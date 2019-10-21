@@ -120,40 +120,58 @@ class Warehouse(gym.Env):
         )
 
     def _make_obs(self, agent):
-        obs = [agent.x, agent.y]
 
-        min_x = max(0, agent.x - self.sensor_range)
-        max_x = min(self.grid_size[1], agent.x + self.sensor_range + 1)
+        _bits_per_agent = len(Direction) + self.msg_bits
+        _bits_per_shelf = 0
+        _bits_for_self = 2
+        _bits_for_targets = 0
 
-        min_y = max(0, agent.y - self.sensor_range)
-        max_y = min(self.grid_size[0], agent.y + self.sensor_range + 1)
+        _sensor_locations = self.sensor_range ** 2
 
-        shelfs = self.grid[_LAYER_SHELFS, min_y:max_y, min_x:max_x]
+        obs_length = (
+            _bits_for_self
+            + _bits_for_targets
+            + _sensor_locations * (_bits_per_agent + _bits_per_shelf)
+        )
 
+        obs = _VectorWriter(obs_length)
+
+        obs.write(np.array([agent.x, agent.y]))
+
+        # neighbors
+        padded_agents = np.pad(
+            self.grid[_LAYER_AGENTS], self.sensor_range, mode="constant"
+        )
+        padded_shelfs = np.pad(
+            self.grid[_LAYER_SHELFS], self.sensor_range, mode="constant"
+        )
+
+        # + self.sensor_range due to padding
+        min_x = agent.x - self.sensor_range + self.sensor_range
+        max_x = agent.x + 2 * self.sensor_range + 1
+
+        min_y = agent.y - self.sensor_range + self.sensor_range
+        max_y = agent.y + 2 * self.sensor_range + 1
+
+        # ---
         # find neighboring agents
-        agents = self.grid[_LAYER_AGENTS, min_y:max_y, min_x:max_x].reshape(-1)
-        # agents = agents[np.nonzero(agents)]
-        # agents = agents[agents != agent.id]
-        # agents = agents - 1  # to get indices to self.agents
-        # agents = list(agents)
+
+        agents = padded_agents[min_y:max_y, min_x:max_x].reshape(-1)
 
         bits_per_agent = len(Direction) + self.msg_bits
-
         agent_obs = _VectorWriter(bits_per_agent * len(agents))
-        print(bits_per_agent * len(agents))
-        print(len(agents))
 
         for i, id_ in enumerate(agents):
             if id_ == 0 or id_ == agent.id:
                 agent_obs.skip(bits_per_agent)
+                continue
 
             agent_obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir])
             agent_obs.write(self.agents[id_ - 1].message)
 
-        agent_obs = _VectorWriter.vector
-        print(agent.id, agents_obs)
+        agent_obs = agent_obs.vector
 
-        # get neighbors:
+        return agent_obs
 
     def reset(self):
         Shelf.counter = 0
