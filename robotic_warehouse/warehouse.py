@@ -104,6 +104,9 @@ class Warehouse(gym.Env):
         )
 
         self.sensor_range = 1
+
+        self.request_queue_size = 5
+        self.request_queue = []
         # self.observation_space = MultiAgentObservationSpace(
         #     [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)]
         # )
@@ -122,16 +125,18 @@ class Warehouse(gym.Env):
     def _make_obs(self, agent):
 
         _bits_per_agent = len(Direction) + self.msg_bits
-        _bits_per_shelf = 0
+        _bits_per_shelf = 1
         _bits_for_self = 2
-        _bits_for_targets = 0
+        _bits_for_requests = 2
 
-        _sensor_locations = self.sensor_range ** 2
+        _sensor_locations = (1 + 2 * self.sensor_range) ** 2
+        _request_count = self.request_queue_size
 
         obs_length = (
             _bits_for_self
-            + _bits_for_targets
-            + _sensor_locations * (_bits_per_agent + _bits_per_shelf)
+            + _bits_for_requests * _request_count
+            + (_sensor_locations - 1) * (_bits_per_agent)
+            + _sensor_locations * _bits_per_shelf
         )
 
         obs = _VectorWriter(obs_length)
@@ -157,21 +162,29 @@ class Warehouse(gym.Env):
         # find neighboring agents
 
         agents = padded_agents[min_y:max_y, min_x:max_x].reshape(-1)
-
-        bits_per_agent = len(Direction) + self.msg_bits
-        agent_obs = _VectorWriter(bits_per_agent * len(agents))
-
         for i, id_ in enumerate(agents):
-            if id_ == 0 or id_ == agent.id:
-                agent_obs.skip(bits_per_agent)
+            if id_ == 0:
+                obs.skip(_bits_per_agent)
                 continue
+            if id_ == agent.id:
+                continue
+            obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir])
+            obs.write(self.agents[id_ - 1].message)
 
-            agent_obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir])
-            agent_obs.write(self.agents[id_ - 1].message)
+        # find neighboring shelfs:
+        shelfs = padded_shelfs[min_y:max_y, min_x:max_x].reshape(-1)
+        for i, id_ in enumerate(shelfs):
+            if id_ == 0:
+                obs.skip(_bits_per_shelf)
+                continue
+            obs.write(np.array([self.shelfs[id_ - 1] in self.request_queue]))
 
-        agent_obs = agent_obs.vector
+        # writing requests:
+        for shelf in self.request_queue:
+            obs.write(np.array([shelf.x, shelf.y]))
 
-        return agent_obs
+        assert obs.idx == obs_length
+        return obs.vector
 
     def reset(self):
         Shelf.counter = 0
@@ -210,6 +223,11 @@ class Warehouse(gym.Env):
 
         for a in self.agents:
             self.grid[_LAYER_AGENTS, a.y, a.x] = a.id
+
+        self.request_queue = list(
+            np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
+        )
+
         print(self.grid)
 
         return [self._make_obs(agent) for agent in self.agents]
