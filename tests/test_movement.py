@@ -468,3 +468,63 @@ def test_simple_carrying_chain():
     assert env.agents[1].y == 25
     assert env.shelfs[1].x == 5
     assert env.shelfs[1].y == 25
+
+
+def test_pickup_and_carry_0():
+    grid_size = (29, 10)
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 3
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.FORWARD])
+
+    env.step([Action.LOAD])
+    assert env.agents[0].carrying_shelf
+    shelf = env.agents[0].carrying_shelf
+    assert shelf.x == 2
+    assert shelf.y == 25
+    env.step([Action.LEFT])
+    env.step([Action.LEFT])
+    env.step([Action.FORWARD])
+    assert env.agents[0].x == 3
+    assert env.agents[0].y == 25
+    assert shelf.x == 3
+    assert shelf.y == 25
+
+    env.step([Action.FORWARD])
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert shelf.x == 4
+    assert shelf.y == 25
+    env.step([Action.UNLOAD])  # cannot unload on highway
+    env.step([Action.FORWARD])
+    assert env.agents[0].x == 5
+    assert env.agents[0].y == 25
+    assert shelf.x == 5
+    assert shelf.y == 25
+
+
+def test_pickup_and_carry_1():
+    grid_size = (29, 10)
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 3
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.FORWARD])
+    env.step([Action.LOAD])
+    assert env.agents[0].carrying_shelf
+    shelf = env.agents[0].carrying_shelf
+    assert shelf.x == 2
+    assert shelf.y == 25
+    env.step([Action.LEFT])
+    env.step([Action.LEFT])
+    env.step([Action.UNLOAD])  # can unload here
+    env.step([Action.FORWARD])
+    assert env.agents[0].x == 3
+    assert env.agents[0].y == 25
+    assert shelf.x == 2
+    assert shelf.y == 25
