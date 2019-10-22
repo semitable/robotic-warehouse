@@ -1,5 +1,6 @@
 import logging
 
+from collections import defaultdict
 import gym
 from gym import spaces
 
@@ -8,6 +9,10 @@ from ma_gym.envs.utils.observation_space import MultiAgentObservationSpace
 
 from enum import Enum
 import numpy as np
+
+from typing import List, Tuple, Optional
+
+import networkx as nx
 
 _AXIS_Z = 0
 _AXIS_Y = 1
@@ -50,6 +55,7 @@ class Agent(Entity):
         super().__init__(Agent.counter, x, y)
         self.dir = dir_
         self.message = np.zeros(msg_bits)
+        self.req_action: Optional[Action] = None
 
     @property
     def collision_layers(self):
@@ -57,6 +63,18 @@ class Agent(Entity):
             return (_LAYER_AGENTS, _LAYER_SHELFS)
         else:
             return (_LAYER_AGENTS,)
+
+    def req_location(self, grid_size) -> Tuple[int, int]:
+        if self.req_action != Action.FORWARD:
+            return self.x, self.y
+        elif self.dir == Direction.UP.value:
+            return self.x, max(0, self.y - 1)
+        elif self.dir == Direction.DOWN.value:
+            return self.x, min(grid_size[0] - 1, self.y + 1)
+        elif self.dir == Direction.LEFT.value:
+            return max(0, self.x - 1), self.y
+        elif self.dir == Direction.RIGHT.value:
+            return min(grid_size[1] - 1, self.x + 1), self.y
 
 
 class Shelf(Entity):
@@ -107,6 +125,8 @@ class Warehouse(gym.Env):
 
         self.request_queue_size = 5
         self.request_queue = []
+
+        self.agents: List[Agent] = []
         # self.observation_space = MultiAgentObservationSpace(
         #     [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)]
         # )
@@ -236,7 +256,56 @@ class Warehouse(gym.Env):
         # print(self.grid[0])
 
     def step(self, actions):
-        ...
+        assert len(actions) == len(self.agents)
+
+        for agent, action in zip(self.agents, actions):
+            agent.req_action = action
+
+        # # stationary agents will certainly stay where they are
+        # stationary_agents = [agent for agent in self.agents if agent.action != Action.FORWARD]
+
+        # # forward agents will move only if they avoid collisions
+        # forward_agents = [agent for agent in self.agents if agent.action == Action.FORWARD]
+        commited_agents = set()
+
+        G = nx.DiGraph()
+
+        for agent in self.agents:
+            start = agent.x, agent.y
+            target = agent.req_location(self.grid_size)
+
+            G.add_edge(start, target)
+
+        wcomps = nx.algorithms.weakly_connected_component_subgraphs(G, copy=False)
+
+        for comp in wcomps:
+            try:
+                # if we find a cycle in this component we have to
+                # commit all nodes in that cycle, and nothing else
+                # todo if [A] <-> [B] then we have to cancel
+                cycle = nx.algorithms.find_cycle(comp)
+                for edge in cycle:
+                    start_node = edge[0]
+                    agent_id = self.grid[_LAYER_AGENTS, start_node[1], start_node[0]]
+                    commited_agents.add(agent_id)
+            except nx.NetworkXNoCycle:
+
+                longest_path = nx.algorithms.dag_longest_path(comp)
+                for x, y in longest_path:
+                    agent_id = self.grid[_LAYER_AGENTS, y, x]
+                    if agent_id:
+                        commited_agents.add(agent_id)
+
+        commited_agents = set([self.agents[id_ - 1] for id_ in commited_agents])
+        failed_agents = set(self.agents) - commited_agents
+        print(commited_agents)
+        print(failed_agents)
+        for agent in failed_agents:
+            assert agent.req_action == Action.FORWARD
+            agent.req_action = Action.NOOP
+
+        for agent in self.agents:
+            agent.x, agent.y = agent.req_location(self.grid_size)
 
     def render(self, mode="human"):
         ...
@@ -251,3 +320,4 @@ class Warehouse(gym.Env):
 if __name__ == "__main__":
     env = Warehouse()
     env.reset()
+    env.step(18 * [Action.FORWARD] + 2 * [Action.NOOP])
