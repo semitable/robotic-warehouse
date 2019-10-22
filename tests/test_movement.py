@@ -68,6 +68,22 @@ def test_simple_movement_right():
     assert env.agents[0].y == 25
 
 
+def test_movement_under_shelf():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 0  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+    env._recalc_grid()
+    for i in range(10):
+        env.step([Action.FORWARD])
+
+        assert env.agents[0].x == min(i + 1, 9)
+        assert env.agents[0].y == 25
+
+
 def test_simple_wall_collision_up():
     grid_size = (29, 10)
 
