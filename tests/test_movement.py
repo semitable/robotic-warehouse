@@ -254,3 +254,131 @@ def test_circle_chain_movement():
 
     assert env.agents[3].x == 3
     assert env.agents[3].y == 25
+
+
+def test_turn_right_0():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.UP
+    env._recalc_grid()
+    env.step([Action.RIGHT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.RIGHT
+
+
+def test_turn_right_1():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+    env._recalc_grid()
+    env.step([Action.RIGHT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.DOWN
+
+
+def test_turn_right_2():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.DOWN
+    env._recalc_grid()
+    env.step([Action.RIGHT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.LEFT
+
+
+def test_turn_right_3():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.RIGHT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.UP
+
+
+def test_turn_left_0():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.UP
+    env._recalc_grid()
+    env.step([Action.LEFT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.LEFT
+
+
+def test_turn_left_1():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+    env._recalc_grid()
+    env.step([Action.LEFT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.UP
+
+
+def test_turn_left_2():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.DOWN
+    env._recalc_grid()
+    env.step([Action.LEFT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.RIGHT
+
+
+def test_turn_left_3():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.LEFT])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[0].dir == Direction.DOWN
