@@ -107,13 +107,12 @@ class Warehouse(gym.Env):
 
     metadata = {"render.modes": ["human", "rgb_array"]}
 
-    def __init__(self):
-        self.grid_size = (29, 10)
+    def __init__(self, grid_size, n_agents, msg_bits):
+        self.grid_size = grid_size
+        self.n_agents = n_agents
+        self.msg_bits = msg_bits
 
-        self.n_agents = 20
         self._max_steps = None
-        self.n_shelfs = 20
-        self.msg_bits = 2
 
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
 
@@ -318,6 +317,6 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse()
+    env = Warehouse((29, 10), 20, 2)
     env.reset()
     env.step(18 * [Action.FORWARD] + 2 * [Action.NOOP])
