@@ -290,6 +290,14 @@ class Warehouse(gym.Env):
             target = agent.req_location(self.grid_size)
 
             G.add_edge(start, target)
+            if (
+                agent.carrying_shelf
+                and start != target
+                and self.grid[_LAYER_SHELFS, target[1], target[0]] > 0
+            ):
+                # there's a shelf at the target location
+                # so we add a 'fake' node
+                G.add_edge(target, target)
 
         wcomps = [G.subgraph(c).copy() for c in nx.weakly_connected_components(G)]
 
@@ -305,7 +313,8 @@ class Warehouse(gym.Env):
                 for edge in cycle:
                     start_node = edge[0]
                     agent_id = self.grid[_LAYER_AGENTS, start_node[1], start_node[0]]
-                    commited_agents.add(agent_id)
+                    if agent_id > 0:
+                        commited_agents.add(agent_id)
             except nx.NetworkXNoCycle:
 
                 longest_path = nx.algorithms.dag_longest_path(comp)
