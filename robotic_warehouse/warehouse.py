@@ -76,6 +76,10 @@ class Agent(Entity):
         elif self.dir == Direction.RIGHT.value:
             return min(grid_size[1] - 1, self.x + 1), self.y
 
+        raise ValueError(
+            f"Direction is {self.dir}. Should be one of {[v.value for v in Direction]}"
+        )
+
 
 class Shelf(Entity):
     counter = 0
@@ -205,6 +209,14 @@ class Warehouse(gym.Env):
         assert obs.idx == obs_length
         return obs.vector
 
+    def _recalc_grid(self):
+        self.grid[:] = 0
+        for s in self.shelfs:
+            self.grid[_LAYER_SHELFS, s.y, s.x] = s.id
+
+        for a in self.agents:
+            self.grid[_LAYER_AGENTS, a.y, a.x] = a.id
+
     def reset(self):
         Shelf.counter = 0
         Agent.counter = 0
@@ -237,11 +249,7 @@ class Warehouse(gym.Env):
             for y, x, dir_ in zip(*agent_locs, agent_dirs)
         ]
 
-        for s in self.shelfs:
-            self.grid[_LAYER_SHELFS, s.y, s.x] = s.id
-
-        for a in self.agents:
-            self.grid[_LAYER_AGENTS, a.y, a.x] = a.id
+        self._recalc_grid()
 
         self.request_queue = list(
             np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
@@ -275,7 +283,7 @@ class Warehouse(gym.Env):
 
             G.add_edge(start, target)
 
-        wcomps = nx.algorithms.weakly_connected_component_subgraphs(G, copy=False)
+        wcomps = [G.subgraph(c).copy() for c in nx.weakly_connected_components(G)]
 
         for comp in wcomps:
             try:
@@ -305,6 +313,7 @@ class Warehouse(gym.Env):
 
         for agent in self.agents:
             agent.x, agent.y = agent.req_location(self.grid_size)
+        self._recalc_grid()
 
     def render(self, mode="human"):
         ...
