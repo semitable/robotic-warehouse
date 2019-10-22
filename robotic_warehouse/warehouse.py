@@ -255,8 +255,6 @@ class Warehouse(gym.Env):
             np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
         )
 
-        print(self.grid)
-
         return [self._make_obs(agent) for agent in self.agents]
         # for s in self.shelfs:
         #     self.grid[0, s.y, s.x] = 1
