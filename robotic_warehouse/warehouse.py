@@ -332,10 +332,19 @@ class Warehouse(gym.Env):
             agent.req_action = Action.NOOP
 
         for agent in self.agents:
-            agent.x, agent.y = agent.req_location(self.grid_size)
-            agent.dir = agent.req_direction()
-            if agent.carrying_shelf:
-                agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y
+            if agent.req_action == Action.FORWARD:
+                agent.x, agent.y = agent.req_location(self.grid_size)
+                if agent.carrying_shelf:
+                    agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y
+            elif agent.req_action in [Action.LEFT, Action.RIGHT]:
+                agent.dir = agent.req_direction()
+            elif agent.req_action == Action.LOAD:
+                shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
+                if shelf_id:
+                    agent.carrying_shelf = self.shelfs[shelf_id - 1]
+            elif agent.req_action == Action.UNLOAD:
+                if not self._is_highway(agent.x, agent.y):
+                    agent.carrying_shelf = None
 
         self._recalc_grid()
 
