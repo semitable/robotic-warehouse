@@ -149,7 +149,7 @@ def test_head_collision():
     assert env.agents[1].y == 25
 
 
-def test_chain_movement():
+def test_chain_movement_1():
     grid_size = (29, 10)
 
     env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
@@ -167,6 +167,27 @@ def test_chain_movement():
     assert env.agents[0].x == 4
     assert env.agents[0].y == 25
     assert env.agents[1].x == 5
+    assert env.agents[1].y == 25
+
+
+def test_chain_movement_2():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 8
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT.value
+
+    env.agents[1].x = 9
+    env.agents[1].y = 25
+    env.agents[1].dir = Direction.RIGHT.value
+    env._recalc_grid()
+    env.step([Action.FORWARD, Action.FORWARD])
+
+    assert env.agents[0].x == 8
+    assert env.agents[0].y == 25
+    assert env.agents[1].x == 9
     assert env.agents[1].y == 25
 
 
