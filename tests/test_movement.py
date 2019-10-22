@@ -422,3 +422,33 @@ def test_simple_carrying_collision():
     assert env.agents[0].y == 25
     assert env.shelfs[0].x == 3
     assert env.shelfs[0].y == 25
+
+
+def test_simple_carrying_chain():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
+    env.reset()
+    env.agents[0].x = env.shelfs[0].x = 3
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+
+    env.agents[1].x = env.shelfs[1].x = 4
+    env.agents[1].y = env.shelfs[1].y = 25
+    env.agents[1].dir = Direction.RIGHT
+
+    env.agents[0].carrying_shelf = env.shelfs[0]
+    env.agents[1].carrying_shelf = env.shelfs[1]
+
+    env._recalc_grid()
+    env.step(2 * [Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.shelfs[0].x == 4
+    assert env.shelfs[0].y == 25
+
+    assert env.agents[1].x == 5
+    assert env.agents[1].y == 25
+    assert env.shelfs[1].x == 5
+    assert env.shelfs[1].y == 25
