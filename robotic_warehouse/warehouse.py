@@ -293,9 +293,15 @@ class Warehouse(gym.Env):
             if (
                 agent.carrying_shelf
                 and start != target
-                and self.grid[_LAYER_SHELFS, target[1], target[0]] > 0
+                and self.grid[_LAYER_SHELFS, target[1], target[0]]
+                and not (
+                    self.grid[_LAYER_AGENTS, target[1], target[0]]
+                    and self.agents[
+                        self.grid[_LAYER_AGENTS, target[1], target[0]] - 1
+                    ].carrying_shelf
+                )
             ):
-                # there's a shelf at the target location
+                # there's a standing shelf at the target location
                 # so we add a 'fake' node
                 G.add_edge(target, target)
 
