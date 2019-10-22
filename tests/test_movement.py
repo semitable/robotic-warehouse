@@ -191,6 +191,34 @@ def test_chain_movement_2():
     assert env.agents[1].y == 25
 
 
+def test_chain_movement_3():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=3, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 3
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT.value
+
+    env.agents[1].x = 4
+    env.agents[1].y = 25
+    env.agents[1].dir = Direction.RIGHT.value
+
+    env.agents[2].x = 5
+    env.agents[2].y = 26
+    env.agents[2].dir = Direction.UP.value
+
+    env._recalc_grid()
+    env.step(3 * [Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[1].x == 5
+    assert env.agents[1].y == 25
+    assert env.agents[2].x == 5
+    assert env.agents[2].y == 26
+
+
 def test_circle_chain_movement():
     grid_size = (29, 10)
 
