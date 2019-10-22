@@ -287,8 +287,11 @@ class Warehouse(gym.Env):
             try:
                 # if we find a cycle in this component we have to
                 # commit all nodes in that cycle, and nothing else
-                # todo if [A] <-> [B] then we have to cancel
                 cycle = nx.algorithms.find_cycle(comp)
+                if len(cycle) == 2:
+                    # we have a situation like this: [A] <-> [B]
+                    # which is physically impossible. so skip
+                    continue
                 for edge in cycle:
                     start_node = edge[0]
                     agent_id = self.grid[_LAYER_AGENTS, start_node[1], start_node[0]]
