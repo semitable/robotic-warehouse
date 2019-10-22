@@ -402,3 +402,23 @@ def test_simple_carrying():
     assert env.agents[0].y == 26
     assert env.shelfs[0].x == 4
     assert env.shelfs[0].y == 26
+
+
+def test_simple_carrying_collision():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = env.shelfs[0].x = 3
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env._recalc_grid()
+    env.step([Action.FORWARD])
+
+    assert env.agents[0].x == 3
+    assert env.agents[0].y == 25
+    assert env.shelfs[0].x == 3
+    assert env.shelfs[0].y == 25
