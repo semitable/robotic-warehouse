@@ -15,7 +15,7 @@ def test_simple_movement_down():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.DOWN.value
+    env.agents[0].dir = Direction.DOWN
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -30,7 +30,7 @@ def test_simple_movement_up():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.UP.value
+    env.agents[0].dir = Direction.UP
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -45,7 +45,7 @@ def test_simple_movement_left():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.LEFT.value
+    env.agents[0].dir = Direction.LEFT
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -60,7 +60,7 @@ def test_simple_movement_right():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -75,7 +75,7 @@ def test_simple_wall_collision_up():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 0
-    env.agents[0].dir = Direction.UP.value
+    env.agents[0].dir = Direction.UP
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -90,7 +90,7 @@ def test_simple_wall_collision_down():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 28
-    env.agents[0].dir = Direction.DOWN.value
+    env.agents[0].dir = Direction.DOWN
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -105,7 +105,7 @@ def test_simple_wall_collision_right():
     env.reset()
     env.agents[0].x = 9  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -120,7 +120,7 @@ def test_simple_wall_collision_left():
     env.reset()
     env.agents[0].x = 0  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.LEFT.value
+    env.agents[0].dir = Direction.LEFT
     env._recalc_grid()
     env.step([Action.FORWARD])
 
@@ -135,11 +135,11 @@ def test_head_collision():
     env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
 
     env.agents[1].x = 5  # should place it next to the other
     env.agents[1].y = 25
-    env.agents[1].dir = Direction.LEFT.value
+    env.agents[1].dir = Direction.LEFT
     env._recalc_grid()
     env.step([Action.FORWARD, Action.FORWARD])
 
@@ -156,11 +156,11 @@ def test_chain_movement_1():
     env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
 
     env.agents[1].x = 4
     env.agents[1].y = 25
-    env.agents[1].dir = Direction.RIGHT.value
+    env.agents[1].dir = Direction.RIGHT
     env._recalc_grid()
     env.step([Action.FORWARD, Action.FORWARD])
 
@@ -177,11 +177,11 @@ def test_chain_movement_2():
     env.reset()
     env.agents[0].x = 8
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
 
     env.agents[1].x = 9
     env.agents[1].y = 25
-    env.agents[1].dir = Direction.RIGHT.value
+    env.agents[1].dir = Direction.RIGHT
     env._recalc_grid()
     env.step([Action.FORWARD, Action.FORWARD])
 
@@ -198,15 +198,15 @@ def test_chain_movement_3():
     env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
 
     env.agents[1].x = 4
     env.agents[1].y = 25
-    env.agents[1].dir = Direction.RIGHT.value
+    env.agents[1].dir = Direction.RIGHT
 
     env.agents[2].x = 5
     env.agents[2].y = 26
-    env.agents[2].dir = Direction.UP.value
+    env.agents[2].dir = Direction.UP
 
     env._recalc_grid()
     env.step(3 * [Action.FORWARD])
@@ -226,19 +226,19 @@ def test_circle_chain_movement():
     env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
-    env.agents[0].dir = Direction.RIGHT.value
+    env.agents[0].dir = Direction.RIGHT
 
     env.agents[1].x = 4
     env.agents[1].y = 25
-    env.agents[1].dir = Direction.UP.value
+    env.agents[1].dir = Direction.UP
 
     env.agents[2].x = 4
     env.agents[2].y = 24
-    env.agents[2].dir = Direction.LEFT.value
+    env.agents[2].dir = Direction.LEFT
 
     env.agents[3].x = 3
     env.agents[3].y = 24
-    env.agents[3].dir = Direction.DOWN.value
+    env.agents[3].dir = Direction.DOWN
 
     env._recalc_grid()
     env.step(4 * [Action.FORWARD])

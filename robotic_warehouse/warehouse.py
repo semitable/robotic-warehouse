@@ -67,17 +67,17 @@ class Agent(Entity):
     def req_location(self, grid_size) -> Tuple[int, int]:
         if self.req_action != Action.FORWARD:
             return self.x, self.y
-        elif self.dir == Direction.UP.value:
+        elif self.dir == Direction.UP:
             return self.x, max(0, self.y - 1)
-        elif self.dir == Direction.DOWN.value:
+        elif self.dir == Direction.DOWN:
             return self.x, min(grid_size[0] - 1, self.y + 1)
-        elif self.dir == Direction.LEFT.value:
+        elif self.dir == Direction.LEFT:
             return max(0, self.x - 1), self.y
-        elif self.dir == Direction.RIGHT.value:
+        elif self.dir == Direction.RIGHT:
             return min(grid_size[1] - 1, self.x + 1), self.y
 
         raise ValueError(
-            f"Direction is {self.dir}. Should be one of {[v.value for v in Direction]}"
+            f"Direction is {self.dir}. Should be one of {[v for v in Direction]}"
         )
 
     def req_direction(self) -> Direction:
@@ -323,7 +323,7 @@ class Warehouse(gym.Env):
 
         for agent in self.agents:
             agent.x, agent.y = agent.req_location(self.grid_size)
-            agent.dir = agent.req_direction().value
+            agent.dir = agent.req_direction()
         self._recalc_grid()
 
     def render(self, mode="human"):
