@@ -235,7 +235,7 @@ def test_chain_movement_3():
     assert env.agents[2].y == 26
 
 
-def test_circle_chain_movement():
+def test_circle_chain_movement_0():
     grid_size = (29, 10)
 
     env = Warehouse(grid_size=grid_size, n_agents=4, msg_bits=0)
@@ -270,6 +270,51 @@ def test_circle_chain_movement():
 
     assert env.agents[3].x == 3
     assert env.agents[3].y == 25
+
+
+def test_circle_chain_movement_1():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=5, msg_bits=0)
+    env.reset()
+    env.agents[0].x = 3
+    env.agents[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+
+    env.agents[1].x = 4
+    env.agents[1].y = 25
+    env.agents[1].dir = Direction.UP
+
+    env.agents[2].x = 4
+    env.agents[2].y = 24
+    env.agents[2].dir = Direction.LEFT
+
+    env.agents[3].x = 3
+    env.agents[3].y = 24
+    env.agents[3].dir = Direction.DOWN
+
+    env.agents[4].x = 5
+    env.agents[4].y = 24
+    env.agents[4].dir = Direction.LEFT
+
+    env._recalc_grid()
+    env.step(5 * [Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+
+    assert env.agents[1].x == 4
+    assert env.agents[1].y == 24
+
+    assert env.agents[2].x == 3
+    assert env.agents[2].y == 24
+
+    assert env.agents[3].x == 3
+    assert env.agents[3].y == 25
+
+    # this stayed still:
+    assert env.agents[4].x == 5
+    assert env.agents[4].y == 24
 
 
 def test_turn_right_0():
