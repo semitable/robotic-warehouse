@@ -80,6 +80,15 @@ class Agent(Entity):
             f"Direction is {self.dir}. Should be one of {[v.value for v in Direction]}"
         )
 
+    def req_direction(self) -> Direction:
+        wraplist = [Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT]
+        if self.req_action == Action.RIGHT:
+            return wraplist[(wraplist.index(self.dir) + 1) % len(wraplist)]
+        elif self.req_action == Action.LEFT:
+            return wraplist[(wraplist.index(self.dir) - 1) % len(wraplist)]
+        else:
+            return self.dir
+
 
 class Shelf(Entity):
     counter = 0
@@ -314,6 +323,7 @@ class Warehouse(gym.Env):
 
         for agent in self.agents:
             agent.x, agent.y = agent.req_location(self.grid_size)
+            agent.dir = agent.req_direction().value
         self._recalc_grid()
 
     def render(self, mode="human"):
