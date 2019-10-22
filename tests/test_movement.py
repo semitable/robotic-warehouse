@@ -382,3 +382,23 @@ def test_turn_left_3():
     assert env.agents[0].x == 4
     assert env.agents[0].y == 25
     assert env.agents[0].dir == Direction.DOWN
+
+
+def test_simple_carrying():
+    grid_size = (29, 10)
+
+    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env.reset()
+    env.agents[0].x = env.shelfs[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.DOWN
+
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env._recalc_grid()
+    env.step([Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 26
+    assert env.shelfs[0].x == 4
+    assert env.shelfs[0].y == 26

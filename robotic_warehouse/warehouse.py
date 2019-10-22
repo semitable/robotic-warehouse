@@ -56,6 +56,7 @@ class Agent(Entity):
         self.dir = dir_
         self.message = np.zeros(msg_bits)
         self.req_action: Optional[Action] = None
+        self.carrying_shelf: Optional[Shelf] = None
 
     @property
     def collision_layers(self):
@@ -324,6 +325,9 @@ class Warehouse(gym.Env):
         for agent in self.agents:
             agent.x, agent.y = agent.req_location(self.grid_size)
             agent.dir = agent.req_direction()
+            if agent.carrying_shelf:
+                agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y
+
         self._recalc_grid()
 
     def render(self, mode="human"):
