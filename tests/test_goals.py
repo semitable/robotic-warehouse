@@ -28,7 +28,12 @@ def env_0():
     return env
 
 
-def test_goal_0(env_0: Warehouse):
+def test_goal_location(env_0: Warehouse):
+    assert env_0.goals[0] == (4, 28)
+    assert env_0.goals[1] == (5, 28)
+
+
+def test_goal_1(env_0: Warehouse):
     assert env_0.request_queue[0] == env_0.shelfs[0]
 
     _, rewards, _, _ = env_0.step([Action.FORWARD])
@@ -38,7 +43,8 @@ def test_goal_0(env_0: Warehouse):
     assert env_0.request_queue[0] != env_0.shelfs[0]
     assert rewards[0] == pytest.approx(1.0)
 
-def test_goal_1(env_0: Warehouse):
+
+def test_goal_2(env_0: Warehouse):
     assert env_0.request_queue[0] == env_0.shelfs[0]
 
     _, rewards, _, _ = env_0.step([Action.UNLOAD])

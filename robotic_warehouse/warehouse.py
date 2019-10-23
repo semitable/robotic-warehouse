@@ -140,6 +140,11 @@ class Warehouse(gym.Env):
         self.request_queue = []
 
         self.agents: List[Agent] = []
+
+        self.goals: List[Tuple[int, int]] = [
+            (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
+            (self.grid_size[1] // 2, self.grid_size[0] - 1),
+        ]
         # self.observation_space = MultiAgentObservationSpace(
         #     [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)]
         # )
@@ -269,7 +274,9 @@ class Warehouse(gym.Env):
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
 
-    def step(self, actions: List[Action]) -> Tuple[List[np.ndarray], List[float], List[bool], Dict]:
+    def step(
+        self, actions: List[Action]
+    ) -> Tuple[List[np.ndarray], List[float], List[bool], Dict]:
         assert len(actions) == len(self.agents)
 
         for agent, action in zip(self.agents, actions):
@@ -353,10 +360,9 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
-
         new_obs = [self._make_obs(agent) for agent in self.agents]
-        rewards = self.n_agents*[0.0]
-        dones = self.n_agents*[False]
+        rewards = self.n_agents * [0.0]
+        dones = self.n_agents * [False]
         info = {}
         return new_obs, rewards, dones, info
 
