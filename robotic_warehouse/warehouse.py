@@ -354,9 +354,10 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
-        new_obs = []
-        rewards = []
-        dones = []
+
+        new_obs = [self._make_obs(agent) for agent in self.agents]
+        rewards = self.n_agents*[0.0]
+        dones = self.n_agents*[False]
         info = {}
         return new_obs, rewards, dones, info
 
