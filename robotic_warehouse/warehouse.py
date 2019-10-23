@@ -360,8 +360,26 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
+        global_reward = 0
+        for x, y in self.goals:
+            shelf_id = self.grid[_LAYER_SHELFS, y, x]
+            if not shelf_id:
+                continue
+            shelf = self.shelfs[shelf_id - 1]
+
+            if shelf not in self.request_queue:
+                continue
+            # a shelf was successfully delived.
+            # remove from queue and replace it
+            new_request = np.random.choice(
+                list(set(self.shelfs) - set(self.request_queue))
+            )
+            self.request_queue[self.request_queue.index(shelf)] = new_request
+            # also reward the agents
+            global_reward += 1.0
+
         new_obs = [self._make_obs(agent) for agent in self.agents]
-        rewards = self.n_agents * [0.0]
+        rewards = self.n_agents * [global_reward]
         dones = self.n_agents * [False]
         info = {}
         return new_obs, rewards, dones, info
