@@ -10,7 +10,7 @@ from ma_gym.envs.utils.observation_space import MultiAgentObservationSpace
 from enum import Enum
 import numpy as np
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 import networkx as nx
 
@@ -270,7 +270,7 @@ class Warehouse(gym.Env):
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
 
-    def step(self, actions):
+    def step(self, actions: List[Action]) -> Tuple[List[np.ndarray], List[float], List[bool], Dict]:
         assert len(actions) == len(self.agents)
 
         for agent, action in zip(self.agents, actions):
@@ -353,6 +353,12 @@ class Warehouse(gym.Env):
                     agent.carrying_shelf = None
 
         self._recalc_grid()
+
+        new_obs = []
+        rewards = []
+        dones = []
+        info = {}
+        return new_obs, rewards, dones, info
 
     def render(self, mode="human"):
         ...
