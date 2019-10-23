@@ -47,11 +47,13 @@ def test_goal_1(env_0: Warehouse):
 def test_goal_2(env_0: Warehouse):
     assert env_0.request_queue[0] == env_0.shelfs[0]
 
-    _, rewards, _, _ = env_0.step([Action.UNLOAD])
+    _, rewards, _, _ = env_0.step([Action.LEFT])
+    assert rewards[0] == pytest.approx(0.0)
+    _, rewards, _, _ = env_0.step([Action.LEFT])
     assert rewards[0] == pytest.approx(0.0)
     _, rewards, _, _ = env_0.step([Action.FORWARD])
     assert env_0.agents[0].x == 4
-    assert env_0.agents[0].y == 28
+    assert env_0.agents[0].y == 26
 
     assert env_0.request_queue[0] == env_0.shelfs[0]
 
