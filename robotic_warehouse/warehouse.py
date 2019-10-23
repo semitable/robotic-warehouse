@@ -201,7 +201,7 @@ class Warehouse(gym.Env):
                 continue
             if id_ == agent.id:
                 continue
-            obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir])
+            obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir.value])
             obs.write(self.agents[id_ - 1].message)
 
         # find neighboring shelfs:
@@ -252,8 +252,7 @@ class Warehouse(gym.Env):
         )
         agent_locs = np.unravel_index(agent_locs, self.grid_size)
         # and direction
-        agent_dirs = np.random.choice(4, size=self.n_agents)
-
+        agent_dirs = np.random.choice([d for d in Direction], size=self.n_agents)
         self.agents = [
             Agent(x, y, dir_, self.msg_bits)
             for y, x, dir_ in zip(*agent_locs, agent_dirs)
