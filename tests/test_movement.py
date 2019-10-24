@@ -163,7 +163,7 @@ def test_simple_wall_collision_left(env_single_agent):
     assert env.agents[0].y == 25
 
 
-def test_head_collision(env_two_agents):
+def test_head_collision_0(env_two_agents):
     env = env_two_agents
 
     env.agents[0].x = 4  # should place it in the middle (empty space)
@@ -173,6 +173,47 @@ def test_head_collision(env_two_agents):
     env.agents[1].x = 5  # should place it next to the other
     env.agents[1].y = 25
     env.agents[1].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.FORWARD, Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[1].x == 5
+    assert env.agents[1].y == 25
+
+
+def test_head_collision_1(env_two_agents):
+    env = env_two_agents
+
+    env.agents[0].x = env.shelfs[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env.agents[1].x = 5  # should place it next to the other
+    env.agents[1].y = 25
+    env.agents[1].dir = Direction.LEFT
+    env._recalc_grid()
+    env.step([Action.FORWARD, Action.FORWARD])
+
+    assert env.agents[0].x == 4
+    assert env.agents[0].y == 25
+    assert env.agents[1].x == 5
+    assert env.agents[1].y == 25
+
+
+def test_head_collision_2(env_two_agents):
+    env = env_two_agents
+
+    env.agents[0].x = env.shelfs[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.RIGHT
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env.agents[1].x = env.shelfs[1].x = 5  # should place it next to the other
+    env.agents[1].y = env.shelfs[1].y = 25
+    env.agents[1].dir = Direction.LEFT
+    env.agents[1].carrying_shelf = env.shelfs[1]
     env._recalc_grid()
     env.step([Action.FORWARD, Action.FORWARD])
 
