@@ -220,6 +220,8 @@ class Warehouse(gym.Env):
             (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
             (self.grid_size[1] // 2, self.grid_size[0] - 1),
         ]
+
+        self.renderer = None
         # self.observation_space = MultiAgentObservationSpace(
         #     [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)]
         # )
@@ -477,7 +479,11 @@ class Warehouse(gym.Env):
         return new_obs, rewards, dones, info
 
     def render(self, mode="human"):
-        ...
+        if not self.renderer:
+            from rendering import Viewer
+
+            self.renderer = Viewer(self.grid_size)
+        self.renderer.render(self)
 
     def close(self):
         ...
@@ -490,3 +496,8 @@ if __name__ == "__main__":
     env = Warehouse(3, 8, 3, 20, 1, 1, None, RewardType.GLOBAL)
     env.reset()
     env.step(18 * [Action.FORWARD] + 2 * [Action.NOOP])
+
+    env.render()
+    import time
+
+    time.sleep(5)
