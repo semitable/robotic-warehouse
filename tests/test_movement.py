@@ -222,6 +222,25 @@ def test_head_collision_2(env_two_agents):
     assert env.agents[1].x == 5
     assert env.agents[1].y == 25
 
+def test_head_collision_3(env_two_agents):
+    env = env_two_agents
+
+    env.agents[0].x = env.shelfs[0].x = 3  # should place it in the middle (empty space)
+    env.agents[0].y = env.shelfs[0].y = 25
+    env.agents[0].dir = Direction.LEFT
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env.agents[1].x = 2  # should place it next to the other
+    env.agents[1].y = 25
+    env.agents[1].dir = Direction.RIGHT
+    env._recalc_grid()
+    env.step([Action.FORWARD, Action.FORWARD])
+
+    assert env.agents[0].x == 3
+    assert env.agents[0].y == 25
+    assert env.agents[1].x == 2
+    assert env.agents[1].y == 25
+
 
 def test_chain_movement_1(env_two_agents):
     env = env_two_agents
