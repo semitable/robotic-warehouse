@@ -50,13 +50,17 @@ _BLACK = (0, 0, 0)
 _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
-
+_ORANGE = (255, 165, 0)
+_DARKORANGE = (255, 140, 0)
+_DARKSLATEBLUE = (72, 61, 139)
+_TEAL = (0, 128, 128)
 
 _BACKGROUND_COLOR = _WHITE
 _GRID_COLOR = _BLACK
-_SHELF_COLOR = _GREEN
-_AGENT_COLOR = _RED
-_AGENT_LOADED_COLOR = (255, 255, 0)
+_SHELF_COLOR = _DARKSLATEBLUE
+_SHELF_REQ_COLOR = _TEAL
+_AGENT_COLOR = _DARKORANGE
+_AGENT_LOADED_COLOR = _RED
 _AGENT_DIR_COLOR = _BLACK
 
 _SHELF_PADDING = 2
@@ -177,6 +181,9 @@ class Viewer(object):
         for shelf in env.shelfs:
             x, y = shelf.x, shelf.y
             y = self.rows - y - 1  # pyglet rendering is reversed
+            shelf_color = (
+                _SHELF_REQ_COLOR if shelf in env.request_queue else _SHELF_COLOR
+            )
 
             batch.add(
                 4,
@@ -195,7 +202,7 @@ class Viewer(object):
                         (self.grid_size + 1) * (y + 1) - _SHELF_PADDING,  # BL - Y
                     ),
                 ),
-                ("c3B", (*_SHELF_COLOR, *_SHELF_COLOR, *_SHELF_COLOR, *_SHELF_COLOR)),
+                ("c3B", 4 * shelf_color),
             )
         batch.draw()
 
