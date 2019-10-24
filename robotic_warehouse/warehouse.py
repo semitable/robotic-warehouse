@@ -473,8 +473,6 @@ class Warehouse(gym.Env):
             dones = self.n_agents * [False]
 
         new_obs = [self._make_obs(agent) for agent in self.agents]
-
-        dones = self.n_agents * [False]
         info = {}
         return new_obs, rewards, dones, info
 
