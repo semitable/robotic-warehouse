@@ -1,18 +1,53 @@
 import os
 import sys
+import pytest
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
 sys.path.insert(0, PROJECT_DIR)
 
-from robotic_warehouse.warehouse import Warehouse, Direction, Action
+from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 
-def test_simple_movement_down():
-    grid_size = (29, 10)
-
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+@pytest.fixture
+def env_single_agent():
+    env = Warehouse(3, 8, 3, 1, 0, 1, None, RewardType.GLOBAL)
     env.reset()
+
+    return env
+
+
+@pytest.fixture
+def env_two_agents():
+    env = Warehouse(3, 8, 3, 2, 0, 1, None, RewardType.GLOBAL)
+    env.reset()
+    return env
+
+
+@pytest.fixture
+def env_three_agents():
+    env = Warehouse(3, 8, 3, 3, 0, 1, None, RewardType.GLOBAL)
+    env.reset()
+    return env
+
+
+@pytest.fixture
+def env_four_agents():
+    env = Warehouse(3, 8, 3, 4, 0, 1, None, RewardType.GLOBAL)
+    env.reset()
+    return env
+
+
+@pytest.fixture
+def env_five_agents():
+    env = Warehouse(3, 8, 3, 5, 0, 1, None, RewardType.GLOBAL)
+    env.reset()
+    return env
+
+
+def test_simple_movement_down(env_single_agent):
+    env = env_single_agent
+
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.DOWN
@@ -23,11 +58,9 @@ def test_simple_movement_down():
     assert env.agents[0].y == 26
 
 
-def test_simple_movement_up():
-    grid_size = (29, 10)
+def test_simple_movement_up(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.UP
@@ -38,11 +71,9 @@ def test_simple_movement_up():
     assert env.agents[0].y == 24
 
 
-def test_simple_movement_left():
-    grid_size = (29, 10)
+def test_simple_movement_left(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -53,11 +84,9 @@ def test_simple_movement_left():
     assert env.agents[0].y == 25
 
 
-def test_simple_movement_right():
-    grid_size = (29, 10)
+def test_simple_movement_right(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -68,11 +97,9 @@ def test_simple_movement_right():
     assert env.agents[0].y == 25
 
 
-def test_movement_under_shelf():
-    grid_size = (29, 10)
+def test_movement_under_shelf(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 0  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -84,11 +111,9 @@ def test_movement_under_shelf():
         assert env.agents[0].y == 25
 
 
-def test_simple_wall_collision_up():
-    grid_size = (29, 10)
+def test_simple_wall_collision_up(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 0
     env.agents[0].dir = Direction.UP
@@ -99,11 +124,9 @@ def test_simple_wall_collision_up():
     assert env.agents[0].y == 0
 
 
-def test_simple_wall_collision_down():
-    grid_size = (29, 10)
+def test_simple_wall_collision_down(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 28
     env.agents[0].dir = Direction.DOWN
@@ -114,11 +137,9 @@ def test_simple_wall_collision_down():
     assert env.agents[0].y == 28
 
 
-def test_simple_wall_collision_right():
-    grid_size = (29, 10)
+def test_simple_wall_collision_right(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 9  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -129,11 +150,9 @@ def test_simple_wall_collision_right():
     assert env.agents[0].y == 25
 
 
-def test_simple_wall_collision_left():
-    grid_size = (29, 10)
+def test_simple_wall_collision_left(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 0  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -144,11 +163,9 @@ def test_simple_wall_collision_left():
     assert env.agents[0].y == 25
 
 
-def test_head_collision():
-    grid_size = (29, 10)
+def test_head_collision(env_two_agents):
+    env = env_two_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -165,11 +182,9 @@ def test_head_collision():
     assert env.agents[1].y == 25
 
 
-def test_chain_movement_1():
-    grid_size = (29, 10)
+def test_chain_movement_1(env_two_agents):
+    env = env_two_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
-    env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -186,11 +201,9 @@ def test_chain_movement_1():
     assert env.agents[1].y == 25
 
 
-def test_chain_movement_2():
-    grid_size = (29, 10)
+def test_chain_movement_2(env_two_agents):
+    env = env_two_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
-    env.reset()
     env.agents[0].x = 8
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -207,11 +220,9 @@ def test_chain_movement_2():
     assert env.agents[1].y == 25
 
 
-def test_chain_movement_3():
-    grid_size = (29, 10)
+def test_chain_movement_3(env_three_agents):
+    env = env_three_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=3, msg_bits=0)
-    env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -235,11 +246,8 @@ def test_chain_movement_3():
     assert env.agents[2].y == 26
 
 
-def test_circle_chain_movement_0():
-    grid_size = (29, 10)
-
-    env = Warehouse(grid_size=grid_size, n_agents=4, msg_bits=0)
-    env.reset()
+def test_circle_chain_movement_0(env_four_agents):
+    env = env_four_agents
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -272,11 +280,9 @@ def test_circle_chain_movement_0():
     assert env.agents[3].y == 25
 
 
-def test_circle_chain_movement_1():
-    grid_size = (29, 10)
+def test_circle_chain_movement_1(env_five_agents):
+    env = env_five_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=5, msg_bits=0)
-    env.reset()
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -317,11 +323,9 @@ def test_circle_chain_movement_1():
     assert env.agents[4].y == 24
 
 
-def test_turn_right_0():
-    grid_size = (29, 10)
+def test_turn_right_0(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.UP
@@ -333,11 +337,9 @@ def test_turn_right_0():
     assert env.agents[0].dir == Direction.RIGHT
 
 
-def test_turn_right_1():
-    grid_size = (29, 10)
+def test_turn_right_1(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -349,11 +351,9 @@ def test_turn_right_1():
     assert env.agents[0].dir == Direction.DOWN
 
 
-def test_turn_right_2():
-    grid_size = (29, 10)
+def test_turn_right_2(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.DOWN
@@ -365,11 +365,9 @@ def test_turn_right_2():
     assert env.agents[0].dir == Direction.LEFT
 
 
-def test_turn_right_3():
-    grid_size = (29, 10)
+def test_turn_right_3(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -381,11 +379,9 @@ def test_turn_right_3():
     assert env.agents[0].dir == Direction.UP
 
 
-def test_turn_left_0():
-    grid_size = (29, 10)
+def test_turn_left_0(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.UP
@@ -397,11 +393,9 @@ def test_turn_left_0():
     assert env.agents[0].dir == Direction.LEFT
 
 
-def test_turn_left_1():
-    grid_size = (29, 10)
+def test_turn_left_1(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -413,11 +407,9 @@ def test_turn_left_1():
     assert env.agents[0].dir == Direction.UP
 
 
-def test_turn_left_2():
-    grid_size = (29, 10)
+def test_turn_left_2(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.DOWN
@@ -429,11 +421,9 @@ def test_turn_left_2():
     assert env.agents[0].dir == Direction.RIGHT
 
 
-def test_turn_left_3():
-    grid_size = (29, 10)
+def test_turn_left_3(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -445,11 +435,9 @@ def test_turn_left_3():
     assert env.agents[0].dir == Direction.DOWN
 
 
-def test_simple_carrying():
-    grid_size = (29, 10)
+def test_simple_carrying(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = env.shelfs[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = env.shelfs[0].y = 25
     env.agents[0].dir = Direction.DOWN
@@ -465,11 +453,9 @@ def test_simple_carrying():
     assert env.shelfs[0].y == 26
 
 
-def test_simple_carrying_collision():
-    grid_size = (29, 10)
+def test_simple_carrying_collision(env_single_agent):
+    env = env_single_agent
 
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
     env.agents[0].x = env.shelfs[0].x = 3
     env.agents[0].y = env.shelfs[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -485,11 +471,9 @@ def test_simple_carrying_collision():
     assert env.shelfs[0].y == 25
 
 
-def test_simple_carrying_chain():
-    grid_size = (29, 10)
+def test_simple_carrying_chain(env_two_agents):
+    env = env_two_agents
 
-    env = Warehouse(grid_size=grid_size, n_agents=2, msg_bits=0)
-    env.reset()
     env.agents[0].x = env.shelfs[0].x = 3
     env.agents[0].y = env.shelfs[0].y = 25
     env.agents[0].dir = Direction.RIGHT
@@ -515,10 +499,9 @@ def test_simple_carrying_chain():
     assert env.shelfs[1].y == 25
 
 
-def test_pickup_and_carry_0():
-    grid_size = (29, 10)
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
+def test_pickup_and_carry_0(env_single_agent):
+    env = env_single_agent
+
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT
@@ -551,10 +534,9 @@ def test_pickup_and_carry_0():
     assert shelf.y == 25
 
 
-def test_pickup_and_carry_1():
-    grid_size = (29, 10)
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
-    env.reset()
+def test_pickup_and_carry_1(env_single_agent):
+    env = env_single_agent
+
     env.agents[0].x = 3
     env.agents[0].y = 25
     env.agents[0].dir = Direction.LEFT

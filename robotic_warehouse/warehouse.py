@@ -40,6 +40,11 @@ class Direction(Enum):
     RIGHT = 3
 
 
+class RewardType(Enum):
+    GLOBAL = 0
+    INDIVIDUAL = 1
+
+
 class Entity:
     def __init__(self, id_: int, x: int, y: int):
         self.id = id_
@@ -121,10 +126,81 @@ class Warehouse(gym.Env):
 
     metadata = {"render.modes": ["human", "rgb_array"]}
 
-    def __init__(self, grid_size, n_agents, msg_bits):
-        self.grid_size = grid_size
+    def __init__(
+        self,
+        shelf_columns: int,
+        column_height: int,
+        shelf_rows: int,
+        n_agents: int,
+        msg_bits: int,
+        sensor_range: int,
+        max_inactivity: Optional[int],
+        reward_type: RewardType,
+    ):
+        """The robotic warehouse environment
+
+        Creates a grid world where multiple agents (robots)
+        are supposed to collect shelfs, bring them to a goal
+        and then return them.
+        .. note:
+            The grid looks like this:
+
+            shelf
+            columns
+                vv
+            ----------
+            -XX-XX-XX-        ^
+            -XX-XX-XX-  Column Height
+            -XX-XX-XX-        v
+            ----------
+            -XX----XX-   <\
+            -XX----XX-   <- Shelf Rows
+            -XX----XX-   </
+            ----------
+            ----GG----
+
+            G: is the goal positions where agents are rewarded if
+            they bring the correct shelfs.
+
+            The final grid size will be
+            height: (column_height + 1) * shelf_rows + 2
+            width: (2 + 1) * shelf_columns + 1
+
+            The bottom-middle column will be removed to allow for
+            robot queuing next to the goal locations
+
+        :param shelf_columns: Number of columns in the warehouse
+        :type shelf_columns: int
+        :param column_height: Column height in the warehouse
+        :type column_height: int
+        :param shelf_rows: Number of columns in the warehouse
+        :type shelf_rows: int
+        :param n_agents: Number of spawned and controlled agents
+        :type n_agents: int
+        :param msg_bits: Number of communication bits for each agent
+        :type msg_bits: int
+        :param sensor_range: Range of each agents observation
+        :type sensor_range: int
+        :param request_queue_size: How many shelfs are simultaneously requested
+        :type request_queue_size: int
+        :param max_inactivity: Number of steps without a delivered shelf until environment finishes
+        :type max_inactivity: Optional[int]
+        :param reward_type: Specifies if agents are rewarded individually or globally
+        :type reward_type: RewardType
+        """
+
+        assert shelf_columns % 2 == 1, "Only odd number of shelf columns is supported"
+
+        self.grid_size = (
+            (column_height + 1) * shelf_rows + 2,
+            (2 + 1) * shelf_columns + 1,
+        )
+
         self.n_agents = n_agents
         self.msg_bits = msg_bits
+        self.sensor_range = sensor_range
+        self.max_inactivity_steps = max_inactivity
+        self.reward_type = reward_type
 
         self._max_steps = None
 
@@ -133,8 +209,6 @@ class Warehouse(gym.Env):
         self.action_space = MultiAgentActionSpace(
             [spaces.Discrete(len(Action)) for _ in range(self.n_agents)]
         )
-
-        self.sensor_range = 1
 
         self.request_queue_size = 5
         self.request_queue = []
@@ -395,6 +469,6 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse((29, 10), 20, 2)
+    env = Warehouse(3, 8, 3, 20, 1, 1, None, RewardType.GLOBAL)
     env.reset()
     env.step(18 * [Action.FORWARD] + 2 * [Action.NOOP])

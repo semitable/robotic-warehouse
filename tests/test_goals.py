@@ -6,14 +6,14 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
 sys.path.insert(0, PROJECT_DIR)
 
-from robotic_warehouse.warehouse import Warehouse, Direction, Action
+from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 
 @pytest.fixture
 def env_0():
-    grid_size = (29, 10)
-    env = Warehouse(grid_size=grid_size, n_agents=1, msg_bits=0)
+    env = Warehouse(3, 8, 3, 1, 0, 1, None, RewardType.GLOBAL)
     env.reset()
+
     env.agents[0].x = 4  # should place it in the middle (empty space)
     env.agents[0].y = 27
     env.agents[0].dir = Direction.DOWN
