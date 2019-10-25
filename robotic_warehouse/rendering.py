@@ -125,9 +125,9 @@ class Viewer(object):
         self.window.dispatch_events()
 
         self._draw_grid()
+        self._draw_goals(env)
         self._draw_shelfs(env)
         self._draw_agents(env)
-        self._draw_goals(env)
 
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
