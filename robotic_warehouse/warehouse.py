@@ -260,9 +260,12 @@ class Warehouse(gym.Env):
             + _bits_for_requests * _request_count
         )
 
+        y_scale, x_scale = self.grid_size[0] - 1, self.grid_size[1] - 1
+
         obs = _VectorWriter(obs_length)
 
-        obs.write(np.array([agent.x, agent.y, agent.carrying_shelf is not None]))
+        obs.write(np.array([agent.x / x_scale, agent.y / y_scale]))
+        obs.write([agent.carrying_shelf is not None])
         obs.write(np.eye(len(Direction))[agent.dir.value])
         obs.write(np.array([self._is_highway(agent.x, agent.y)]))
 
@@ -306,7 +309,7 @@ class Warehouse(gym.Env):
 
         # writing requests:
         for shelf in self.request_queue:
-            obs.write(np.array([shelf.x, shelf.y]))
+            obs.write(np.array([shelf.x / x_scale, shelf.y / y_scale]))
 
         assert obs.idx == obs_length
         return obs.vector
