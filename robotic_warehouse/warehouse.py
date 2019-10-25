@@ -48,6 +48,8 @@ class RewardType(Enum):
 class Entity:
     def __init__(self, id_: int, x: int, y: int):
         self.id = id_
+        self.prev_x = None
+        self.prev_y = None
         self.x = x
         self.y = y
 
@@ -62,6 +64,7 @@ class Agent(Entity):
         self.message = np.zeros(msg_bits)
         self.req_action: Optional[Action] = None
         self.carrying_shelf: Optional[Shelf] = None
+        self.canceled_action = None
 
     @property
     def collision_layers(self):
@@ -372,7 +375,6 @@ class Warehouse(gym.Env):
             start = agent.x, agent.y
             target = agent.req_location(self.grid_size)
 
-            G.add_edge(start, target)
             if (
                 agent.carrying_shelf
                 and start != target
@@ -385,8 +387,13 @@ class Warehouse(gym.Env):
                 )
             ):
                 # there's a standing shelf at the target location
-                # so we add a 'fake' node
-                G.add_edge(target, target)
+                # our agent is carrying a shelf so there's no way
+                # this movement can succeed. Cancel it.
+                agent.req_action = Action.NOOP
+                G.add_edge(start, start)
+            else:
+                G.add_edge(start, target)
+
 
         wcomps = [G.subgraph(c).copy() for c in nx.weakly_connected_components(G)]
 
@@ -414,13 +421,14 @@ class Warehouse(gym.Env):
 
         commited_agents = set([self.agents[id_ - 1] for id_ in commited_agents])
         failed_agents = set(self.agents) - commited_agents
-        print(commited_agents)
-        print(failed_agents)
+
         for agent in failed_agents:
             assert agent.req_action == Action.FORWARD
             agent.req_action = Action.NOOP
 
         for agent in self.agents:
+            agent.prev_x, agent.prev_y = agent.x, agent.y
+
             if agent.req_action == Action.FORWARD:
                 agent.x, agent.y = agent.req_location(self.grid_size)
                 if agent.carrying_shelf:
@@ -493,11 +501,16 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(3, 8, 3, 20, 1, 1, None, RewardType.GLOBAL)
+    env = Warehouse(5, 8, 3, 20, 0, 1, None, RewardType.GLOBAL)
     env.reset()
-    env.step(18 * [Action.FORWARD] + 2 * [Action.NOOP])
-
-    env.render()
     import time
 
-    time.sleep(5)
+    time.sleep(2)
+    env.render()
+    env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
+
+    while True:
+        # time.sleep(2)
+        env.render()
+        actions = list(np.random.choice(Action, size=20))
+        env.step(actions)
