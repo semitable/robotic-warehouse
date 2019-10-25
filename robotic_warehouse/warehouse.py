@@ -210,9 +210,12 @@ class Warehouse(gym.Env):
 
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
 
-        self.action_space = MultiAgentActionSpace(
-            [spaces.Discrete(len(Action)) for _ in range(self.n_agents)]
-        )
+        sa_action_space = [len(Action), *msg_bits * (2,)]
+        if len(sa_action_space) == 1:
+            sa_action_space = spaces.Discrete(sa_action_space[0])
+        else:
+            sa_action_space = spaces.MultiDiscrete(sa_action_space)
+        self.action_space = MultiAgentActionSpace(n_agents * [sa_action_space])
 
         self.request_queue_size = 5
         self.request_queue = []
@@ -394,7 +397,6 @@ class Warehouse(gym.Env):
             else:
                 G.add_edge(start, target)
 
-
         wcomps = [G.subgraph(c).copy() for c in nx.weakly_connected_components(G)]
 
         for comp in wcomps:
@@ -501,16 +503,17 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(5, 8, 3, 20, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 2, 10, 1, 1, None, RewardType.GLOBAL)
     env.reset()
     import time
+    from tqdm import tqdm
 
     time.sleep(2)
-    env.render()
-    env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
+    # env.render()
+    # env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
 
-    while True:
+    for _ in tqdm(range(1000000)):
         # time.sleep(2)
-        env.render()
-        actions = list(np.random.choice(Action, size=20))
+        # env.render()
+        actions = list(np.random.choice(Action, size=10))
         env.step(actions)
