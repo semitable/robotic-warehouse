@@ -88,3 +88,19 @@ def test_action_space_2():
     env.reset()
     assert env.action_space == 2 * [gym.spaces.MultiDiscrete([len(Action), 2, 2])]
     env.step(env.action_space.sample())
+
+
+def test_action_space_3():
+    env = Warehouse(
+        shelf_columns=1,
+        column_height=3,
+        shelf_rows=3,
+        n_agents=10,
+        msg_bits=5,
+        sensor_range=1,
+        max_inactivity=None,
+        reward_type=RewardType.GLOBAL,
+    )
+    env.reset()
+    assert env.action_space == 10 * [gym.spaces.MultiDiscrete([len(Action), *5 * (2,)])]
+    env.step(env.action_space.sample())
