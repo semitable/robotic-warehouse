@@ -363,7 +363,11 @@ class Warehouse(gym.Env):
         assert len(actions) == len(self.agents)
 
         for agent, action in zip(self.agents, actions):
-            agent.req_action = action
+            if self.msg_bits > 0:
+                agent.req_action = Action(action[0])
+                agent.message[:] = action[1:]
+            else:
+                agent.req_action = Action(action)
 
         # # stationary agents will certainly stay where they are
         # stationary_agents = [agent for agent in self.agents if agent.action != Action.FORWARD]
@@ -503,7 +507,7 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(3, 8, 2, 10, 1, 1, None, RewardType.GLOBAL)
+    env = Warehouse(9, 8, 3, 10, 3, 1, None, RewardType.GLOBAL)
     env.reset()
     import time
     from tqdm import tqdm
@@ -515,5 +519,5 @@ if __name__ == "__main__":
     for _ in tqdm(range(1000000)):
         # time.sleep(2)
         # env.render()
-        actions = list(np.random.choice(Action, size=10))
+        actions = env.action_space.sample()
         env.step(actions)
