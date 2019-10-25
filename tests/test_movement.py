@@ -222,6 +222,7 @@ def test_head_collision_2(env_two_agents):
     assert env.agents[1].x == 5
     assert env.agents[1].y == 25
 
+
 def test_head_collision_3(env_two_agents):
     env = env_two_agents
 
