@@ -227,10 +227,28 @@ class Warehouse(gym.Env):
             (self.grid_size[1] // 2, self.grid_size[0] - 1),
         ]
 
+        self._obs_bits_for_self = 4 + len(Direction)
+        self._obs_bits_per_agent = 1 + len(Direction) + self.msg_bits
+        self._obs_bits_per_shelf = 2
+        self._obs_bits_for_requests = 2
+
+        self._obs_sensor_locations = (1 + 2 * self.sensor_range) ** 2
+
+        self._obs_length = (
+            self._obs_bits_for_self
+            + (self._obs_sensor_locations - 1) * (self._obs_bits_per_agent)
+            + self._obs_sensor_locations * self._obs_bits_per_shelf
+            + self._obs_bits_for_requests * self.request_queue_size
+        )
+
+        self.observation_space = MultiAgentObservationSpace(
+            [
+                spaces.Box(low=0, high=1, shape=(self._obs_length,))
+                for _ in range(self.n_agents)
+            ]
+        )
+
         self.renderer = None
-        # self.observation_space = MultiAgentObservationSpace(
-        #     [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.n_agents)]
-        # )
 
     def _is_highway(self, x: int, y: int) -> bool:
         return (
@@ -245,24 +263,9 @@ class Warehouse(gym.Env):
 
     def _make_obs(self, agent):
 
-        _bits_for_self = 4 + len(Direction)
-        _bits_per_agent = 1 + len(Direction) + self.msg_bits
-        _bits_per_shelf = 2
-        _bits_for_requests = 2
-
-        _sensor_locations = (1 + 2 * self.sensor_range) ** 2
-        _request_count = self.request_queue_size
-
-        obs_length = (
-            _bits_for_self
-            + (_sensor_locations - 1) * (_bits_per_agent)
-            + _sensor_locations * _bits_per_shelf
-            + _bits_for_requests * _request_count
-        )
-
         y_scale, x_scale = self.grid_size[0] - 1, self.grid_size[1] - 1
 
-        obs = _VectorWriter(obs_length)
+        obs = _VectorWriter(self._obs_length)
 
         obs.write(np.array([agent.x / x_scale, agent.y / y_scale]))
         obs.write([agent.carrying_shelf is not None])
@@ -290,7 +293,7 @@ class Warehouse(gym.Env):
         agents = padded_agents[min_y:max_y, min_x:max_x].reshape(-1)
         for i, id_ in enumerate(agents):
             if id_ == 0:
-                obs.skip(_bits_per_agent)
+                obs.skip(self._obs_bits_per_agent)
                 continue
             if id_ == agent.id:
                 continue
@@ -302,7 +305,7 @@ class Warehouse(gym.Env):
         shelfs = padded_shelfs[min_y:max_y, min_x:max_x].reshape(-1)
         for i, id_ in enumerate(shelfs):
             if id_ == 0:
-                obs.skip(_bits_per_shelf)
+                obs.skip(self._obs_bits_per_shelf)
                 continue
             obs.write(np.array([1.0]))
             obs.write(np.array([self.shelfs[id_ - 1] in self.request_queue]))
@@ -311,7 +314,7 @@ class Warehouse(gym.Env):
         for shelf in self.request_queue:
             obs.write(np.array([shelf.x / x_scale, shelf.y / y_scale]))
 
-        assert obs.idx == obs_length
+        assert obs.idx == self._obs_length
         return obs.vector
 
     def _recalc_grid(self):
