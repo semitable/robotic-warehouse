@@ -245,9 +245,9 @@ class Warehouse(gym.Env):
 
     def _make_obs(self, agent):
 
-        _bits_per_agent = len(Direction) + self.msg_bits
-        _bits_per_shelf = 1
-        _bits_for_self = 2
+        _bits_for_self = 4 + len(Direction)
+        _bits_per_agent = 1 + len(Direction) + self.msg_bits
+        _bits_per_shelf = 2
         _bits_for_requests = 2
 
         _sensor_locations = (1 + 2 * self.sensor_range) ** 2
@@ -255,14 +255,16 @@ class Warehouse(gym.Env):
 
         obs_length = (
             _bits_for_self
-            + _bits_for_requests * _request_count
             + (_sensor_locations - 1) * (_bits_per_agent)
             + _sensor_locations * _bits_per_shelf
+            + _bits_for_requests * _request_count
         )
 
         obs = _VectorWriter(obs_length)
 
-        obs.write(np.array([agent.x, agent.y]))
+        obs.write(np.array([agent.x, agent.y, agent.carrying_shelf is not None]))
+        obs.write(np.eye(len(Direction))[agent.dir.value])
+        obs.write(np.array([self._is_highway(agent.x, agent.y)]))
 
         # neighbors
         padded_agents = np.pad(
@@ -289,6 +291,7 @@ class Warehouse(gym.Env):
                 continue
             if id_ == agent.id:
                 continue
+            obs.write(np.array([1.0]))
             obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir.value])
             obs.write(self.agents[id_ - 1].message)
 
@@ -298,6 +301,7 @@ class Warehouse(gym.Env):
             if id_ == 0:
                 obs.skip(_bits_per_shelf)
                 continue
+            obs.write(np.array([1.0]))
             obs.write(np.array([self.shelfs[id_ - 1] in self.request_queue]))
 
         # writing requests:
