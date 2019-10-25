@@ -62,6 +62,7 @@ _SHELF_REQ_COLOR = _TEAL
 _AGENT_COLOR = _DARKORANGE
 _AGENT_LOADED_COLOR = _RED
 _AGENT_DIR_COLOR = _BLACK
+_GOAL_COLOR = (60, 60, 60)
 
 _SHELF_PADDING = 2
 
@@ -126,6 +127,7 @@ class Viewer(object):
         self._draw_grid()
         self._draw_shelfs(env)
         self._draw_agents(env)
+        self._draw_goals(env)
 
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
@@ -203,6 +205,33 @@ class Viewer(object):
                     ),
                 ),
                 ("c3B", 4 * shelf_color),
+            )
+        batch.draw()
+
+    def _draw_goals(self, env):
+        batch = pyglet.graphics.Batch()
+
+        for goal in env.goals:
+            x, y = goal
+            y = self.rows - y - 1  # pyglet rendering is reversed
+            batch.add(
+                4,
+                gl.GL_QUADS,
+                None,
+                (
+                    "v2f",
+                    (
+                        (self.grid_size + 1) * x + 1,  # TL - X
+                        (self.grid_size + 1) * y + 1,  # TL - Y
+                        (self.grid_size + 1) * (x + 1),  # TR - X
+                        (self.grid_size + 1) * y + 1,  # TR - Y
+                        (self.grid_size + 1) * (x + 1),  # BR - X
+                        (self.grid_size + 1) * (y + 1),  # BR - Y
+                        (self.grid_size + 1) * x + 1,  # BL - X
+                        (self.grid_size + 1) * (y + 1),  # BL - Y
+                    ),
+                ),
+                ("c3B", 4 * _GOAL_COLOR),
             )
         batch.draw()
 
