@@ -17,6 +17,25 @@ def env_single_agent():
     return env
 
 
+@pytest.fixture
+def env_0():
+    env = Warehouse(3, 8, 3, 1, 0, 1, 10, RewardType.GLOBAL)
+    env.reset()
+
+    env.agents[0].x = 4  # should place it in the middle (empty space)
+    env.agents[0].y = 27
+    env.agents[0].dir = Direction.DOWN
+
+    env.shelfs[0].x = 4
+    env.shelfs[0].y = 27
+
+    env.agents[0].carrying_shelf = env.shelfs[0]
+
+    env.request_queue[0] = env.shelfs[0]
+    env._recalc_grid()
+    return env
+
+
 def test_grid_size():
     env = Warehouse(
         shelf_columns=1,
@@ -121,3 +140,28 @@ def test_obs_space_0():
     assert env.observation_space.contains(obs)
     nobs, _, _, _ = env.step(env.action_space.sample())
     assert env.observation_space.contains(nobs)
+
+
+def test_inactivity_0(env_0):
+    env = env_0
+    for i in range(9):
+        _, _, done, _ = env.step([Action.NOOP])
+        assert done == [False]
+    _, _, done, _ = env.step([Action.NOOP])
+    assert done == [True]
+
+
+def test_inactivity_1(env_0):
+    env = env_0
+    for i in range(4):
+        _, _, done, _ = env.step([Action.NOOP])
+        assert done == [False]
+
+    _, reward, _, _, = env.step([Action.FORWARD])
+    assert reward[0] == pytest.approx(1.0)
+    for i in range(9):
+        _, _, done, _ = env.step([Action.NOOP])
+        assert done == [False]
+
+    _, _, done, _ = env.step([Action.NOOP])
+    assert done == [True]
