@@ -483,7 +483,7 @@ class Warehouse(gym.Env):
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
-                agent_id = self.grid[_LAYER_SHELFS, y, x]
+                agent_id = self.grid[_LAYER_AGENTS, y, x]
                 rewards[agent_id - 1] += 1
 
         if shelf_delivered:
