@@ -505,7 +505,7 @@ class Warehouse(gym.Env):
 
     def render(self, mode="human"):
         if not self.renderer:
-            from rendering import Viewer
+            from robotic_warehouse.rendering import Viewer
 
             self.renderer = Viewer(self.grid_size)
         self.renderer.render(self)
