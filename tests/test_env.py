@@ -165,3 +165,18 @@ def test_inactivity_1(env_0):
 
     _, _, done, _ = env.step([Action.NOOP])
     assert done == [True]
+
+
+def test_inactivity_2(env_0):
+    env = env_0
+    for i in range(9):
+        _, _, done, _ = env.step([Action.NOOP])
+        assert done == [False]
+    _, _, done, _ = env.step([Action.NOOP])
+    assert done == [True]
+    env.reset()
+    for i in range(9):
+        _, _, done, _ = env.step([Action.NOOP])
+        assert done == [False]
+    _, _, done, _ = env.step([Action.NOOP])
+    assert done == [True]

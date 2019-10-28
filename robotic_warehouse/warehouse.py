@@ -205,7 +205,7 @@ class Warehouse(gym.Env):
         self.max_inactivity_steps: Optional[int] = max_inactivity
         self.reward_type = reward_type
 
-        self._cur_inactive_steps = 0
+        self._cur_inactive_steps = None
         self._max_steps = None
 
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
@@ -328,6 +328,7 @@ class Warehouse(gym.Env):
     def reset(self):
         Shelf.counter = 0
         Agent.counter = 0
+        self._cur_inactive_steps = 0
 
         # n_xshelf = (self.grid_size[1] - 1) // 3
         # n_yshelf = (self.grid_size[0] - 2) // 9
