@@ -12,14 +12,14 @@ from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 @pytest.fixture
 def env_single_agent():
-    env = Warehouse(3, 8, 3, 1, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     return env
 
 
 @pytest.fixture
 def env_0():
-    env = Warehouse(3, 8, 3, 1, 0, 1, 10, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, 10, RewardType.GLOBAL)
     env.reset()
 
     env.agents[0].x = 4  # should place it in the middle (empty space)
@@ -44,6 +44,7 @@ def test_grid_size():
         n_agents=1,
         msg_bits=0,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -55,6 +56,7 @@ def test_grid_size():
         n_agents=1,
         msg_bits=0,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -69,6 +71,7 @@ def test_action_space_0():
         n_agents=2,
         msg_bits=0,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -85,6 +88,7 @@ def test_action_space_1():
         n_agents=2,
         msg_bits=1,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -101,6 +105,7 @@ def test_action_space_2():
         n_agents=2,
         msg_bits=2,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -117,6 +122,7 @@ def test_action_space_3():
         n_agents=10,
         msg_bits=5,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )
@@ -133,6 +139,7 @@ def test_obs_space_0():
         n_agents=10,
         msg_bits=5,
         sensor_range=1,
+        request_queue_size=5,
         max_inactivity=None,
         reward_type=RewardType.GLOBAL,
     )

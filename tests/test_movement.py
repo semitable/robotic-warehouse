@@ -11,7 +11,7 @@ from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 @pytest.fixture
 def env_single_agent():
-    env = Warehouse(3, 8, 3, 1, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
 
     return env
@@ -19,28 +19,28 @@ def env_single_agent():
 
 @pytest.fixture
 def env_two_agents():
-    env = Warehouse(3, 8, 3, 2, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 2, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     return env
 
 
 @pytest.fixture
 def env_three_agents():
-    env = Warehouse(3, 8, 3, 3, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 3, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     return env
 
 
 @pytest.fixture
 def env_four_agents():
-    env = Warehouse(3, 8, 3, 4, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 4, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     return env
 
 
 @pytest.fixture
 def env_five_agents():
-    env = Warehouse(3, 8, 3, 5, 0, 1, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 5, 0, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     return env
 

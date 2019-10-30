@@ -137,6 +137,7 @@ class Warehouse(gym.Env):
         n_agents: int,
         msg_bits: int,
         sensor_range: int,
+        request_queue_size: int,
         max_inactivity: Optional[int],
         reward_type: RewardType,
     ):
@@ -217,7 +218,7 @@ class Warehouse(gym.Env):
             sa_action_space = spaces.MultiDiscrete(sa_action_space)
         self.action_space = MultiAgentActionSpace(n_agents * [sa_action_space])
 
-        self.request_queue_size = 5
+        self.request_queue_size = request_queue_size
         self.request_queue = []
 
         self.agents: List[Agent] = []
