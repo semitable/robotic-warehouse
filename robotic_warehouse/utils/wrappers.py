@@ -24,10 +24,10 @@ class FlattenAgents(gym.Wrapper):
         return np.concatenate(observation)
 
     def step(self, action):
-        if type(action) is int:
-            action = [action]
-        else:
+        try:
             action = np.split(action, self.n_agents)
+        except (AttributeError, IndexError):
+            action = [action]
 
         observation, reward, done, info = super().step(action)
         observation = np.concatenate(observation)
