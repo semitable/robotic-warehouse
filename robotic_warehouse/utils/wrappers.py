@@ -14,6 +14,11 @@ class FlattenAgents(gym.Wrapper):
             sa_action_space = spaces.MultiDiscrete(self.n_agents * sa_action_space)
         self.action_space = sa_action_space
 
+        obs_length = sum(
+            [self.observation_space[i].shape[0] for i in range(self.n_agents)]
+        )
+        self.observation_space = spaces.Box(low=0, high=1, shape=(obs_length,))
+
     def reset(self, **kwargs):
         observation = super().reset(**kwargs)
         return np.concatenate(observation)
