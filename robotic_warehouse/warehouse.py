@@ -4,8 +4,7 @@ from collections import defaultdict
 import gym
 from gym import spaces
 
-from ma_gym.envs.utils.action_space import MultiAgentActionSpace
-from ma_gym.envs.utils.observation_space import MultiAgentObservationSpace
+from robotic_warehouse.utils import MultiAgentActionSpace, MultiAgentObservationSpace
 
 from enum import Enum
 import numpy as np
@@ -519,7 +518,7 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(9, 8, 3, 10, 3, 1, None, RewardType.GLOBAL)
+    env = Warehouse(9, 8, 3, 10, 3, 1, 5, None, RewardType.GLOBAL)
     env.reset()
     import time
     from tqdm import tqdm
@@ -530,6 +529,6 @@ if __name__ == "__main__":
 
     for _ in tqdm(range(1000000)):
         # time.sleep(2)
-        # env.render()
+        env.render()
         actions = env.action_space.sample()
         env.step(actions)
