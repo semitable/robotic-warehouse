@@ -2,6 +2,7 @@ import gym
 import numpy as np
 from robotic_warehouse import Action
 from gym import spaces
+import math
 
 
 class FlattenAgents(gym.Wrapper):
@@ -33,4 +34,33 @@ class FlattenAgents(gym.Wrapper):
         observation = np.concatenate(observation)
         reward = np.sum(reward)
         done = all(done)
+        return observation, reward, done, info
+
+
+class DictAgents(gym.Wrapper):
+    def reset(self, **kwargs):
+        observation = super().reset(**kwargs)
+        digits = int(math.log10(self.n_agents)) + 1
+
+        return {f"agent_{i:{digits}}": obs_i for i, obs_i in enumerate(observation)}
+
+    def step(self, action):
+        digits = int(math.log10(self.n_agents)) + 1
+        keys = [f"agent_{i:{digits}}" for i in range(self.n_agents)]
+        assert keys == sorted(action.keys())
+
+        # unwrap actions
+        action = [action[key] for key in sorted(action.keys())]
+
+        # step
+        observation, reward, done, info = super().step(action)
+
+        # wrap observations, rewards and dones
+        observation = {
+            f"agent_{i:{digits}}": obs_i for i, obs_i in enumerate(observation)
+        }
+        reward = {f"agent_{i:{digits}}": rew_i for i, rew_i in enumerate(reward)}
+        done = {f"agent_{i:{digits}}": done_i for i, done_i in enumerate(done)}
+        done["__all__"] = all(done.values())
+
         return observation, reward, done, info
