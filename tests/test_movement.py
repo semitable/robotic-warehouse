@@ -569,8 +569,8 @@ def test_pickup_and_carry_0(env_single_agent):
     env._recalc_grid()
     env.step([Action.FORWARD])
 
-    env.step([Action.LOAD])
-    assert env.agents[0].carrying_shelf
+    env.step([Action.TOGGLE_LOAD])
+    assert env.agents[0].carrying_shelf is not None
     shelf = env.agents[0].carrying_shelf
     assert shelf.x == 2
     assert shelf.y == 25
@@ -587,7 +587,7 @@ def test_pickup_and_carry_0(env_single_agent):
     assert env.agents[0].y == 25
     assert shelf.x == 4
     assert shelf.y == 25
-    env.step([Action.UNLOAD])  # cannot unload on highway
+    env.step([Action.TOGGLE_LOAD])  # cannot unload on highway
     env.step([Action.FORWARD])
     assert env.agents[0].x == 5
     assert env.agents[0].y == 25
@@ -603,14 +603,14 @@ def test_pickup_and_carry_1(env_single_agent):
     env.agents[0].dir = Direction.LEFT
     env._recalc_grid()
     env.step([Action.FORWARD])
-    env.step([Action.LOAD])
-    assert env.agents[0].carrying_shelf
+    env.step([Action.TOGGLE_LOAD])
+    assert env.agents[0].carrying_shelf is not None
     shelf = env.agents[0].carrying_shelf
     assert shelf.x == 2
     assert shelf.y == 25
     env.step([Action.LEFT])
     env.step([Action.LEFT])
-    env.step([Action.UNLOAD])  # can unload here
+    env.step([Action.TOGGLE_LOAD])  # can unload here
     env.step([Action.FORWARD])
     assert env.agents[0].x == 3
     assert env.agents[0].y == 25

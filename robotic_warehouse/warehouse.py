@@ -28,8 +28,7 @@ class Action(Enum):
     FORWARD = 1
     LEFT = 2
     RIGHT = 3
-    LOAD = 4
-    UNLOAD = 5
+    TOGGLE_LOAD = 4
 
 
 class Direction(Enum):
@@ -452,11 +451,11 @@ class Warehouse(gym.Env):
                     agent.carrying_shelf.x, agent.carrying_shelf.y = agent.x, agent.y
             elif agent.req_action in [Action.LEFT, Action.RIGHT]:
                 agent.dir = agent.req_direction()
-            elif agent.req_action == Action.LOAD:
+            elif agent.req_action == Action.TOGGLE_LOAD and not agent.carrying_shelf:
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
                 if shelf_id:
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
-            elif agent.req_action == Action.UNLOAD:
+            elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:
                 if not self._is_highway(agent.x, agent.y):
                     agent.carrying_shelf = None
 
