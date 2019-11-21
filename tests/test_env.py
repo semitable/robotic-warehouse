@@ -12,14 +12,14 @@ from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 @pytest.fixture
 def env_single_agent():
-    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, None, RewardType.GLOBAL)
     env.reset()
     return env
 
 
 @pytest.fixture
 def env_0():
-    env = Warehouse(3, 8, 3, 1, 0, 1, 5, 10, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, 10, None, RewardType.GLOBAL)
     env.reset()
 
     env.agents[0].x = 4  # should place it in the middle (empty space)
@@ -45,7 +45,8 @@ def test_grid_size():
         msg_bits=0,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     assert env.grid_size == (14, 4)
@@ -57,7 +58,8 @@ def test_grid_size():
         msg_bits=0,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     assert env.grid_size == (14, 10)
@@ -72,7 +74,8 @@ def test_action_space_0():
         msg_bits=0,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
@@ -89,7 +92,8 @@ def test_action_space_1():
         msg_bits=1,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
@@ -106,7 +110,8 @@ def test_action_space_2():
         msg_bits=2,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
@@ -123,7 +128,8 @@ def test_action_space_3():
         msg_bits=5,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
@@ -140,7 +146,8 @@ def test_obs_space_0():
         msg_bits=5,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     obs = env.reset()
@@ -160,7 +167,8 @@ def test_obs_space_1():
         msg_bits=5,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     obs = env.reset()
@@ -178,7 +186,8 @@ def test_obs_space_2():
         msg_bits=5,
         sensor_range=1,
         request_queue_size=5,
-        max_inactivity=None,
+        max_inactivity_steps=None,
+        max_steps=None,
         reward_type=RewardType.GLOBAL,
     )
     obs = env.reset()
@@ -209,6 +218,30 @@ def test_inactivity_1(env_0):
 
     _, _, done, _ = env.step([Action.NOOP])
     assert done == [True]
+
+
+@pytest.mark.parametrize("time_limit,", [1, 100, 200])
+def test_time_limit(time_limit):
+    env = Warehouse(
+        shelf_columns=1,
+        column_height=3,
+        shelf_rows=3,
+        n_agents=10,
+        msg_bits=5,
+        sensor_range=1,
+        request_queue_size=5,
+        max_inactivity_steps=None,
+        max_steps=time_limit,
+        reward_type=RewardType.GLOBAL,
+    )
+    _ = env.reset()
+
+    for _ in range(time_limit - 1):
+        _, _, done, _ = env.step(env.action_space.sample())
+        assert done == 10 * [False]
+
+    _, _, done, _ = env.step(env.action_space.sample())
+    assert done == 10 * [True]
 
 
 def test_inactivity_2(env_0):

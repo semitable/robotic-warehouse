@@ -11,7 +11,7 @@ from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
 
 @pytest.fixture
 def env_0():
-    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 1, 0, 1, 5, None, None, RewardType.GLOBAL)
     env.reset()
 
     env.agents[0].x = 4  # should place it in the middle (empty space)
@@ -30,7 +30,7 @@ def env_0():
 
 @pytest.fixture
 def env_1():
-    env = Warehouse(3, 8, 3, 2, 0, 1, 5, None, RewardType.GLOBAL)
+    env = Warehouse(3, 8, 3, 2, 0, 1, 5, None, None, RewardType.GLOBAL)
     env.reset()
 
     env.agents[0].x = 4  # should place it in the middle (empty space)
@@ -52,7 +52,7 @@ def env_1():
 
 @pytest.fixture
 def env_2():
-    env = Warehouse(3, 8, 3, 2, 0, 1, 5, None, RewardType.INDIVIDUAL)
+    env = Warehouse(3, 8, 3, 2, 0, 1, 5, None, None, RewardType.INDIVIDUAL)
     env.reset()
 
     env.agents[0].x = 4  # should place it in the middle (empty space)

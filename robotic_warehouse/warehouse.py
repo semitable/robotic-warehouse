@@ -122,7 +122,8 @@ class Warehouse(gym.Env):
         msg_bits: int,
         sensor_range: int,
         request_queue_size: int,
-        max_inactivity: Optional[int],
+        max_inactivity_steps: Optional[int],
+        max_steps: Optional[int],
         reward_type: RewardType,
     ):
         """The robotic warehouse environment
@@ -187,11 +188,12 @@ class Warehouse(gym.Env):
         self.n_agents = n_agents
         self.msg_bits = msg_bits
         self.sensor_range = sensor_range
-        self.max_inactivity_steps: Optional[int] = max_inactivity
+        self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
 
         self._cur_inactive_steps = None
-        self._max_steps = None
+        self._cur_steps = 0
+        self.max_steps = max_steps
 
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
 
@@ -352,6 +354,7 @@ class Warehouse(gym.Env):
         Shelf.counter = 0
         Agent.counter = 0
         self._cur_inactive_steps = 0
+        self._cur_steps = 0
 
         # n_xshelf = (self.grid_size[1] - 1) // 3
         # n_yshelf = (self.grid_size[0] - 2) // 9
@@ -513,11 +516,12 @@ class Warehouse(gym.Env):
             self._cur_inactive_steps = 0
         else:
             self._cur_inactive_steps += 1
+        self._cur_steps += 1
 
         if (
             self.max_inactivity_steps
             and self._cur_inactive_steps >= self.max_inactivity_steps
-        ):
+        ) or (self.max_steps and self._cur_steps >= self.max_steps):
             dones = self.n_agents * [True]
         else:
             dones = self.n_agents * [False]
