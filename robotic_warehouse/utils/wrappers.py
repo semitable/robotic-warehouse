@@ -15,14 +15,15 @@ class FlattenAgents(gym.Wrapper):
             sa_action_space = spaces.MultiDiscrete(self.n_agents * sa_action_space)
         self.action_space = sa_action_space
 
-        obs_length = sum(
-            [self.observation_space[i].shape[0] for i in range(self.n_agents)]
+        self.observation_space = spaces.Tuple(
+            tuple(space for space in self.observation_space)
         )
-        self.observation_space = spaces.Box(low=0, high=1, shape=(obs_length,))
 
     def reset(self, **kwargs):
         observation = super().reset(**kwargs)
-        return np.concatenate(observation)
+        return np.concatenate(
+            [spaces.flatten(s, o) for s, o in zip(self.observation_space, observation)]
+        )
 
     def step(self, action):
         try:
@@ -31,7 +32,9 @@ class FlattenAgents(gym.Wrapper):
             action = [action]
 
         observation, reward, done, info = super().step(action)
-        observation = np.concatenate(observation)
+        observation = np.concatenate(
+            [spaces.flatten(s, o) for s, o in zip(self.observation_space, observation)]
+        )
         reward = np.sum(reward)
         done = all(done)
         return observation, reward, done, info

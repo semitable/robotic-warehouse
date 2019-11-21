@@ -109,20 +109,6 @@ class Shelf(Entity):
         return (_LAYER_SHELFS,)
 
 
-class _VectorWriter:
-    def __init__(self, size: int):
-        self.vector = np.zeros(size)
-        self.idx = 0
-
-    def write(self, data):
-        data_size = len(data)
-        self.vector[self.idx : self.idx + data_size] = data
-        self.idx += data_size
-
-    def skip(self, bits):
-        self.idx += bits
-
-
 class Warehouse(gym.Env):
 
     metadata = {"render.modes": ["human", "rgb_array"]}
@@ -235,18 +221,54 @@ class Warehouse(gym.Env):
 
         self._obs_length = (
             self._obs_bits_for_self
-            + (self._obs_sensor_locations - 1) * (self._obs_bits_per_agent)
+            + self._obs_sensor_locations * self._obs_bits_per_agent
             + self._obs_sensor_locations * self._obs_bits_per_shelf
             + self._obs_bits_for_requests * self.request_queue_size
         )
 
         self.observation_space = MultiAgentObservationSpace(
             [
-                spaces.Box(low=0, high=1, shape=(self._obs_length,))
+                spaces.Dict(
+                    {
+                        "self": spaces.Dict(
+                            {
+                                "location": spaces.MultiDiscrete(
+                                    [self.grid_size[1], self.grid_size[0]]
+                                ),
+                                "carrying_shelf": spaces.MultiDiscrete([2]),
+                                "direction": spaces.Discrete(4),
+                                "on_highway": spaces.MultiDiscrete([2]),
+                            }
+                        ),
+                        "sensors": spaces.Tuple(
+                            self._obs_sensor_locations
+                            * (
+                                spaces.Dict(
+                                    {
+                                        "has_agent": spaces.MultiDiscrete([2]),
+                                        "direction": spaces.Discrete(4),
+                                        "local_message": spaces.MultiBinary(
+                                            self.msg_bits
+                                        ),
+                                        "has_shelf": spaces.MultiDiscrete([2]),
+                                        "shelf_requested": spaces.MultiDiscrete([2]),
+                                    }
+                                ),
+                            )
+                        ),
+                        "requests": spaces.Tuple(
+                            self.request_queue_size
+                            * (
+                                spaces.MultiDiscrete(
+                                    [self.grid_size[1], self.grid_size[0]]
+                                ),
+                            )
+                        ),
+                    }
+                )
                 for _ in range(self.n_agents)
             ]
         )
-
         self.renderer = None
 
     def _is_highway(self, x: int, y: int) -> bool:
@@ -264,14 +286,15 @@ class Warehouse(gym.Env):
 
         y_scale, x_scale = self.grid_size[0] - 1, self.grid_size[1] - 1
 
-        obs = _VectorWriter(self._obs_length)
+        obs = {}
+        obs["self"] = {
+            "location": np.array([agent.x, agent.y]),
+            "carrying_shelf": [int(agent.carrying_shelf is not None)],
+            "direction": agent.dir.value,
+            "on_highway": [int(self._is_highway(agent.x, agent.y))],
+        }
 
-        obs.write(np.array([agent.x / x_scale, agent.y / y_scale]))
-        obs.write([agent.carrying_shelf is not None])
-        obs.write(np.eye(len(Direction))[agent.dir.value])
-        obs.write(np.array([self._is_highway(agent.x, agent.y)]))
-
-        # neighbors
+        # sensors
         padded_agents = np.pad(
             self.grid[_LAYER_AGENTS], self.sensor_range, mode="constant"
         )
@@ -286,35 +309,36 @@ class Warehouse(gym.Env):
         min_y = agent.y - self.sensor_range + self.sensor_range
         max_y = agent.y + 2 * self.sensor_range + 1
 
-        # ---
-        # find neighboring agents
+        # --- sensor data
+        obs["sensors"] = tuple({} for _ in range(self._obs_sensor_locations))
 
+        # find neighboring agents
         agents = padded_agents[min_y:max_y, min_x:max_x].reshape(-1)
         for i, id_ in enumerate(agents):
             if id_ == 0:
-                obs.skip(self._obs_bits_per_agent)
-                continue
-            if id_ == agent.id:
-                continue
-            obs.write(np.array([1.0]))
-            obs.write(np.eye(len(Direction))[self.agents[id_ - 1].dir.value])
-            obs.write(self.agents[id_ - 1].message)
+                obs["sensors"][i]["has_agent"] = [0]
+                obs["sensors"][i]["direction"] = 0
+                obs["sensors"][i]["local_message"] = self.msg_bits * [0]
+            else:
+                obs["sensors"][i]["has_agent"] = [1]
+                obs["sensors"][i]["direction"] = self.agents[id_ - 1].dir.value
+                obs["sensors"][i]["local_message"] = self.agents[id_ - 1].message
 
         # find neighboring shelfs:
         shelfs = padded_shelfs[min_y:max_y, min_x:max_x].reshape(-1)
         for i, id_ in enumerate(shelfs):
             if id_ == 0:
-                obs.skip(self._obs_bits_per_shelf)
-                continue
-            obs.write(np.array([1.0]))
-            obs.write(np.array([self.shelfs[id_ - 1] in self.request_queue]))
+                obs["sensors"][i]["has_shelf"] = [0]
+                obs["sensors"][i]["shelf_requested"] = [0]
+            else:
+                obs["sensors"][i]["has_shelf"] = [1]
+                obs["sensors"][i]["shelf_requested"] = [
+                    int(self.shelfs[id_ - 1] in self.request_queue)
+                ]
 
         # writing requests:
-        for shelf in self.request_queue:
-            obs.write(np.array([shelf.x / x_scale, shelf.y / y_scale]))
-
-        assert obs.idx == self._obs_length
-        return obs.vector
+        obs["requests"] = tuple([shelf.x, shelf.y] for shelf in self.request_queue)
+        return obs
 
     def _recalc_grid(self):
         self.grid[:] = 0

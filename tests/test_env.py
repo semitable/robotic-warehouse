@@ -144,9 +144,46 @@ def test_obs_space_0():
         reward_type=RewardType.GLOBAL,
     )
     obs = env.reset()
+    assert env.observation_space[0]["self"].contains(obs[0]["self"])
+    assert env.observation_space[0].contains(obs[0])
     assert env.observation_space.contains(obs)
     nobs, _, _, _ = env.step(env.action_space.sample())
     assert env.observation_space.contains(nobs)
+
+
+def test_obs_space_1():
+    env = Warehouse(
+        shelf_columns=1,
+        column_height=3,
+        shelf_rows=3,
+        n_agents=10,
+        msg_bits=5,
+        sensor_range=1,
+        request_queue_size=5,
+        max_inactivity=None,
+        reward_type=RewardType.GLOBAL,
+    )
+    obs = env.reset()
+    for _ in range(200):
+        obs, _, _, _ = env.step(env.action_space.sample())
+        assert env.observation_space.contains(obs)
+
+
+def test_obs_space_2():
+    env = Warehouse(
+        shelf_columns=1,
+        column_height=3,
+        shelf_rows=3,
+        n_agents=10,
+        msg_bits=5,
+        sensor_range=1,
+        request_queue_size=5,
+        max_inactivity=None,
+        reward_type=RewardType.GLOBAL,
+    )
+    obs = env.reset()
+    for s, o in zip(env.observation_space, obs):
+        assert len(gym.spaces.flatten(s, o)) == env._obs_length
 
 
 def test_inactivity_0(env_0):
