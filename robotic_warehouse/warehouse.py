@@ -545,7 +545,7 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(9, 8, 3, 10, 3, 1, 5, None, RewardType.GLOBAL)
+    env = Warehouse(9, 8, 3, 10, 3, 1, 5,None, None, RewardType.GLOBAL)
     env.reset()
     import time
     from tqdm import tqdm
@@ -556,6 +556,6 @@ if __name__ == "__main__":
 
     for _ in tqdm(range(1000000)):
         # time.sleep(2)
-        env.render()
+        # env.render()
         actions = env.action_space.sample()
         env.step(actions)
