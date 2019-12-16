@@ -46,7 +46,7 @@ if __name__ == "__main__":
         config={
             "env": f"ray-{ENVIRONMENT}",
             "num_gpus": 0,
-            "num_workers": 11,
+            "num_workers": 20,
             "num_envs_per_worker": 5,
             # "lr": tune.grid_search([0.01, 0.001, 0.0001]),
             "eager": False,
