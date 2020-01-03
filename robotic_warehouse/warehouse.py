@@ -41,6 +41,7 @@ class Direction(Enum):
 class RewardType(Enum):
     GLOBAL = 0
     INDIVIDUAL = 1
+    TWO_STAGE = 2
 
 
 class Entity:
@@ -63,6 +64,7 @@ class Agent(Entity):
         self.req_action: Optional[Action] = None
         self.carrying_shelf: Optional[Shelf] = None
         self.canceled_action = None
+        self.has_delivered = False
 
     @property
     def collision_layers(self):
@@ -469,6 +471,8 @@ class Warehouse(gym.Env):
             assert agent.req_action == Action.FORWARD
             agent.req_action = Action.NOOP
 
+        rewards = np.zeros(self.n_agents)
+
         for agent in self.agents:
             agent.prev_x, agent.prev_y = agent.x, agent.y
 
@@ -485,10 +489,13 @@ class Warehouse(gym.Env):
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:
                 if not self._is_highway(agent.x, agent.y):
                     agent.carrying_shelf = None
+                    if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
+                        rewards[agent.id - 1] += 0.5
+
+                    agent.has_delivered = False
 
         self._recalc_grid()
 
-        rewards = np.zeros(self.n_agents)
         shelf_delivered = False
         for x, y in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, y, x]
@@ -511,6 +518,10 @@ class Warehouse(gym.Env):
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, y, x]
                 rewards[agent_id - 1] += 1
+            elif self.reward_type == RewardType.TWO_STAGE:
+                agent_id = self.grid[_LAYER_AGENTS, y, x]
+                self.agents[agent_id - 1].has_delivered = True
+                rewards[agent_id - 1] += 0.5
 
         if shelf_delivered:
             self._cur_inactive_steps = 0
