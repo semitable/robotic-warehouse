@@ -3,8 +3,13 @@ from .warehouse import Warehouse, RewardType, Action
 import itertools
 
 _perms = itertools.product(
-    range(1, 5), range(3, 10, 2), range(10), [5, 10, 20], ["indiv", "global"]
+    range(1, 5), range(3, 10, 2), range(10), [5, 10, 20], ["indiv", "global", "twostage"]
 )
+_rewards = {
+    "indiv": RewardType.INDIVIDUAL,
+    "global": RewardType.GLOBAL,
+    "twostage": RewardType.TWO_STAGE,
+}
 
 for rows, cols, agents, req, rew in _perms:
     gym.register(
@@ -20,8 +25,6 @@ for rows, cols, agents, req, rew in _perms:
             "request_queue_size": req,
             "max_inactivity_steps": None,
             "max_steps": 500,
-            "reward_type": RewardType.INDIVIDUAL
-            if rew == "indiv"
-            else RewardType.GLOBAL,
+            "reward_type": _rewards[rew],
         },
     )
