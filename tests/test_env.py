@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 import gym
+from gym import spaces
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
@@ -79,7 +80,7 @@ def test_action_space_0():
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
-    assert env.action_space == 2 * [gym.spaces.Discrete(len(Action))]
+    assert env.action_space == spaces.Tuple(2 * (spaces.Discrete(len(Action)), ))
     env.step(env.action_space.sample())
 
 
@@ -97,7 +98,7 @@ def test_action_space_1():
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
-    assert env.action_space == 2 * [gym.spaces.MultiDiscrete([len(Action), 2])]
+    assert env.action_space == spaces.Tuple(2 * (spaces.MultiDiscrete([len(Action), 2]), ))
     env.step(env.action_space.sample())
 
 
@@ -115,7 +116,7 @@ def test_action_space_2():
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
-    assert env.action_space == 2 * [gym.spaces.MultiDiscrete([len(Action), 2, 2])]
+    assert env.action_space == spaces.Tuple(2 * (spaces.MultiDiscrete([len(Action), 2, 2]), ))
     env.step(env.action_space.sample())
 
 
@@ -133,7 +134,7 @@ def test_action_space_3():
         reward_type=RewardType.GLOBAL,
     )
     env.reset()
-    assert env.action_space == 10 * [gym.spaces.MultiDiscrete([len(Action), *5 * (2,)])]
+    assert env.action_space == spaces.Tuple(10 * (spaces.MultiDiscrete([len(Action), *5 * (2,)]), ))
     env.step(env.action_space.sample())
 
 

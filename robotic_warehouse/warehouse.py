@@ -192,6 +192,7 @@ class Warehouse(gym.Env):
         self.sensor_range = sensor_range
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
+        self.reward_range = (0, 1)
 
         self._cur_inactive_steps = None
         self._cur_steps = 0
@@ -204,7 +205,7 @@ class Warehouse(gym.Env):
             sa_action_space = spaces.Discrete(sa_action_space[0])
         else:
             sa_action_space = spaces.MultiDiscrete(sa_action_space)
-        self.action_space = MultiAgentActionSpace(n_agents * [sa_action_space])
+        self.action_space = spaces.Tuple(tuple(n_agents * [sa_action_space]))
 
         self.request_queue_size = request_queue_size
         self.request_queue = []
@@ -230,8 +231,8 @@ class Warehouse(gym.Env):
             + self._obs_bits_for_requests * self.request_queue_size
         )
 
-        self.observation_space = MultiAgentObservationSpace(
-            [
+        self.observation_space = spaces.Tuple(
+            tuple([
                 spaces.Dict(
                     {
                         "self": spaces.Dict(
@@ -271,7 +272,7 @@ class Warehouse(gym.Env):
                     }
                 )
                 for _ in range(self.n_agents)
-            ]
+            ])
         )
         self.renderer = None
 

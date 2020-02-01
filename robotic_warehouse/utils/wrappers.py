@@ -2,6 +2,8 @@ import gym
 import numpy as np
 from robotic_warehouse import Action
 from gym import spaces
+from gym import ObservationWrapper
+
 import math
 
 
@@ -67,3 +69,26 @@ class DictAgents(gym.Wrapper):
         done["__all__"] = all(done.values())
 
         return observation, reward, done, info
+
+
+class FlattenSAObservation(ObservationWrapper):
+    r"""Observation wrapper that flattens the observation."""
+    def __init__(self, env):
+        super(FlattenSAObservation, self).__init__(env)
+        
+        ma_spaces = []
+
+        for sa_obs in env.observation_space:
+            flatdim = spaces.flatdim(sa_obs)
+            ma_spaces += [spaces.Box(low=-float('inf'), high=float('inf'), shape=(flatdim,), dtype=np.float32)]
+        
+        self.observation_space = spaces.Tuple(tuple(ma_spaces))
+
+    def observation(self, observation):
+        return [spaces.flatten(obs_space, obs) for obs_space, obs in zip(self.env.observation_space, observation)]
+
+class SquashDones(gym.Wrapper):
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return observation, reward, all(done), info
