@@ -3,7 +3,7 @@ from .warehouse import Warehouse, RewardType, Action
 import itertools
 
 _perms = itertools.product(
-    range(1, 5), range(3, 10, 2), range(20), range(20), ["indiv", "global", "twostage"]
+    range(1, 5), range(3, 10, 2), range(1, 20), range(1, 20), ["indiv", "global", "twostage"]
 )
 _rewards = {
     "indiv": RewardType.INDIVIDUAL,
