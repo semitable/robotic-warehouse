@@ -16,7 +16,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=["numpy", "gym>=0.12", "pyglet", "networkx"],
+    install_requires=["numpy", "gym>=0.15", "pyglet", "networkx"],
     extras_require={"test": ["pytest"]},
     include_package_data=True,
 )
