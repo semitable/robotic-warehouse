@@ -4,7 +4,7 @@ from robotic_warehouse import Warehouse, RewardType
 from robotic_warehouse.utils.wrappers import DictAgents
 from ray.rllib.env import MultiAgentEnv
 
-ENVIRONMENT = "rware-1x3-2ag-10req-indiv-v0"
+ENVIRONMENT = "rware-tiny-2ag-v0"
 
 class RayWarehouseEnv(MultiAgentEnv):
     def __init__(self, env):
@@ -24,7 +24,7 @@ class RayWarehouseEnv(MultiAgentEnv):
 
 
 def env_creator(env_config):
-    env = gym.make(ENVIRONMENT)
+    env = gym.make(env_config)
     env = DictAgents(env)
     env = RayWarehouseEnv(env)
     return env
