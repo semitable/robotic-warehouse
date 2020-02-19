@@ -1,8 +1,9 @@
 import argparse
 import gym, ray
+from ray.rllib.env import MultiAgentEnv
+import re
 from robotic_warehouse import Warehouse, RewardType
 from robotic_warehouse.utils.wrappers import DictAgents
-from ray.rllib.env import MultiAgentEnv
 
 ENVIRONMENT = "rware-tiny-2ag-v0"
 
@@ -22,9 +23,21 @@ class RayWarehouseEnv(MultiAgentEnv):
     def render(self, *args, **kwargs):
         return self.__env.render(*args, **kwargs)
 
+def extract_num_agents(env_config):
+    regex = r"([0-9]+)ag"
+    match = re.search(regex, env_config)
+    assert match
+    num = int(match.group(1))
+    return num
+
+def extract_spaces(env_config):
+    env = gym.make(env_config)
+    obs_space = env.observation_space[0]
+    act_space = env.action_space[0]
+    return obs_space, act_space
 
 def env_creator(env_config):
-    env = gym.make(env_config)
+    env = gym.make(ENVIRONMENT)
     env = DictAgents(env)
     env = RayWarehouseEnv(env)
     return env
