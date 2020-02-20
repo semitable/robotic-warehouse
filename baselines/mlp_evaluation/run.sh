@@ -1,3 +1,11 @@
+#!/bin/bash
+#SBATCH --job-name=a2c_ind
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=5GB
+#SBATCH --nodes=4
+#SBATCH --tasks-per-node 1
+#SBATCH --gres=gpu:4
+
 if ! [ "$#" -ge 4 ]
 then
     echo 'Usage: run <train_script> <job_name> <num_nodes> <conda_env> (<cpus_per_task=12>) (<mem_per_cpu=5>) (<num_gpus=4>)'
@@ -38,15 +46,7 @@ fi
 
 username=$(whoami)
 
-#!/bin/bash
-#SBATCH --job-name=$job_name
-#SBATCH --cpus-per-task=$cpus_per_task
-#SBATCH --mem-per-cpu=${mem_per_cpu}GB
-#SBATCH --nodes=$num_nodes
-#SBATCH --tasks-per-node 1
-#SBATCH --gres=gpu:$num_gpus
-
-worker_num=$(expr $num_nodes - 1) # Must be one less that the total number of nodes
+worker_num=3 # Must be one less that the total number of nodes
 
 mkdir -p /disk/scratch/$username
 source ~/.bashrc
@@ -64,18 +64,20 @@ ip_head=$ip_prefix$suffix
 redis_password=$(uuidgen)
 export ip_head # Exporting for latter access by trainer.py
 
-head_gpus=$(num_gpus) / 2
+head_gpus=2
+#$(num_gpus)/2
 
-srun --nodes=1 --ntasks=1 --gres=gpu:$head_gpus -w $node1 ray start --num-cpus=$cpus_per_task --block --head --temp-dir /disk/scratch/$username --redis-port=6379 --redis-password=$redis_password & # Starting the head
+srun --nodes=1 --ntasks=1 --gres=gpu:2 -w $node1 ray start --num-cpus=$cpus_per_task --block --head --temp-dir /disk/scratch/$username --redis-port=6379 --redis-password=$redis_password & # Starting the head
 
 sleep 5
 
-worker_gpus=$(num_gpus)/2
+worker_gpus=2
+#$(num_gpus)/2
 
 for ((  i=1; i<=$worker_num; i++ ))
 do
   node2=${nodes_array[$i]}
-  srun --nodes=1 --ntasks=1 --gres=gpu:worker_gpus -w $node2 ray start --num-cpus=12 --temp-dir /disk/scratch/$username --block --address=$ip_head --redis-password=$redis_password & # Starting the workers
+  srun --nodes=1 --ntasks=1 --gres=gpu:2 -w $node2 ray start --num-cpus=12 --temp-dir /disk/scratch/$username --block --address=$ip_head --redis-password=$redis_password & # Starting the workers
   sleep 5
 done
 
