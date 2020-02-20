@@ -46,6 +46,8 @@ def env_creator(env_config):
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("--num-iters", type=int, default=1000, help="maximum number of iterations")
+    parser.add_argument("--ip-head", type=str, default=None, help="IP head of training")
+    parser.add_argument("--redis-pwd", type=str, default=None)
     parser.add_argument(
             "--stop-reward",
             type=int,

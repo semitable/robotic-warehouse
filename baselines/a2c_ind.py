@@ -13,7 +13,10 @@ if __name__ == "__main__":
     num_agents = extract_num_agents(ENVIRONMENT)
     obs_space, act_space = extract_spaces(ENVIRONMENT)
 
-    ray.init()
+    if args.redis_pwd is not None and args.ip_head is not None:
+        ray.init(address=args.ip_head, redis_password=redis_pwd)
+    else:
+        ray.init()
     tune.run(
         "A2C",
         checkpoint_freq=100,
