@@ -14,7 +14,7 @@ if __name__ == "__main__":
     obs_space, act_space = extract_spaces(ENVIRONMENT)
 
     if args.redis_pwd is not None and args.ip_head is not None:
-        ray.init(address=args.ip_head, redis_password=redis_pwd)
+        ray.init(address=args.ip_head, redis_password=args.redis_pwd)
     else:
         ray.init()
     tune.run(
