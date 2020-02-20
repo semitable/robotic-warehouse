@@ -56,8 +56,9 @@ source activate $conda_env
 # source venv/bin/activate
 
 nodes=$(scontrol show hostnames $SLURM_JOB_NODELIST) # Getting the node names
-nodes_array=$( nodes )
+nodes_array=( $nodes )
 node1=${nodes_array[0]}
+
 ip_prefix=$(srun --nodes=1 --ntasks=1 -w $node1 hostname --ip-address) # Making address
 suffix=':6379'
 ip_head=$ip_prefix$suffix
