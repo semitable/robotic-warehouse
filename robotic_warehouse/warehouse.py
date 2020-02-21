@@ -228,7 +228,6 @@ class Warehouse(gym.Env):
             self._obs_bits_for_self
             + self._obs_sensor_locations * self._obs_bits_per_agent
             + self._obs_sensor_locations * self._obs_bits_per_shelf
-            + self._obs_bits_for_requests * self.request_queue_size
         )
 
         self.observation_space = spaces.Tuple(
@@ -258,14 +257,6 @@ class Warehouse(gym.Env):
                                         "has_shelf": spaces.MultiDiscrete([2]),
                                         "shelf_requested": spaces.MultiDiscrete([2]),
                                     }
-                                ),
-                            )
-                        ),
-                        "requests": spaces.Tuple(
-                            self.request_queue_size
-                            * (
-                                spaces.MultiDiscrete(
-                                    [self.grid_size[1], self.grid_size[0]]
                                 ),
                             )
                         ),
@@ -342,7 +333,6 @@ class Warehouse(gym.Env):
                 ]
 
         # writing requests:
-        obs["requests"] = tuple([shelf.x, shelf.y] for shelf in self.request_queue)
         return obs
 
     def _recalc_grid(self):
