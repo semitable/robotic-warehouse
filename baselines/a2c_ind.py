@@ -31,7 +31,7 @@ if __name__ == "__main__":
             # Size of rollout batch
             "sample_batch_size": 10,
             # Learning rate
-            "lr": 0.0001, # tune.grid_search([0.01, 0.001, 0.0001, 1e-5]),
+            tune.grid_search([0.01, 0.001, 0.0001, 1e-5]), # "lr": 0.0001,
             # Entropy coefficient
             "entropy_coeff": 0.001, # tune.grid_search([0.1, 0.01, 0.001]),
             # Workers sample async. Note that this increases the effective
