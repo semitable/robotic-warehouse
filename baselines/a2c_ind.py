@@ -22,8 +22,8 @@ if __name__ == "__main__":
         checkpoint_freq=100,
         checkpoint_at_end=True,
         stop={
-            #"episode_reward_mean": 20,
-            "training_iteration": 5000,
+            "episode_reward_mean": args.stop_reward,
+            "training_iteration": args.num_iters,
         },
         config={
             "env": f"ray-{ENVIRONMENT}",
