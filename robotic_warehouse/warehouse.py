@@ -232,47 +232,51 @@ class Warehouse(gym.Env):
         )
 
         self.observation_space = spaces.Tuple(
-            tuple([
-                spaces.Dict(
-                    {
-                        "self": spaces.Dict(
-                            {
-                                "location": spaces.MultiDiscrete(
-                                    [self.grid_size[1], self.grid_size[0]]
-                                ),
-                                "carrying_shelf": spaces.MultiDiscrete([2]),
-                                "direction": spaces.Discrete(4),
-                                "on_highway": spaces.MultiDiscrete([2]),
-                            }
-                        ),
-                        "sensors": spaces.Tuple(
-                            self._obs_sensor_locations
-                            * (
-                                spaces.Dict(
-                                    {
-                                        "has_agent": spaces.MultiDiscrete([2]),
-                                        "direction": spaces.Discrete(4),
-                                        "local_message": spaces.MultiBinary(
-                                            self.msg_bits
-                                        ),
-                                        "has_shelf": spaces.MultiDiscrete([2]),
-                                        "shelf_requested": spaces.MultiDiscrete([2]),
-                                    }
-                                ),
-                            )
-                        ),
-                        "requests": spaces.Tuple(
-                            self.request_queue_size
-                            * (
-                                spaces.MultiDiscrete(
-                                    [self.grid_size[1], self.grid_size[0]]
-                                ),
-                            )
-                        ),
-                    }
-                )
-                for _ in range(self.n_agents)
-            ])
+            tuple(
+                [
+                    spaces.Dict(
+                        {
+                            "self": spaces.Dict(
+                                {
+                                    "location": spaces.MultiDiscrete(
+                                        [self.grid_size[1], self.grid_size[0]]
+                                    ),
+                                    "carrying_shelf": spaces.MultiDiscrete([2]),
+                                    "direction": spaces.Discrete(4),
+                                    "on_highway": spaces.MultiDiscrete([2]),
+                                }
+                            ),
+                            "sensors": spaces.Tuple(
+                                self._obs_sensor_locations
+                                * (
+                                    spaces.Dict(
+                                        {
+                                            "has_agent": spaces.MultiDiscrete([2]),
+                                            "direction": spaces.Discrete(4),
+                                            "local_message": spaces.MultiBinary(
+                                                self.msg_bits
+                                            ),
+                                            "has_shelf": spaces.MultiDiscrete([2]),
+                                            "shelf_requested": spaces.MultiDiscrete(
+                                                [2]
+                                            ),
+                                        }
+                                    ),
+                                )
+                            ),
+                            "requests": spaces.Tuple(
+                                self.request_queue_size
+                                * (
+                                    spaces.MultiDiscrete(
+                                        [self.grid_size[1], self.grid_size[0]]
+                                    ),
+                                )
+                            ),
+                        }
+                    )
+                    for _ in range(self.n_agents)
+                ]
+            )
         )
         self.renderer = None
 
@@ -299,20 +303,35 @@ class Warehouse(gym.Env):
             "on_highway": [int(self._is_highway(agent.x, agent.y))],
         }
 
+
+        min_x = agent.x - self.sensor_range
+        max_x = agent.x + self.sensor_range + 1
+
+        min_y = agent.y - self.sensor_range
+        max_y = agent.y + self.sensor_range + 1
         # sensors
-        padded_agents = np.pad(
-            self.grid[_LAYER_AGENTS], self.sensor_range, mode="constant"
-        )
-        padded_shelfs = np.pad(
-            self.grid[_LAYER_SHELFS], self.sensor_range, mode="constant"
-        )
+        if (
+            (min_x < 0)
+            or (min_y < 0)
+            or (max_x > self.grid_size[1])
+            or (max_y > self.grid_size[0])
+        ):
+            padded_agents = np.pad(
+                self.grid[_LAYER_AGENTS], self.sensor_range, mode="constant"
+            )
+            padded_shelfs = np.pad(
+                self.grid[_LAYER_SHELFS], self.sensor_range, mode="constant"
+            )
+            # + self.sensor_range due to padding
+            min_x += self.sensor_range
+            max_x += self.sensor_range
+            min_y += self.sensor_range
+            max_y += self.sensor_range
 
-        # + self.sensor_range due to padding
-        min_x = agent.x - self.sensor_range + self.sensor_range
-        max_x = agent.x + 2 * self.sensor_range + 1
+        else:
+            padded_agents = self.grid[_LAYER_AGENTS]
+            padded_shelfs = self.grid[_LAYER_SHELFS]
 
-        min_y = agent.y - self.sensor_range + self.sensor_range
-        max_y = agent.y + 2 * self.sensor_range + 1
 
         # --- sensor data
         obs["sensors"] = tuple({} for _ in range(self._obs_sensor_locations))
@@ -557,7 +576,7 @@ class Warehouse(gym.Env):
 
 
 if __name__ == "__main__":
-    env = Warehouse(9, 8, 3, 10, 3, 1, 5,None, None, RewardType.GLOBAL)
+    env = Warehouse(9, 8, 3, 10, 3, 1, 5, None, None, RewardType.GLOBAL)
     env.reset()
     import time
     from tqdm import tqdm
