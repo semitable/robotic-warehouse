@@ -64,8 +64,7 @@ if __name__ == "__main__":
 
             # === Optimization ===
             # Learning rate for adam optimizer
-            "lr": 5e-4,
-            "lr": tune.grid_search([0.01, 0.001, 5e-4, 0.0001]),
+            "lr": 5e-4, # tune.grid_search([0.01, 0.001, 5e-4, 0.0001]),
             # Size of a batched sampled from replay buffer for training. Note that
             # if async_updates is set, then each worker returns gradients for a
             # batch of this size.
