@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "num_gpus": 0,
             "num_workers": args.num_workers,
             "num_envs_per_worker": 5,
-            "lr": tune.grid_search([0.01, 0.001, 0.0001, 1e-5]),
+            "lr": 0.0001, # tune.grid_search([0.01, 0.001, 0.0001, 1e-5]),
             "eager": False,
             "multiagent": {
                 "policies": {
