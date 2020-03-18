@@ -2,6 +2,7 @@ import os
 import sys
 import pytest
 import gym
+import numpy as np
 from gym import spaces
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -150,6 +151,7 @@ def test_obs_space_0():
         max_inactivity_steps=None,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
+        fast_obs=False,
     )
     obs = env.reset()
     assert env.observation_space[0]["self"].contains(obs[0]["self"])
@@ -258,3 +260,71 @@ def test_inactivity_2(env_0):
         assert done == [False]
     _, _, done, _ = env.step([Action.NOOP])
     assert done == [True]
+
+
+def test_fast_obs_0():
+    env = Warehouse(3, 8, 3, 2, 0, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env.reset()
+
+    slow_obs_space = env.observation_space
+
+    for _ in range(10):
+        slow_obs = [env._make_obs(agent) for agent in env.agents]
+        env._use_fast_obs()
+        fast_obs = [env._make_obs(agent) for agent in env.agents]
+        assert len(fast_obs) == 2
+        assert len(slow_obs) == 2
+
+        flattened_slow = [spaces.flatten(osp, obs) for osp, obs in zip(slow_obs_space, slow_obs)]
+
+        for i in range(len(fast_obs)):
+            print(slow_obs[0])
+            assert list(fast_obs[i]) ==  list(flattened_slow[i])
+
+        env._use_slow_obs()
+        env.step(env.action_space.sample())
+        
+def test_fast_obs_1():
+    env = Warehouse(3, 8, 3, 3, 0, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env.reset()
+
+    slow_obs_space = env.observation_space
+
+    for _ in range(10):
+        slow_obs = [env._make_obs(agent) for agent in env.agents]
+        env._use_fast_obs()
+        fast_obs = [env._make_obs(agent) for agent in env.agents]
+        assert len(fast_obs) == 3
+        assert len(slow_obs) == 3
+
+        flattened_slow = [spaces.flatten(osp, obs) for osp, obs in zip(slow_obs_space, slow_obs)]
+
+        for i in range(len(fast_obs)):
+            print(slow_obs[0])
+            assert list(fast_obs[i]) ==  list(flattened_slow[i])
+
+        env._use_slow_obs()
+        env.step(env.action_space.sample())
+        
+def test_fast_obs_2():
+    env = Warehouse(3, 8, 3, 3, 2, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env.reset()
+
+    slow_obs_space = env.observation_space
+
+    for _ in range(10):
+        slow_obs = [env._make_obs(agent) for agent in env.agents]
+        env._use_fast_obs()
+        fast_obs = [env._make_obs(agent) for agent in env.agents]
+        assert len(fast_obs) == 3
+        assert len(slow_obs) == 3
+
+        flattened_slow = [spaces.flatten(osp, obs) for osp, obs in zip(slow_obs_space, slow_obs)]
+
+        for i in range(len(fast_obs)):
+            print(slow_obs[0])
+            assert list(fast_obs[i]) ==  list(flattened_slow[i])
+
+        env._use_slow_obs()
+        env.step(env.action_space.sample())
+        
