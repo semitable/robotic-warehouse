@@ -23,6 +23,9 @@ class RayWarehouseEnv(MultiAgentEnv):
     def render(self, *args, **kwargs):
         return self.__env.render(*args, **kwargs)
 
+    def seed(self, seed):
+        self.__env.seed(seed)
+
 def extract_num_agents(env_config):
     regex = r"([0-9]+)ag"
     match = re.search(regex, env_config)
