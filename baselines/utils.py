@@ -23,6 +23,9 @@ class RayWarehouseEnv(MultiAgentEnv):
     def render(self, *args, **kwargs):
         return self.__env.render(*args, **kwargs)
 
+    def seed(self, seed):
+        self.__env.seed(seed)
+
 def extract_num_agents(env_config):
     regex = r"([0-9]+)ag"
     match = re.search(regex, env_config)
@@ -45,13 +48,13 @@ def env_creator(env_config):
 # setup parser
 def parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num-iters", type=int, default=1000, help="maximum number of iterations")
+    parser.add_argument("--num-iters", type=int, default=50000, help="maximum number of iterations")
     parser.add_argument("--ip-head", type=str, default=None, help="IP head of training")
     parser.add_argument("--redis-pwd", type=str, default=None)
     parser.add_argument(
             "--stop-reward",
             type=int,
-            default=20,
+            default=50,
             help="number of episodic reward mean to stop at",
     )
     parser.add_argument("--num-workers", type=int, default=1)
