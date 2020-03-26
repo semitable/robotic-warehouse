@@ -132,7 +132,7 @@ class Viewer(object):
         if return_rgb_array:
             buffer = pyglet.image.get_buffer_manager().get_color_buffer()
             image_data = buffer.get_image_data()
-            arr = np.frombuffer(image_data.data, dtype=np.uint8)
+            arr = np.frombuffer(image_data.get_data(), dtype=np.uint8)
             arr = arr.reshape(buffer.height, buffer.width, 4)
             arr = arr[::-1, :, 0:3]
         self.window.flip()

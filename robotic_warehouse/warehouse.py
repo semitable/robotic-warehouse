@@ -643,10 +643,11 @@ class Warehouse(gym.Env):
             from robotic_warehouse.rendering import Viewer
 
             self.renderer = Viewer(self.grid_size)
-        self.renderer.render(self)
+        return self.renderer.render(self, return_rgb_array = mode=='rgb_array')
 
     def close(self):
-        ...
+        if self.renderer:
+            self.renderer.close()
 
     def seed(self, seed=None):
         ...
