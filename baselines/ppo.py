@@ -4,7 +4,7 @@ from ray.rllib.agents import ppo
 from ray import tune
 from ray.tune.registry import register_env
 
-from utils import ENVIRONMENT, parse, env_creator, extract_spaces, extract_num_agents
+from utils import ENVIRONMENT, NUM_SEEDS, parse, env_creator, extract_spaces, extract_num_agents
 
 register_env(f"ray-{ENVIRONMENT}", env_creator)
 
@@ -31,7 +31,9 @@ if __name__ == "__main__":
             "num_gpus": 0,
             "num_workers": args.num_workers,
             "num_envs_per_worker": 5,
-            "lr": 0.0001, # tune.grid_search([0.01, 0.001, 0.0001, 1e-5]),
+            "lr": 1e-4, # tune.grid_search([5e-4, 2e-4, 1e-4, 5e-5]),
+            # Seeds
+            "seed": tune.grid_search([i for i in range(NUM_SEEDS)]),
             "eager": False,
             "multiagent": {
                 "policies": {

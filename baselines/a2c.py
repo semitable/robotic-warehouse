@@ -4,7 +4,7 @@ from ray.rllib.agents import a3c
 from ray import tune
 from ray.tune.registry import register_env
 
-from utils import ENVIRONMENT, parse, env_creator, extract_spaces, extract_num_agents
+from utils import ENVIRONMENT, NUM_SEEDS, parse, env_creator, extract_spaces, extract_num_agents
 
 register_env(f"ray-{ENVIRONMENT}", env_creator)
 
@@ -31,12 +31,15 @@ if __name__ == "__main__":
             # Size of rollout batch
             "sample_batch_size": 10,
             # Learning rate
-            "lr": 0.0001, #tune.grid_search([0.01, 0.001, 0.0001, 1e-5]),
+            "lr": 1e-4, # tune.grid_search([5e-4, 2e-4, 1e-4, 5e-5]),
+            # Seeds
+            "seed": tune.grid_search([i for i in range(NUM_SEEDS)]),
             # Entropy coefficient
             "entropy_coeff": 0.001, # tune.grid_search([0.1, 0.01, 0.001]),
             # Workers sample async. Note that this increases the effective
             # sample_batch_size by up to 5x due to async buffering of batches.
             "sample_async": True,
+            # multiagent policy for each agent
             "multiagent": {
                 "policies": {
                     f"agent_{i}": (None, obs_space, act_space, {}) for i in range(num_agents)

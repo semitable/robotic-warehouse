@@ -4,7 +4,7 @@ from ray.rllib.agents import dqn
 from ray import tune
 from ray.tune.registry import register_env
 
-from utils import ENVIRONMENT, parse, env_creator, extract_spaces, extract_num_agents
+from utils import ENVIRONMENT, NUM_SEEDS, parse, env_creator, extract_spaces, extract_num_agents
 
 register_env(f"ray-{ENVIRONMENT}", env_creator)
 
@@ -64,7 +64,9 @@ if __name__ == "__main__":
 
             # === Optimization ===
             # Learning rate for adam optimizer
-            "lr": 5e-4, # tune.grid_search([0.01, 0.001, 5e-4, 0.0001]),
+            "lr": 5e-4, # tune.grid_search([1e-3, 5e-4, 2e-4, 1e-4]),
+            # Seeds
+            "seed": tune.grid_search([i for i in range(NUM_SEEDS)]),
             # Size of a batched sampled from replay buffer for training. Note that
             # if async_updates is set, then each worker returns gradients for a
             # batch of this size.

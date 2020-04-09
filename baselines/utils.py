@@ -6,6 +6,7 @@ from robotic_warehouse import Warehouse, RewardType
 from robotic_warehouse.utils.wrappers import DictAgents
 
 ENVIRONMENT = "rware-tiny-2ag-v0"
+NUM_SEEDS = 10
 
 class RayWarehouseEnv(MultiAgentEnv):
     def __init__(self, env):
