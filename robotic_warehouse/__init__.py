@@ -9,15 +9,22 @@ _sizes = {
     "large": (3, 5),
 }
 
+_difficulty = {
+    "-easy": 2,
+    "": 1,
+    "-hard": 0.5
+}
+
 _perms = itertools.product(
     _sizes.keys(),
+    _difficulty,
     range(1, 20),
 )
 
-for size, agents in _perms:
+for size, diff, agents in _perms:
     # normal tasks
     gym.register(
-        id=f"rware-{size}-{agents}ag-v0",
+        id=f"rware-{size}-{agents}ag{diff}-v1",
         entry_point="robotic_warehouse.warehouse:Warehouse",
         kwargs={
             "column_height": 8,
@@ -26,43 +33,7 @@ for size, agents in _perms:
             "n_agents": agents,
             "msg_bits": 0,
             "sensor_range": 1,
-            "request_queue_size": agents,
-            "max_inactivity_steps": None,
-            "max_steps": 500,
-            "reward_type": RewardType.INDIVIDUAL,
-        },
-    )
-
-    # single request tasks
-    gym.register(
-        id=f"rware-{size}-{agents}ag-onereq-v0",
-        entry_point="robotic_warehouse.warehouse:Warehouse",
-        kwargs={
-            "column_height": 8,
-            "shelf_rows": _sizes[size][0],
-            "shelf_columns": _sizes[size][1],
-            "n_agents": agents,
-            "msg_bits": 0,
-            "sensor_range": 1,
-            "request_queue_size": 1,
-            "max_inactivity_steps": None,
-            "max_steps": 500,
-            "reward_type": RewardType.INDIVIDUAL,
-        },
-    )
-
-    # double requests compared to agents tasks
-    gym.register(
-        id=f"rware-{size}-{agents}ag-doublereq-v0",
-        entry_point="robotic_warehouse.warehouse:Warehouse",
-        kwargs={
-            "column_height": 8,
-            "shelf_rows": _sizes[size][0],
-            "shelf_columns": _sizes[size][1],
-            "n_agents": agents,
-            "msg_bits": 0,
-            "sensor_range": 1,
-            "request_queue_size": agents * 2,
+            "request_queue_size": int(agents * _difficulty[diff]),
             "max_inactivity_steps": None,
             "max_steps": 500,
             "reward_type": RewardType.INDIVIDUAL,
