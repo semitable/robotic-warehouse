@@ -33,6 +33,24 @@ for size, agents in _perms:
         },
     )
 
+    # global reward tasks
+    gym.register(
+        id=f"rware-{size}-{agents}ag-globalrew-v0",
+        entry_point="robotic_warehouse.warehouse:Warehouse",
+        kwargs={
+            "column_height": 8,
+            "shelf_rows": _sizes[size][0],
+            "shelf_columns": _sizes[size][1],
+            "n_agents": agents,
+            "msg_bits": 0,
+            "sensor_range": 1,
+            "request_queue_size": agents,
+            "max_inactivity_steps": None,
+            "max_steps": 500,
+            "reward_type": RewardType.GLOBAL,
+        },
+    )
+
     # single request tasks
     gym.register(
         id=f"rware-{size}-{agents}ag-onereq-v0",
@@ -45,6 +63,24 @@ for size, agents in _perms:
             "msg_bits": 0,
             "sensor_range": 1,
             "request_queue_size": 1,
+            "max_inactivity_steps": None,
+            "max_steps": 500,
+            "reward_type": RewardType.INDIVIDUAL,
+        },
+    )
+
+    # half requests compared to agents tasks
+    gym.register(
+        id=f"rware-{size}-{agents}ag-halfreq-v0",
+        entry_point="robotic_warehouse.warehouse:Warehouse",
+        kwargs={
+            "column_height": 8,
+            "shelf_rows": _sizes[size][0],
+            "shelf_columns": _sizes[size][1],
+            "n_agents": agents,
+            "msg_bits": 0,
+            "sensor_range": 1,
+            "request_queue_size": agents//2,
             "max_inactivity_steps": None,
             "max_steps": 500,
             "reward_type": RewardType.INDIVIDUAL,
@@ -68,6 +104,7 @@ for size, agents in _perms:
             "reward_type": RewardType.INDIVIDUAL,
         },
     )
+
 
 
 def full_registration():
