@@ -24,7 +24,7 @@ setup(
         "pyglet",
         "setproctitle",
         "requests",
-        "psutils",
+        "psutil",
         "networkx",
     ],
     extras_require={"test": ["pytest"]},
