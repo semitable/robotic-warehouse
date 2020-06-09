@@ -1,5 +1,5 @@
 # Multi-Robot Warehouse Environment (RWARE)
-### A multi-agent reinforcement learning environment
+### A multi-agent environment for Reinforcement Learning 
 
 # Installation:
 ```sh
