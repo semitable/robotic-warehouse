@@ -242,7 +242,6 @@ class Warehouse(gym.Env):
             self._obs_bits_for_self
             + self._obs_sensor_locations * self._obs_bits_per_agent
             + self._obs_sensor_locations * self._obs_bits_per_shelf
-            + self._obs_bits_for_requests * self.request_queue_size
         )
 
         # default values:
@@ -289,14 +288,6 @@ class Warehouse(gym.Env):
                                                 [2]
                                             ),
                                         })
-                                    ),
-                                )
-                            ),
-                            "requests": spaces.Tuple(
-                                self.request_queue_size
-                                * (
-                                    spaces.MultiDiscrete(
-                                        [self.grid_size[1], self.grid_size[0]]
                                     ),
                                 )
                             ),
@@ -399,9 +390,6 @@ class Warehouse(gym.Env):
                 else:
                     obs.write([1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)])
 
-            for shelf in self.request_queue:
-                obs.write([shelf.x, shelf.y])
-
             return obs.vector
 
         # --- self data
@@ -437,8 +425,6 @@ class Warehouse(gym.Env):
                     int(self.shelfs[id_ - 1] in self.request_queue)
                 ]
 
-        # --- writing requests:
-        obs["requests"] = tuple([shelf.x, shelf.y] for shelf in self.request_queue)
         return obs
 
     def _recalc_grid(self):
