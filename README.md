@@ -14,7 +14,7 @@ To use in Python, import it and use it as a gym environment:
 import robotic_warehouse
 import gym
 
-env = gym.make("rware-tiny-2ag-v0")
+env = gym.make("rware-tiny-2ag-v1")
 n_obs = env.reset()
 n_obs, n_reward, n_done, info = env.step(n_action)
 ```
