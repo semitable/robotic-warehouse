@@ -22,6 +22,7 @@ _COLLISION_LAYERS = 2
 _LAYER_AGENTS = 0
 _LAYER_SHELFS = 1
 
+
 class _VectorWriter:
     def __init__(self, size: int):
         self.vector = np.zeros(size)
@@ -34,6 +35,7 @@ class _VectorWriter:
 
     def skip(self, bits):
         self.idx += bits
+
 
 class Action(Enum):
     NOOP = 0
@@ -139,7 +141,6 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
-
         fast_obs=True,
     ):
         """The robotic warehouse environment
@@ -245,7 +246,7 @@ class Warehouse(gym.Env):
         )
 
         # default values:
-        self.fast_obs = None 
+        self.fast_obs = None
         self.observation_space = None
         self._use_slow_obs()
 
@@ -262,36 +263,46 @@ class Warehouse(gym.Env):
             tuple(
                 [
                     spaces.Dict(
-                        OrderedDict({
-                            "self": spaces.Dict(
-                                OrderedDict({
-                                    "location": spaces.MultiDiscrete(
-                                        [self.grid_size[1], self.grid_size[0]]
-                                    ),
-                                    "carrying_shelf": spaces.MultiDiscrete([2]),
-                                    "direction": spaces.Discrete(4),
-                                    "on_highway": spaces.MultiDiscrete([2]),
-                                })
-                            ),
-                            "sensors": spaces.Tuple(
-                                self._obs_sensor_locations
-                                * (
-                                    spaces.Dict(
-                                        OrderedDict({
-                                            "has_agent": spaces.MultiDiscrete([2]),
+                        OrderedDict(
+                            {
+                                "self": spaces.Dict(
+                                    OrderedDict(
+                                        {
+                                            "location": spaces.MultiDiscrete(
+                                                [self.grid_size[1], self.grid_size[0]]
+                                            ),
+                                            "carrying_shelf": spaces.MultiDiscrete([2]),
                                             "direction": spaces.Discrete(4),
-                                            "local_message": spaces.MultiBinary(
-                                                self.msg_bits
-                                            ),
-                                            "has_shelf": spaces.MultiDiscrete([2]),
-                                            "shelf_requested": spaces.MultiDiscrete(
-                                                [2]
-                                            ),
-                                        })
-                                    ),
-                                )
-                            ),
-                        })
+                                            "on_highway": spaces.MultiDiscrete([2]),
+                                        }
+                                    )
+                                ),
+                                "sensors": spaces.Tuple(
+                                    self._obs_sensor_locations
+                                    * (
+                                        spaces.Dict(
+                                            OrderedDict(
+                                                {
+                                                    "has_agent": spaces.MultiDiscrete(
+                                                        [2]
+                                                    ),
+                                                    "direction": spaces.Discrete(4),
+                                                    "local_message": spaces.MultiBinary(
+                                                        self.msg_bits
+                                                    ),
+                                                    "has_shelf": spaces.MultiDiscrete(
+                                                        [2]
+                                                    ),
+                                                    "shelf_requested": spaces.MultiDiscrete(
+                                                        [2]
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                    )
+                                ),
+                            }
+                        )
                     )
                     for _ in range(self.n_agents)
                 ]
@@ -363,9 +374,8 @@ class Warehouse(gym.Env):
         agents = padded_agents[min_y:max_y, min_x:max_x].reshape(-1)
         shelfs = padded_shelfs[min_y:max_y, min_x:max_x].reshape(-1)
 
-
         if self.fast_obs:
-            obs = _VectorWriter(self.observation_space[agent.id-1].shape[0])
+            obs = _VectorWriter(self.observation_space[agent.id - 1].shape[0])
 
             obs.write([agent.x, agent.y, int(agent.carrying_shelf is not None)])
             direction = np.zeros(4)
@@ -388,7 +398,9 @@ class Warehouse(gym.Env):
                 if id_shelf == 0:
                     obs.skip(2)
                 else:
-                    obs.write([1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)])
+                    obs.write(
+                        [1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)]
+                    )
 
             return obs.vector
 
@@ -474,7 +486,7 @@ class Warehouse(gym.Env):
             np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
         )
 
-        return [self._make_obs(agent) for agent in self.agents]
+        return tuple([self._make_obs(agent) for agent in self.agents])
         # for s in self.shelfs:
         #     self.grid[0, s.y, s.x] = 1
         # print(self.grid[0])
@@ -620,16 +632,16 @@ class Warehouse(gym.Env):
         else:
             dones = self.n_agents * [False]
 
-        new_obs = [self._make_obs(agent) for agent in self.agents]
+        new_obs = tuple([self._make_obs(agent) for agent in self.agents])
         info = {}
-        return new_obs, rewards, dones, info
+        return new_obs, list(rewards), dones, info
 
     def render(self, mode="human"):
         if not self.renderer:
             from robotic_warehouse.rendering import Viewer
 
             self.renderer = Viewer(self.grid_size)
-        return self.renderer.render(self, return_rgb_array = mode=='rgb_array')
+        return self.renderer.render(self, return_rgb_array=mode == "rgb_array")
 
     def close(self):
         if self.renderer:
