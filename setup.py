@@ -20,7 +20,7 @@ setup(
         "numpy",
         "gym>=0.15",
         "ray[rllib]==0.8.0",
-        "tensorflow==1.15.0",
+        "tensorflow==1.15.2",
         "pyglet",
         "setproctitle",
         "requests",
