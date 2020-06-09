@@ -19,12 +19,7 @@ setup(
     install_requires=[
         "numpy",
         "gym>=0.15",
-        "ray[rllib]==0.8.0",
-        "tensorflow==1.15.0",
         "pyglet",
-        "setproctitle",
-        "requests",
-        "psutil",
         "networkx",
     ],
     extras_require={"test": ["pytest"]},
