@@ -25,7 +25,7 @@ _LAYER_SHELFS = 1
 
 class _VectorWriter:
     def __init__(self, size: int):
-        self.vector = np.zeros(size)
+        self.vector = np.zeros(size, dtype=np.float32)
         self.idx = 0
 
     def write(self, data):
