@@ -10,6 +10,7 @@ import sys
 import numpy as np
 import math
 import six
+import colorsys
 from gym import error
 from robotic_warehouse.warehouse import Direction
 
@@ -50,6 +51,7 @@ _BLACK = (0, 0, 0)
 _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
+_BLUE = (0, 0, 255)
 _ORANGE = (255, 165, 0)
 _DARKORANGE = (255, 140, 0)
 _DARKSLATEBLUE = (72, 61, 139)
@@ -65,6 +67,21 @@ _AGENT_DIR_COLOR = _BLACK
 _GOAL_COLOR = (60, 60, 60)
 
 _SHELF_PADDING = 2
+
+_ENTITY_COLORS = [
+    _RED,
+    _GREEN,
+    _BLUE,
+    _ORANGE,
+    _TEAL,
+]
+
+
+def adjust_lightness(color, amount=0.5):
+    color = colorsys.rgb_to_hls(*[c / 255. for c in color])
+    color = colorsys.hls_to_rgb(color[0], max(0, min(1, amount * color[1])), color[2])
+    color = [int(c*255) for c in color]
+    return color
 
 
 def get_display(spec):
@@ -183,9 +200,16 @@ class Viewer(object):
         for shelf in env.shelfs:
             x, y = shelf.x, shelf.y
             y = self.rows - y - 1  # pyglet rendering is reversed
-            shelf_color = (
-                _SHELF_REQ_COLOR if shelf in env.request_queue else _SHELF_COLOR
-            )
+            
+            shelf_color = _ENTITY_COLORS[shelf.color]
+            if shelf not in env.request_queue:
+                shelf_color = adjust_lightness(shelf_color, 0.3)
+            else:
+                shelf_color = adjust_lightness(shelf_color, 0.7)
+            # shelf_color = (
+            #     _SHELF_REQ_COLOR if shelf in env.request_queue else _SHELF_COLOR
+            # )
+
 
             batch.add(
                 4,
@@ -267,7 +291,9 @@ class Viewer(object):
                 verts += [x, y]
             circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
 
-            draw_color = _AGENT_LOADED_COLOR if agent.carrying_shelf else _AGENT_COLOR
+            draw_color = _ENTITY_COLORS[agent.color]
+            if not agent.carrying_shelf:
+                draw_color = adjust_lightness(draw_color, 0.8)
 
             glColor3ub(*draw_color)
             circle.draw(GL_POLYGON)

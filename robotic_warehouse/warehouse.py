@@ -59,20 +59,21 @@ class RewardType(Enum):
 
 
 class Entity:
-    def __init__(self, id_: int, x: int, y: int):
+    def __init__(self, id_: int, x: int, y: int, color: int):
         self.id = id_
         self.prev_x = None
         self.prev_y = None
         self.x = x
         self.y = y
 
+        self.color = color
 
 class Agent(Entity):
     counter = 0
 
-    def __init__(self, x: int, y: int, dir_: Direction, msg_bits: int):
+    def __init__(self, x: int, y: int, color: int, dir_: Direction, msg_bits: int):
         Agent.counter += 1
-        super().__init__(Agent.counter, x, y)
+        super().__init__(Agent.counter, x, y, color)
         self.dir = dir_
         self.message = np.zeros(msg_bits)
         self.req_action: Optional[Action] = None
@@ -116,9 +117,9 @@ class Agent(Entity):
 class Shelf(Entity):
     counter = 0
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, color):
         Shelf.counter += 1
-        super().__init__(Shelf.counter, x, y)
+        super().__init__(Shelf.counter, x, y, color)
 
     @property
     def collision_layers(self):
@@ -245,6 +246,10 @@ class Warehouse(gym.Env):
             + self._obs_sensor_locations * self._obs_bits_per_shelf
         )
 
+        self.color_classes = 2
+        # self.agent_colors = np.random.randint(0, self.color_classes, self.n_agents)
+        self.agent_colors = [0, 1]
+
         # default values:
         self.fast_obs = None
         self.observation_space = None
@@ -286,12 +291,12 @@ class Warehouse(gym.Env):
                                                     "has_agent": spaces.MultiDiscrete(
                                                         [2]
                                                     ),
-                                                    "direction": spaces.Discrete(4),
+                                                    # "direction": spaces.Discrete(4),
                                                     "local_message": spaces.MultiBinary(
                                                         self.msg_bits
                                                     ),
-                                                    "has_shelf": spaces.MultiDiscrete(
-                                                        [2]
+                                                    "has_shelf": spaces.MultiBinary(
+                                                        self.color_classes
                                                     ),
                                                     "shelf_requested": spaces.MultiDiscrete(
                                                         [2]
@@ -386,20 +391,21 @@ class Warehouse(gym.Env):
             for i, (id_agent, id_shelf) in enumerate(zip(agents, shelfs)):
                 if id_agent == 0:
                     obs.skip(1)
-                    obs.write([1.0])
-                    obs.skip(3 + self.msg_bits)
+                    # obs.write([1.0])
+                    obs.skip(self.msg_bits)
                 else:
                     obs.write([1.0])
-                    direction = np.zeros(4)
-                    direction[self.agents[id_agent - 1].dir.value] = 1.0
-                    obs.write(direction)
+                    # direction = np.zeros(4)
+                    # direction[self.agents[id_agent - 1].dir.value] = 1.0
+                    # obs.write(direction)
                     if self.msg_bits > 0:
                         obs.write(self.agents[id_agent - 1].message)
                 if id_shelf == 0:
-                    obs.skip(2)
+                    obs.skip(1 + self.color_classes)
                 else:
+                    obs.write([c == self.shelfs[id_shelf - 1].color for c in range(self.color_classes)])
                     obs.write(
-                        [1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)]
+                        [self.shelfs[id_shelf - 1] in self.request_queue]
                     )
 
             return obs.vector
@@ -458,7 +464,7 @@ class Warehouse(gym.Env):
 
         # make the shelfs
         self.shelfs = [
-            Shelf(x, y)
+            Shelf(x, y, np.random.choice(self.color_classes))
             for y, x in zip(
                 np.indices(self.grid_size)[0].reshape(-1),
                 np.indices(self.grid_size)[1].reshape(-1),
@@ -476,8 +482,8 @@ class Warehouse(gym.Env):
         # and direction
         agent_dirs = np.random.choice([d for d in Direction], size=self.n_agents)
         self.agents = [
-            Agent(x, y, dir_, self.msg_bits)
-            for y, x, dir_ in zip(*agent_locs, agent_dirs)
+            Agent(x, y, color, dir_, self.msg_bits)
+            for y, x, dir_, color in zip(*agent_locs, agent_dirs, self.agent_colors)
         ]
 
         self._recalc_grid()
@@ -594,11 +600,16 @@ class Warehouse(gym.Env):
         shelf_delivered = False
         for x, y in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, y, x]
+            agent_id = self.grid[_LAYER_AGENTS, y, x]
             if not shelf_id:
                 continue
             shelf = self.shelfs[shelf_id - 1]
 
             if shelf not in self.request_queue:
+                continue
+
+            agent = self.agents[agent_id - 1]
+            if shelf.color != agent.color:
                 continue
             # a shelf was successfully delived.
             shelf_delivered = True
@@ -611,10 +622,8 @@ class Warehouse(gym.Env):
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
                 rewards[agent_id - 1] += 1
             elif self.reward_type == RewardType.TWO_STAGE:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
                 self.agents[agent_id - 1].has_delivered = True
                 rewards[agent_id - 1] += 0.5
 
@@ -662,7 +671,7 @@ if __name__ == "__main__":
     # env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
 
     for _ in tqdm(range(1000000)):
-        # time.sleep(2)
-        # env.render()
+        time.sleep(0.01)
+        env.render()
         actions = env.action_space.sample()
         env.step(actions)
