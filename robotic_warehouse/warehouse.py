@@ -248,7 +248,8 @@ class Warehouse(gym.Env):
 
         self.color_classes = 2
         # self.agent_colors = np.random.randint(0, self.color_classes, self.n_agents)
-        self.agent_colors = [0, 1]
+        # self.agent_colors = [0, 1]
+        self.agent_colors = [0, 0, 1, 1]
 
         # default values:
         self.fast_obs = None

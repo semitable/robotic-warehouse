@@ -16,7 +16,7 @@ _perms = itertools.product(_sizes.keys(), _difficulty, range(1, 20),)
 for size, diff, agents in _perms:
     # normal tasks
     gym.register(
-        id=f"rware-{size}-{agents}ag{diff}-v1",
+        id=f"rware-color-{size}-{agents}ag{diff}-v1",
         entry_point="robotic_warehouse.warehouse:Warehouse",
         kwargs={
             "column_height": 8,
