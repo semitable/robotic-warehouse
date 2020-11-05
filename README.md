@@ -36,7 +36,6 @@ where `n_*` is a list of length `len(agents)`
   title={Shared Experience Actor-Critic for Multi-Agent Reinforcement Learning},
   author={Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V},
   booktitle = {Advances in Neural Information Processing Systems},
-  journal={arXiv preprint arXiv:2006.07169},
   year={2020}
 }
 ```
