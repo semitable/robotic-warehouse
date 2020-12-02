@@ -142,6 +142,7 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
+        colors: int,
         fast_obs=True,
     ):
         """The robotic warehouse environment
@@ -246,10 +247,11 @@ class Warehouse(gym.Env):
             + self._obs_sensor_locations * self._obs_bits_per_shelf
         )
 
-        self.color_classes = 2
+        self.color_classes = colors
         # self.agent_colors = np.random.randint(0, self.color_classes, self.n_agents)
         # self.agent_colors = [0, 1]
-        self.agent_colors = [0, 0, 1, 1]
+        # self.agent_colors = (n_agents//2 + n_agents%2) * [0] + n_agents//2 * [1]
+        self.agent_colors = np.concatenate([(n_agents // colors + (n_agents % colors)*(i == 0)) * [i] for i in range(colors)])[:n_agents]
 
         # default values:
         self.fast_obs = None
@@ -260,6 +262,9 @@ class Warehouse(gym.Env):
         # can flatten the obs vector
         if fast_obs:
             self._use_fast_obs()
+
+        self.color_obs_permutations = [np.random.permutation(self.observation_space[0].shape[0]) for _ in range(self.color_classes)]
+        
 
         self.renderer = None
 
@@ -408,7 +413,8 @@ class Warehouse(gym.Env):
                     obs.write(
                         [self.shelfs[id_shelf - 1] in self.request_queue]
                     )
-
+            # shuffle obs depending on color
+            # return obs.vector[self.color_obs_permutations[agent.color]]
             return obs.vector
 
         # --- self data
@@ -508,7 +514,8 @@ class Warehouse(gym.Env):
                 agent.req_action = Action(action[0])
                 agent.message[:] = action[1:]
             else:
-                agent.req_action = Action(action)
+                caction = np.roll(np.arange(len(Action)), agent.color)[action]
+                agent.req_action = Action(caction)
 
         # # stationary agents will certainly stay where they are
         # stationary_agents = [agent for agent in self.agents if agent.action != Action.FORWARD]

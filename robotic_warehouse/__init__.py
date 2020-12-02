@@ -11,12 +11,12 @@ _sizes = {
 
 _difficulty = {"-easy": 2, "": 1, "-hard": 0.5}
 
-_perms = itertools.product(_sizes.keys(), _difficulty, range(1, 20),)
+_perms = itertools.product(_sizes.keys(), _difficulty, range(1, 20), range(1, 5))
 
-for size, diff, agents in _perms:
+for size, diff, agents, colors in _perms:
     # normal tasks
     gym.register(
-        id=f"rware-color-{size}-{agents}ag{diff}-v1",
+        id=f"rware-{colors}color-{size}-{agents}ag{diff}-v1",
         entry_point="robotic_warehouse.warehouse:Warehouse",
         kwargs={
             "column_height": 8,
@@ -29,6 +29,7 @@ for size, diff, agents in _perms:
             "max_inactivity_steps": None,
             "max_steps": 500,
             "reward_type": RewardType.INDIVIDUAL,
+            "colors": colors,
         },
     )
 
