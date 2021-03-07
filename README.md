@@ -14,12 +14,18 @@ If you use this environment, consider citing
 ```
 2. A method that achieves state-of-the-art performance in the robotic warehouse task
 ```
-@article{christianos2020shared,
-  title={Shared Experience Actor-Critic for Multi-Agent Reinforcement Learning},
-  author={Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V},
-  journal={arXiv preprint arXiv:2006.07169},
-  year={2020}
+@inproceedings{christianos2020shared,
+ author = {Christianos, Filippos and Sch\"{a}fer, Lukas and Albrecht, Stefano},
+ booktitle = {Advances in Neural Information Processing Systems},
+ editor = {H. Larochelle and M. Ranzato and R. Hadsell and M. F. Balcan and H. Lin},
+ pages = {10707--10717},
+ publisher = {Curran Associates, Inc.},
+ title = {Shared Experience Actor-Critic for Multi-Agent Reinforcement Learning},
+ url = {https://proceedings.neurips.cc/paper/2020/file/7967cc8e3ab559e68cc944c44b1cf3e8-Paper.pdf},
+ volume = {33},
+ year = {2020}
 }
+
 ```
 
 # Installation:
