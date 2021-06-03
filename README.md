@@ -29,6 +29,7 @@ If you use this environment, consider citing
 ```
 
 # Installation:
+
 ```sh
 git clone https://github.com/semitable/robotic-warehouse.git
 cd robotic-warehouse
@@ -46,4 +47,3 @@ n_obs = env.reset()
 n_obs, n_reward, n_done, info = env.step(n_action)
 ```
 where `n_*` is a list of length `len(agents)`
-
