@@ -3,6 +3,8 @@
  <p align="center">A multi-agent reinforcement learning environment</p>
 </p>
 
+**WARNING**: This is a **fork** meant as an archive of the code used in our publications. Development is still active in the [original repository](https://github.com/semitable/robotic-warehouse). Please redirect any issues, PRs, or questions there.
+
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Naereen/StrapDown.js/blob/master/LICENSE)
 
