@@ -1,9 +1,17 @@
+import pathlib
 from setuptools import setup, find_packages
+# The directory containing this file
+HERE = pathlib.Path(__file__).parent
+
+# The text of the README file
+README = (HERE / "README.md").read_text()
 
 setup(
     name="rware",
-    version="1.0.0",
+    version="1.0.1",
     description="Multi-Robot Warehouse environment for reinforcement learning",
+    long_description=README,
+    long_description_content_type="text/markdown",
     author="Filippos Christianos",
     url="https://github.com/semitable/robotic-warehouse",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
