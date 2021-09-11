@@ -83,7 +83,13 @@ env = gym.make("rware-tiny-2ag-v1", sensor_range=3, request_queue_size=6)
 A detailed explanation of all parameters can be found [here](https://github.com/semitable/robotic-warehouse/blob/4307b1fe3afa26de4ca4003fd04ab1319879832a/robotic_warehouse/warehouse.py#L132)
 
 # Installation
-Assuming you have Git and Python3 (preferably on a virtual environment: venv or Anaconda) installed, you can download and install it using
+
+Assuming you have Python3 (preferably on a virtual environment: venv or Anaconda) installed, you can use PyPI:
+```sh
+pip install rware
+```
+
+If you prefer to have the code available and be able to edit it, you can use Git to download and install it:
 ```sh
 git clone git@github.com:uoe-agents/robotic-warehouse.git
 cd robotic-warehouse
@@ -98,9 +104,16 @@ Creating the environment is done exactly as one would create a Gym environment:
 
 ```python
 import gym
-import robootic_warehouse
+import rware
 env = gym.make("rware-tiny-2ag-v1")
 ```
+
+You can even bypass the `import` statement with Gym, and directly use:
+```python
+import gym
+env = gym.make("rware:rware-tiny-2ag-v1")
+```
+The `rware:` in the beginning of the environment name tells Gym to import the respective package.
 
 The number of agents, the observation space, and the action space are accessed using:
 ```python
