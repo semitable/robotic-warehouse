@@ -1,0 +1,25 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Christianos"
+  given-names: "Filippos"
+title: "Multi-Robot Warehouse (RWARE)"
+version: 1.0.2
+date-released: 2020-09-11
+url: "https://github.com/semitable/robotic-warehouse"
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: "Filippos"
+    given-names: "Christianos"
+  - family-names: "Schäfer"
+    given-names: "Lukas"
+  - family-names: "Albrecht"
+    given-names: "Stefano"
+  journal: "34th Conference on Neural Information Processing Systems"
+  start: 10707 # First page number
+  end: 10717 # Last page number
+  title: "Shared Experience Actor-Critic for Multi-Agent Reinforcement Learning"
+  volume: 33
+  year: 2020
+  url: "https://arxiv.org/abs/2006.07169"
