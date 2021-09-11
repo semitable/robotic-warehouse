@@ -4,7 +4,7 @@ from collections import defaultdict, OrderedDict
 import gym
 from gym import spaces
 
-from robotic_warehouse.utils import MultiAgentActionSpace, MultiAgentObservationSpace
+from rware.utils import MultiAgentActionSpace, MultiAgentObservationSpace
 
 from enum import Enum
 import numpy as np
