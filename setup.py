@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="robotic_warehouse",
-    version="0.0.1",
-    description="Robotic Warehouse Environment for RL",
+    name="rware",
+    version="1.0.0",
+    description="Multi-Robot Warehouse environment for reinforcement learning",
     author="Filippos Christianos",
     url="https://github.com/semitable/robotic-warehouse",
     packages=find_packages(exclude=["contrib", "docs", "tests"]),
