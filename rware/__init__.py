@@ -17,7 +17,7 @@ for size, diff, agents in _perms:
     # normal tasks
     gym.register(
         id=f"rware-{size}-{agents}ag{diff}-v1",
-        entry_point="robotic_warehouse.warehouse:Warehouse",
+        entry_point="rware.warehouse:Warehouse",
         kwargs={
             "column_height": 8,
             "shelf_rows": _sizes[size][0],
@@ -50,7 +50,7 @@ def full_registration():
     for rows, cols, agents, req, rew in _perms:
         gym.register(
             id=f"rware-{rows}x{cols}-{agents}ag-{req}req-{rew}-v0",
-            entry_point="robotic_warehouse.warehouse:Warehouse",
+            entry_point="rware.warehouse:Warehouse",
             kwargs={
                 "column_height": 8,
                 "shelf_rows": rows,
