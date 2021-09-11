@@ -44,9 +44,9 @@ The dynamics of the environment are also of particular interest. Like a real, 3-
 
 Any collisions are resolved in a way that allows for maximum mobility. When two or more agents attempt to move to the same location, we prioritise the one that also blocks others. Otherwise, the selection is done arbitrarily. The visuals below demonstrate the resolution of various collisions.
 
-![rware collision1](https://agents.inf.ed.ac.uk/blog/new-environments-algorithm-multiagent-rl/img/collision1.gif)
-![rware collision2](https://agents.inf.ed.ac.uk/blog/new-environments-algorithm-multiagent-rl/img/collision2.gif)
-![rware collision3](https://agents.inf.ed.ac.uk/blog/new-environments-algorithm-multiagent-rl/img/collision3.gif)
+ Example 1                 |   Example 2               | Example 3
+:-------------------------:|:-------------------------:|:-------------------------:
+![](docs/img/collision1.gif)  |  ![](docs/img/collision2.gif)  |  ![](docs/img/collision3.gif)
 
 ## Rewards
 At each time a set number of shelves R is requested. When a requested shelf is brought to a goal location, another shelf is uniformly sampled and added to the current requests. Agents are rewarded for successfully delivering a requested shelf to a goal location, with a reward of 1. A significant challenge in these environments is for agents to deliver requested shelves but also finding an empty location to return the previously delivered shelf. Having multiple steps between deliveries leads a very sparse reward signal.
