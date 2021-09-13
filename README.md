@@ -17,12 +17,12 @@
   - [Naming Scheme](#naming-scheme)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Consider Citing](#consider-citing)
+- [Please Cite](#please-cite)
 
 
 # Environment Description
 
-The multi-robot warehouse (RWARE) environment simulates a warehouse with robots moving and delivering requested goods. We based the simulator on real-world applications, in which robots pick-up shelves and deliver them to a workstation. Humans access the content of a shelf, and then robots can return them to empty shelf locations. The image on the right helps visualise how the robots might look like in real-life.
+The multi-robot warehouse (RWARE) environment simulates a warehouse with robots moving and delivering requested goods. The simulator is inspired by real-world applications, in which robots pick-up shelves and deliver them to a workstation. Humans access the content of a shelf, and then robots can return them to empty shelf locations.
 
 The environment is configurable: it allows for different sizes (difficulty), number of agents, communication capabilities, and reward settings (cooperative/individual). Of course, the parameters used in each experiment must be clearly reported to allow for fair comparisons between algorithms.
 
@@ -148,7 +148,7 @@ env.close()
 ```
 
 
-# Consider Citing
+# Please Cite
 If you use this environment, consider citing
 1. A comperative evaluation of MARL algorithms that includes this environment
 ```
