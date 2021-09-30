@@ -9,6 +9,7 @@
 <h1>Table of Contents</h1>
 
 - [Environment Description](#environment-description)
+  - [What does it look like?](#what-does-it-look-like)
   - [Action Space](#action-space)
   - [Observation Space](#observation-space)
   - [Dynamics: Collisions](#dynamics-collisions)
@@ -25,6 +26,15 @@
 The multi-robot warehouse (RWARE) environment simulates a warehouse with robots moving and delivering requested goods. The simulator is inspired by real-world applications, in which robots pick-up shelves and deliver them to a workstation. Humans access the content of a shelf, and then robots can return them to empty shelf locations.
 
 The environment is configurable: it allows for different sizes (difficulty), number of agents, communication capabilities, and reward settings (cooperative/individual). Of course, the parameters used in each experiment must be clearly reported to allow for fair comparisons between algorithms.
+
+## What does it look like?
+
+Below is an illustration of a small (10x20) warehouse with four trained agents. Agents have been trained with the SEAC algorithm [[2](#please-cite)]. This visualisation can be achieved using the `env.render()` function as described later.
+
+<p align="center">
+ <img width="450px" src="docs/img/rware.gif" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
+</p>
+
 
 ## Action Space
 In this simulation, robots have the following discrete action space:
