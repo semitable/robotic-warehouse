@@ -335,7 +335,7 @@ class Warehouse(gym.Env):
             or (y % (self.column_height + 1) == 0)  # horizontal highways
             or (y == self.grid_size[0] - 1)  # delivery row
             or (  # remove a box for queuing
-                (y > self.grid_size[0] - 11)
+                (y > self.grid_size[0] - (self.column_height + 3))
                 and ((x == self.grid_size[1] // 2 - 1) or (x == self.grid_size[1] // 2))
             )
         )
