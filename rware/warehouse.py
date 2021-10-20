@@ -204,6 +204,7 @@ class Warehouse(gym.Env):
 
         self.n_agents = n_agents
         self.msg_bits = msg_bits
+        self.column_height = column_height
         self.sensor_range = sensor_range
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
@@ -331,7 +332,7 @@ class Warehouse(gym.Env):
     def _is_highway(self, x: int, y: int) -> bool:
         return (
             (x % 3 == 0)  # vertical highways
-            or (y % 9 == 0)  # horizontal highways
+            or (y % (self.column_height + 1) == 0)  # horizontal highways
             or (y == self.grid_size[0] - 1)  # delivery row
             or (  # remove a box for queuing
                 (y > self.grid_size[0] - 11)
