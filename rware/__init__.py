@@ -32,28 +32,27 @@ for size, diff, agents in _perms:
         },
     )
 
-_perms = itertools.product(_sizes.keys(), _difficulty, range(1, 20), range(2, 11),)
-for size, diff, agents, column_height in _perms:
-    # normal tasks with modified column height
-    gym.register(
-        id=f"rware-{size}-{column_height}h-{agents}ag{diff}-v1",
-        entry_point="rware.warehouse:Warehouse",
-        kwargs={
-            "column_height": column_height,
-            "shelf_rows": _sizes[size][0],
-            "shelf_columns": _sizes[size][1],
-            "n_agents": agents,
-            "msg_bits": 0,
-            "sensor_range": 1,
-            "request_queue_size": int(agents * _difficulty[diff]),
-            "max_inactivity_steps": None,
-            "max_steps": 500,
-            "reward_type": RewardType.INDIVIDUAL,
-        },
-    )
-
-
 def full_registration():
+    _perms = itertools.product(_sizes.keys(), _difficulty, range(1, 20), range(2, 11),)
+    for size, diff, agents, column_height in _perms:
+        # normal tasks with modified column height
+        gym.register(
+            id=f"rware-{size}-{column_height}h-{agents}ag{diff}-v1",
+            entry_point="rware.warehouse:Warehouse",
+            kwargs={
+                "column_height": column_height,
+                "shelf_rows": _sizes[size][0],
+                "shelf_columns": _sizes[size][1],
+                "n_agents": agents,
+                "msg_bits": 0,
+                "sensor_range": 1,
+                "request_queue_size": int(agents * _difficulty[diff]),
+                "max_inactivity_steps": None,
+                "max_steps": 500,
+                "reward_type": RewardType.INDIVIDUAL,
+            },
+        )
+
     _perms = itertools.product(
         range(1, 5),
         range(3, 10, 2),
