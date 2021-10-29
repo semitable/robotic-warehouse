@@ -9,7 +9,7 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
 sys.path.insert(0, PROJECT_DIR)
 
-from rware.warehouse import Warehouse, Direction, Action, RewardType
+from rware.warehouse import ObserationType, Warehouse, Direction, Action, RewardType
 
 
 @pytest.fixture
@@ -151,7 +151,7 @@ def test_obs_space_0():
         max_inactivity_steps=None,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
-        fast_obs=False,
+        observation_type=ObserationType.DICT,
     )
     obs = env.reset()
     assert env.observation_space[0]["self"].contains(obs[0]["self"])
@@ -263,7 +263,7 @@ def test_inactivity_2(env_0):
 
 
 def test_fast_obs_0():
-    env = Warehouse(3, 8, 3, 2, 0, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env = Warehouse(3, 8, 3, 2, 0, 1, 5, 10, None, RewardType.GLOBAL, observation_type=ObserationType.DICT)
     env.reset()
 
     slow_obs_space = env.observation_space
@@ -285,7 +285,7 @@ def test_fast_obs_0():
         env.step(env.action_space.sample())
         
 def test_fast_obs_1():
-    env = Warehouse(3, 8, 3, 3, 0, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env = Warehouse(3, 8, 3, 3, 0, 1, 5, 10, None, RewardType.GLOBAL, observation_type=ObserationType.DICT)
     env.reset()
 
     slow_obs_space = env.observation_space
@@ -307,7 +307,7 @@ def test_fast_obs_1():
         env.step(env.action_space.sample())
         
 def test_fast_obs_2():
-    env = Warehouse(3, 8, 3, 3, 2, 1, 5, 10, None, RewardType.GLOBAL, fast_obs=False)
+    env = Warehouse(3, 8, 3, 3, 2, 1, 5, 10, None, RewardType.GLOBAL, observation_type=ObserationType.DICT)
     env.reset()
 
     slow_obs_space = env.observation_space
