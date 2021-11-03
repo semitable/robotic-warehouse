@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from robotic_warehouse import Action
+from rware import Action
 from gym import spaces
 from gym import ObservationWrapper
 

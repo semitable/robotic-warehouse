@@ -7,8 +7,8 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
 sys.path.insert(0, PROJECT_DIR)
 
-from robotic_warehouse.warehouse import Warehouse, Direction, Action, RewardType
-from robotic_warehouse.utils.wrappers import FlattenAgents, DictAgents
+from rware.warehouse import Warehouse, Direction, Action, RewardType
+from rware.utils.wrappers import FlattenAgents, DictAgents
 
 
 @pytest.fixture
