@@ -280,12 +280,19 @@ class Warehouse(gym.Env):
                                 "self": spaces.Dict(
                                     OrderedDict(
                                         {
-                                            "location": spaces.MultiDiscrete(
-                                                [self.grid_size[1], self.grid_size[0]]
+                                            "location": spaces.Box(
+                                                low=0,
+                                                high=np.array(
+                                                    [
+                                                        self.grid_size[1],
+                                                        self.grid_size[0],
+                                                    ]
+                                                ),
+                                                dtype=int,
                                             ),
-                                            "carrying_shelf": spaces.MultiDiscrete([2]),
+                                            "carrying_shelf": spaces.MultiBinary(1),
                                             "direction": spaces.Discrete(4),
-                                            "on_highway": spaces.MultiDiscrete([2]),
+                                            "on_highway": spaces.MultiBinary(1),
                                         }
                                     )
                                 ),
@@ -302,12 +309,8 @@ class Warehouse(gym.Env):
                                                     "local_message": spaces.MultiBinary(
                                                         self.msg_bits
                                                     ),
-                                                    "has_shelf": spaces.MultiBinary(
-                                                        self.color_classes
-                                                    ),
-                                                    "shelf_requested": spaces.MultiDiscrete(
-                                                        [2]
-                                                    ),
+                                                    "has_shelf": spaces.MultiBinary(self.color_classes),
+                                                    "shelf_requested": spaces.MultiBinary(1),
                                                 }
                                             )
                                         ),
@@ -415,8 +418,7 @@ class Warehouse(gym.Env):
                         [self.shelfs[id_shelf - 1] in self.request_queue]
                     )
             # shuffle obs depending on color
-            # return obs.vector[self.color_obs_permutations[agent.color]]
-            return obs.vector
+            return obs.vector[self.color_obs_permutations[agent.color]]
 
         # --- self data
         obs = {}
