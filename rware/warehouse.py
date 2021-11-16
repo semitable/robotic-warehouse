@@ -269,12 +269,19 @@ class Warehouse(gym.Env):
                                 "self": spaces.Dict(
                                     OrderedDict(
                                         {
-                                            "location": spaces.MultiDiscrete(
-                                                [self.grid_size[1], self.grid_size[0]]
+                                            "location": spaces.Box(
+                                                low=0,
+                                                high=np.array(
+                                                    [
+                                                        self.grid_size[1],
+                                                        self.grid_size[0],
+                                                    ]
+                                                ),
+                                                dtype=int,
                                             ),
-                                            "carrying_shelf": spaces.MultiDiscrete([2]),
+                                            "carrying_shelf": spaces.MultiBinary(1),
                                             "direction": spaces.Discrete(4),
-                                            "on_highway": spaces.MultiDiscrete([2]),
+                                            "on_highway": spaces.MultiBinary(1),
                                         }
                                     )
                                 ),
@@ -284,18 +291,14 @@ class Warehouse(gym.Env):
                                         spaces.Dict(
                                             OrderedDict(
                                                 {
-                                                    "has_agent": spaces.MultiDiscrete(
-                                                        [2]
-                                                    ),
+                                                    "has_agent": spaces.MultiBinary(1),
                                                     "direction": spaces.Discrete(4),
                                                     "local_message": spaces.MultiBinary(
                                                         self.msg_bits
                                                     ),
-                                                    "has_shelf": spaces.MultiDiscrete(
-                                                        [2]
-                                                    ),
-                                                    "shelf_requested": spaces.MultiDiscrete(
-                                                        [2]
+                                                    "has_shelf": spaces.MultiBinary(1),
+                                                    "shelf_requested": spaces.MultiBinary(
+                                                        1
                                                     ),
                                                 }
                                             )
