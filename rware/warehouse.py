@@ -807,10 +807,10 @@ class Warehouse(gym.Env):
 
         This function initially positions agents randomly in the warehouse and assumes
         full observability with agents directly moving to closest possible shelf to deliver
-        or closest "open space" to return. Directions are ignored and required steps for movement
+        or closest "open space" to return. Required steps for movement (including rotations)
         are computed using A* only moving on highways if shelves are loaded. This serves as a
-        crude approximation. Observability and ignoring of directions significantly simplify the
-        problem.
+        crude approximation. Observability with agents directly moving towards requested shelves/
+        goals without search significantly simplifies the problem.
         """
         # if already computed --> return computed value
         if hasattr(self, 'calculated_optimal_returns'):
@@ -821,27 +821,48 @@ class Warehouse(gym.Env):
         
         def neighbore_locations(state):
             # given location get neighbours
-            neighbours = []
-            x, y, loaded, empty_shelf_loc = state
-            if x + 1 < self.grid_size[1]:
-                if not loaded or (self._is_highway(x + 1, y) or (x + 1, y) == empty_shelf_loc):
-                    neighbours.append((x + 1, y, loaded, empty_shelf_loc))
-            if x - 1 >= 0:
-                if not loaded or (self._is_highway(x - 1, y) or (x - 1, y) == empty_shelf_loc):
-                    neighbours.append((x - 1, y, loaded, empty_shelf_loc))
-            if y + 1 < self.grid_size[0]:
-                if not loaded or (self._is_highway(x, y + 1) or (x, y + 1) == empty_shelf_loc):
-                    neighbours.append((x, y + 1, loaded, empty_shelf_loc))
-            if y - 1 >= 0:
-                if not loaded or (self._is_highway(x, y - 1) or (x, y - 1) == empty_shelf_loc):
-                    neighbours.append((x, y - 1, loaded, empty_shelf_loc))
-            # print(state, neighbours)
+            x, y, direction, loaded, empty_shelf_loc = state
+            # neighbours for rotating
+            neighbours = [
+                (x, y, (direction - 1) % 4, loaded, empty_shelf_loc),
+                (x, y, (direction + 1) % 4, loaded, empty_shelf_loc)
+            ]
+            # neighbour for forward movement
+            if direction == 0:
+                # going down
+                target_x = x
+                target_y = y + 1
+            elif direction == 1:
+                # going left
+                target_x = x - 1
+                target_y = y
+            elif direction == 2:
+                # going up
+                target_x = x
+                target_y = y - 1
+            elif direction == 3:
+                # going right
+                target_x = x + 1
+                target_y = y
+            else:
+                raise ValueError(f"Invalid direction {direction} for optimal return computation!")
+
+            if target_x >= 0 and target_x < self.grid_size[1] and target_y >= 0 and target_y < self.grid_size[0]:
+                # valid location
+                if not loaded or (self._is_highway(target_x, target_y) or (target_x, target_y) == empty_shelf_loc):
+                    neighbours.append((target_x, target_y, direction, loaded, empty_shelf_loc))
+            print(state, neighbours)
             return neighbours
 
         def hamming_distance(state1, state2):
-            x1, y1, _, _ = state1
-            x2, y2, _, _ = state2
+            x1, y1, _, _, _ = state1
+            x2, y2, _, _, _ = state2
             return abs(x1 - x2) + abs(y1 - y2)
+        
+        def is_goal(state, goal):
+            x, y, _, _, _ = state
+            goal_x, goal_y, _, _, _ = goal
+            return x == goal_x and y == goal_y
 
         def pathfinder(state1, state2):
             # pathfinder between two warehouse locations
@@ -854,11 +875,12 @@ class Warehouse(gym.Env):
                 reversePath=False,
                 heuristic_cost_estimate_fnct = hamming_distance,
                 distance_between_fnct = lambda a, b: 1.0,
-                is_goal_reached_fnct = lambda a, b: a == b
+                is_goal_reached_fnct = is_goal,
             ))
         
         # count delivered shelves
         agent_deliveries = [0] * self.n_agents
+        agent_directions = list(np.random.randint(0, 4, self.n_agents))
         agent_locations = [(np.random.choice(self.grid_size[0]), np.random.choice(self.grid_size[1])) for _ in range(self.n_agents)]
         # agent goal location with remaining distances to goal
         agent_goals = [loc for loc in agent_locations]
@@ -875,6 +897,7 @@ class Warehouse(gym.Env):
             print()
             print(f"STEP {t}")
             for i in range(self.n_agents):
+                agent_direction = agent_directions[i]
                 goal = agent_goals[i]
                 goal_distance = agent_goal_distances[i]
                 agent_stat = agent_status[i]
@@ -888,17 +911,22 @@ class Warehouse(gym.Env):
                         agent_locations[i] = goal
                         agent_shelf_original_locations[i] = goal
                         # find closest goal
-                        state = (goal[0], goal[1], True, goal)
+                        state = (goal[0], goal[1], agent_direction, True, goal)
                         closest_goal = None
                         closest_goal_distance = None
+                        closest_goal_direction = None
                         for possible_goal in self.goals:
-                            goal_state = (possible_goal[0], possible_goal[1], True, goal)
-                            distance = len(pathfinder(state, goal_state))
+                            goal_state = (possible_goal[0], possible_goal[1], None, True, goal)
+                            path = pathfinder(state, goal_state)
+                            distance = len(path)
+                            direction = path[-1][2]
                             if closest_goal_distance is None or distance < closest_goal_distance:
                                 closest_goal = possible_goal
                                 closest_goal_distance = distance
+                                closest_goal_direction = direction
                         agent_goals[i] = closest_goal
                         agent_goal_distances[i] = closest_goal_distance
+                        agent_directions[i] = closest_goal_direction
                         agent_status[i] = 1
                     elif agent_stat == 1:
                         # goal is to deliver shelf at goal --> now delivered
@@ -908,9 +936,11 @@ class Warehouse(gym.Env):
                         assert agent_shelf_orig_location is not None
                         agent_locations[i] = goal
                         agent_goals[i] = agent_shelf_orig_location
-                        state = (goal[0], goal[1], True, agent_shelf_orig_location)
-                        goal_state = (agent_goals[i][0], agent_goals[i][1], True, agent_shelf_orig_location)
-                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        state = (goal[0], goal[1], agent_direction, True, agent_shelf_orig_location)
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], None, True, agent_shelf_orig_location)
+                        path = pathfinder(state, goal_state)
+                        agent_goal_distances[i] = len(path)
+                        agent_directions[i] = path[-1][2]
                         agent_shelf_original_locations[i] = None
                         agent_status[i] = 2
                     elif agent_stat == 2:
@@ -921,10 +951,12 @@ class Warehouse(gym.Env):
                         agent_locations[i] = goal
                         agent_goals[i] = (shelf.x, shelf.y)
                         agent_shelf_original_locations[i] = None
-                        state = (goal[0], goal[1], False, (-1, -1))
-                        goal_state = (agent_goals[i][0], agent_goals[i][1], False, (-1, -1))
-                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        state = (goal[0], goal[1], agent_direction, False, (-1, -1))
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], None, False, (-1, -1))
+                        path = pathfinder(state, goal_state)
+                        agent_goal_distances[i] = len(path)
                         agent_status[i] = 0
+                        agent_directions[i] = path[-1][2]
                 else:
                     # not yet reached goal --> get one closer to goal
                     agent_goal_distances[i] -= 1
