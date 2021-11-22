@@ -851,7 +851,7 @@ class Warehouse(gym.Env):
                 # valid location
                 if not loaded or (self._is_highway(target_x, target_y) or (target_x, target_y) == empty_shelf_loc):
                     neighbours.append((target_x, target_y, direction, loaded, empty_shelf_loc))
-            print(state, neighbours)
+            # print(state, neighbours)
             return neighbours
 
         def hamming_distance(state1, state2):
