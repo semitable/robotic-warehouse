@@ -887,10 +887,18 @@ class Warehouse(gym.Env):
                         # new goal: go to goal location
                         agent_locations[i] = goal
                         agent_shelf_original_locations[i] = goal
-                        agent_goals[i] = self.goals[0]
+                        # find closest goal
                         state = (goal[0], goal[1], True, goal)
-                        goal_state = (agent_goals[i][0], agent_goals[i][1], True, goal)
-                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        closest_goal = None
+                        closest_goal_distance = None
+                        for possible_goal in self.goals:
+                            goal_state = (possible_goal[0], possible_goal[1], True, goal)
+                            distance = len(pathfinder(state, goal_state))
+                            if closest_goal_distance is None or distance < closest_goal_distance:
+                                closest_goal = possible_goal
+                                closest_goal_distance = distance
+                        agent_goals[i] = closest_goal
+                        agent_goal_distances[i] = closest_goal_distance
                         agent_status[i] = 1
                     elif agent_stat == 1:
                         # goal is to deliver shelf at goal --> now delivered
