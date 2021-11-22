@@ -12,6 +12,7 @@ import numpy as np
 from typing import List, Tuple, Optional, Dict
 
 import networkx as nx
+import astar
 
 _AXIS_Z = 0
 _AXIS_Y = 1
@@ -797,6 +798,135 @@ class Warehouse(gym.Env):
 
     def seed(self, seed=None):
         ...
+    
+    def optimal_returns(self, steps=None):
+        """
+        Compute optimal returns for environment for all agents given steps
+        :param steps (int): number of steps available to agents
+        :return (List[int]): returns for all agents
+
+        This function initially positions agents randomly in the warehouse and assumes
+        full observability with agents directly moving to closest possible shelf to deliver
+        or closest "open space" to return. Directions are ignored and required steps for movement
+        are computed using A* only moving on highways if shelves are loaded. This serves as a
+        crude approximation. Observability and ignoring of directions significantly simplify the
+        problem.
+        """
+        # if already computed --> return computed value
+        if hasattr(self, 'calculated_optimal_returns'):
+            return self.calculated_optimal_returns
+        
+        if steps is None:
+            steps = self.max_steps
+        
+        def neighbore_locations(state):
+            # given location get neighbours
+            neighbours = []
+            x, y, loaded, empty_shelf_loc = state
+            if x + 1 < self.grid_size[1]:
+                if not loaded or (self._is_highway(x + 1, y) or (x + 1, y) == empty_shelf_loc):
+                    neighbours.append((x + 1, y, loaded, empty_shelf_loc))
+            if x - 1 >= 0:
+                if not loaded or (self._is_highway(x - 1, y) or (x - 1, y) == empty_shelf_loc):
+                    neighbours.append((x - 1, y, loaded, empty_shelf_loc))
+            if y + 1 < self.grid_size[0]:
+                if not loaded or (self._is_highway(x, y + 1) or (x, y + 1) == empty_shelf_loc):
+                    neighbours.append((x, y + 1, loaded, empty_shelf_loc))
+            if y - 1 >= 0:
+                if not loaded or (self._is_highway(x, y - 1) or (x, y - 1) == empty_shelf_loc):
+                    neighbours.append((x, y - 1, loaded, empty_shelf_loc))
+            # print(state, neighbours)
+            return neighbours
+
+        def hamming_distance(state1, state2):
+            x1, y1, _, _ = state1
+            x2, y2, _, _ = state2
+            return abs(x1 - x2) + abs(y1 - y2)
+
+        def pathfinder(state1, state2):
+            # pathfinder between two warehouse locations
+            # print()
+            # print("\tFind path:", state1, state2)
+            return list(astar.find_path(
+                state1,
+                state2,
+                neighbore_locations,
+                reversePath=False,
+                heuristic_cost_estimate_fnct = hamming_distance,
+                distance_between_fnct = lambda a, b: 1.0,
+                is_goal_reached_fnct = lambda a, b: a == b
+            ))
+        
+        # count delivered shelves
+        agent_deliveries = [0] * self.n_agents
+        agent_locations = [(np.random.choice(self.grid_size[0]), np.random.choice(self.grid_size[1])) for _ in range(self.n_agents)]
+        # agent goal location with remaining distances to goal
+        agent_goals = [loc for loc in agent_locations]
+        agent_goal_distances = [0] * self.n_agents
+        # original locations of collected shelves
+        agent_shelf_original_locations = [None] * self.n_agents
+        # agent status (0 - go to requested shelf, 1 - go to goal, 2 - bring back shelf)
+        agent_status = [2] * self.n_agents
+
+        # print(self.grid_size)
+        # print(self.goals)
+        
+        for t in range(0, steps):
+            print()
+            print(f"STEP {t}")
+            for i in range(self.n_agents):
+                goal = agent_goals[i]
+                goal_distance = agent_goal_distances[i]
+                agent_stat = agent_status[i]
+                agent_shelf_orig_location = agent_shelf_original_locations[i]
+                print(f"\tAgent {i}: {agent_locations[i]} --> {goal} ({goal_distance}) with stat={agent_stat}")
+                if goal_distance == 0:
+                    # reached goal
+                    if agent_stat == 0:
+                        # goal is to collect shelf --> now will be loaded
+                        # new goal: go to goal location
+                        agent_locations[i] = goal
+                        agent_shelf_original_locations[i] = goal
+                        agent_goals[i] = self.goals[0]
+                        state = (goal[0], goal[1], True, goal)
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], True, goal)
+                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        agent_status[i] = 1
+                    elif agent_stat == 1:
+                        # goal is to deliver shelf at goal --> now delivered
+                        # new goal: bring back shelf
+                        agent_deliveries[i] += 1
+                        # for new goal: return to original location
+                        assert agent_shelf_orig_location is not None
+                        agent_locations[i] = goal
+                        agent_goals[i] = agent_shelf_orig_location
+                        state = (goal[0], goal[1], True, agent_shelf_orig_location)
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], True, agent_shelf_orig_location)
+                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        agent_shelf_original_locations[i] = None
+                        agent_status[i] = 2
+                    elif agent_stat == 2:
+                        # goal is to bring back shelf --> now succeeded
+                        # new goal: identify new random unrequested shelf to collect
+                        # find unrequested shelf
+                        shelf = np.random.choice(self.shelfs)
+                        agent_locations[i] = goal
+                        agent_goals[i] = (shelf.x, shelf.y)
+                        agent_shelf_original_locations[i] = None
+                        state = (goal[0], goal[1], False, (-1, -1))
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], False, (-1, -1))
+                        agent_goal_distances[i] = len(pathfinder(state, goal_state))
+                        agent_status[i] = 0
+                else:
+                    # not yet reached goal --> get one closer to goal
+                    agent_goal_distances[i] -= 1
+        
+        if self.reward_type == RewardType.GLOBAL:
+            total_returns = sum(agent_deliveries)
+            self.calculated_optimal_returns = [total_returns] * self.n_agents
+        else:
+            self.calculated_optimal_returns = agent_deliveries
+        return self.calculated_optimal_returns
 
 
 if __name__ == "__main__":
