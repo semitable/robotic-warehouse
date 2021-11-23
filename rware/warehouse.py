@@ -851,6 +851,8 @@ class Warehouse(gym.Env):
                 # valid location
                 if not loaded or (self._is_highway(target_x, target_y) or (target_x, target_y) == empty_shelf_loc):
                     neighbours.append((target_x, target_y, direction, loaded, empty_shelf_loc))
+            # else:
+            #     print(f"({target_x}, {target_y}) out of bounds")
             # print(state, neighbours)
             return neighbours
 
@@ -881,7 +883,7 @@ class Warehouse(gym.Env):
         # count delivered shelves
         agent_deliveries = [0] * self.n_agents
         agent_directions = list(np.random.randint(0, 4, self.n_agents))
-        agent_locations = [(np.random.choice(self.grid_size[0]), np.random.choice(self.grid_size[1])) for _ in range(self.n_agents)]
+        agent_locations = [(np.random.choice(self.grid_size[1]), np.random.choice(self.grid_size[0])) for _ in range(self.n_agents)]
         # agent goal location with remaining distances to goal
         agent_goals = [loc for loc in agent_locations]
         agent_goal_distances = [0] * self.n_agents

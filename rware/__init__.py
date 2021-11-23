@@ -69,7 +69,7 @@ def full_registration():
     _sensor_ranges = {f"-{sight}s": sight for sight in range(2, 6)}
     _sensor_ranges[""] = 1
     _image_directional = {"": True, "-Nd": False}
-    _perms = itertools.product(_sizes.keys(), _difficulty, _observation_type, _sensor_ranges, _image_directional, range(1, 20), range(2, 16),)
+    _perms = itertools.product(_sizes.keys(), _difficulty, _observation_type, _sensor_ranges, _image_directional, range(1, 20), range(1, 16),)
     for size, diff, obs_type, sensor_range, directional, agents, column_height in _perms:
         # normal tasks with modified column height
         if directional != "" and obs_type == "":
@@ -103,7 +103,7 @@ def full_registration():
     _perms = itertools.product(
         range(1, 5),
         range(3, 10, 2),
-        range(2, 16),
+        range(1, 16),
         range(1, 20),
         range(1, 20),
         _rewards,
