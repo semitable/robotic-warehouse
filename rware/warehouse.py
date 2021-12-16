@@ -169,6 +169,7 @@ class Warehouse(gym.Env):
             ImageLayer.ACCESSIBLE
         ],
         image_observation_directional: bool=True,
+        normalised_coordinates: bool=False,
     ):
         """The robotic warehouse environment
 
@@ -228,6 +229,9 @@ class Warehouse(gym.Env):
         :param image_observation_directional: Specifies whether image observations should be
             rotated to be directional (agent perspective) if image-observations are used
         :type image_observation_directional: bool
+        :param normalised_coordinates: Specifies whether absolute coordinates should be normalised
+            with respect to total warehouse size
+        :type normalised_coordinates: bool
         """
 
         assert shelf_columns % 2 == 1, "Only odd number of shelf columns is supported"
@@ -250,6 +254,7 @@ class Warehouse(gym.Env):
         self.max_steps = max_steps
 
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
+        self.normalised_coordinates = normalised_coordinates
 
         sa_action_space = [len(Action), *msg_bits * (2,)]
         if len(sa_action_space) == 1:
@@ -337,6 +342,17 @@ class Warehouse(gym.Env):
             + self._obs_sensor_locations * self._obs_bits_per_shelf
         )
 
+        if self.normalised_coordinates:
+            location_space = spaces.Box(
+                    low=0.0,
+                    high=1.0,
+                    shape=(2,),
+                    dtype=np.float32,
+            )
+        else:
+            location_space = spaces.MultiDiscrete(
+                [self.grid_size[1], self.grid_size[0]]
+            )
         self.observation_space = spaces.Tuple(
             tuple(
                 [
@@ -346,9 +362,7 @@ class Warehouse(gym.Env):
                                 "self": spaces.Dict(
                                     OrderedDict(
                                         {
-                                            "location": spaces.MultiDiscrete(
-                                                [self.grid_size[1], self.grid_size[0]]
-                                            ),
+                                            "location": location_space,
                                             "carrying_shelf": spaces.MultiDiscrete([2]),
                                             "direction": spaces.Discrete(4),
                                             "on_highway": spaces.MultiDiscrete([2]),
@@ -525,7 +539,14 @@ class Warehouse(gym.Env):
             # write flattened observations
             obs = _VectorWriter(self.observation_space[agent.id - 1].shape[0])
 
-            obs.write([agent.x, agent.y, int(agent.carrying_shelf is not None)])
+            if self.normalised_coordinates:
+                agent_x = agent.x / (self.grid_size[1] - 1)
+                agent_y = agent.y / (self.grid_size[0] - 1)
+            else:
+                agent_x = agent.x
+                agent_y = agent.y
+
+            obs.write([agent_x, agent_y, int(agent.carrying_shelf is not None)])
             direction = np.zeros(4)
             direction[agent.dir.value] = 1.0
             obs.write(direction)
@@ -554,9 +575,15 @@ class Warehouse(gym.Env):
  
         # write dictionary observations
         obs = {}
+        if self.normalised_coordinates:
+            agent_x = agent.x / (self.grid_size[1] - 1)
+            agent_y = agent.y / (self.grid_size[0] - 1)
+        else:
+            agent_x = agent.x
+            agent_y = agent.y
         # --- self data
         obs["self"] = {
-            "location": np.array([agent.x, agent.y]),
+            "location": np.array([agent_x, agent_y]),
             "carrying_shelf": [int(agent.carrying_shelf is not None)],
             "direction": agent.dir.value,
             "on_highway": [int(self._is_highway(agent.x, agent.y))],
@@ -799,10 +826,13 @@ class Warehouse(gym.Env):
     def seed(self, seed=None):
         ...
     
-    def optimal_returns(self, steps=None):
+    def optimal_returns(self, steps=None, output=False):
         """
         Compute optimal returns for environment for all agents given steps
+        NOTE: Needs to be called on reset environment with shelves in their initial locations
+
         :param steps (int): number of steps available to agents
+        :param output (bool): whether steps should be printed
         :return (List[int]): returns for all agents
 
         This function initially positions agents randomly in the warehouse and assumes
@@ -896,15 +926,17 @@ class Warehouse(gym.Env):
         # print(self.goals)
         
         for t in range(0, steps):
-            print()
-            print(f"STEP {t}")
+            if output:
+                print()
+                print(f"STEP {t}")
             for i in range(self.n_agents):
                 agent_direction = agent_directions[i]
                 goal = agent_goals[i]
                 goal_distance = agent_goal_distances[i]
                 agent_stat = agent_status[i]
                 agent_shelf_orig_location = agent_shelf_original_locations[i]
-                print(f"\tAgent {i}: {agent_locations[i]} --> {goal} ({goal_distance}) with stat={agent_stat}")
+                if output:
+                    print(f"\tAgent {i}: {agent_locations[i]} --> {goal} ({goal_distance}) with stat={agent_stat}")
                 if goal_distance == 0:
                     # reached goal
                     if agent_stat == 0:
