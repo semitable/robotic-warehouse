@@ -289,7 +289,6 @@ class Warehouse(gym.Env):
         lines = layout.split("\n")
         grid_width = len(lines[0])
         for line in lines:
-            print(line, len(line), grid_width)
             assert len(line) == grid_width, "Layout must be rectangular"
 
         self.grid_size = (grid_height, grid_width)
