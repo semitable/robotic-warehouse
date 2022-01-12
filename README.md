@@ -16,6 +16,7 @@
   - [Rewards](#rewards)
 - [Environment Parameters](#environment-parameters)
   - [Naming Scheme](#naming-scheme)
+  - [Custom layout](#custom-layout)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Please Cite](#please-cite)
@@ -89,6 +90,27 @@ Of course, more settings are available, but have to be changed during environmen
 ```python
 env = gym.make("rware-tiny-2ag-v1", sensor_range=3, request_queue_size=6)
 ```
+
+## Custom layout
+You can design a custom warehouse layout with the following:
+```python
+layout = """
+........
+...x....
+..x.x...
+.x...x..
+..x.x...
+...x....
+.g....g.
+"""
+gym = env.make("rware:rware-tiny-2ag-v1", layout=layout)
+```
+This will transform "X"s to shelves and "G"s to goal locations with a result like the one below:
+<p align="center">
+ <img width="450px" src="docs/img/rware_round.png" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
+</p>
+
+
 
 A detailed explanation of all parameters can be found [here](https://github.com/semitable/robotic-warehouse/blob/4307b1fe3afa26de4ca4003fd04ab1319879832a/robotic_warehouse/warehouse.py#L132)
 
