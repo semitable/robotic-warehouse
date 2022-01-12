@@ -12,6 +12,7 @@ import numpy as np
 from typing import List, Tuple, Optional, Dict
 
 import networkx as nx
+import astar
 
 _AXIS_Z = 0
 _AXIS_Y = 1
@@ -56,6 +57,24 @@ class RewardType(Enum):
     GLOBAL = 0
     INDIVIDUAL = 1
     TWO_STAGE = 2
+
+
+class ObserationType(Enum):
+    DICT = 0
+    FLATTENED = 1
+    IMAGE = 2
+
+class ImageLayer(Enum):
+    """
+    Input layers of image-style observations
+    """
+    SHELVES = 0 # binary layer indicating shelves (also indicates carried shelves)
+    REQUESTS = 1 # binary layer indicating requested shelves
+    AGENTS = 2 # binary layer indicating agents in the environment (no way to distinguish agents)
+    AGENT_DIRECTION = 3 # layer indicating agent directions as int (see Direction enum + 1 for values)
+    AGENT_LOAD = 4 # binary layer indicating agents with load
+    GOALS = 5 # binary layer indicating goal/ delivery locations
+    ACCESSIBLE = 6 # binary layer indicating accessible cells (all but occupied cells/ out of map)
 
 
 class Entity:
@@ -141,8 +160,17 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
-        fast_obs=True,
         layout: str = None,
+        observation_type: ObserationType=ObserationType.FLATTENED,
+        image_observation_layers: List[ImageLayer]=[
+            ImageLayer.SHELVES,
+            ImageLayer.REQUESTS,
+            ImageLayer.AGENTS,
+            ImageLayer.GOALS,
+            ImageLayer.ACCESSIBLE
+        ],
+        image_observation_directional: bool=True,
+        normalised_coordinates: bool=False,
     ):
         """The robotic warehouse environment
 
@@ -196,6 +224,16 @@ class Warehouse(gym.Env):
         :type reward_type: RewardType
         :param layout: A string for a custom warehouse layout. X are shelve locations, dots are corridors, and g are the goal locations. Ignores shelf_columns, shelf_height and shelf_rows when used.
         :type layout: str
+        :param observation_type: Specifies type of observations
+        :param image_observation_layers: Specifies types of layers observed if image-observations
+            are used
+        :type image_observation_layers: List[ImageLayer]
+        :param image_observation_directional: Specifies whether image observations should be
+            rotated to be directional (agent perspective) if image-observations are used
+        :type image_observation_directional: bool
+        :param normalised_coordinates: Specifies whether absolute coordinates should be normalised
+            with respect to total warehouse size
+        :type normalised_coordinates: bool
         """
 
         self.goals: List[Tuple[int, int]] = []
@@ -215,6 +253,8 @@ class Warehouse(gym.Env):
         self._cur_inactive_steps = None
         self._cur_steps = 0
         self.max_steps = max_steps
+        
+        self.normalised_coordinates = normalised_coordinates
 
         sa_action_space = [len(Action), *msg_bits * (2,)]
         if len(sa_action_space) == 1:
@@ -228,27 +268,20 @@ class Warehouse(gym.Env):
 
         self.agents: List[Agent] = []
 
-        self._obs_bits_for_self = 4 + len(Direction)
-        self._obs_bits_per_agent = 1 + len(Direction) + self.msg_bits
-        self._obs_bits_per_shelf = 2
-        self._obs_bits_for_requests = 2
-
-        self._obs_sensor_locations = (1 + 2 * self.sensor_range) ** 2
-
-        self._obs_length = (
-            self._obs_bits_for_self
-            + self._obs_sensor_locations * self._obs_bits_per_agent
-            + self._obs_sensor_locations * self._obs_bits_per_shelf
-        )
-
         # default values:
         self.fast_obs = None
+        self.image_obs = None
         self.observation_space = None
-        self._use_slow_obs()
+        if observation_type == ObserationType.IMAGE:
+            self._use_image_obs(image_observation_layers, image_observation_directional)
+        else:
+            # used for DICT observation type and needed as preceeding stype to generate
+            # FLATTENED observations as well
+            self._use_slow_obs()
 
         # for performance reasons we
         # can flatten the obs vector
-        if fast_obs:
+        if observation_type == ObserationType.FLATTENED:
             self._use_fast_obs()
 
         self.renderer = None
@@ -306,8 +339,69 @@ class Warehouse(gym.Env):
 
         assert len(self.goals) >= 1, "At least one goal is required"
 
+    def _use_image_obs(self, image_observation_layers, directional=True):
+        """
+        Set image observation space
+        :param image_observation_layers (List[ImageLayer]): list of layers to use as image channels
+        :param directional (bool): flag whether observations should be directional (pointing in
+            direction of agent or north-wise)
+        """
+        self.image_obs = True
+        self.fast_obs = False
+        self.image_observation_directional = directional
+        self.image_observation_layers = image_observation_layers
+
+        observation_shape = (1 + 2 * self.sensor_range, 1 + 2 * self.sensor_range)
+
+        layers_min = []
+        layers_max = []
+        for layer in image_observation_layers:
+            if layer == ImageLayer.AGENT_DIRECTION:
+                # directions as int
+                layer_min = np.zeros(observation_shape, dtype=np.float32)
+                layer_max = np.ones(observation_shape, dtype=np.float32) * max([d.value + 1 for d in Direction])
+            else:
+                # binary layer
+                layer_min = np.zeros(observation_shape, dtype=np.float32)
+                layer_max = np.ones(observation_shape, dtype=np.float32)
+            layers_min.append(layer_min)
+            layers_max.append(layer_max)
+
+        # total observation
+        min_obs = np.stack(layers_min)
+        max_obs = np.stack(layers_max)
+        self.observation_space = spaces.Tuple(
+            tuple([spaces.Box(min_obs, max_obs, dtype=np.float32)] * self.n_agents)
+        )
+
     def _use_slow_obs(self):
         self.fast_obs = False
+
+        self._obs_bits_for_self = 4 + len(Direction)
+        self._obs_bits_per_agent = 1 + len(Direction) + self.msg_bits
+        self._obs_bits_per_shelf = 2
+        self._obs_bits_for_requests = 2
+
+        self._obs_sensor_locations = (1 + 2 * self.sensor_range) ** 2
+
+        self._obs_length = (
+            self._obs_bits_for_self
+            + self._obs_sensor_locations * self._obs_bits_per_agent
+            + self._obs_sensor_locations * self._obs_bits_per_shelf
+        )
+
+        if self.normalised_coordinates:
+            location_space = spaces.Box(
+                    low=0.0,
+                    high=1.0,
+                    shape=(2,),
+                    dtype=np.float32,
+            )
+        else:
+            location_space = spaces.MultiDiscrete(
+                [self.grid_size[1], self.grid_size[0]]
+            )
+
         self.observation_space = spaces.Tuple(
             tuple(
                 [
@@ -317,17 +411,8 @@ class Warehouse(gym.Env):
                                 "self": spaces.Dict(
                                     OrderedDict(
                                         {
-                                            "location": spaces.Box(
-                                                low=0,
-                                                high=np.array(
-                                                    [
-                                                        self.grid_size[1],
-                                                        self.grid_size[0],
-                                                    ]
-                                                ),
-                                                dtype=int,
-                                            ),
-                                            "carrying_shelf": spaces.MultiBinary(1),
+                                            "location": location_space,
+                                            "carrying_shelf": spaces.MultiDiscrete([2]),
                                             "direction": spaces.Discrete(4),
                                             "on_highway": spaces.MultiBinary(1),
                                         }
@@ -384,14 +469,83 @@ class Warehouse(gym.Env):
         return self.highways[y, x]
 
     def _make_obs(self, agent):
+        if self.image_obs:
+            # write image observations
+            if agent.id == 1:
+                layers = []
+                # first agent's observation --> update global observation layers
+                for layer_type in self.image_observation_layers:
+                    if layer_type == ImageLayer.SHELVES:
+                        layer = self.grid[_LAYER_SHELFS].copy().astype(np.float32)
+                        # set all occupied shelf cells to 1.0 (instead of shelf ID)
+                        layer[layer > 0.0] = 1.0
+                        # print("SHELVES LAYER")
+                    elif layer_type == ImageLayer.REQUESTS:
+                        layer = np.zeros(self.grid_size, dtype=np.float32)
+                        for requested_shelf in self.request_queue:
+                            layer[requested_shelf.y, requested_shelf.x] = 1.0
+                        # print("REQUESTS LAYER")
+                    elif layer_type == ImageLayer.AGENTS:
+                        layer = self.grid[_LAYER_AGENTS].copy().astype(np.float32)
+                        # set all occupied agent cells to 1.0 (instead of agent ID)
+                        layer[layer > 0.0] = 1.0
+                        # print("AGENTS LAYER")
+                    elif layer_type == ImageLayer.AGENT_DIRECTION:
+                        layer = np.zeros(self.grid_size, dtype=np.float32)
+                        for ag in self.agents:
+                            agent_direction = ag.dir.value + 1
+                            layer[ag.x, ag.y] = float(agent_direction)
+                        # print("AGENT DIRECTIONS LAYER")
+                    elif layer_type == ImageLayer.AGENT_LOAD:
+                        layer = np.zeros(self.grid_size, dtype=np.float32)
+                        for ag in self.agents:
+                            if ag.carrying_shelf is not None:
+                                layer[ag.x, ag.y] = 1.0
+                        # print("AGENT LOAD LAYER")
+                    elif layer_type == ImageLayer.GOALS:
+                        layer = np.zeros(self.grid_size, dtype=np.float32)
+                        for goal_y, goal_x in self.goals:
+                            layer[goal_x, goal_y] = 1.0
+                        # print("GOALS LAYER")
+                    elif layer_type == ImageLayer.ACCESSIBLE:
+                        layer = np.ones(self.grid_size, dtype=np.float32)
+                        for ag in self.agents:
+                            layer[ag.y, ag.x] = 0.0
+                        # print("ACCESSIBLE LAYER")
+                    # print(layer)
+                    # print()
+                    # pad with 0s for out-of-map cells
+                    layer = np.pad(layer, self.sensor_range, mode="constant")
+                    layers.append(layer)
+                self.global_layers = np.stack(layers)
 
-        y_scale, x_scale = self.grid_size[0] - 1, self.grid_size[1] - 1
+            # global information was generated --> get information for agent
+            start_x = agent.y
+            end_x = agent.y + 2 * self.sensor_range + 1
+            start_y = agent.x
+            end_y = agent.x + 2 * self.sensor_range + 1
+            obs = self.global_layers[:, start_x:end_x, start_y:end_y]
+
+            if self.image_observation_directional:
+                # rotate image to be in direction of agent
+                if agent.dir == Direction.DOWN:
+                    # rotate by 180 degrees (clockwise)
+                    obs = np.rot90(obs, k=2, axes=(1,2))
+                elif agent.dir == Direction.LEFT:
+                    # rotate by 90 degrees (clockwise)
+                    obs = np.rot90(obs, k=3, axes=(1,2))
+                elif agent.dir == Direction.RIGHT:
+                    # rotate by 270 degrees (clockwise)
+                    obs = np.rot90(obs, k=1, axes=(1,2))
+                # no rotation needed for UP direction
+            return obs
 
         min_x = agent.x - self.sensor_range
         max_x = agent.x + self.sensor_range + 1
 
         min_y = agent.y - self.sensor_range
         max_y = agent.y + self.sensor_range + 1
+
         # sensors
         if (
             (min_x < 0)
@@ -419,9 +573,17 @@ class Warehouse(gym.Env):
         shelfs = padded_shelfs[min_y:max_y, min_x:max_x].reshape(-1)
 
         if self.fast_obs:
+            # write flattened observations
             obs = _VectorWriter(self.observation_space[agent.id - 1].shape[0])
 
-            obs.write([agent.x, agent.y, int(agent.carrying_shelf is not None)])
+            if self.normalised_coordinates:
+                agent_x = agent.x / (self.grid_size[1] - 1)
+                agent_y = agent.y / (self.grid_size[0] - 1)
+            else:
+                agent_x = agent.x
+                agent_y = agent.y
+
+            obs.write([agent_x, agent_y, int(agent.carrying_shelf is not None)])
             direction = np.zeros(4)
             direction[agent.dir.value] = 1.0
             obs.write(direction)
@@ -447,11 +609,18 @@ class Warehouse(gym.Env):
                     )
 
             return obs.vector
-
-        # --- self data
+ 
+        # write dictionary observations
         obs = {}
+        if self.normalised_coordinates:
+            agent_x = agent.x / (self.grid_size[1] - 1)
+            agent_y = agent.y / (self.grid_size[0] - 1)
+        else:
+            agent_x = agent.x
+            agent_y = agent.y
+        # --- self data
         obs["self"] = {
-            "location": np.array([agent.x, agent.y]),
+            "location": np.array([agent_x, agent_y]),
             "carrying_shelf": [int(agent.carrying_shelf is not None)],
             "direction": agent.dir.value,
             "on_highway": [int(self._is_highway(agent.x, agent.y))],
@@ -636,8 +805,8 @@ class Warehouse(gym.Env):
         self._recalc_grid()
 
         shelf_delivered = False
-        for x, y in self.goals:
-            shelf_id = self.grid[_LAYER_SHELFS, y, x]
+        for y, x in self.goals:
+            shelf_id = self.grid[_LAYER_SHELFS, x, y]
             if not shelf_id:
                 continue
             shelf = self.shelfs[shelf_id - 1]
@@ -655,10 +824,10 @@ class Warehouse(gym.Env):
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
+                agent_id = self.grid[_LAYER_AGENTS, x, y]
                 rewards[agent_id - 1] += 1
             elif self.reward_type == RewardType.TWO_STAGE:
-                agent_id = self.grid[_LAYER_AGENTS, y, x]
+                agent_id = self.grid[_LAYER_AGENTS, x, y]
                 self.agents[agent_id - 1].has_delivered = True
                 rewards[agent_id - 1] += 0.5
 
@@ -693,6 +862,182 @@ class Warehouse(gym.Env):
 
     def seed(self, seed=None):
         ...
+    
+    def optimal_returns(self, steps=None, output=False):
+        """
+        Compute optimal returns for environment for all agents given steps
+        NOTE: Needs to be called on reset environment with shelves in their initial locations
+
+        :param steps (int): number of steps available to agents
+        :param output (bool): whether steps should be printed
+        :return (List[int]): returns for all agents
+
+        This function initially positions agents randomly in the warehouse and assumes
+        full observability with agents directly moving to closest possible shelf to deliver
+        or closest "open space" to return. Required steps for movement (including rotations)
+        are computed using A* only moving on highways if shelves are loaded. This serves as a
+        crude approximation. Observability with agents directly moving towards requested shelves/
+        goals without search significantly simplifies the problem.
+        """
+        # if already computed --> return computed value
+        if hasattr(self, 'calculated_optimal_returns'):
+            return self.calculated_optimal_returns
+        
+        if steps is None:
+            steps = self.max_steps
+        
+        def neighbore_locations(state):
+            # given location get neighbours
+            x, y, direction, loaded, empty_shelf_loc = state
+            # neighbours for rotating
+            neighbours = [
+                (x, y, (direction - 1) % 4, loaded, empty_shelf_loc),
+                (x, y, (direction + 1) % 4, loaded, empty_shelf_loc)
+            ]
+            # neighbour for forward movement
+            if direction == 0:
+                # going down
+                target_x = x
+                target_y = y + 1
+            elif direction == 1:
+                # going left
+                target_x = x - 1
+                target_y = y
+            elif direction == 2:
+                # going up
+                target_x = x
+                target_y = y - 1
+            elif direction == 3:
+                # going right
+                target_x = x + 1
+                target_y = y
+            else:
+                raise ValueError(f"Invalid direction {direction} for optimal return computation!")
+
+            if target_x >= 0 and target_x < self.grid_size[1] and target_y >= 0 and target_y < self.grid_size[0]:
+                # valid location
+                if not loaded or (self._is_highway(target_x, target_y) or (target_x, target_y) == empty_shelf_loc):
+                    neighbours.append((target_x, target_y, direction, loaded, empty_shelf_loc))
+            # else:
+            #     print(f"({target_x}, {target_y}) out of bounds")
+            # print(state, neighbours)
+            return neighbours
+
+        def hamming_distance(state1, state2):
+            x1, y1, _, _, _ = state1
+            x2, y2, _, _, _ = state2
+            return abs(x1 - x2) + abs(y1 - y2)
+        
+        def is_goal(state, goal):
+            x, y, _, _, _ = state
+            goal_x, goal_y, _, _, _ = goal
+            return x == goal_x and y == goal_y
+
+        def pathfinder(state1, state2):
+            # pathfinder between two warehouse locations
+            # print()
+            # print("\tFind path:", state1, state2)
+            return list(astar.find_path(
+                state1,
+                state2,
+                neighbore_locations,
+                reversePath=False,
+                heuristic_cost_estimate_fnct = hamming_distance,
+                distance_between_fnct = lambda a, b: 1.0,
+                is_goal_reached_fnct = is_goal,
+            ))
+        
+        # count delivered shelves
+        agent_deliveries = [0] * self.n_agents
+        agent_directions = list(np.random.randint(0, 4, self.n_agents))
+        agent_locations = [(np.random.choice(self.grid_size[1]), np.random.choice(self.grid_size[0])) for _ in range(self.n_agents)]
+        # agent goal location with remaining distances to goal
+        agent_goals = [loc for loc in agent_locations]
+        agent_goal_distances = [0] * self.n_agents
+        # original locations of collected shelves
+        agent_shelf_original_locations = [None] * self.n_agents
+        # agent status (0 - go to requested shelf, 1 - go to goal, 2 - bring back shelf)
+        agent_status = [2] * self.n_agents
+
+        # print(self.grid_size)
+        # print(self.goals)
+        
+        for t in range(0, steps):
+            if output:
+                print()
+                print(f"STEP {t}")
+            for i in range(self.n_agents):
+                agent_direction = agent_directions[i]
+                goal = agent_goals[i]
+                goal_distance = agent_goal_distances[i]
+                agent_stat = agent_status[i]
+                agent_shelf_orig_location = agent_shelf_original_locations[i]
+                if output:
+                    print(f"\tAgent {i}: {agent_locations[i]} --> {goal} ({goal_distance}) with stat={agent_stat}")
+                if goal_distance == 0:
+                    # reached goal
+                    if agent_stat == 0:
+                        # goal is to collect shelf --> now will be loaded
+                        # new goal: go to goal location
+                        agent_locations[i] = goal
+                        agent_shelf_original_locations[i] = goal
+                        # find closest goal
+                        state = (goal[0], goal[1], agent_direction, True, goal)
+                        closest_goal = None
+                        closest_goal_distance = None
+                        closest_goal_direction = None
+                        for possible_goal in self.goals:
+                            goal_state = (possible_goal[0], possible_goal[1], None, True, goal)
+                            path = pathfinder(state, goal_state)
+                            distance = len(path)
+                            direction = path[-1][2]
+                            if closest_goal_distance is None or distance < closest_goal_distance:
+                                closest_goal = possible_goal
+                                closest_goal_distance = distance
+                                closest_goal_direction = direction
+                        agent_goals[i] = closest_goal
+                        agent_goal_distances[i] = closest_goal_distance
+                        agent_directions[i] = closest_goal_direction
+                        agent_status[i] = 1
+                    elif agent_stat == 1:
+                        # goal is to deliver shelf at goal --> now delivered
+                        # new goal: bring back shelf
+                        agent_deliveries[i] += 1
+                        # for new goal: return to original location
+                        assert agent_shelf_orig_location is not None
+                        agent_locations[i] = goal
+                        agent_goals[i] = agent_shelf_orig_location
+                        state = (goal[0], goal[1], agent_direction, True, agent_shelf_orig_location)
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], None, True, agent_shelf_orig_location)
+                        path = pathfinder(state, goal_state)
+                        agent_goal_distances[i] = len(path)
+                        agent_directions[i] = path[-1][2]
+                        agent_shelf_original_locations[i] = None
+                        agent_status[i] = 2
+                    elif agent_stat == 2:
+                        # goal is to bring back shelf --> now succeeded
+                        # new goal: identify new random unrequested shelf to collect
+                        # find unrequested shelf
+                        shelf = np.random.choice(self.shelfs)
+                        agent_locations[i] = goal
+                        agent_goals[i] = (shelf.x, shelf.y)
+                        agent_shelf_original_locations[i] = None
+                        state = (goal[0], goal[1], agent_direction, False, (-1, -1))
+                        goal_state = (agent_goals[i][0], agent_goals[i][1], None, False, (-1, -1))
+                        path = pathfinder(state, goal_state)
+                        agent_goal_distances[i] = len(path)
+                        agent_status[i] = 0
+                        agent_directions[i] = path[-1][2]
+                else:
+                    # not yet reached goal --> get one closer to goal
+                    agent_goal_distances[i] -= 1
+        
+        if self.reward_type == RewardType.GLOBAL:
+            total_returns = sum(agent_deliveries)
+            self.calculated_optimal_returns = [total_returns] * self.n_agents
+        else:
+            self.calculated_optimal_returns = agent_deliveries
+        return self.calculated_optimal_returns
 
 
 if __name__ == "__main__":
