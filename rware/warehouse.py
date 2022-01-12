@@ -300,7 +300,7 @@ class Warehouse(gym.Env):
             for x, char in enumerate(line):
                 assert char.lower() in "gx."
                 if char.lower() == "g":
-                    self.goals.append((y, x))
+                    self.goals.append((x, y))
                     self.highways[y, x] = 1
                 elif char.lower() == ".":
                     self.highways[y, x] = 1
