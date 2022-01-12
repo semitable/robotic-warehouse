@@ -107,7 +107,7 @@ gym = env.make("rware:rware-tiny-2ag-v1", layout=layout)
 ```
 This will transform "X"s to shelves and "G"s to goal locations with a result like the one below:
 <p align="center">
- <img width="450px" src="docs/img/rware_round.png" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
+ <img width="300px" src="docs/img/rware_round.png" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
 </p>
 
 
