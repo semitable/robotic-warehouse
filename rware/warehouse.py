@@ -160,6 +160,7 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
+        layout: str = None,
         observation_type: ObserationType=ObserationType.FLATTENED,
         image_observation_layers: List[ImageLayer]=[
             ImageLayer.SHELVES,
@@ -221,8 +222,9 @@ class Warehouse(gym.Env):
         :type max_inactivity: Optional[int]
         :param reward_type: Specifies if agents are rewarded individually or globally
         :type reward_type: RewardType
+        :param layout: A string for a custom warehouse layout. X are shelve locations, dots are corridors, and g are the goal locations. Ignores shelf_columns, shelf_height and shelf_rows when used.
+        :type layout: str
         :param observation_type: Specifies type of observations
-        :type fast_obs: ObservationType
         :param image_observation_layers: Specifies types of layers observed if image-observations
             are used
         :type image_observation_layers: List[ImageLayer]
@@ -234,16 +236,15 @@ class Warehouse(gym.Env):
         :type normalised_coordinates: bool
         """
 
-        assert shelf_columns % 2 == 1, "Only odd number of shelf columns is supported"
+        self.goals: List[Tuple[int, int]] = []
 
-        self.grid_size = (
-            (column_height + 1) * shelf_rows + 2,
-            (2 + 1) * shelf_columns + 1,
-        )
+        if not layout:
+            self._make_layout_from_params(shelf_columns, shelf_rows, column_height)
+        else:
+            self._make_layout_from_str(layout)
 
         self.n_agents = n_agents
         self.msg_bits = msg_bits
-        self.column_height = column_height
         self.sensor_range = sensor_range
         self.max_inactivity_steps: Optional[int] = max_inactivity_steps
         self.reward_type = reward_type
@@ -252,8 +253,7 @@ class Warehouse(gym.Env):
         self._cur_inactive_steps = None
         self._cur_steps = 0
         self.max_steps = max_steps
-
-        self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
+        
         self.normalised_coordinates = normalised_coordinates
 
         sa_action_space = [len(Action), *msg_bits * (2,)]
@@ -267,11 +267,6 @@ class Warehouse(gym.Env):
         self.request_queue = []
 
         self.agents: List[Agent] = []
-
-        self.goals: List[Tuple[int, int]] = [
-            (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
-            (self.grid_size[1] // 2, self.grid_size[0] - 1),
-        ]
 
         # default values:
         self.fast_obs = None
@@ -290,6 +285,59 @@ class Warehouse(gym.Env):
             self._use_fast_obs()
 
         self.renderer = None
+
+    def _make_layout_from_params(self, shelf_columns, shelf_rows, column_height):
+        assert shelf_columns % 2 == 1, "Only odd number of shelf columns is supported"
+
+        self.grid_size = (
+            (column_height + 1) * shelf_rows + 2,
+            (2 + 1) * shelf_columns + 1,
+        )
+        self.column_height = column_height
+        self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
+        self.goals = [
+            (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
+            (self.grid_size[1] // 2, self.grid_size[0] - 1),
+        ]
+
+        self.highways = np.zeros(self.grid_size, dtype=np.int32)
+
+        highway_func = lambda x, y: (
+            (x % 3 == 0)  # vertical highways
+            or (y % (self.column_height + 1) == 0)  # horizontal highways
+            or (y == self.grid_size[0] - 1)  # delivery row
+            or (  # remove a box for queuing
+                (y > self.grid_size[0] - (self.column_height + 3))
+                and ((x == self.grid_size[1] // 2 - 1) or (x == self.grid_size[1] // 2))
+            )
+        )
+        for x in range(self.grid_size[1]):
+            for y in range(self.grid_size[0]):
+                self.highways[y, x] = highway_func(x, y)
+
+    def _make_layout_from_str(self, layout):
+        layout = layout.strip()
+        layout = layout.replace(" ", "")
+        grid_height = layout.count("\n") + 1
+        lines = layout.split("\n")
+        grid_width = len(lines[0])
+        for line in lines:
+            assert len(line) == grid_width, "Layout must be rectangular"
+
+        self.grid_size = (grid_height, grid_width)
+        self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
+        self.highways = np.zeros(self.grid_size, dtype=np.int32)
+
+        for y, line in enumerate(lines):
+            for x, char in enumerate(line):
+                assert char.lower() in "gx."
+                if char.lower() == "g":
+                    self.goals.append((x, y))
+                    self.highways[y, x] = 1
+                elif char.lower() == ".":
+                    self.highways[y, x] = 1
+
+        assert len(self.goals) >= 1, "At least one goal is required"
 
     def _use_image_obs(self, image_observation_layers, directional=True):
         """
@@ -353,6 +401,7 @@ class Warehouse(gym.Env):
             location_space = spaces.MultiDiscrete(
                 [self.grid_size[1], self.grid_size[0]]
             )
+
         self.observation_space = spaces.Tuple(
             tuple(
                 [
@@ -365,7 +414,7 @@ class Warehouse(gym.Env):
                                             "location": location_space,
                                             "carrying_shelf": spaces.MultiDiscrete([2]),
                                             "direction": spaces.Discrete(4),
-                                            "on_highway": spaces.MultiDiscrete([2]),
+                                            "on_highway": spaces.MultiBinary(1),
                                         }
                                     )
                                 ),
@@ -375,18 +424,14 @@ class Warehouse(gym.Env):
                                         spaces.Dict(
                                             OrderedDict(
                                                 {
-                                                    "has_agent": spaces.MultiDiscrete(
-                                                        [2]
-                                                    ),
+                                                    "has_agent": spaces.MultiBinary(1),
                                                     "direction": spaces.Discrete(4),
                                                     "local_message": spaces.MultiBinary(
                                                         self.msg_bits
                                                     ),
-                                                    "has_shelf": spaces.MultiDiscrete(
-                                                        [2]
-                                                    ),
-                                                    "shelf_requested": spaces.MultiDiscrete(
-                                                        [2]
+                                                    "has_shelf": spaces.MultiBinary(1),
+                                                    "shelf_requested": spaces.MultiBinary(
+                                                        1
                                                     ),
                                                 }
                                             )
@@ -421,15 +466,7 @@ class Warehouse(gym.Env):
         self.observation_space = spaces.Tuple(tuple(ma_spaces))
 
     def _is_highway(self, x: int, y: int) -> bool:
-        return (
-            (x % 3 == 0)  # vertical highways
-            or (y % (self.column_height + 1) == 0)  # horizontal highways
-            or (y == self.grid_size[0] - 1)  # delivery row
-            or (  # remove a box for queuing
-                (y > self.grid_size[0] - (self.column_height + 3))
-                and ((x == self.grid_size[1] // 2 - 1) or (x == self.grid_size[1] // 2))
-            )
-        )
+        return self.highways[y, x]
 
     def _make_obs(self, agent):
         if self.image_obs:

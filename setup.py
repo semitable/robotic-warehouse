@@ -8,7 +8,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="rware",
-    version="1.0.1",
+    version="1.0.3",
     description="Multi-Robot Warehouse environment for reinforcement learning",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -23,7 +23,7 @@ setup(
     ],
     install_requires=[
         "numpy",
-        "gym>=0.15",
+        "gym>=0.20",
         "pyglet",
         "networkx",
     ],
