@@ -95,19 +95,19 @@ env = gym.make("rware-tiny-2ag-v1", sensor_range=3, request_queue_size=6)
 You can design a custom warehouse layout with the following:
 ```python
 layout = """
-........
-...x....
-..x.x...
-.x...x..
-..x.x...
-...x....
-.g....g.
+.......
+...x...
+..x.x..
+.x...x.
+..x.x..
+...x...
+.g...g.
 """
 gym = env.make("rware:rware-tiny-2ag-v1", layout=layout)
 ```
 This will transform "X"s to shelves and "G"s to goal locations with a result like the one below:
 <p align="center">
- <img width="300px" src="docs/img/rware_round.png" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
+ <img width="300px" src="docs/img/rware-round.png" align="center" alt="Multi-Robot Warehouse (RWARE) illustration" />
 </p>
 
 
