@@ -388,7 +388,7 @@ class Warehouse(gym.Env):
         :param directional (bool): flag whether observations should be directional (pointing in
             direction of agent or north-wise)
         """
-        image_obs_space = self._use_image_obs(image_observation_layers, directional)
+        image_obs_space = self._use_image_obs(image_observation_layers, directional)[0]
         self.image_obs = False
         self.image_dict_obs = True
         feature_space = spaces.Dict(
