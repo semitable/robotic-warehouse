@@ -63,6 +63,7 @@ class ObserationType(Enum):
     DICT = 0
     FLATTENED = 1
     IMAGE = 2
+    IMAGE_DICT = 3
 
 class ImageLayer(Enum):
     """
@@ -273,16 +274,20 @@ class Warehouse(gym.Env):
         self.image_obs = None
         self.observation_space = None
         if observation_type == ObserationType.IMAGE:
-            self._use_image_obs(image_observation_layers, image_observation_directional)
+            self.observation_space = self._use_image_obs(image_observation_layers, image_observation_directional)
+        elif observation_type == ObserationType.IMAGE_DICT:
+            self.observation_space = self._use_image_dict_obs(image_observation_layers, image_observation_directional)
+
         else:
             # used for DICT observation type and needed as preceeding stype to generate
             # FLATTENED observations as well
-            self._use_slow_obs()
+            self.observation_space = self._use_slow_obs()
 
-        # for performance reasons we
-        # can flatten the obs vector
-        if observation_type == ObserationType.FLATTENED:
-            self._use_fast_obs()
+            # for performance reasons we
+            # can flatten the obs vector
+            if observation_type == ObserationType.FLATTENED:
+                self.observation_space = self._use_fast_obs()
+        
 
         self.renderer = None
 
@@ -348,6 +353,7 @@ class Warehouse(gym.Env):
         """
         self.image_obs = True
         self.fast_obs = False
+        self.image_dict_obs = True
         self.image_observation_directional = directional
         self.image_observation_layers = image_observation_layers
 
@@ -370,9 +376,51 @@ class Warehouse(gym.Env):
         # total observation
         min_obs = np.stack(layers_min)
         max_obs = np.stack(layers_max)
-        self.observation_space = spaces.Tuple(
+        return spaces.Tuple(
             tuple([spaces.Box(min_obs, max_obs, dtype=np.float32)] * self.n_agents)
         )
+
+    def _use_image_dict_obs(self, image_observation_layers, directional=True):
+        """
+        Get image dictionary observation with image and flattened feature vector
+        :param image_observation_layers (List[ImageLayer]): list of layers to use as image channels
+        :param directional (bool): flag whether observations should be directional (pointing in
+            direction of agent or north-wise)
+        """
+        image_obs_space = self._use_image_obs(image_observation_layers, directional)
+        self.image_obs = False
+        self.image_dict_obs = True
+        feature_space = spaces.Dict(
+            OrderedDict(
+                {
+                    "direction": spaces.Discrete(4),
+                    "on_highway": spaces.MultiBinary(1),
+                    "carrying_shelf": spaces.MultiDiscrete([2]),
+                }
+            )
+        )
+
+        feature_flat_dim = spaces.flatdim(feature_space)
+        feature_space = spaces.Box(
+            low=-float("inf"),
+            high=float("inf"),
+            shape=(feature_flat_dim,),
+            dtype=np.float32,
+        )
+
+        return spaces.Tuple(
+            tuple(
+                [
+                    spaces.Dict(
+                        {
+                            "image": image_obs_space,
+                            "features": feature_space
+                        }
+                    )
+                for _ in range(self.n_agents)]
+            )
+        )
+
 
     def _use_slow_obs(self):
         self.fast_obs = False
@@ -402,7 +450,7 @@ class Warehouse(gym.Env):
                 [self.grid_size[1], self.grid_size[0]]
             )
 
-        self.observation_space = spaces.Tuple(
+        return spaces.Tuple(
             tuple(
                 [
                     spaces.Dict(
@@ -463,83 +511,98 @@ class Warehouse(gym.Env):
                 )
             ]
 
-        self.observation_space = spaces.Tuple(tuple(ma_spaces))
+        return spaces.Tuple(tuple(ma_spaces))
 
     def _is_highway(self, x: int, y: int) -> bool:
         return self.highways[y, x]
 
+    def _make_img_obs(self, agent):
+        # write image observations
+        if agent.id == 1:
+            layers = []
+            # first agent's observation --> update global observation layers
+            for layer_type in self.image_observation_layers:
+                if layer_type == ImageLayer.SHELVES:
+                    layer = self.grid[_LAYER_SHELFS].copy().astype(np.float32)
+                    # set all occupied shelf cells to 1.0 (instead of shelf ID)
+                    layer[layer > 0.0] = 1.0
+                    # print("SHELVES LAYER")
+                elif layer_type == ImageLayer.REQUESTS:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for requested_shelf in self.request_queue:
+                        layer[requested_shelf.y, requested_shelf.x] = 1.0
+                    # print("REQUESTS LAYER")
+                elif layer_type == ImageLayer.AGENTS:
+                    layer = self.grid[_LAYER_AGENTS].copy().astype(np.float32)
+                    # set all occupied agent cells to 1.0 (instead of agent ID)
+                    layer[layer > 0.0] = 1.0
+                    # print("AGENTS LAYER")
+                elif layer_type == ImageLayer.AGENT_DIRECTION:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        agent_direction = ag.dir.value + 1
+                        layer[ag.x, ag.y] = float(agent_direction)
+                    # print("AGENT DIRECTIONS LAYER")
+                elif layer_type == ImageLayer.AGENT_LOAD:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        if ag.carrying_shelf is not None:
+                            layer[ag.x, ag.y] = 1.0
+                    # print("AGENT LOAD LAYER")
+                elif layer_type == ImageLayer.GOALS:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for goal_y, goal_x in self.goals:
+                        layer[goal_x, goal_y] = 1.0
+                    # print("GOALS LAYER")
+                elif layer_type == ImageLayer.ACCESSIBLE:
+                    layer = np.ones(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        layer[ag.y, ag.x] = 0.0
+                    # print("ACCESSIBLE LAYER")
+                # print(layer)
+                # print()
+                # pad with 0s for out-of-map cells
+                layer = np.pad(layer, self.sensor_range, mode="constant")
+                layers.append(layer)
+            self.global_layers = np.stack(layers)
+
+        # global information was generated --> get information for agent
+        start_x = agent.y
+        end_x = agent.y + 2 * self.sensor_range + 1
+        start_y = agent.x
+        end_y = agent.x + 2 * self.sensor_range + 1
+        obs = self.global_layers[:, start_x:end_x, start_y:end_y]
+
+        if self.image_observation_directional:
+            # rotate image to be in direction of agent
+            if agent.dir == Direction.DOWN:
+                # rotate by 180 degrees (clockwise)
+                obs = np.rot90(obs, k=2, axes=(1,2))
+            elif agent.dir == Direction.LEFT:
+                # rotate by 90 degrees (clockwise)
+                obs = np.rot90(obs, k=3, axes=(1,2))
+            elif agent.dir == Direction.RIGHT:
+                # rotate by 270 degrees (clockwise)
+                obs = np.rot90(obs, k=1, axes=(1,2))
+            # no rotation needed for UP direction
+        return obs
+
+
     def _make_obs(self, agent):
         if self.image_obs:
-            # write image observations
-            if agent.id == 1:
-                layers = []
-                # first agent's observation --> update global observation layers
-                for layer_type in self.image_observation_layers:
-                    if layer_type == ImageLayer.SHELVES:
-                        layer = self.grid[_LAYER_SHELFS].copy().astype(np.float32)
-                        # set all occupied shelf cells to 1.0 (instead of shelf ID)
-                        layer[layer > 0.0] = 1.0
-                        # print("SHELVES LAYER")
-                    elif layer_type == ImageLayer.REQUESTS:
-                        layer = np.zeros(self.grid_size, dtype=np.float32)
-                        for requested_shelf in self.request_queue:
-                            layer[requested_shelf.y, requested_shelf.x] = 1.0
-                        # print("REQUESTS LAYER")
-                    elif layer_type == ImageLayer.AGENTS:
-                        layer = self.grid[_LAYER_AGENTS].copy().astype(np.float32)
-                        # set all occupied agent cells to 1.0 (instead of agent ID)
-                        layer[layer > 0.0] = 1.0
-                        # print("AGENTS LAYER")
-                    elif layer_type == ImageLayer.AGENT_DIRECTION:
-                        layer = np.zeros(self.grid_size, dtype=np.float32)
-                        for ag in self.agents:
-                            agent_direction = ag.dir.value + 1
-                            layer[ag.x, ag.y] = float(agent_direction)
-                        # print("AGENT DIRECTIONS LAYER")
-                    elif layer_type == ImageLayer.AGENT_LOAD:
-                        layer = np.zeros(self.grid_size, dtype=np.float32)
-                        for ag in self.agents:
-                            if ag.carrying_shelf is not None:
-                                layer[ag.x, ag.y] = 1.0
-                        # print("AGENT LOAD LAYER")
-                    elif layer_type == ImageLayer.GOALS:
-                        layer = np.zeros(self.grid_size, dtype=np.float32)
-                        for goal_y, goal_x in self.goals:
-                            layer[goal_x, goal_y] = 1.0
-                        # print("GOALS LAYER")
-                    elif layer_type == ImageLayer.ACCESSIBLE:
-                        layer = np.ones(self.grid_size, dtype=np.float32)
-                        for ag in self.agents:
-                            layer[ag.y, ag.x] = 0.0
-                        # print("ACCESSIBLE LAYER")
-                    # print(layer)
-                    # print()
-                    # pad with 0s for out-of-map cells
-                    layer = np.pad(layer, self.sensor_range, mode="constant")
-                    layers.append(layer)
-                self.global_layers = np.stack(layers)
-
-            # global information was generated --> get information for agent
-            start_x = agent.y
-            end_x = agent.y + 2 * self.sensor_range + 1
-            start_y = agent.x
-            end_y = agent.x + 2 * self.sensor_range + 1
-            obs = self.global_layers[:, start_x:end_x, start_y:end_y]
-
-            if self.image_observation_directional:
-                # rotate image to be in direction of agent
-                if agent.dir == Direction.DOWN:
-                    # rotate by 180 degrees (clockwise)
-                    obs = np.rot90(obs, k=2, axes=(1,2))
-                elif agent.dir == Direction.LEFT:
-                    # rotate by 90 degrees (clockwise)
-                    obs = np.rot90(obs, k=3, axes=(1,2))
-                elif agent.dir == Direction.RIGHT:
-                    # rotate by 270 degrees (clockwise)
-                    obs = np.rot90(obs, k=1, axes=(1,2))
-                # no rotation needed for UP direction
-            return obs
-
+            return self._make_img_obs(agent)
+        elif self.image_dict_obs:
+            image_obs = self._make_img_obs(agent)
+            feature_obs = _VectorWriter(self.observation_space[agent.id - 1]["features"].shape[0])
+            direction = np.zeros(4)
+            direction[agent.dir.value] = 1.0
+            feature_obs.write(direction)
+            feature_obs.write([int(self._is_highway(agent.x, agent.y)), int(agent.carrying_shelf is not None)])
+            return {
+                "image": image_obs,
+                "features": feature_obs.vector,
+            }
+        
         min_x = agent.x - self.sensor_range
         max_x = agent.x + self.sensor_range + 1
 

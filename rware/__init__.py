@@ -34,7 +34,7 @@ for size, diff, agents in _perms:
 
 
 def image_registration():
-    _observation_type = {"": ObserationType.FLATTENED, "-img": ObserationType.IMAGE}
+    _observation_type = {"": ObserationType.FLATTENED, "-img": ObserationType.IMAGE, "-imgdict": ObserationType.IMAGE_DICT}
     _image_directional = {"": True, "-Nd": False}
     _perms = itertools.product(_sizes.keys(), _difficulty, _observation_type, _image_directional, range(1, 20),)
     for size, diff, obs_type, directional, agents in _perms:
