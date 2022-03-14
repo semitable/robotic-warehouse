@@ -272,6 +272,7 @@ class Warehouse(gym.Env):
         # default values:
         self.fast_obs = None
         self.image_obs = None
+        self.image_dict_obs = None
         self.observation_space = None
         if observation_type == ObserationType.IMAGE:
             self.observation_space = self._use_image_obs(image_observation_layers, image_observation_directional)
