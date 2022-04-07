@@ -934,6 +934,7 @@ class Warehouse(gym.Env):
                 ImageLayer.GOALS,
             ],
             recompute=False,
+            pad_to_shape=None,
     ):
         """
         Get global image observation
@@ -941,6 +942,8 @@ class Warehouse(gym.Env):
         :param recompute: bool whether image should be recomputed or taken from last computation
             (for default params, image will be constant for environment so no recomputation needed
              but if agent or request information is included, then should be recomputed)
+         :param pad_to_shape: if given than pad environment global image shape into this
+             shape (if doesn't fit throw exception)
         """
         if recompute or not self.global_image:
             layers = []
@@ -976,7 +979,17 @@ class Warehouse(gym.Env):
                     for ag in self.agents:
                         layer[ag.y, ag.x] = 0.0
                 layers.append(layer)
-            self.global_image = np.stack(layers)
+            all_layers = np.stack(layers)
+            if pad_to_shape:
+                assert len(pad_to_shape) == len(all_layers.shape) == 3
+                padding_dims = [pad_dim - global_dim for pad_dim, global_dim in zip(pad_to_shape, all_layers.shape)]
+                start_dims = [pad_dim // 2 for pad_dim in padding_dims[1:]]
+                end_dims = [pad_dim // 2 if pad_dim % 2 == 0 else pad_dim // 2 + 1 for pad_dim in padding_dims[1:]]
+                assert all([dim >= 0 for dim in padding_dims])
+                self.global_image = np.zeros(pad_to_shape)
+                self.global_image[:, start_dims[0]:-end_dims[0], start_dims[1]:-end_dims[1]] = all_layers
+            else:
+                self.global_image = all_layers
         return self.global_image
 
     
