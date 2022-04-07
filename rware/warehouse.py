@@ -289,7 +289,7 @@ class Warehouse(gym.Env):
             if observation_type == ObserationType.FLATTENED:
                 self.observation_space = self._use_fast_obs()
         
-
+        self.global_image = None
         self.renderer = None
 
     def _make_layout_from_params(self, shelf_columns, shelf_rows, column_height):
@@ -926,6 +926,59 @@ class Warehouse(gym.Env):
 
     def seed(self, seed=None):
         ...
+
+    def get_global_image(
+            self,
+            image_layers=[
+                ImageLayer.SHELVES,
+                ImageLayer.GOALS,
+            ],
+            recompute=False,
+    ):
+        """
+        Get global image observation
+        :param image_layers: image layers to include in global image
+        :param recompute: bool whether image should be recomputed or taken from last computation
+            (for default params, image will be constant for environment so no recomputation needed
+             but if agent or request information is included, then should be recomputed)
+        """
+        if recompute or not self.global_image:
+            layers = []
+            for layer_type in image_layers:
+                if layer_type == ImageLayer.SHELVES:
+                    layer = self.grid[_LAYER_SHELFS].copy().astype(np.float32)
+                    # set all occupied shelf cells to 1.0 (instead of shelf ID)
+                    layer[layer > 0.0] = 1.0
+                elif layer_type == ImageLayer.REQUESTS:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for requested_shelf in self.request_queue:
+                        layer[requested_shelf.y, requested_shelf.x] = 1.0
+                elif layer_type == ImageLayer.AGENTS:
+                    layer = self.grid[_LAYER_AGENTS].copy().astype(np.float32)
+                    # set all occupied agent cells to 1.0 (instead of agent ID)
+                    layer[layer > 0.0] = 1.0
+                elif layer_type == ImageLayer.AGENT_DIRECTION:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        agent_direction = ag.dir.value + 1
+                        layer[ag.x, ag.y] = float(agent_direction)
+                elif layer_type == ImageLayer.AGENT_LOAD:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        if ag.carrying_shelf is not None:
+                            layer[ag.x, ag.y] = 1.0
+                elif layer_type == ImageLayer.GOALS:
+                    layer = np.zeros(self.grid_size, dtype=np.float32)
+                    for goal_y, goal_x in self.goals:
+                        layer[goal_x, goal_y] = 1.0
+                elif layer_type == ImageLayer.ACCESSIBLE:
+                    layer = np.ones(self.grid_size, dtype=np.float32)
+                    for ag in self.agents:
+                        layer[ag.y, ag.x] = 0.0
+                layers.append(layer)
+            self.global_image = np.stack(layers)
+        return self.global_image
+
     
     def optimal_returns(self, steps=None, output=False):
         """
