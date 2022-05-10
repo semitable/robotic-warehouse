@@ -211,6 +211,7 @@ class Viewer(object):
     def _draw_goals(self, env):
         batch = pyglet.graphics.Batch()
 
+        # draw goal boxes
         for goal in env.goals:
             x, y = goal
             y = self.rows - y - 1  # pyglet rendering is reversed
@@ -234,6 +235,27 @@ class Viewer(object):
                 ("c3B", 4 * _GOAL_COLOR),
             )
         batch.draw()
+
+        # draw goal labels
+        for goal in env.goals:
+            x, y = goal
+            y = self.rows - y - 1
+            label_x = x * (self.grid_size + 1) + (1 / 2) * (self.grid_size + 1)
+            label_y = (self.grid_size + 1) * y + (1 / 2) * (self.grid_size + 1)
+            label = pyglet.text.Label(
+                "G",
+                font_name="Calibri",
+                font_size=18,
+                bold=False,
+                x=label_x,
+                y=label_y,
+                anchor_x="center",
+                anchor_y="center",
+                color=(*_WHITE, 255),
+            )
+            label.draw()
+
+
 
     def _draw_agents(self, env):
         agents = []
@@ -313,33 +335,3 @@ class Viewer(object):
                 ("c3B", (*_AGENT_DIR_COLOR, *_AGENT_DIR_COLOR)),
             )
         batch.draw()
-
-    def _draw_badge(self, row, col, level):
-        resolution = 6
-        radius = self.grid_size / 5
-
-        badge_x = col * self.grid_size + (3 / 4) * self.grid_size
-        badge_y = self.height - self.grid_size * (row + 1) + (1 / 4) * self.grid_size
-
-        # make a circle
-        verts = []
-        for i in range(resolution):
-            angle = 2 * math.pi * i / resolution
-            x = radius * math.cos(angle) + badge_x
-            y = radius * math.sin(angle) + badge_y
-            verts += [x, y]
-        circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
-        glColor3ub(*_BLACK)
-        circle.draw(GL_POLYGON)
-        glColor3ub(*_WHITE)
-        circle.draw(GL_LINE_LOOP)
-        label = pyglet.text.Label(
-            str(level),
-            font_name="Times New Roman",
-            font_size=12,
-            x=badge_x,
-            y=badge_y + 2,
-            anchor_x="center",
-            anchor_y="center",
-        )
-        label.draw()
