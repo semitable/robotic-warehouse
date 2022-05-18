@@ -93,7 +93,7 @@ class Viewer(object):
         self.icon_size = 20
 
         self.width = 1 + self.cols * (self.grid_size + 1)
-        self.height = 1 + self.rows * (self.grid_size + 1)
+        self.height = 2 + self.rows * (self.grid_size + 1)
         self.window = pyglet.window.Window(
             width=self.width, height=self.height, display=display
         )
@@ -140,7 +140,7 @@ class Viewer(object):
 
     def _draw_grid(self):
         batch = pyglet.graphics.Batch()
-        # VERTICAL LINES
+        # HORIZONTAL LINES
         for r in range(self.rows + 1):
             batch.add(
                 2,
@@ -158,7 +158,7 @@ class Viewer(object):
                 ("c3B", (*_GRID_COLOR, *_GRID_COLOR)),
             )
 
-        # HORIZONTAL LINES
+        # VERTICAL LINES
         for c in range(self.cols + 1):
             batch.add(
                 2,
@@ -295,7 +295,6 @@ class Viewer(object):
             circle.draw(GL_POLYGON)
 
         for agent in env.agents:
-
             col, row = agent.x, agent.y
             row = self.rows - row - 1  # pyglet rendering is reversed
 
@@ -335,3 +334,41 @@ class Viewer(object):
                 ("c3B", (*_AGENT_DIR_COLOR, *_AGENT_DIR_COLOR)),
             )
         batch.draw()
+
+        # render agent indeces
+        # for agent_idx, agent in enumerate(env.agents):
+        #     col, row = agent.x, agent.y
+        #     self._draw_badge(row, col, agent_idx + 1)
+
+
+    def _draw_badge(self, row, col, index):
+        resolution = 6
+        radius = self.grid_size / 5
+
+        badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
+        badge_y = self.height - (self.grid_size + 1) * (row + 1) + (1 / 4) * (self.grid_size + 1)
+
+        # make a circle
+        verts = []
+        for i in range(resolution):
+            angle = 2 * math.pi * i / resolution
+            x = radius * math.cos(angle) + badge_x
+            y = radius * math.sin(angle) + badge_y
+            verts += [x, y]
+        circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
+        glColor3ub(*_WHITE)
+        circle.draw(GL_POLYGON)
+        glColor3ub(*_BLACK)
+        circle.draw(GL_LINE_LOOP)
+        label = pyglet.text.Label(
+            str(index),
+            font_name="Times New Roman",
+            font_size=9,
+            bold=True,
+            x=badge_x,
+            y=badge_y + 2,
+            anchor_x="center",
+            anchor_y="center",
+            color=(*_BLACK, 255),
+        )
+        label.draw()
