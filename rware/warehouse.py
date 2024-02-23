@@ -815,9 +815,8 @@ class Warehouse(gym.Env):
             # a shelf was successfully delived.
             shelf_delivered = True
             # remove from queue and replace it
-            new_request = np.random.choice(
-                list(set(self.shelfs) - set(self.request_queue))
-            )
+            candidates = [s for s in self.shelfs if s not in self.request_queue]
+            new_request = np.random.choice(candidates)
             self.request_queue[self.request_queue.index(shelf)] = new_request
             # also reward the agents
             if self.reward_type == RewardType.GLOBAL:
@@ -869,12 +868,10 @@ if __name__ == "__main__":
     import time
     from tqdm import tqdm
 
-    time.sleep(2)
     # env.render()
-    # env.step(18 * [Action.LOAD] + 2 * [Action.NOOP])
 
     for _ in tqdm(range(1000000)):
-        # time.sleep(2)
+        # time.sleep(0.05)
         # env.render()
         actions = env.action_space.sample()
         env.step(actions)
