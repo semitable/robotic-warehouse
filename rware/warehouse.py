@@ -143,7 +143,7 @@ class Shelf(Entity):
 
 class Warehouse(gym.Env):
     metadata = {
-        "render.modes": ["human", "rgb_array"],
+        "render_modes": ["human", "rgb_array"],
         "render_fps": 10,
     }
 
