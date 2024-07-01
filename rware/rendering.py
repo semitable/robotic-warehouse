@@ -7,10 +7,10 @@ import math
 import os
 import sys
 
+from gymnasium import error
 import numpy as np
-import math
 import six
-from gym import error
+
 from rware.warehouse import Direction
 
 if "Apple" in sys.version:
@@ -21,7 +21,7 @@ if "Apple" in sys.version:
 
 try:
     import pyglet
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Cannot import pyglet.
@@ -33,7 +33,7 @@ except ImportError as e:
 
 try:
     from pyglet.gl import *
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Error occured while running `from pyglet.gl import *`
@@ -255,8 +255,6 @@ class Viewer(object):
             )
             label.draw()
 
-
-
     def _draw_agents(self, env):
         agents = []
         batch = pyglet.graphics.Batch()
@@ -266,7 +264,6 @@ class Viewer(object):
         resolution = 6
 
         for agent in env.agents:
-
             col, row = agent.x, agent.y
             row = self.rows - row - 1  # pyglet rendering is reversed
 
@@ -335,18 +332,16 @@ class Viewer(object):
             )
         batch.draw()
 
-        # render agent indeces
-        # for agent_idx, agent in enumerate(env.agents):
-        #     col, row = agent.x, agent.y
-        #     self._draw_badge(row, col, agent_idx + 1)
-
-
     def _draw_badge(self, row, col, index):
         resolution = 6
         radius = self.grid_size / 5
 
         badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
-        badge_y = self.height - (self.grid_size + 1) * (row + 1) + (1 / 4) * (self.grid_size + 1)
+        badge_y = (
+            self.height
+            - (self.grid_size + 1) * (row + 1)
+            + (1 / 4) * (self.grid_size + 1)
+        )
 
         # make a circle
         verts = []

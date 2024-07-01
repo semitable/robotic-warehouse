@@ -6,6 +6,14 @@
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Naereen/StrapDown.js/blob/master/LICENSE)
 
+> [!CAUTION]
+> The RWARE environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version XXX of the repository. The main changes to the interface are as follows:
+> - `obss = env.reset()` --> `obss, info = env.reset()`
+> - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
+> - `done` is given as single boolean value instead of one `bool` value per agent
+> - You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
+
+
 <h1>Table of Contents</h1>
 
 - [Environment Description](#environment-description)
@@ -74,26 +82,35 @@ Note that R directly affects the difficulty of the environment. A small R, espec
 
 ## Naming Scheme
 
-While RWARE allows fine tuning of multiple parameters when using the Warehouse class, it also registers multiple default environments with Gym for simplicity.
+While RWARE allows fine tuning of multiple parameters when using the Warehouse class, it also registers multiple default environments with Gymnasium for simplicity.
 
-The registered names look like `rware-tiny-2ag-v1` and might cryptic in the beginning, but it is not actually complicated. Every name always starts with rware. Next, the map size is appended as -tiny, -small, -medium, or -large. The number of robots in the map is selected as Xag with X being a number larger than one (e.g. -4ag for 4 agents). A difficulty modifier is optionally appended in the form of -easy or -hard, making requested shelves twice or half the number of agents (see section Rewards). Finally -v1 is the version as required by OpenAI Gym. In the time of writing all environments are v1, but we will increase it during changes or bugfixes.
+The registered names look like `rware-tiny-2ag-v1` and might cryptic in the beginning, but it is not actually complicated. Every name always starts with rware. Next, the map size is appended as -tiny, -small, -medium, or -large. The number of robots in the map is selected as Xag with X being a number larger than one (e.g. -4ag for 4 agents). A difficulty modifier is optionally appended in the form of -easy or -hard, making requested shelves twice or half the number of agents (see section Rewards). Finally -v2 is the version as required for Gymnasium. In the time of writing all environments are v1, but we will increase it during changes or bugfixes.
 
 A few examples:
 ```python
-env = gym.make("rware-tiny-2ag-v1")
-env = gym.make("rware-small-4ag-v1")
-env = gym.make("rware-medium-6ag-hard-v1")
+import gymnasium as gym
+import rware
+
+env = gym.make("rware-tiny-2ag-v2")
+env = gym.make("rware-small-4ag-v2")
+env = gym.make("rware-medium-6ag-hard-v2")
 ```
 
 
 Of course, more settings are available, but have to be changed during environment creation. For example:
 ```python
-env = gym.make("rware-tiny-2ag-v1", sensor_range=3, request_queue_size=6)
+import gymnasium as gym
+import rware
+
+env = gym.make("rware-tiny-2ag-v2", sensor_range=3, request_queue_size=6)
 ```
 
 ## Custom layout
 You can design a custom warehouse layout with the following:
 ```python
+import gymnasium as gym
+import rware
+
 layout = """
 .......
 ...x...
@@ -103,7 +120,7 @@ layout = """
 ...x...
 .g...g.
 """
-gym = env.make("rware:rware-tiny-2ag-v1", layout=layout)
+env = gym.make("rware:rware-tiny-2ag-v2", layout=layout)
 ```
 This will transform "X"s to shelves and "G"s to goal locations with a result like the one below:
 <p align="center">
@@ -135,15 +152,15 @@ RWARE was designed to be compatible with Open AI's Gym framework.
 Creating the environment is done exactly as one would create a Gym environment:
 
 ```python
-import gym
+import gymnasium as gym
 import rware
-env = gym.make("rware-tiny-2ag-v1")
+env = gym.make("rware-tiny-2ag-v2")
 ```
 
 You can even bypass the `import` statement with Gym, and directly use:
 ```python
-import gym
-env = gym.make("rware:rware-tiny-2ag-v1")
+import gymnasium as gym
+env = gym.make("rware:rware-tiny-2ag-v2")
 ```
 The `rware:` in the beginning of the environment name tells Gym to import the respective package.
 
@@ -164,8 +181,7 @@ obs = env.reset()  # a tuple of observations
 actions = env.action_space.sample()  # the action space can be sampled
 print(actions)  # (1, 0)
 n_obs, reward, done, info = env.step(actions)
-
-print(done)    # [False, False]
+print(done)    # False
 print(reward)  # [0.0, 0.0]
 ```
 which leaves as to the only difference with Gym: the rewards and the done flag are lists, and each element corresponds to the respective agent.

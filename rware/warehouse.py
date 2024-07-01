@@ -1,17 +1,12 @@
-import logging
-
-from collections import defaultdict, OrderedDict
-import gym
-from gym import spaces
-
-from rware.utils import MultiAgentActionSpace, MultiAgentObservationSpace
-
+from collections import OrderedDict
 from enum import Enum
-import numpy as np
-
 from typing import List, Tuple, Optional, Dict
 
+import gymnasium as gym
+from gymnasium.utils import seeding
 import networkx as nx
+import numpy as np
+
 
 _AXIS_Z = 0
 _AXIS_Y = 1
@@ -64,17 +59,19 @@ class ObserationType(Enum):
     IMAGE = 2
     IMAGE_DICT = 3
 
+
 class ImageLayer(Enum):
     """
     Input layers of image-style observations
     """
-    SHELVES = 0 # binary layer indicating shelves (also indicates carried shelves)
-    REQUESTS = 1 # binary layer indicating requested shelves
-    AGENTS = 2 # binary layer indicating agents in the environment (no way to distinguish agents)
-    AGENT_DIRECTION = 3 # layer indicating agent directions as int (see Direction enum + 1 for values)
-    AGENT_LOAD = 4 # binary layer indicating agents with load
-    GOALS = 5 # binary layer indicating goal/ delivery locations
-    ACCESSIBLE = 6 # binary layer indicating accessible cells (all but occupied cells/ out of map)
+
+    SHELVES = 0  # binary layer indicating shelves (also indicates carried shelves)
+    REQUESTS = 1  # binary layer indicating requested shelves
+    AGENTS = 2  # binary layer indicating agents in the environment (no way to distinguish agents)
+    AGENT_DIRECTION = 3  # layer indicating agent directions as int (see Direction enum + 1 for values)
+    AGENT_LOAD = 4  # binary layer indicating agents with load
+    GOALS = 5  # binary layer indicating goal/ delivery locations
+    ACCESSIBLE = 6  # binary layer indicating accessible cells (all but occupied cells/ out of map)
 
 
 class Entity:
@@ -145,8 +142,10 @@ class Shelf(Entity):
 
 
 class Warehouse(gym.Env):
-
-    metadata = {"render.modes": ["human", "rgb_array"]}
+    metadata = {
+        "render.modes": ["human", "rgb_array"],
+        "render_fps": 10,
+    }
 
     def __init__(
         self,
@@ -161,16 +160,17 @@ class Warehouse(gym.Env):
         max_steps: Optional[int],
         reward_type: RewardType,
         layout: str = None,
-        observation_type: ObserationType=ObserationType.FLATTENED,
-        image_observation_layers: List[ImageLayer]=[
+        observation_type: ObserationType = ObserationType.FLATTENED,
+        image_observation_layers: List[ImageLayer] = [
             ImageLayer.SHELVES,
             ImageLayer.REQUESTS,
             ImageLayer.AGENTS,
             ImageLayer.GOALS,
-            ImageLayer.ACCESSIBLE
+            ImageLayer.ACCESSIBLE,
         ],
-        image_observation_directional: bool=True,
-        normalised_coordinates: bool=False,
+        image_observation_directional: bool = True,
+        normalised_coordinates: bool = False,
+        render_mode: Optional[str] = None,
     ):
         """The robotic warehouse environment
 
@@ -253,15 +253,15 @@ class Warehouse(gym.Env):
         self._cur_inactive_steps = None
         self._cur_steps = 0
         self.max_steps = max_steps
-        
+
         self.normalised_coordinates = normalised_coordinates
 
         sa_action_space = [len(Action), *msg_bits * (2,)]
         if len(sa_action_space) == 1:
-            sa_action_space = spaces.Discrete(sa_action_space[0])
+            sa_action_space = gym.spaces.Discrete(sa_action_space[0])
         else:
-            sa_action_space = spaces.MultiDiscrete(sa_action_space)
-        self.action_space = spaces.Tuple(tuple(n_agents * [sa_action_space]))
+            sa_action_space = gym.spaces.MultiDiscrete(sa_action_space)
+        self.action_space = gym.spaces.Tuple(tuple(n_agents * [sa_action_space]))
 
         self.request_queue_size = request_queue_size
         self.request_queue = []
@@ -274,9 +274,13 @@ class Warehouse(gym.Env):
         self.image_dict_obs = None
         self.observation_space = None
         if observation_type == ObserationType.IMAGE:
-            self.observation_space = self._use_image_obs(image_observation_layers, image_observation_directional)
+            self.observation_space = self._use_image_obs(
+                image_observation_layers, image_observation_directional
+            )
         elif observation_type == ObserationType.IMAGE_DICT:
-            self.observation_space = self._use_image_dict_obs(image_observation_layers, image_observation_directional)
+            self.observation_space = self._use_image_dict_obs(
+                image_observation_layers, image_observation_directional
+            )
 
         else:
             # used for DICT observation type and needed as preceeding stype to generate
@@ -287,9 +291,10 @@ class Warehouse(gym.Env):
             # can flatten the obs vector
             if observation_type == ObserationType.FLATTENED:
                 self.observation_space = self._use_fast_obs()
-        
+
         self.global_image = None
         self.renderer = None
+        self.render_mode = render_mode
 
     def _make_layout_from_params(self, shelf_columns, shelf_rows, column_height):
         assert shelf_columns % 2 == 1, "Only odd number of shelf columns is supported"
@@ -305,20 +310,25 @@ class Warehouse(gym.Env):
             (self.grid_size[1] // 2, self.grid_size[0] - 1),
         ]
 
-        self.highways = np.zeros(self.grid_size, dtype=np.int32)
+        self.highways = np.zeros(self.grid_size, dtype=np.uint8)
 
-        highway_func = lambda x, y: (
-            (x % 3 == 0)  # vertical highways
-            or (y % (self.column_height + 1) == 0)  # horizontal highways
-            or (y == self.grid_size[0] - 1)  # delivery row
-            or (  # remove a box for queuing
-                (y > self.grid_size[0] - (self.column_height + 3))
-                and ((x == self.grid_size[1] // 2 - 1) or (x == self.grid_size[1] // 2))
+        def highway_func(x, y):
+            is_on_vertical_highway = x % 3 == 0
+            is_on_horizontal_highway = y % (column_height + 1) == 0
+            is_on_delivery_row = y == self.grid_size[0] - 1
+            is_on_queue = (y > self.grid_size[0] - (column_height + 3)) and (
+                x == self.grid_size[1] // 2 - 1 or x == self.grid_size[1] // 2
             )
-        )
+            return (
+                is_on_vertical_highway
+                or is_on_horizontal_highway
+                or is_on_delivery_row
+                or is_on_queue
+            )
+
         for x in range(self.grid_size[1]):
             for y in range(self.grid_size[0]):
-                self.highways[y, x] = highway_func(x, y)
+                self.highways[y, x] = int(highway_func(x, y))
 
     def _make_layout_from_str(self, layout):
         layout = layout.strip()
@@ -331,7 +341,7 @@ class Warehouse(gym.Env):
 
         self.grid_size = (grid_height, grid_width)
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
-        self.highways = np.zeros(self.grid_size, dtype=np.int32)
+        self.highways = np.zeros(self.grid_size, dtype=np.uint8)
 
         for y, line in enumerate(lines):
             for x, char in enumerate(line):
@@ -365,7 +375,9 @@ class Warehouse(gym.Env):
             if layer == ImageLayer.AGENT_DIRECTION:
                 # directions as int
                 layer_min = np.zeros(observation_shape, dtype=np.float32)
-                layer_max = np.ones(observation_shape, dtype=np.float32) * max([d.value + 1 for d in Direction])
+                layer_max = np.ones(observation_shape, dtype=np.float32) * max(
+                    [d.value + 1 for d in Direction]
+                )
             else:
                 # binary layer
                 layer_min = np.zeros(observation_shape, dtype=np.float32)
@@ -376,8 +388,8 @@ class Warehouse(gym.Env):
         # total observation
         min_obs = np.stack(layers_min)
         max_obs = np.stack(layers_max)
-        return spaces.Tuple(
-            tuple([spaces.Box(min_obs, max_obs, dtype=np.float32)] * self.n_agents)
+        return gym.spaces.Tuple(
+            tuple([gym.spaces.Box(min_obs, max_obs, dtype=np.float32)] * self.n_agents)
         )
 
     def _use_image_dict_obs(self, image_observation_layers, directional=True):
@@ -390,37 +402,34 @@ class Warehouse(gym.Env):
         image_obs_space = self._use_image_obs(image_observation_layers, directional)[0]
         self.image_obs = False
         self.image_dict_obs = True
-        feature_space = spaces.Dict(
+        feature_space = gym.spaces.Dict(
             OrderedDict(
                 {
-                    "direction": spaces.Discrete(4),
-                    "on_highway": spaces.MultiBinary(1),
-                    "carrying_shelf": spaces.MultiDiscrete([2]),
+                    "direction": gym.spaces.Discrete(4),
+                    "on_highway": gym.spaces.MultiBinary(1),
+                    "carrying_shelf": gym.spaces.MultiBinary(1),
                 }
             )
         )
 
-        feature_flat_dim = spaces.flatdim(feature_space)
-        feature_space = spaces.Box(
+        feature_flat_dim = gym.spaces.flatdim(feature_space)
+        feature_space = gym.spaces.Box(
             low=-float("inf"),
             high=float("inf"),
             shape=(feature_flat_dim,),
             dtype=np.float32,
         )
 
-        return spaces.Tuple(
+        return gym.spaces.Tuple(
             tuple(
                 [
-                    spaces.Dict(
-                        {
-                            "image": image_obs_space,
-                            "features": feature_space
-                        }
+                    gym.spaces.Dict(
+                        {"image": image_obs_space, "features": feature_space}
                     )
-                for _ in range(self.n_agents)]
+                    for _ in range(self.n_agents)
+                ]
             )
         )
-
 
     def _use_slow_obs(self):
         self.fast_obs = False
@@ -438,53 +447,57 @@ class Warehouse(gym.Env):
             + self._obs_sensor_locations * self._obs_bits_per_shelf
         )
 
+        max_grid_val = max(self.grid_size)
+        low = np.zeros(2)
         if self.normalised_coordinates:
-            location_space = spaces.Box(
-                    low=0.0,
-                    high=1.0,
-                    shape=(2,),
-                    dtype=np.float32,
-            )
+            high = np.ones(2)
+            dtype = np.float32
         else:
-            location_space = spaces.MultiDiscrete(
-                [self.grid_size[1], self.grid_size[0]]
-            )
+            high = np.ones(2) * max_grid_val
+            dtype = np.int32
+        location_space = gym.spaces.Box(
+            low=low,
+            high=high,
+            shape=(2,),
+            dtype=dtype,
+        )
 
-        return spaces.Tuple(
+        self_observation_dict_space = gym.spaces.Dict(
+            OrderedDict(
+                {
+                    "location": location_space,
+                    "carrying_shelf": gym.spaces.MultiBinary(1),
+                    "direction": gym.spaces.Discrete(4),
+                    "on_highway": gym.spaces.MultiBinary(1),
+                }
+            )
+        )
+        sensor_per_location_dict = OrderedDict(
+            {
+                "has_agent": gym.spaces.MultiBinary(1),
+                "direction": gym.spaces.Discrete(4),
+            }
+        )
+        if self.msg_bits > 0:
+            sensor_per_location_dict["local_message"] = gym.spaces.MultiBinary(
+                self.msg_bits
+            )
+        sensor_per_location_dict.update(
+            {
+                "has_shelf": gym.spaces.MultiBinary(1),
+                "shelf_requested": gym.spaces.MultiBinary(1),
+            }
+        )
+        return gym.spaces.Tuple(
             tuple(
                 [
-                    spaces.Dict(
+                    gym.spaces.Dict(
                         OrderedDict(
                             {
-                                "self": spaces.Dict(
-                                    OrderedDict(
-                                        {
-                                            "location": location_space,
-                                            "carrying_shelf": spaces.MultiDiscrete([2]),
-                                            "direction": spaces.Discrete(4),
-                                            "on_highway": spaces.MultiBinary(1),
-                                        }
-                                    )
-                                ),
-                                "sensors": spaces.Tuple(
+                                "self": self_observation_dict_space,
+                                "sensors": gym.spaces.Tuple(
                                     self._obs_sensor_locations
-                                    * (
-                                        spaces.Dict(
-                                            OrderedDict(
-                                                {
-                                                    "has_agent": spaces.MultiBinary(1),
-                                                    "direction": spaces.Discrete(4),
-                                                    "local_message": spaces.MultiBinary(
-                                                        self.msg_bits
-                                                    ),
-                                                    "has_shelf": spaces.MultiBinary(1),
-                                                    "shelf_requested": spaces.MultiBinary(
-                                                        1
-                                                    ),
-                                                }
-                                            )
-                                        ),
-                                    )
+                                    * (gym.spaces.Dict(sensor_per_location_dict),)
                                 ),
                             }
                         )
@@ -501,9 +514,9 @@ class Warehouse(gym.Env):
         self.fast_obs = True
         ma_spaces = []
         for sa_obs in self.observation_space:
-            flatdim = spaces.flatdim(sa_obs)
+            flatdim = gym.spaces.flatdim(sa_obs)
             ma_spaces += [
-                spaces.Box(
+                gym.spaces.Box(
                     low=-float("inf"),
                     high=float("inf"),
                     shape=(flatdim,),
@@ -511,7 +524,7 @@ class Warehouse(gym.Env):
                 )
             ]
 
-        return spaces.Tuple(tuple(ma_spaces))
+        return gym.spaces.Tuple(tuple(ma_spaces))
 
     def _is_highway(self, x: int, y: int) -> bool:
         return self.highways[y, x]
@@ -577,32 +590,17 @@ class Warehouse(gym.Env):
             # rotate image to be in direction of agent
             if agent.dir == Direction.DOWN:
                 # rotate by 180 degrees (clockwise)
-                obs = np.rot90(obs, k=2, axes=(1,2))
+                obs = np.rot90(obs, k=2, axes=(1, 2))
             elif agent.dir == Direction.LEFT:
                 # rotate by 90 degrees (clockwise)
-                obs = np.rot90(obs, k=3, axes=(1,2))
+                obs = np.rot90(obs, k=3, axes=(1, 2))
             elif agent.dir == Direction.RIGHT:
                 # rotate by 270 degrees (clockwise)
-                obs = np.rot90(obs, k=1, axes=(1,2))
+                obs = np.rot90(obs, k=1, axes=(1, 2))
             # no rotation needed for UP direction
         return obs
 
-
-    def _make_obs(self, agent):
-        if self.image_obs:
-            return self._make_img_obs(agent)
-        elif self.image_dict_obs:
-            image_obs = self._make_img_obs(agent)
-            feature_obs = _VectorWriter(self.observation_space[agent.id - 1]["features"].shape[0])
-            direction = np.zeros(4)
-            direction[agent.dir.value] = 1.0
-            feature_obs.write(direction)
-            feature_obs.write([int(self._is_highway(agent.x, agent.y)), int(agent.carrying_shelf is not None)])
-            return {
-                "image": image_obs,
-                "features": feature_obs.vector,
-            }
-        
+    def _get_default_obs(self, agent):
         min_x = agent.x - self.sensor_range
         max_x = agent.x + self.sensor_range + 1
 
@@ -637,7 +635,8 @@ class Warehouse(gym.Env):
 
         if self.fast_obs:
             # write flattened observations
-            obs = _VectorWriter(self.observation_space[agent.id - 1].shape[0])
+            flatdim = gym.spaces.flatdim(self.observation_space[agent.id - 1])
+            obs = _VectorWriter(flatdim)
 
             if self.normalised_coordinates:
                 agent_x = agent.x / (self.grid_size[1] - 1)
@@ -652,27 +651,33 @@ class Warehouse(gym.Env):
             obs.write(direction)
             obs.write([int(self._is_highway(agent.x, agent.y))])
 
+            # 'has_agent': MultiBinary(1),
+            # 'direction': Discrete(4),
+            # 'local_message': MultiBinary(2)
+            # 'has_shelf': MultiBinary(1),
+            # 'shelf_requested': MultiBinary(1),
+
             for i, (id_agent, id_shelf) in enumerate(zip(agents, shelfs)):
                 if id_agent == 0:
-                    obs.skip(1)
-                    obs.write([1.0])
-                    obs.skip(3 + self.msg_bits)
+                    # no agent, direction, or message
+                    obs.write([0.0])  # no agent present
+                    obs.write([1.0, 0.0, 0.0, 0.0])  # agent direction
+                    obs.skip(self.msg_bits)  # agent message
                 else:
-                    obs.write([1.0])
+                    obs.write([1.0])  # agent present
                     direction = np.zeros(4)
                     direction[self.agents[id_agent - 1].dir.value] = 1.0
-                    obs.write(direction)
+                    obs.write(direction)  # agent direction as onehot
                     if self.msg_bits > 0:
-                        obs.write(self.agents[id_agent - 1].message)
+                        obs.write(self.agents[id_agent - 1].message)  # agent message
                 if id_shelf == 0:
-                    obs.skip(2)
+                    obs.write([0.0, 0.0])  # no shelf or requested shelf
                 else:
                     obs.write(
                         [1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)]
-                    )
-
+                    )  # shelf presence and request status
             return obs.vector
- 
+
         # write dictionary observations
         obs = {}
         if self.normalised_coordinates:
@@ -683,7 +688,7 @@ class Warehouse(gym.Env):
             agent_y = agent.y
         # --- self data
         obs["self"] = {
-            "location": np.array([agent_x, agent_y]),
+            "location": np.array([agent_x, agent_y], dtype=np.int32),
             "carrying_shelf": [int(agent.carrying_shelf is not None)],
             "direction": agent.dir.value,
             "on_highway": [int(self._is_highway(agent.x, agent.y))],
@@ -696,11 +701,15 @@ class Warehouse(gym.Env):
             if id_ == 0:
                 obs["sensors"][i]["has_agent"] = [0]
                 obs["sensors"][i]["direction"] = 0
-                obs["sensors"][i]["local_message"] = self.msg_bits * [0]
+                obs["sensors"][i]["local_message"] = (
+                    self.msg_bits * [0] if self.msg_bits > 0 else None
+                )
             else:
                 obs["sensors"][i]["has_agent"] = [1]
                 obs["sensors"][i]["direction"] = self.agents[id_ - 1].dir.value
-                obs["sensors"][i]["local_message"] = self.agents[id_ - 1].message
+                obs["sensors"][i]["local_message"] = (
+                    self.agents[id_ - 1].message if self.msg_bits > 0 else None
+                )
 
         # find neighboring shelfs:
         for i, id_ in enumerate(shelfs):
@@ -715,6 +724,33 @@ class Warehouse(gym.Env):
 
         return obs
 
+    def _make_obs(self, agent):
+        if self.image_obs:
+            return self._make_img_obs(agent)
+        elif self.image_dict_obs:
+            image_obs = self._make_img_obs(agent)
+            feature_obs = _VectorWriter(
+                self.observation_space[agent.id - 1]["features"].shape[0]
+            )
+            direction = np.zeros(4)
+            direction[agent.dir.value] = 1.0
+            feature_obs.write(direction)
+            feature_obs.write(
+                [
+                    int(self._is_highway(agent.x, agent.y)),
+                    int(agent.carrying_shelf is not None),
+                ]
+            )
+            return {
+                "image": image_obs,
+                "features": feature_obs.vector,
+            }
+        else:
+            return self._get_default_obs(agent)
+
+    def _get_info(self):
+        return {}
+
     def _recalc_grid(self):
         self.grid[:] = 0
         for s in self.shelfs:
@@ -723,7 +759,14 @@ class Warehouse(gym.Env):
         for a in self.agents:
             self.grid[_LAYER_AGENTS, a.y, a.x] = a.id
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        if seed is not None:
+            # setting seed
+            super().reset(seed=seed, options=options)
+
+        if self.render_mode == "human":
+            self.render()
+
         Shelf.counter = 0
         Agent.counter = 0
         self._cur_inactive_steps = 0
@@ -743,14 +786,14 @@ class Warehouse(gym.Env):
         ]
 
         # spawn agents at random locations
-        agent_locs = np.random.choice(
+        agent_locs = self.np_random.choice(
             np.arange(self.grid_size[0] * self.grid_size[1]),
             size=self.n_agents,
             replace=False,
         )
         agent_locs = np.unravel_index(agent_locs, self.grid_size)
         # and direction
-        agent_dirs = np.random.choice([d for d in Direction], size=self.n_agents)
+        agent_dirs = self.np_random.choice([d for d in Direction], size=self.n_agents)
         self.agents = [
             Agent(x, y, dir_, self.msg_bits)
             for y, x, dir_ in zip(*agent_locs, agent_dirs)
@@ -759,17 +802,16 @@ class Warehouse(gym.Env):
         self._recalc_grid()
 
         self.request_queue = list(
-            np.random.choice(self.shelfs, size=self.request_queue_size, replace=False)
+            self.np_random.choice(
+                self.shelfs, size=self.request_queue_size, replace=False
+            )
         )
 
-        return tuple([self._make_obs(agent) for agent in self.agents])
-        # for s in self.shelfs:
-        #     self.grid[0, s.y, s.x] = 1
-        # print(self.grid[0])
+        return tuple([self._make_obs(agent) for agent in self.agents]), self._get_info()
 
     def step(
         self, actions: List[Action]
-    ) -> Tuple[List[np.ndarray], List[float], List[bool], Dict]:
+    ) -> Tuple[List[np.ndarray], List[float], bool, bool, Dict]:
         assert len(actions) == len(self.agents)
 
         for agent, action in zip(self.agents, actions):
@@ -828,7 +870,6 @@ class Warehouse(gym.Env):
                     if agent_id > 0:
                         commited_agents.add(agent_id)
             except nx.NetworkXNoCycle:
-
                 longest_path = nx.algorithms.dag_longest_path(comp)
                 for x, y in longest_path:
                     agent_id = self.grid[_LAYER_AGENTS, y, x]
@@ -880,7 +921,7 @@ class Warehouse(gym.Env):
             shelf_delivered = True
             # remove from queue and replace it
             candidates = [s for s in self.shelfs if s not in self.request_queue]
-            new_request = np.random.choice(candidates)
+            new_request = self.np_random.choice(candidates)
             self.request_queue[self.request_queue.index(shelf)] = new_request
             # also reward the agents
             if self.reward_type == RewardType.GLOBAL:
@@ -903,13 +944,14 @@ class Warehouse(gym.Env):
             self.max_inactivity_steps
             and self._cur_inactive_steps >= self.max_inactivity_steps
         ) or (self.max_steps and self._cur_steps >= self.max_steps):
-            dones = self.n_agents * [True]
+            done = True
         else:
-            dones = self.n_agents * [False]
+            done = False
+        truncated = False
 
         new_obs = tuple([self._make_obs(agent) for agent in self.agents])
-        info = {}
-        return new_obs, list(rewards), dones, info
+        info = self._get_info()
+        return new_obs, list(rewards), done, truncated, info
 
     def render(self, mode="human"):
         if not self.renderer:
@@ -923,16 +965,17 @@ class Warehouse(gym.Env):
             self.renderer.close()
 
     def seed(self, seed=None):
-        ...
+        if seed is not None:
+            self._np_random, seed = seeding.np_random(seed)
 
     def get_global_image(
-            self,
-            image_layers=[
-                ImageLayer.SHELVES,
-                ImageLayer.GOALS,
-            ],
-            recompute=False,
-            pad_to_shape=None,
+        self,
+        image_layers=[
+            ImageLayer.SHELVES,
+            ImageLayer.GOALS,
+        ],
+        recompute=False,
+        pad_to_shape=None,
     ):
         """
         Get global image observation
@@ -979,24 +1022,30 @@ class Warehouse(gym.Env):
                 layers.append(layer)
             self.global_image = np.stack(layers)
             if pad_to_shape is not None:
-                padding_dims = [pad_dim - global_dim for pad_dim, global_dim in zip(pad_to_shape, self.global_image.shape)]
+                padding_dims = [
+                    pad_dim - global_dim
+                    for pad_dim, global_dim in zip(
+                        pad_to_shape, self.global_image.shape
+                    )
+                ]
                 assert all([dim >= 0 for dim in padding_dims])
                 pad_before = [pad_dim // 2 for pad_dim in padding_dims]
-                pad_after = [pad_dim // 2 if pad_dim % 2 == 0 else pad_dim // 2 + 1 for pad_dim in padding_dims]
+                pad_after = [
+                    pad_dim // 2 if pad_dim % 2 == 0 else pad_dim // 2 + 1
+                    for pad_dim in padding_dims
+                ]
                 self.global_image = np.pad(
                     self.global_image,
                     pad_width=tuple(zip(pad_before, pad_after)),
-                    mode='constant',
-                    constant_values=0
+                    mode="constant",
+                    constant_values=0,
                 )
         return self.global_image
 
-    
 
 if __name__ == "__main__":
     env = Warehouse(9, 8, 3, 10, 3, 1, 5, None, None, RewardType.GLOBAL)
     env.reset()
-    import time
     from tqdm import tqdm
 
     # env.render()
