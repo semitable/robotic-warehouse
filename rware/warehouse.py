@@ -8,10 +8,6 @@ import networkx as nx
 import numpy as np
 
 
-_AXIS_Z = 0
-_AXIS_Y = 1
-_AXIS_X = 2
-
 _COLLISION_LAYERS = 2
 
 _LAYER_AGENTS = 0
@@ -53,7 +49,7 @@ class RewardType(Enum):
     TWO_STAGE = 2
 
 
-class ObserationType(Enum):
+class ObservationType(Enum):
     DICT = 0
     FLATTENED = 1
     IMAGE = 2
@@ -159,8 +155,8 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
-        layout: str = None,
-        observation_type: ObserationType = ObserationType.FLATTENED,
+        layout: Optional[str] = None,
+        observation_type: ObservationType = ObservationType.FLATTENED,
         image_observation_layers: List[ImageLayer] = [
             ImageLayer.SHELVES,
             ImageLayer.REQUESTS,
@@ -272,12 +268,11 @@ class Warehouse(gym.Env):
         self.fast_obs = None
         self.image_obs = None
         self.image_dict_obs = None
-        self.observation_space = None
-        if observation_type == ObserationType.IMAGE:
+        if observation_type == ObservationType.IMAGE:
             self.observation_space = self._use_image_obs(
                 image_observation_layers, image_observation_directional
             )
-        elif observation_type == ObserationType.IMAGE_DICT:
+        elif observation_type == ObservationType.IMAGE_DICT:
             self.observation_space = self._use_image_dict_obs(
                 image_observation_layers, image_observation_directional
             )
@@ -289,7 +284,7 @@ class Warehouse(gym.Env):
 
             # for performance reasons we
             # can flatten the obs vector
-            if observation_type == ObserationType.FLATTENED:
+            if observation_type == ObservationType.FLATTENED:
                 self.observation_space = self._use_fast_obs()
 
         self.global_image = None
@@ -509,7 +504,7 @@ class Warehouse(gym.Env):
 
     def _use_fast_obs(self):
         if self.fast_obs:
-            return
+            return self.observation_space
 
         self.fast_obs = True
         ma_spaces = []
@@ -571,9 +566,9 @@ class Warehouse(gym.Env):
                     layer = np.ones(self.grid_size, dtype=np.float32)
                     for ag in self.agents:
                         layer[ag.y, ag.x] = 0.0
-                    # print("ACCESSIBLE LAYER")
-                # print(layer)
-                # print()
+                else:
+                    raise ValueError(f"Unknown image layer type: {layer_type}")
+
                 # pad with 0s for out-of-map cells
                 layer = np.pad(layer, self.sensor_range, mode="constant")
                 layers.append(layer)
@@ -1019,6 +1014,8 @@ class Warehouse(gym.Env):
                     layer = np.ones(self.grid_size, dtype=np.float32)
                     for ag in self.agents:
                         layer[ag.y, ag.x] = 0.0
+                else:
+                    raise ValueError(f"Unknown image layer type: {layer_type}")
                 layers.append(layer)
             self.global_image = np.stack(layers)
             if pad_to_shape is not None:

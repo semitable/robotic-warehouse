@@ -2,7 +2,7 @@ import itertools
 
 from gymnasium import register
 
-from rware.warehouse import RewardType, ObserationType
+from rware.warehouse import RewardType, ObservationType
 
 _sizes = {
     "tiny": (1, 3),
@@ -41,9 +41,9 @@ for size, diff, agents in _perms:
 
 def image_registration():
     _observation_type = {
-        "": ObserationType.FLATTENED,
-        "-img": ObserationType.IMAGE,
-        "-imgdict": ObserationType.IMAGE_DICT,
+        "": ObservationType.FLATTENED,
+        "-img": ObservationType.IMAGE,
+        "-imgdict": ObservationType.IMAGE_DICT,
     }
     _image_directional = {"": True, "-Nd": False}
     _perms = itertools.product(
@@ -81,7 +81,7 @@ def image_registration():
 
 
 def full_registration():
-    _observation_type = {"": ObserationType.FLATTENED, "-img": ObserationType.IMAGE}
+    _observation_type = {"": ObservationType.FLATTENED, "-img": ObservationType.IMAGE}
     _sensor_ranges = {f"-{sight}s": sight for sight in range(2, 6)}
     _sensor_ranges[""] = 1
     _image_directional = {"": True, "-Nd": False}

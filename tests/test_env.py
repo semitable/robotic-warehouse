@@ -5,11 +5,12 @@ import gymnasium as gym
 import numpy as np
 import pytest
 
+from rware.warehouse import ObservationType, Warehouse, Direction, Action, RewardType
+
+
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.abspath(os.path.join(TEST_DIR, os.pardir))
 sys.path.insert(0, PROJECT_DIR)
-
-from rware.warehouse import ObserationType, Warehouse, Direction, Action, RewardType
 
 
 @pytest.fixture
@@ -157,7 +158,7 @@ def test_obs_space_0():
         max_inactivity_steps=None,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
-        observation_type=ObserationType.DICT,
+        observation_type=ObservationType.DICT,
     )
     obs, _ = env.reset()
     for i in range(env.unwrapped.n_agents):
@@ -303,7 +304,7 @@ def test_obs_space_3():
         request_queue_size=5,
         max_inactivity_steps=None,
         max_steps=None,
-        observation_type=ObserationType.IMAGE,
+        observation_type=ObservationType.IMAGE,
         reward_type=RewardType.GLOBAL,
     )
     obs, _ = env.reset()
@@ -323,7 +324,7 @@ def test_obs_space_4():
         request_queue_size=5,
         max_inactivity_steps=None,
         max_steps=None,
-        observation_type=ObserationType.IMAGE_DICT,
+        observation_type=ObservationType.IMAGE_DICT,
         reward_type=RewardType.GLOBAL,
     )
     obs, _ = env.reset()
@@ -414,7 +415,7 @@ def test_fast_obs_0():
         max_inactivity_steps=10,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
-        observation_type=ObserationType.DICT,
+        observation_type=ObservationType.DICT,
     )
     env.reset()
 
@@ -449,7 +450,7 @@ def test_fast_obs_1():
         max_inactivity_steps=10,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
-        observation_type=ObserationType.DICT,
+        observation_type=ObservationType.DICT,
     )
     env.reset()
 
@@ -485,7 +486,7 @@ def test_fast_obs_2():
         max_inactivity_steps=10,
         max_steps=None,
         reward_type=RewardType.GLOBAL,
-        observation_type=ObserationType.DICT,
+        observation_type=ObservationType.DICT,
     )
     env.reset()
 
