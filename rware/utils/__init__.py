@@ -1,1 +1,1 @@
-from .spaces import MultiAgentActionSpace, MultiAgentObservationSpace
+from rware.utils.spaces import MultiAgentActionSpace, MultiAgentObservationSpace

@@ -7,10 +7,10 @@ import math
 import os
 import sys
 
+from gymnasium import error
 import numpy as np
-import math
 import six
-from gym import error
+
 from rware.warehouse import Direction
 
 if "Apple" in sys.version:
@@ -21,7 +21,7 @@ if "Apple" in sys.version:
 
 try:
     import pyglet
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Cannot import pyglet.
@@ -33,7 +33,7 @@ except ImportError as e:
 
 try:
     from pyglet.gl import *
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Error occured while running `from pyglet.gl import *`
@@ -93,7 +93,7 @@ class Viewer(object):
         self.icon_size = 20
 
         self.width = 1 + self.cols * (self.grid_size + 1)
-        self.height = 1 + self.rows * (self.grid_size + 1)
+        self.height = 2 + self.rows * (self.grid_size + 1)
         self.window = pyglet.window.Window(
             width=self.width, height=self.height, display=display
         )
@@ -140,7 +140,7 @@ class Viewer(object):
 
     def _draw_grid(self):
         batch = pyglet.graphics.Batch()
-        # VERTICAL LINES
+        # HORIZONTAL LINES
         for r in range(self.rows + 1):
             batch.add(
                 2,
@@ -158,7 +158,7 @@ class Viewer(object):
                 ("c3B", (*_GRID_COLOR, *_GRID_COLOR)),
             )
 
-        # HORIZONTAL LINES
+        # VERTICAL LINES
         for c in range(self.cols + 1):
             batch.add(
                 2,
@@ -211,6 +211,7 @@ class Viewer(object):
     def _draw_goals(self, env):
         batch = pyglet.graphics.Batch()
 
+        # draw goal boxes
         for goal in env.goals:
             x, y = goal
             y = self.rows - y - 1  # pyglet rendering is reversed
@@ -235,6 +236,25 @@ class Viewer(object):
             )
         batch.draw()
 
+        # draw goal labels
+        for goal in env.goals:
+            x, y = goal
+            y = self.rows - y - 1
+            label_x = x * (self.grid_size + 1) + (1 / 2) * (self.grid_size + 1)
+            label_y = (self.grid_size + 1) * y + (1 / 2) * (self.grid_size + 1)
+            label = pyglet.text.Label(
+                "G",
+                font_name="Calibri",
+                font_size=18,
+                bold=False,
+                x=label_x,
+                y=label_y,
+                anchor_x="center",
+                anchor_y="center",
+                color=(*_WHITE, 255),
+            )
+            label.draw()
+
     def _draw_agents(self, env):
         agents = []
         batch = pyglet.graphics.Batch()
@@ -244,7 +264,6 @@ class Viewer(object):
         resolution = 6
 
         for agent in env.agents:
-
             col, row = agent.x, agent.y
             row = self.rows - row - 1  # pyglet rendering is reversed
 
@@ -273,7 +292,6 @@ class Viewer(object):
             circle.draw(GL_POLYGON)
 
         for agent in env.agents:
-
             col, row = agent.x, agent.y
             row = self.rows - row - 1  # pyglet rendering is reversed
 
@@ -314,12 +332,16 @@ class Viewer(object):
             )
         batch.draw()
 
-    def _draw_badge(self, row, col, level):
+    def _draw_badge(self, row, col, index):
         resolution = 6
         radius = self.grid_size / 5
 
-        badge_x = col * self.grid_size + (3 / 4) * self.grid_size
-        badge_y = self.height - self.grid_size * (row + 1) + (1 / 4) * self.grid_size
+        badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
+        badge_y = (
+            self.height
+            - (self.grid_size + 1) * (row + 1)
+            + (1 / 4) * (self.grid_size + 1)
+        )
 
         # make a circle
         verts = []
@@ -329,17 +351,19 @@ class Viewer(object):
             y = radius * math.sin(angle) + badge_y
             verts += [x, y]
         circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
-        glColor3ub(*_BLACK)
-        circle.draw(GL_POLYGON)
         glColor3ub(*_WHITE)
+        circle.draw(GL_POLYGON)
+        glColor3ub(*_BLACK)
         circle.draw(GL_LINE_LOOP)
         label = pyglet.text.Label(
-            str(level),
+            str(index),
             font_name="Times New Roman",
-            font_size=12,
+            font_size=9,
+            bold=True,
             x=badge_x,
             y=badge_y + 2,
             anchor_x="center",
             anchor_y="center",
+            color=(*_BLACK, 255),
         )
         label.draw()
