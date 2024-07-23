@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 
 
 class MultiAgentObservationSpace(list):
@@ -9,11 +9,11 @@ class MultiAgentObservationSpace(list):
         super().__init__(ma_space)
 
     def sample(self):
-        """ Samples from each element of the list """
+        """Samples from each element of the list"""
         return [sa_space.sample() for sa_space in self]
 
     def contains(self, obs):
-        """ Checks if each obs is contained in respective agent """
+        """Checks if each obs is contained in respective agent"""
         for space, ob in zip(self, obs):
             if not space.contains(ob):
                 return False
@@ -29,5 +29,5 @@ class MultiAgentActionSpace(list):
         super(MultiAgentActionSpace, self).__init__(ma_space)
 
     def sample(self):
-        """ Samples action from each element of the list"""
+        """Samples action from each element of the list"""
         return [sa_space.sample() for sa_space in self]
