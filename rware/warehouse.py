@@ -759,9 +759,6 @@ class Warehouse(gym.Env):
             # setting seed
             super().reset(seed=seed, options=options)
 
-        if self.render_mode == "human":
-            self.render()
-
         Shelf.counter = 0
         Agent.counter = 0
         self._cur_inactive_steps = 0
