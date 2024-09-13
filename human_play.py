@@ -86,9 +86,6 @@ class InteractiveRWAREEnv:
         print("Press ESC to exit")
         print()
 
-    def _format_pos(self, pos):
-        return f"row {pos[0] + 1}, col {pos[1] + 1}"
-
     def _get_current_agent_info(self):
         agent_carrying = self.env.unwrapped.agents[self.current_agent_index].carrying_shelf
         agent_x = self.env.unwrapped.agents[self.current_agent_index].x

@@ -166,7 +166,7 @@ class Warehouse(gym.Env):
         ],
         image_observation_directional: bool = True,
         normalised_coordinates: bool = False,
-        render_mode: Optional[str] = None,
+        render_mode: str = "human",
     ):
         """The robotic warehouse environment
 
@@ -948,9 +948,12 @@ class Warehouse(gym.Env):
     def render(self):
         if not self.renderer:
             from rware.rendering import Viewer
+
             self.renderer = Viewer(self.grid_size)
 
-        return self.renderer.render(self, return_rgb_array=self.render_mode == "rgb_array")
+        return self.renderer.render(
+            self, return_rgb_array=self.render_mode == "rgb_array"
+        )
 
     def close(self):
         if self.renderer:
