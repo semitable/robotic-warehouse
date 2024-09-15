@@ -166,7 +166,7 @@ class Warehouse(gym.Env):
         ],
         image_observation_directional: bool = True,
         normalised_coordinates: bool = False,
-        render_mode: Optional[str] = None,
+        render_mode: str = "human",
     ):
         """The robotic warehouse environment
 
@@ -759,9 +759,6 @@ class Warehouse(gym.Env):
             # setting seed
             super().reset(seed=seed, options=options)
 
-        if self.render_mode == "human":
-            self.render()
-
         Shelf.counter = 0
         Agent.counter = 0
         self._cur_inactive_steps = 0
@@ -948,12 +945,15 @@ class Warehouse(gym.Env):
         info = self._get_info()
         return new_obs, list(rewards), done, truncated, info
 
-    def render(self, mode="human"):
+    def render(self):
         if not self.renderer:
             from rware.rendering import Viewer
 
             self.renderer = Viewer(self.grid_size)
-        return self.renderer.render(self, return_rgb_array=mode == "rgb_array")
+
+        return self.renderer.render(
+            self, return_rgb_array=self.render_mode == "rgb_array"
+        )
 
     def close(self):
         if self.renderer:

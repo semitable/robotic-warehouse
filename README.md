@@ -27,6 +27,7 @@
   - [Custom layout](#custom-layout)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Human Play](#human-play)
 - [Please Cite](#please-cite)
 
 
@@ -194,6 +195,29 @@ and should be closed before terminating:
 ```python
 env.close()
 ```
+
+
+# Human Play
+
+We also provide a simple script that allows you to play the environment as a human. This is useful for debugging and understanding the environment dynamics. To play the environment, run the following command:
+```sh
+python human_play.py --env <env_name>
+```
+where `<env_name>` is the name of the environment you want to play. For example, to play the tiny environment with 2 agents, run:
+```sh
+python human_play.py --env rware-tiny-2ag-v2
+```
+
+Within the script, you can control a single agent at the time using the following keys:
+- Up Arrow keys: move current agent forward
+- Left/ Right Arrow keys: rotate current agent left/ right
+- P/ L: pickup/ drop shelf
+- SPACE: do nothing
+- TAB: change the current agent (rotates through all agents)
+- R: reset the environment and start a new episode
+- H: show help
+- D: display agent info (at every time step)
+- ESC: exit
 
 
 # Please Cite
