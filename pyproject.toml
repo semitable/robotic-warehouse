@@ -1,0 +1,48 @@
+[project]
+name = "rware"
+version = "2.0.0"
+description = "Multi-Robot Warehouse environment for reinforcement learning"
+readme = { content-type = "text/markdown", file = "README.md" }
+maintainers = [{ name = "Filippos Christianos" }]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.7",
+]
+requires-python = ">=3.7"
+urls = { github = "https://github.com/semitable/robotic-warehouse" }
+dependencies = ["numpy", "gymnasium", "pyglet<2", "networkx"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+test = ["pytest"]
+pettingzoo = ["pettingzoo"]
+
+[tool.setuptools.packages.find]
+exclude = ["contrib", "docs", "tests"]
+
+# pixi
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+preview = ["pixi-build"]
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test", "pettingzoo"], solve-group = "default" }
+
+[tool.pixi.pypi-dependencies]
+rware = { path = ".", editable = true }
+
+[tool.pixi.package]
+name = "rware"
+version = "2.0.1"
+
+[tool.pixi.build-system]
+build-backend = { name = "pixi-build-python", version = "*" }
+channels = ["pixi-build-backends", "conda-forge"]
+
+[tool.pixi.feature.test.tasks]
+test = "pytest"

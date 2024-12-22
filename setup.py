@@ -27,6 +27,6 @@ setup(
         "pyglet<2",
         "networkx",
     ],
-    extras_require={"test": ["pytest"]},
+    extras_require={"test": ["pytest"], "pettingzoo": ["pettingzoo"]},
     include_package_data=True,
 )

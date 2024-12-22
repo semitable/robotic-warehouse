@@ -1,3 +1,4 @@
+pixi.lock
 
 # Created by https://www.gitignore.io/api/linux,python,windows,pycharm+all,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=linux,python,windows,pycharm+all,visualstudiocode
@@ -246,3 +247,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/linux,python,windows,pycharm+all,visualstudiocode
+# pixi environments
+.pixi
+*.egg-info
