@@ -549,18 +549,18 @@ class Warehouse(gym.Env):
                     layer = np.zeros(self.grid_size, dtype=np.float32)
                     for ag in self.agents:
                         agent_direction = ag.dir.value + 1
-                        layer[ag.x, ag.y] = float(agent_direction)
+                        layer[ag.y, ag.x] = float(agent_direction)
                     # print("AGENT DIRECTIONS LAYER")
                 elif layer_type == ImageLayer.AGENT_LOAD:
                     layer = np.zeros(self.grid_size, dtype=np.float32)
                     for ag in self.agents:
                         if ag.carrying_shelf is not None:
-                            layer[ag.x, ag.y] = 1.0
+                            layer[ag.y, ag.x] = 1.0
                     # print("AGENT LOAD LAYER")
                 elif layer_type == ImageLayer.GOALS:
                     layer = np.zeros(self.grid_size, dtype=np.float32)
-                    for goal_y, goal_x in self.goals:
-                        layer[goal_x, goal_y] = 1.0
+                    for goal_x, goal_y in self.goals:
+                        layer[goal_y, goal_x] = 1.0
                     # print("GOALS LAYER")
                 elif layer_type == ImageLayer.ACCESSIBLE:
                     layer = np.ones(self.grid_size, dtype=np.float32)
@@ -594,7 +594,7 @@ class Warehouse(gym.Env):
                 obs = np.rot90(obs, k=1, axes=(1, 2))
             # no rotation needed for UP direction
         return obs
-
+        
     def _get_default_obs(self, agent):
         min_x = agent.x - self.sensor_range
         max_x = agent.x + self.sensor_range + 1
