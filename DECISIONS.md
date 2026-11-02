@@ -1282,3 +1282,163 @@
   2. 학습(승인 필요): Oracle-max·All-max, seed 1–3, 5M.
   3. PGCT-max.
 - 아무것도 실행하지 않았다.
+
+## D92. D91 수정: 근거는 MAMBA, 앞선 agent 보호는 미보장, 팀원 critic 상향은 같은 팀일 때 대체로 실제 이득 — 2026-10-29 Claude Code (E63 근거, 사용자 결정 대기)
+
+- 사용자 검토(T149, 붙여넣은 의견)를 받아 고친 점:
+  1. 직접 선행연구는 MAMBA(Cheng, Kolobov & Agarwal, NeurIPS 2020)다. GPI(Barreto et al. 2017)는 Q 기반 행동 선택이므로 배경으로만 쓴다. D2(보수적 혼합)는 RPI(ICLR 2024)와 연결한다.
+  2. "앞선 agent는 느려지지 않는다"는 과장이었다. GAE에서 다음 상태의 f가 팀원 값으로 바뀔 수 있다. 항등식 A^f − A^self = −b_t + γ(1−λ)Σ_{k≥1}(γλ)^{k−1} b_{t+k}(b = f − V_i ≥ 0)를 확인했다. λ=.95, γ=.99에서 미래 항의 총가중은 .83이다. 따라서 max-GAE의 actor 신호는 "격차 b가 커지는 상태로 가는 행동"이다. λ=1이면 baseline만 남는다.
+  3. "뒤처진 agent가 더 빨리 배운다"는 미입증이다. 정확히는 "max advantage가 실제로 더 나은 행동을 강화한다면 가속될 수 있다"다.
+- 부분 반박: 이 환경의 개인 보상 규칙은 agent 기준으로 팀원끼리 같다(A+C가 판정하는 대상). 차이가 나는 것은 보상 함수가 아니다. V_j가 j의 이력 분포에서 학습되어 V_j(h_i) ≠ V_i^{π_j}(h_i)일 수 있다는 점이다. 이 차이를 E63에서 직접 측정했다.
+- E63 판정:
+  - 뒤처진 agent에게 같은 팀 dV > .2이면 실제 dMC > 0이 67–100%, 유의 이득이 40–89%다. 다른 팀은 dV가 양수여도 실제 이득이 작다.
+  - 앞선 agent에게 다른 팀 critic은 가짜 상향을 준다. 팀 식별은 전이에서 실제로 의미가 있다.
+  - 행동 수준에서 A_max는 자기 정책 continuation Q를 A_self보다 잘 맞히지 못한다. 팀원 정책 continuation Q는 조금 더 맞힌다. 미결이다.
+  - 통신 범위와 성숙 제한으로 기회는 팀 전체 대비 21–40%다. 질의는 L8 window를 쓴다.
+- 설계 반영(제안):
+  - D1(순수 max-GAE)과 D2((1−η)A^self + ηA^max) 비교. λ도 조절 변수로 둔다.
+  - value loss는 자기 return으로 학습한다.
+  - donor 집합은 update 단위로 고정하고 지속 승인을 요구한다. f의 불연속(jump)을 로그로 남긴다.
+  - trainer를 고치지 않고, `latent_team/`에 actor advantage와 critic return을 분리한 별도 PPO update 경로를 둔다. f = V_i일 때 기존 `update_ippo`와 같은 결과인지 동등성 테스트를 한다.
+- 판단: 탐색 실험(seed 1, 5M: Oracle-max D1·D2, All-max, 기존 IPPO)은 근거가 생겼다. 최종 주장에는 3 seed 이상이 필요하다. 학습·구현은 사용자 결정 대기다. 아무것도 시작하지 않았다.
+
+## D93. 사용자 방향 B(발견한 팀의 평균 보상으로 학습) 검토: 개념은 깔끔하지만 이 환경의 병목에는 불리할 가능성, Oracle 수준에서 D와 맞붙여 결정 권고 — 2026-11-02 Claude Code (의견, 사용자 결정 대기)
+
+- 사용자(T150):
+  - 팀 발견은 R 기준, 발견한 팀은 공동 목적의 가치를 분산 학습해야 한다.
+  - 방향 A(공통 표현 z + critic consensus)와 B(팀 평균 보상 r̄_T의 가치 V_i^T(h_i)를 각자 학습, actor 독립) 중 B로 갈 생각이라고 했다.
+- 동의:
+  - R 기준 발견.
+  - "팀은 정의했지만 공동으로 근사할 가치함수는 정의하지 않았다"(E61과 같은 진단).
+  - 부분관측에서는 A보다 B가 현실적이다.
+  - "보상 유사성 ⇒ 공동 학습 적합성"은 환경 가정이다.
+- 반대·위험:
+  1. B는 D82(개인 보상만, 사용자 절대 원칙)를 뒤집는다. 사용자가 명시적으로 결정해야 한다. 연구 질문과 이름(critic transfer)도 바뀐다.
+  2. 우리 병목은 발견 뒤 정착이 느린 agent다(T145). B에서는 뒤처진 agent의 팀 return 중 자기 몫이 ≤1/|T|이고, 사실상 0이다. 팀원 배송이 advantage 잡음이 된다(공유 보상의 lazy agent 문제).
+  3. B의 이득(팀 내 경쟁 제거, 차단 방지)은 이 환경에서 작다는 증거가 있다. E53: 독주 agent를 NOOP으로 두거나 치워도 나머지는 그대로였다.
+  4. 팀 보상 IPPO(B의 Oracle 상한에 가까움)도 1M에서 빠르지 않았다. E52: 평가 .81/.38 대 개인 .99/.83이고, 최다 agent 비율 .91/.82 대 .99/.97이다. 1M·좌표·합산 조건이라 약한 증거다.
+  5. 부분관측에서 먼 팀원의 보상은 h_i로 예측하기 어렵다. V_i^T의 분산이 커진다.
+- B로 간다면 지킬 것:
+  - D82 변경 기록.
+  - 식별용 r̂는 개인 보상으로만 학습한다(묶인 쌍이 스스로를 굳히는 것 방지).
+  - IPPO-팀보상(정답 결합)을 기준선에 넣는다.
+  - team spirit 혼합 r' = (1−τ)r_i + τ r̄_T(OpenAI Five). τ는 일정 계획 또는 식별 확신도에 묶는다.
+  - 통신 단절 시 보상 로그를 저장했다가 전달한다(범위 안 20–46%, E63).
+  - shaping 공유 여부를 정한다(과제 보상만 공유하는 선택지).
+- 권고: 말로 정하지 말고 Oracle 수준에서 같은 조건으로 맞붙인다. 모서리·개인, A+C 관측, seed 1, 5M, 탐색용. 비교 대상은 IPPO-개인(기존), Oracle-B(τ=1), Oracle-B-τ, Oracle-max(D2)다.
+  - B만 IPPO를 넘으면 B로 가고 D82 변경을 확정한다.
+  - 둘 다 못 넘으면 전이 여지 자체를 다시 본다.
+  - 사용자 계획의 "공통 상태 FDMARL" 단계는 A용이라 B에는 Oracle-B가 대신한다.
+- 실행한 것 없음.
+
+## D94. D는 MAMBA의 전제를 엄밀히 만족하지 않는다: 보장 대신 근사 오차를 측정하는 주장으로 — 2026-11-02 Claude Code (사용자 질문 T152에 대한 정정)
+
+- 사용자 질문: MAMBA는 모든 oracle이 같은 환경, 같은 보상 기준에서 평가된다는 전제가 있는데, PGCT는 그렇지 않지 않나?
+- 답: 맞다. T151의 "같은 보상 기준을 A+C가 판정하므로 Q1과 Q2가 이어진다"는 과장이었다.
+  - 같은 MDP: 다른 agent가 학습 중이라 비정상이고, 부분관측이다(✗, 근사).
+  - 같은 보상 기준: 팀 안에서만, agent 기준 규칙이 같다(△).
+  - learner 상태 분포 위에서 oracle 가치를 정확히 알 것: MAMBA는 oracle rollout으로 추정한다(원문 확인 필요). D는 팀원 critic을 내 이력으로 외삽한다(✗, 가장 큰 차이).
+- 주장 수정:
+  - MAMBA는 계산 방식(max 결합 advantage)의 출처로만 인용한다.
+  - 보장 대신 f̂와 max_j V_i^{π_j}의 오차 ε가 붙은 명제로 쓴다. 정확한 형태는 MAMBA 원문의 근사오차 분석을 확인한 뒤 정한다.
+  - ε는 E63 반사실 실험으로 측정했다. 같은 팀 뒤처진 agent는 방향이 대체로 맞고 크기는 최대 1.6배 과대, 다른 팀은 틀림.
+  - gate의 역할은 "전제가 근사적으로 성립하는 상대 고르기"다.
+- 선택지:
+  1. 현재 D(외삽 + gate·성숙·상한·η).
+  2. MAMBA에 더 가까운 D: 팀원 actor를 공유받아 내 자리에서 실행하고, V_i^{π_j}를 내 보상으로 직접 학습한다. 비용이 크다.
+- 구현 영향: 계산은 같으므로 코드 계획은 그대로다. 구현은 구조 확인 단계에서 멈췄다(파일 변경 없음).
+
+## D95. GPT 검토 반영: 주장은 낮추고 D2 유지. 오프라인 행동 검증 대신 1M checkpoint 분기 학습을 관문으로 — 2026-11-02 Claude Code (의견, 사용자 결정 대기)
+
+- 사용자가 붙여넣은 GPT 검토(T153)에서 받아들일 것:
+  - MAMBA Algorithm 1은 oracle rollout으로 V̂^k를 학습한다(D94의 "원문 확인 필요"가 확인됨).
+  - O(ε/(1−γ)) 성능보장은 철회한다. MAMBA 정리는 정책경사 편향 β·분산 ν, regret, 정책 클래스 조건이다.
+  - advantage 오차 상한 (1 + γ(1−λ)/(1−γλ))ε는 맞다. 계수는 2 이하다.
+  - D의 직접적 문제는 비정상성이 아니라 "남의 critic을 내 자리로 옮긴 가치추정 오차"다.
+  - "critic 학습 목표 유지"와 "개인 return 정책경사 유지"를 구분한다. D는 전자만 만족하고 actor에는 편향된 보조 신호를 넣는다.
+  - donor 수를 맞춘 All-max-k 대조군을 추가한다.
+  - A+C는 보상 유사성만 판별한다. 주장 문장은 GPT 제안을 채택한다.
+- 동의하지 않는 것:
+  1. "같은 전역 상태에서 다른 agent를 고정하고 i의 정책만 j로 바꾼 반사실 비교"는 E63이 이미 그렇게 했다(deepcopy, 다른 agent 자기 정책, i의 자리·보상 유지, CRN).
+  2. "A^max가 좋은 행동을 더 잘 구별하는지"를 학습 전 오프라인 관문으로 두는 것은 잘못 놓인 문제다.
+     - Q^{π_i} 기준이면 A^self가 정의상 편향 없는 추정량이라 A^max가 질 수밖에 없다.
+     - MAMBA식 신호의 효과는 학습 과정에서만 드러난다.
+     - MC 잡음도 크다(E63 Q 일치도 .20–.49).
+  3. 균일 ε 상한은 비관적이고 검증할 수 없다. agent별 advantage 정규화가 일정한 오프셋(약 −.17c)을 없앤다. 위험한 것은 상태마다 달라지는 오차다(max 전환 지점, 크기에 비례하는 과대추정). 정량화 대상은 b·d의 상태별 변동과 정규화된 A^max − A^self 분포다.
+- 권고 순서:
+  1. max-GAE 구현.
+  2. A+C IPPO s1 1M checkpoint에서 분기 학습. A^self, Oracle-max D2, D1, All-max-k를 각 0.5M step, seed 3개. job당 약 4시간.
+  3. 효과가 보이면 5M 처음부터 실험.
+  - 분기 비교는 처음부터의 IPPO 비교로 설명하지 않는다(AGENTS 지침).
+- 실행한 것 없음.
+
+## D96. Max-GAE 구현 결정: D2는 상대 척도, donor는 rollout 접촉 기준, 1M 분기 실험 준비 — 2026-11-02 Claude Code (구현 판단, 학습은 사용자가 시작)
+
+- D2 정의 수정:
+  - 검토 의견의 D2는 (1−η)A_self + ηA_max였다.
+  - E64에서 raw Δ가 뒤처진 agent의 std(A_self)보다 2.6–12배 커서, PPO 정규화 뒤에는 η와 상관없이 D1과 같아진다.
+  - 그래서 D2는 Δ를 std(A_self)로 맞춘 뒤 η를 곱한다(`--max-gae-scale relative`, 기본). D1(`oracle_maxd1`)은 raw η=1이다.
+  - raw D2도 옵션으로 남겼다.
+- donor 기준: rollout 중 한 번이라도 통신 범위 안에서 만난 agent다. 한 rollout 동안 가중치가 고정이므로 한 번 만나면 공유할 수 있다는 근거다. E64에서는 모든 쌍이 만났다. 따라서 E63의 "기회 21–40%"(step 단위 범위 기준)는 이 설계에서는 거의 제약이 아니다. PGCT-max에서는 v2 gate가 제약이 된다.
+- 주입 방식: 검토 의견은 별도 PPO 경로를 권했다. trainer를 수정할 수 없어서, PPO loop를 복제하는 대신 `update_ippo`의 `compute_gae` 호출 한 곳에 (actor advantage, own return)을 주입했다. donor가 없으면 원래 경로 그대로다. 동등성은 실제 smoke에서 비트 단위로 확인했다.
+- 분기 실험 계획(사용자 실행):
+  - 시작점: A+C IPPO s1 `checkpoint_01000.pt`.
+  - 모드: `ippo`, `oracle_max`(D2), `oracle_maxd1`(D1), `allk_max`(D2, donor 수 맞춤).
+  - seed 1·2·3, 0.5M, `--transfer-warmup 0`.
+  - 12 job, job당 약 5.5시간(v1 PGCT s2와 GPU를 같이 쓰면 더 느림).
+  - 분기 비교는 처음부터의 IPPO 비교로 설명하지 않는다.
+  - 주요 지표: 뒤처진 agent(0-index 0·1·4)의 평가 배송, `update/max_gae_adv_shift`·`select_frac`·`mean_b`.
+- 참고(미분석): `runs/acv2_s1_20261029_084340`의 v2 PGCT s1이 complete다. transfer 요약은 같은 팀 arc update 5,252, 다른 팀 352다.
+
+## D97. 희소 보상에서 보상 기반 식별: 가능하지만 "보상 사건을 겪은 뒤부터" — 2026-11-02 Claude Code (사용자 질문 T155에 대한 답, E65 근거)
+
+- 질문: RWARE는 일부 행동에만 보상이 있어 대부분의 전이에서 r̂ = 0일 텐데, 보상 기반 식별이 가능한가.
+- 전제 정정: 우리 환경(`b6_corner_indiv_pen005`)은 shaping·감점 때문에 agent-step의 25–55%에서 보상이 0이 아니다. 다만 팀을 가르는 정보는 드문 큰 사건(배송·반납, r ≥ .5)에 몰려 있고, 그것은 전이의 .01–.03%(1M 이전)로 실제로 희소하다.
+- 답:
+  - 희소성 자체는 결격 사유가 아니다. 문제는 세 곳이다.
+    1. 학습: MSE가 어디서나 0으로 수렴할 수 있다.
+    2. probe와 거리: 0–0 일치가 많으면 다른 팀도 같아 보인다.
+    3. 사건 없는 agent: 비교할 응답이 없다.
+  - v2는 각각 사건 과표집 25%, 사건 probe와 Σ|a−b|/Σ(|a|+|b|) 정규화, 성숙 전 보류로 대응한다.
+  - v1은 이 문제로 사실상 닫혀 있었다(E56, E57).
+  - E65에서 v2는 0.25M 무렵 같은 팀 .25 대 다른 팀 .99로 갈린다.
+- 남는 한계:
+  - 판정 시작이 늦다(성숙 전에는 보류).
+  - 보상 사건을 한 번도 겪지 않은 agent는 원리적으로 보상 기반 식별이 불가능하다. 도움이 가장 필요한 agent와 겹칠 수 있다.
+  - 4.28M 이후 다른 팀 승인이 생긴다(원인 미분석).
+- 논문 표현 권고: "희소 보상에서도 된다"가 아니라 "각 agent가 자기 보상 사건을 겪고, 상대 목표에서 보상을 못 받은 경험이 있거나 예측기가 그쪽으로 일반화될 때 된다"로 조건을 명시한다.
+- 보완 후보(제안만, 사용자 결정 없음): 촘촘한 goal 진척 shaping을 probe에 포함한다(E60: 모서리 배치 0.26M 이전 agent AUROC .87–1.00). 다만 shaping이 있다는 가정이 추가된다.
+
+## D98. PGCT-D2 통합 전 코드 검토: PGCT-D2 미구현, D2 `relative` 척도 결함, 분기 seed 2 goal 반전, 성숙 조건과 뒤처진 agent의 충돌 — 2026-11-02 Claude Code (사용자 요청 T163, 의견·사용자 결정 대기)
+
+- 요청: v2 구현과 PGCT-D2 설계(v2 유지 + 증류를 D2 Max-GAE로 교체)를 실제 코드로 대조. 코드 수정·학습 금지.
+- 확인한 사실:
+  1. PGCT-D2 경로가 없다.
+     - Max-GAE 모드에서 v2는 learn=False라 돌지 않는다(`train_from_scratch.py:332`). donor는 정답 라벨 ∧ rollout 접촉뿐이다(`max_gae.py:84-99`).
+     - v2 `gate`는 update 직전 이웃이 아니면 지워진다(`reward_probe_ac_v2.py:241`). 그대로 donor로 쓸 수 없다.
+     - IPPO 경로에서는 `matched_transfer`가 `active=False`로 controller를 불러 비교 자체가 일어나지 않는다(`exp_b_oracle_consensus.py:160-162`).
+  2. raw D2(λ_f = λ)는 설계식 f = V + η·min(b, c)와 정확히 같다(GAE의 선형성). 기본값 `relative`는 f = V + η·s·b, s = std(A_self)/std(Δ)이고 s에 상한이 없다. 그래서 b → 0에서 IPPO로 연속 퇴화하지 않는다. 합성 점검(E66): b ~ U(0, 1e-6)에서도 변화량 .43σ(raw 0), 1% step의 1e-3 b가 최대 5σ.
+  3. rollout 첫 7 step의 b 가림이 그 step들에 양의 Δ를 만든다(E66: b = .8에서 +.46 → +.67, 이후 −.13).
+  4. `env_candidates.py:104`는 짝수 seed에서 goal 좌우를 바꾼다. T154의 seed 1·2·3 분기 명령에서 seed 2는 다른 과제다.
+  5. actor·critic은 encoder·GRU를 공유하지 않는다. 결합은 공동 grad clipping(.5, trainer `update_ippo`) 하나다. 관측 이력은 hidden 벡터가 아니라 관측 열로 donor GRU에 다시 넣는다.
+  6. A+C IPPO s1 학습 로그에서 a0·a4는 0.95–1.06M·1.4–1.5M에 배송·반납이 0이다(E66). v2 성숙(사건 ≥ 20) 조건상 PGCT-D2는 두 agent를 receiver로 쓸 수 없다.
+- 권고:
+  - 분기 전 필수: 홀수 seed(1·3·5) 또는 goal 배치 검사, `shrink` 척도(s = min(1, std(A_self)/std(Δ)), 즉 η_eff ≤ η), 가린 step Δ = 0, agent별 critic explained variance 로그.
+  - PGCT-D2 필수: v2 `approved()`(round ≥ 3 ∧ EMA < .5 ∧ 두 agent 성숙, 대칭, 접촉과 무관), donor 규칙 gate(rollout 접촉 ∧ 승인 ∧ critic 성숙), `pgct_max`·`oracle_mature_max` 모드, controller를 IPPO 경로에서 직접 활성화하고 trainer에는 0 allocation, 감사 로그.
+  - 접촉 기준: Oracle·PGCT 모두 rollout 접촉. T159 글의 update 시점 기준에는 반대한다. update 직전 위치는 통신 모델이 아니라 구현 부산물이고, D2 세기가 update당 약 1 arc로 희석된다.
+  - E65 오승인: max에서는 donor 하나가 그대로 이기므로 증류보다 위험하다. 원인 가설(반납 사건의 공유 응답 질량)을 checkpoint에 저장된 v2 상태로 학습 없이 검증한다.
+  - 분기 검증: 1단계 `ippo`·`oracle_max`(shrink)·`oracle_maxd1`·`allk_max`, 2단계 `oracle_mature_max`·`pgct_max`. 판정 규칙은 사전 고정한다.
+- 사용자 결정 필요: 수정 구현 여부와 범위, D2 donor 접촉 기준, 보상 사건이 없는 agent를 연구 범위에서 뺄지 또는 shaping probe로 v2를 바꿀지.
+- 실행한 것: 코드 읽기, scratchpad 합성 텐서 점검, 학습 로그 읽기. 코드 변경·학습 없음.
+
+## D99. D98 필수 수정 1–4 구현: D2 기본 척도는 shrink, 분기는 checkpoint와 같은 goal 배치만 허용 — 2026-11-02 Claude Code (사용자 요청 T164)
+
+- 사용자 지시(T164): "필수 수정 1–4 구현".
+- 결정:
+  1. `--init-checkpoint`를 쓰면 job의 `team_goal_positions`를 checkpoint(`effective_env_kwargs`)와 비교하고, 다르면 계획을 거부한다. seed 1 checkpoint는 홀수 seed로만 분기한다.
+  2. D2 기본 척도는 `shrink`다. s = min(1, std(A_self)/std(Δ))이고, f = V + η·s·min(b, c)(η·s ≤ η)와 같다. `relative`는 기록용 선택지로만 남긴다. relative로 실행한 run이 없어 기존 결과에는 영향이 없다.
+  3. donor hidden이 데워지기 전(첫 `window − 1` step, 첫 reset 전)에는 actor advantage를 A_self로 둔다.
+  4. 모든 agent의 critic explained variance를 매 update 자기 rollout에서 로그로 남긴다. donor 성숙 조건으로 쓸지는 실제 분기 run의 값을 보고 정한다.
+- 바꾸지 않은 것: trainer·`rware/`·`examples/`, ippo·pgct 등 기존 모드, raw·D1 정의, donor 규칙(oracle/all/allk, rollout 접촉).
+- 분기 실행 명령(사용자 실행): T164 최종 답변. T154 명령은 쓰지 않는다.
+- 검증: E67.

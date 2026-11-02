@@ -1252,3 +1252,148 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - 팀 특이성은 작다. 관측 ch4·ch12가 팀 기준이기 때문이다. 과대추정 위험이 있다.
 - 한계: seed 하나, 시점마다 3 episode, IPPO 정책만 봤다. 상향의 방향이 맞는지(행동 선택 개선)는 측정하지 않았다.
 - 근거: `output/oracle_why_20261029/{transfer_premise.py,transfer_premise_stdout.txt}`.
+
+## E63. max 결합 advantage(D91) 반사실 점검: 팀원 정책을 내 자리에서 실행(학습 없음) — 2026-10-29 Claude Code, 사용자 요청(T149)
+
+- 데이터: A+C IPPO s1(좌표 마스킹) 1M·2M, 옛 모서리 1M IPPO s1·s2 final(좌표 있음). 모두 개인 보상이다. V2 성숙은 E60 replay에서 해당 시점의 판정을 쓴다. 성숙한 agent만 받는 쪽·주는 쪽으로 넣었다. 뒤처진 agent는 그 episode에서 배송이 0인 성숙 agent다.
+- 방법:
+  - env를 deepcopy해 상태를 복원했다(재현 확인).
+  - 받는 agent i의 자리와 보상은 그대로 두고, i를 자기 정책 또는 팀원 j의 정책으로 실행한다. j의 actor는 i의 관측 이력으로 데운다. 나머지 agent는 자기 정책이다.
+  - dMC = G(π_j) − G(π_i)를 critic 신호 dV = V_j(h_i) − V_i(h_i)와 비교한다.
+  - 공통 난수, N=8, H=100. 데이터당 3 episode, τ = 80·180·280.
+  - 행동 수준: 유효 행동마다 one-step A_self와 A_max를 MC Q(H=60, 자기 정책 또는 앞선 팀원 정책으로 이어 감)와 Spearman으로 비교했다.
+  - 정책·critic 추론만 했다.
+- 상태 수준, 뒤처진 agent이고 dV > .2인 경우. 각 항목은 n / 평균 dMC / dMC>0 / 유의 이득 / 유의 손실:
+  - acs1 1M: 같은 팀 20 / +.28 / 1.00 / .40 / .00, 다른 팀 20 / +.08 / 1.00
+  - acs1 2M: 같은 팀 9 / +.48 / 1.00 / .89 / .00, 다른 팀 9 / +.08
+  - corner s1: 같은 팀 9 / +.58 / 1.00 / .78 / .00, 다른 팀은 전체 dMC −.01이고 유의 손실 .67
+  - corner s2: 같은 팀 18 / +.28 / .67 / .50 / .28, 다른 팀 18 / +.14 / .89
+- 앞선 agent:
+  - 같은 팀 dV는 대체로 음수(−.15 ~ −.52)이고 실제 dMC도 음수(−.02 ~ −.31)다. corr(dV, dMC)는 +.07 ~ +.85.
+  - 같은 팀 dV > .2인 경우(acs1 2M, n=14): dMC +.08, 양수 .71, 유의 손실 .14.
+  - 다른 팀 dV > .2인 경우(n=11·27): dMC +.00 / −.06, 유의 손실 .09 / .22.
+- 크기 보정: dV는 무한 horizon, dMC는 H=100이다(대략 0.63배가 기대값). acs1 2M에서 dV 1.21 대 dMC .48로 약 1.6배 과대이고, 나머지는 비슷하거나 과소다.
+- 행동 수준(뒤처진 상태 9–39개), Spearman:
+  - vs 자기 정책 이어 간 Q: A_self +.19 ~ +.43, A_max −.27 ~ +.38. A_max가 나은 데이터가 없다.
+  - vs 앞선 팀원 정책 이어 간 Q: A_self −.01 ~ +.28, A_max +.18 ~ +.30. A_max가 조금 낫다.
+  - Q_own과 Q_lead의 일치도 +.20 ~ +.49로 MC 잡음이 크다.
+- gate, 뒤처진 agent:
+  - 범위 안 성숙 팀원이 있는 step 비율: .46 / .20 / .28 / .31
+  - uplift > .05 step 비율, gate 대 팀 전체: .42 대 .96, .20 대 1.00, .28 대 1.00, .10 대 .46
+  - 평균 uplift, gate 대 팀 전체: .14 대 .36, .28 대 1.28, .18 대 .63, .06 대 .30
+- h=0 질의:
+  - donor 값 corr: h=0 .55–.86, L8 window .88–1.00
+  - 같은 팀 uplift corr: h=0 .33–.81, L8 .52–1.00
+  - 자기 대 donor 선택이 뒤집히는 비율: 뒤처진 agent .00–.02, 앞선 agent .00–.18
+- 상관 지표(`max_advantage_check.py`, 앞선 팀원의 최선 행동에 대한 정규화 advantage 차이): own .03–.13 → max .13–.19. 다른 팀 앞선 agent의 최선 행동에 대해서도 비슷하게 오른다. 앞선 agent의 corr(A_max, A_own)은 .92–1.00.
+- 해석:
+  1. 뒤처진 agent에게 같은 팀 critic이 높게 나오면 대체로 실제로 더 나은 정책이 있다. 다른 팀 critic의 높은 값은 대부분 실제 이득이 작다. 정책 가치 수준의 팀 특이성은 E62 critic 상관보다 크다.
+  2. "max advantage가 더 좋은 행동을 강화한다"는 미입증이다. 내 정책 기준으로는 A_self보다 낫지 않고, 팀원 정책 기준으로 조금 낫다(MAMBA 이론과 일치).
+  3. 통신 범위와 성숙 제한으로 실제 기회는 팀 전체 대비 21–40%다.
+  4. 질의는 h=0이 아니라 짧은 window(L8)가 필요하다.
+- 한계: 훈련 seed 3개(acs1 s1, 옛 s1·s2), episode 3, τ 3, 일부 집단 n=9. MC 잡음이 크다(행동 수준). H=100 절단. v2 승인 절차(EMA·round)는 모사하지 않았고, 성숙과 범위만 썼다.
+- 근거: `output/oracle_why_20261029/{counterfactual_check.py,cf_*.json,cf_*_stdout.txt,summarize_cf.py,cf_summary.json,cf_summary_stdout.txt,max_advantage_check.py,max_advantage_check_stdout.txt}`.
+
+## E64. Max-GAE(D) 구현, smoke·동등성 검증, 1M 분기 규모 측정 — 2026-11-02 Claude Code, 사용자 요청(T154)
+
+- 구현(기본값·기존 모드 불변):
+  - `latent_team/max_gae.py`: 새 파일.
+  - `latent_team/train_from_scratch.py`:
+    - 모드 `oracle_max`, `oracle_maxd1`, `all_max`, `allk_max`.
+    - 옵션 `--max-gae-eta`, `--max-gae-scale`, `--max-gae-lambda`, `--max-gae-cap`, `--init-checkpoint`, `--transfer-warmup`.
+  - `tests/test_max_gae.py`: 11개.
+  - `docs/MAX_GAE.md`.
+  - trainer와 `rware/`는 수정하지 않았다.
+- 계산:
+  - 받는 agent의 rollout 위에서 donor critic을 recurrent로 돌린다. 시뮬레이션에서는 이것으로 critic 가중치 공유를 대신한다.
+  - b = clip(max_j V_j − V_i, 0, cap), f = V_i + b, A_max = GAE(f). timeout은 donor 값으로 포착하고, done 처리는 trainer와 같다.
+  - actor = A_self + ηΔ. value는 자기 return으로 학습한다.
+  - donor는 rollout 중 한 번이라도 Chebyshev 3 안에서 만난 agent다. update 단위로 고정한다.
+  - donor가 없으면 trainer의 `update_ippo`를 그대로 호출한다. donor가 있으면 그 안의 `compute_gae` 호출 한 곳에 advantage를 주입한다.
+- 검증:
+  - pytest: 새 11개 + 기존 A+C·latent_team 38개, 총 49개 통과.
+  - 실제 trainer smoke(64 step): donor를 끈 `oracle_max`가 IPPO와 최종 가중치까지 비트 단위로 같다. 처음부터와 1M 분기 둘 다 확인했다.
+  - 1M 분기 smoke: 모든 모드의 초기 hash가 `fc4a533b…`로 같다. oracle donor는 같은 팀뿐이다.
+  - plan-only: 분기 12 job 계획을 확인했다(`--plan-only`, scratchpad).
+- 규모 측정: `runs/ac_20261023_185556/..._ippo_s1/checkpoint_01000.pt`에서 1,024 step × 4 update. `oracle_max`·`all_max`, raw η=.5. 측정용 짧은 실행이고 scratchpad에 두었다.
+  - 접촉: rollout 안에서 모든 쌍이 만났다(30/30). rollout 단위 접촉 규칙에서는 통신 제한이 사실상 없다.
+  - 뒤처진 agent(0-index 0·1·4):
+    - b > 0인 step 99%, 평균 b .30–.53.
+    - raw 변화량 |A_actor − A_self| / std(A_self) = 2.6–12.
+  - 앞선 agent(2·3·5): 변화량 0–.4.
+  - 속도: 25.6 sps(원래 IPPO 1M 무렵 26.1, 약 2% 감소).
+- 해석:
+  - 방향은 의도대로다. 앞선 agent는 거의 영향을 받지 않는다.
+  - 다만 raw Δ가 자기 advantage보다 몇 배 커서, PPO의 agent별 정규화 뒤에는 raw D2(η=.5)와 D1이 거의 같은 update가 된다.
+  - 그래서 D2 기본값을 `relative`로 바꿨다. Δ를 std(A_self)로 다시 맞춘 뒤 η를 곱한다. 이 설정의 smoke 변화량은 .14–.33이다.
+- 한계: 규모 측정은 seed 1, 4 update, 시점 하나(1M)다. 학습 효과는 측정하지 않았다.
+- 근거: `latent_team/max_gae.py`, `tests/test_max_gae.py`, `docs/MAX_GAE.md`. smoke·측정 폴더는 scratchpad(`smoke_eq*`, `smoke_br*`, `scale_br`, `plancheck_br`)로, 프로젝트에는 남기지 않았다.
+
+## E65. A+C r̂와 희소 보상: 보상 밀도, v2 사건 누적·성숙·거리 시간표(학습 로그 읽기 전용) — 2026-11-02 Claude Code, 사용자 질문(T155)
+
+- 질문(T155): 보상이 일부 행동에만 있으면 대부분의 전이에서 r̂ = 0일 텐데, 보상 기반 식별이 가능한가.
+- 대상: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1`(A+C v2 PGCT, 모서리·개인 보상, 좌표 마스킹, seed 1, 5M, complete). `experiment.json`, `metrics.jsonl`, `transfer.jsonl`만 읽었다. 학습·추론은 하지 않았다.
+- 보상 설정(`experiment.json`):
+  - 큰 사건: 배송 1.0, 반납 1.0
+  - 요청 선반 집기 .15
+  - 진척 shaping: 반납 .02, goal .005, 요청 선반 .002
+  - 감점: 교착 .02, 막힘 .01, 정지 반복 .006, 잘못된 선반 집기 .05, 잘못된 반납 .005, 실패 전진 .005, 요청 외 집기 .005, 조기 내림 .005, noop .003, 무효 집기 .002
+  - 표준 RWARE(`rware/warehouse.py`)는 배송 +1뿐이다(TWO_STAGE에서만 반납 .5).
+- 보상 밀도(학습 로그 구간 평균, 0이 아닌 agent-step 비율): 0–0.1M .37, 0.1–0.25M .25, 1–2M .41, 4–5M .55. 양수 .08–.24, 대부분 감점이다.
+- v2 사건(r ≥ .5, 배송·반납)은 희소하다. agent당 누적 사건(구간 끝)은 0.1M 11, 0.25M 30, 0.5M 53, 1M 252, 2M 2,439, 5M 21,945다. 전이 대비 .01%(0.1M)–.44%(5M)다.
+- v2 판정 시간표(구간 평균, 문턱 .5):
+
+| 구간 | 성숙 agent | 같은 팀 거리 | 다른 팀 거리 | 다른 팀 승인/update |
+|---|---|---|---|---|
+| 0–0.1M | 0 | – | – | 0 |
+| 0.1–0.25M | 3.3(끝 5) | .25 | .99 | 0 |
+| 0.25–0.5M | 5 | .23 | .99 | 0 |
+| 0.5–1M | 5 | .19 | .99 | 0 |
+| 1–2M | 5.8(끝 6) | .11 | .95 | 0 |
+| 2–3M | 6 | .11 | .88 | 0 |
+| 3–4M | 6 | .09 | .77 | 0 |
+| 4–5M | 6 | .08 | .64 | .64 |
+
+- 실제 전이 arc(`transfer.jsonl`): 같은 팀 5,252(0–1M 546, 1–2M 1,072, 2–3M 1,310, 3–4M 1,198, 4–5M 1,126). 다른 팀 352는 모두 4.28M 이후다(4–4.5M 104, 4.5–5M 248).
+- 해석:
+  - 희소한 사건으로도 agent당 수십 번 쌓이면(0.25M 무렵) 같은 팀과 다른 팀이 갈린다.
+  - 성숙 전 보류 때문에 0.1–0.25M 이전에는 판정이 없다. 0.25–1M에는 한 agent가 보류 상태였다.
+  - 다른 팀 거리는 학습 후반에 계속 내려와 4.28M부터 문턱 아래 쌍이 생긴다. 원인은 분석하지 않았다.
+- 한계: seed 하나. 감사 거리는 그 update에서 비교한 쌍의 EMA 평균이다. 보상 밀도는 학습 rollout 기준이다.
+- 근거: `output/ac_sparsity_20261102/{README.md,reward_settings.py,reward_sparsity.py,*_stdout.txt}`.
+
+## E66. PGCT-D2 검토용 점검: Max-GAE 척도·가림의 합성 수치, 1M 무렵 agent별 보상 사건(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T163)
+
+- 합성 점검: `latent_team/max_gae.py`의 `blended_advantages`·`max_targets`를 합성 텐서(1,024 step, γ .99, λ .95, η .5)에 적용했다. 환경·학습 없음. 스크립트는 scratchpad(`d2_review_check.py`)이고 프로젝트에 남기지 않았다.
+  - 지표 mean|A_actor − A_self| / std(A_self) (괄호는 최대), raw / relative:
+    - b ~ U(0, 1e-6): .0000 / .43 (1.38)
+    - b ~ U(0, 1e-2): .004 / .44
+    - b ~ U(0, .3): .11 / .44
+    - b ~ U(0, 1): .38 (1.20) / .44 (1.41)
+    - 1% step에만 b = 1e-3: .00003 (.0014) / .089 (5.03)
+  - 가림: V_i .2, donor critic 1.0(실제 b .8 일정), window 8, D1. Δ[0..6] = +.46 → +.67, Δ[7..] ≈ −.13(정상 상태 −.12).
+- 로그 읽기: `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/metrics.jsonl`의 `train/agent_k_delivery_count`·`return_count` 기록 평균(배송/반납, 0-index).
+  - 0.95–1.06M(108개): a0 0/0, a1 .06/0, a2 2.96/.94, a3 2.27/.50, a4 0/0, a5 1.63/.40. 같은 구간 평가(2개)에서 a0·a1·a4는 배송 0.
+  - 1.4–1.5M(97개): a0 0/0, a1 1.01/.12, a2 5.62/2.12, a3 3.48/.85, a4 0/0, a5 2.92/1.06.
+- 해석:
+  - relative는 b 크기와 무관하게 거의 같은 비중으로 advantage를 바꾼다. raw는 b에 비례한다.
+  - 가림은 매 rollout 첫 7 step에 체계적인 양의 편향을 만든다.
+  - a0·a4는 분기 구간(1.0–1.5M)에서 v2 사건(r ≥ .5)이 사실상 없어 성숙하기 어렵다.
+- 한계: 합성 텐서라 실제 크기는 다르다. 로그 지표의 단위(episode당/rollout당)는 확인하지 않았고 0이라는 사실만 쓴다. seed 하나.
+- 근거: 위 run 경로, D98.
+
+## E67. D98 필수 수정 1–4 검증: pytest와 실제 trainer smoke(64 step) — 2026-11-02 Claude Code, 사용자 요청(T164)
+
+- 대상 코드: `latent_team/max_gae.py`, `latent_team/train_from_scratch.py`, `tests/test_max_gae.py` (D99).
+- pytest: `tests/test_max_gae.py` 19개(새 8개)와 `test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py`, 모두 57개 통과.
+- smoke(모서리·개인, A+C, `--smoke-test`: 32 step rollout × 2 update, scratchpad에 두고 프로젝트에는 남기지 않음):
+  - `smoke_eq`: 처음부터, `ippo`·`oracle_max`, `--transfer-warmup 100`(donor 보류). 최종 가중치가 비트 단위로 같다.
+  - `smoke_br`: A+C IPPO s1 `checkpoint_01000.pt` 분기, seed 1, `oracle_max`(shrink, η .5)·`oracle_maxd1`.
+    - donor arc 6(같은 팀).
+    - shrink에서 뒤처진 a0·a1의 η_eff .04–.08, 변화량 .41–.59. D1은 변화량 5.3–14.7.
+    - 앞선 a2·a3는 변화량 0. a5는 update 2에서 η_eff .5(줄이지 않음), 변화량 .35.
+    - critic EV −26.6–.27(32 step rollout이라 의미 없음).
+  - `smoke_v2_135`: 권고 명령 형태(`--ac-gate v2`, `ippo`·`oracle_max`·`oracle_maxd1`·`allk_max` × seed 1·3·5). 12 job이 모두 complete이고 초기 가중치가 같다.
+  - `--seeds 1 2` 분기 plan-only는 seed 2의 goal 배치 불일치로 거부되고, 폴더를 만들지 않았다.
+- 한계: smoke는 학습 결과가 아니다. 분기 실험 자체는 아직 실행하지 않았다.
+- 근거: D99, `docs/MAX_GAE.md`.

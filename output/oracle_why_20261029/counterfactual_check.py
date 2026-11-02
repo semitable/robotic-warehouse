@@ -25,7 +25,7 @@ from reward_correlation_baseline import load_model  # noqa: E402
 import reward_probe_ac as AC  # noqa: E402
 
 torch.set_num_threads(2)
-GAMMA, EPISODES, TAUS, H_STATE, H_ACTION, N_MC, COMM, MARGIN = 0.99, 3, (80, 160, 240, 320), 150, 100, 6, 3, 0.05
+GAMMA, EPISODES, TAUS, H_STATE, H_ACTION, N_MC, COMM, MARGIN = 0.99, 3, (80, 180, 280), 100, 60, 8, 3, 0.05
 OLD = ROOT / "runs/queue_20261022_140114_b6_corner_indiv_pen005"
 DATASETS = {
     "acs1_1M": (ROOT / "runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt", True, "acs1", 1024000),

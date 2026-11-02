@@ -1,5 +1,19 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-02 KST, Claude Code (T164, D98 필수 수정 1–4 구현)
+
+- **구현(D99, E67)**: 분기 goal 배치 검사, D2 `shrink` 척도(`--max-gae-scale` 기본값 relative → shrink), rollout 첫 7 step Δ = 0, agent별 critic explained variance 로그. pytest 57개 통과. smoke에서 donor를 끈 동등성(비트 단위), 1M 분기, seed 2 거부를 확인했다.
+- **분기 실행 명령**은 T164 최종 답변에 있다(seed 1·3·5, `--ac-gate v2`, 4 모드, 12 job, 사용자 실행). 아직 시작하지 않았다.
+- **남은 것**: PGCT-D2(필수 5–8), donor critic 성숙 조건, 보상 사건이 없는 agent(a0·a4) 처리.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T163, PGCT-D2 통합 전 코드 검토)
+
+- **PGCT-D2는 미구현이다.** Max-GAE 모드에서 v2는 돌지 않고(learn=False), donor는 정답 라벨 ∧ rollout 접촉뿐이다. v2 승인을 donor로 잇는 코드(`approved()`, donor 규칙 gate, `pgct_max`)가 필요하다(D98).
+- **T154의 1M 분기 명령은 그대로 실행하지 않는다.** seed 2는 goal 좌우가 바뀐다(`env_candidates.py:104`). D2 기본 `relative` 척도는 작은 b를 키워 IPPO로 연속 퇴화하지 않는다. rollout 첫 7 step 가림이 양의 편향을 만든다(E66).
+- **성숙 조건 충돌**: A+C IPPO s1에서 a0·a4는 1–1.5M에 배송·반납이 0이다. v2 규칙으로는 receiver가 될 수 없다.
+- `runs/`에 `maxgae_br1M_*` 폴더가 없다(프로세스는 확인하지 않음). 학습·코드 변경 없음.
+- **미결(사용자 결정)**: 필수 수정 구현 범위, D2 donor 접촉 기준(권고: rollout 접촉), 보상 사건이 없는 agent 처리(연구 범위 축소 또는 shaping probe로 v2 변경).
+
 ## 최신 확인 — 2026-10-29 KST, Claude Code (T143–T147, 정확한 시각은 대화 기록 참고)
 
 - **실행 상태(10:40)**: A+C v1 run `runs/ac_20261023_185556`에서 IPPO·PGCT·Oracle s1은 complete다. All s1은 1.6M에서 진행 중이고, seed 2의 job 4개가 대기 중이다. Claude는 시작·중단하지 않았다. v2 실행 명령만 안내했다(T143, T144).
@@ -7,7 +21,12 @@
 - **JS 가중 제안(T147)**: 미성숙일 때 가중이 최대이고 배울수록 줄어 방향이 반대다. 권하지 않는다.
 - **PGCT `probe/cross_team_gate`**: 물리 이웃 비율일 뿐이다. 실제 v1 다른 팀 전이는 0이다. v2 run에서도 이 그래프는 같으므로 `update/*_arcs`·`update/ac_v2_audit_*`를 본다.
 - **전이 재설계(D91, E62, T148)**: 권고는 팀원 critic의 max를 advantage에 쓰는 방식이다(GPI/MAMBA 계열). V_i는 자기 return으로 학습한다. r̂ 전이는 철회한다(발견은 병목이 아니다). 오프라인 점검 결과, 뒤처진 agent만 상향되고 다른 팀 critic은 가짜 상향을 준다. 팀 특이성은 작고 과대추정 위험이 있다.
-- **미결(사용자 결정)**: D91 오프라인 추가 점검, Oracle-max·All-max 학습(승인 필요), 진행 중인 v1 run 처리.
+- **반사실 점검(E63, D92, T149)**: 팀원 정책을 내 자리에서 실행해 보니, 뒤처진 agent에게 같은 팀 critic이 높게 나오면 대체로 실제로 더 나은 정책이 있었다(dV>.2에서 dMC>0이 67–100%). 다른 팀은 이득이 작고, 앞선 agent에게 가짜 상향을 준다. 행동 수준의 이득은 미입증이다. 통신 범위와 성숙 제한으로 기회는 21–40%다. 질의는 L8 window를 쓴다. 근거는 MAMBA로 고쳤다.
+- **전이 방향 논의(T150–T153, D93–D95)**: B(팀 평균 보상)보다 D(max 결합 advantage)를 유지한다. MAMBA는 방법의 출처로만 인용하고 보장은 주장하지 않는다. 오프라인 행동 검증 대신 1M checkpoint 분기 학습을 관문으로 둔다.
+- **Max-GAE 구현(E64, D96, T154)**: `latent_team/max_gae.py`, 모드 `oracle_max`·`oracle_maxd1`·`all_max`·`allk_max`, `--init-checkpoint` 분기를 구현했다. 테스트 49개가 통과했다. donor가 없으면 IPPO와 비트 단위로 같다. 규모 측정에서 raw Δ가 뒤처진 agent의 자기 advantage보다 2.6–12배 커서, D2는 상대 척도를 기본으로 했다. 학습은 시작하지 않았다.
+- **실행 상태(11-02 13시 무렵)**: v1 run(PID 18880)은 seed 2 PGCT가 진행 중이다. v2 PGCT s1(`runs/acv2_s1_20261029_084340`)은 complete이고 아직 분석하지 않았다.
+- **희소 보상과 r̂(E65, D97, T155)**: 우리 환경은 shaping·감점으로 agent-step의 25–55%에 보상이 있지만, 팀을 가르는 사건(배송·반납, r ≥ .5)은 1M 이전 전이의 .01–.03%다. v2 PGCT s1에서는 0.25M 무렵 같은 팀 거리 .25 대 다른 팀 .99로 갈렸다. 다른 팀 전이 352개는 모두 4.28M 이후다(원인 미분석). 보상 사건을 겪지 않은 agent는 보상 기반으로 식별할 수 없다는 한계를 논문 조건으로 명시하기를 권했다.
+- **미결(사용자 결정)**: 1M 분기 실험(12 job) 실행, v1 run 처리, v2 PGCT s1의 후반 다른 팀 승인 원인 분석.
 
 ## 최신 확인 — 2026-10-26 13:22 KST, Claude Code
 

@@ -56,6 +56,13 @@ PGCT v1은 2.82M까지 IPPO와 같고, 그 뒤 전이 22 update만으로 갈라�
 - 운반 중이고 goal이 시야 밖일 때 critic과 내 return의 상관(자기 / 같은 팀 / 다른 팀): 1M .56/.65/.56, 2M .59/.66/.53, 3M .39/.48/.50.
 - 내 return 대비 편향(자기 V / max(자기, 같은 팀)): +.03/+.25, +.27/+.76, +.13/+.45.
 
+## D91 추가 점검 (T149, E63)
+
+- `max_advantage_check.py` → `max_advantage_check_stdout.txt`: h=0·L8 질의 정확도, 앞선 팀원의 최선 행동에 대한 advantage 선호(상관 지표).
+- `counterfactual_check.py` → `cf_*.json`, `cf_*_stdout.txt`: env deepcopy로 상태를 복원하고, 받는 agent 자리에서 팀원 정책을 실행한 실제 return 차이(dMC)를 critic 신호 dV = V_j(h_i) − V_i(h_i)와 비교. 행동별 one-step A_self·A_max를 MC Q와 비교. V2 성숙(E60 replay) + Chebyshev 3 통신 제한. CRN, N=8, H=100(상태)·60(행동), episode 3, τ = 80·180·280.
+- `summarize_cf.py` → `cf_summary_stdout.txt`, `cf_summary.json`.
+- 결과 요약은 `EXPERIMENTS.md` E63에 있다.
+
 ## 한계
 
 seed 하나다. 실제 상태 분석은 mode·시점마다 3 episode이고, 정책이 mode마다 달라 방문 상태 분포도 다르다. Oracle의 1M |V|가 낮은 것은 원인일 수도 있고 결과(배송이 적음)일 수도 있다.
