@@ -1,0 +1,10 @@
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\utils\passive_env_checker.py:244: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+[acs1_1M] episode 0 done: deliveries [0.0, 0.0, 2.0, 1.0, 0.0, 1.0] mature [True, True, True, True, False, True]
+[acs1_1M] episode 1 done: deliveries [0.0, 0.0, 3.0, 2.0, 0.0, 1.0] mature [True, True, True, True, False, True]
+[acs1_1M] episode 2 done: deliveries [0.0, 0.0, 3.0, 1.0, 0.0, 0.0] mature [True, True, True, True, False, True]
+wrote C:\RWARE\MARL_RWARE\third_party\robotic-warehouse\output\oracle_why_20261029\cf_acs1_1M.json

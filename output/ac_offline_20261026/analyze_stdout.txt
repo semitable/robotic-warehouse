@@ -1,0 +1,971 @@
+{
+ "1_observability": {
+  "deliveries_by_goal_team": {
+   "0": 250,
+   "1": 394
+  },
+  "distinct_landmark_views": {
+   "0": 2,
+   "1": 2
+  },
+  "views_shared_by_both_goals": 0
+ },
+ "2_coverage": {
+  "0": {
+   "team": 0,
+   "transitions": 28000,
+   "deliveries": 2,
+   "carry_onto_own_goal": 209,
+   "carry_onto_other_goal": 0,
+   "mean_reward_onto_other_goal": null
+  },
+  "1": {
+   "team": 1,
+   "transitions": 28000,
+   "deliveries": 113,
+   "carry_onto_own_goal": 663,
+   "carry_onto_other_goal": 136,
+   "mean_reward_onto_other_goal": -0.0012
+  },
+  "2": {
+   "team": 0,
+   "transitions": 28000,
+   "deliveries": 175,
+   "carry_onto_own_goal": 1116,
+   "carry_onto_other_goal": 78,
+   "mean_reward_onto_other_goal": -0.002
+  },
+  "3": {
+   "team": 1,
+   "transitions": 28000,
+   "deliveries": 150,
+   "carry_onto_own_goal": 825,
+   "carry_onto_other_goal": 61,
+   "mean_reward_onto_other_goal": -0.0001
+  },
+  "4": {
+   "team": 0,
+   "transitions": 28000,
+   "deliveries": 73,
+   "carry_onto_own_goal": 882,
+   "carry_onto_other_goal": 31,
+   "mean_reward_onto_other_goal": -0.0029
+  },
+  "5": {
+   "team": 1,
+   "transitions": 28000,
+   "deliveries": 131,
+   "carry_onto_own_goal": 1487,
+   "carry_onto_other_goal": 72,
+   "mean_reward_onto_other_goal": -0.0014
+  }
+ },
+ "3_keys": {
+  "exact (running A+C)": {
+   "per_agent": [
+    {
+     "agent": 0,
+     "transitions": 28000,
+     "unique_keys": 17476,
+     "frac_transitions_supported_strict": 0.268,
+     "supported_keys_strict": 371,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 0,
+     "deliveries": 2,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 2
+    },
+    {
+     "agent": 1,
+     "transitions": 28000,
+     "unique_keys": 22891,
+     "frac_transitions_supported_strict": 0.059,
+     "supported_keys_strict": 129,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 4,
+     "deliveries": 113,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 57
+    },
+    {
+     "agent": 2,
+     "transitions": 28000,
+     "unique_keys": 20981,
+     "frac_transitions_supported_strict": 0.148,
+     "supported_keys_strict": 241,
+     "supported_reward_bearing_strict": 1,
+     "supported_reward_bearing_loose": 5,
+     "deliveries": 175,
+     "deliveries_with_strict_support": 10,
+     "deliveries_with_loose_support": 103
+    },
+    {
+     "agent": 3,
+     "transitions": 28000,
+     "unique_keys": 23157,
+     "frac_transitions_supported_strict": 0.051,
+     "supported_keys_strict": 100,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 3,
+     "deliveries": 150,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 78
+    },
+    {
+     "agent": 4,
+     "transitions": 28000,
+     "unique_keys": 20927,
+     "frac_transitions_supported_strict": 0.145,
+     "supported_keys_strict": 218,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 2,
+     "deliveries": 73,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 41
+    },
+    {
+     "agent": 5,
+     "transitions": 28000,
+     "unique_keys": 22222,
+     "frac_transitions_supported_strict": 0.078,
+     "supported_keys_strict": 134,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 2,
+     "deliveries": 131,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 53
+    }
+   ],
+   "pairs_strict": {
+    "mutual_queries": [
+     21,
+     98,
+     6,
+     66,
+     22,
+     36,
+     35,
+     47,
+     53,
+     13,
+     82,
+     28,
+     30,
+     49,
+     45
+    ],
+    "mutual_reward_bearing": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "decided": 15,
+    "accepted_same": 0,
+    "accepted_cross": 0,
+    "auroc_mean_distance": 0.7963,
+    "auroc_reward_bearing_distance": null,
+    "auroc_mean_distance_without_agent0": 0.9583
+   },
+   "pairs_loose": {
+    "mutual_queries": [
+     22,
+     100,
+     6,
+     67,
+     23,
+     37,
+     38,
+     48,
+     55,
+     13,
+     84,
+     29,
+     30,
+     51,
+     46
+    ],
+    "mutual_reward_bearing": [
+     0,
+     2,
+     0,
+     1,
+     0,
+     1,
+     3,
+     1,
+     2,
+     0,
+     2,
+     1,
+     0,
+     2,
+     1
+    ],
+    "decided": 15,
+    "accepted_same": 4,
+    "accepted_cross": 0,
+    "auroc_mean_distance": 0.3519,
+    "auroc_reward_bearing_distance": 0.5,
+    "auroc_mean_distance_without_agent0": 0.1667
+   },
+   "lru4096_end_of_rollouts": [
+    {
+     "supported": 166,
+     "supported_reward_bearing": 0
+    },
+    {
+     "supported": 24,
+     "supported_reward_bearing": 1
+    },
+    {
+     "supported": 47,
+     "supported_reward_bearing": 0
+    },
+    {
+     "supported": 37,
+     "supported_reward_bearing": 1
+    },
+    {
+     "supported": 36,
+     "supported_reward_bearing": 0
+    },
+    {
+     "supported": 47,
+     "supported_reward_bearing": 0
+    }
+   ]
+  },
+  "no other agents": {
+   "per_agent": [
+    {
+     "agent": 0,
+     "transitions": 28000,
+     "unique_keys": 11008,
+     "frac_transitions_supported_strict": 0.436,
+     "supported_keys_strict": 513,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 0,
+     "deliveries": 2,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 2
+    },
+    {
+     "agent": 1,
+     "transitions": 28000,
+     "unique_keys": 16429,
+     "frac_transitions_supported_strict": 0.169,
+     "supported_keys_strict": 361,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 6,
+     "deliveries": 113,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 65
+    },
+    {
+     "agent": 2,
+     "transitions": 28000,
+     "unique_keys": 14335,
+     "frac_transitions_supported_strict": 0.286,
+     "supported_keys_strict": 451,
+     "supported_reward_bearing_strict": 1,
+     "supported_reward_bearing_loose": 9,
+     "deliveries": 175,
+     "deliveries_with_strict_support": 10,
+     "deliveries_with_loose_support": 124
+    },
+    {
+     "agent": 3,
+     "transitions": 28000,
+     "unique_keys": 16386,
+     "frac_transitions_supported_strict": 0.159,
+     "supported_keys_strict": 323,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 7,
+     "deliveries": 150,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 86
+    },
+    {
+     "agent": 4,
+     "transitions": 28000,
+     "unique_keys": 14245,
+     "frac_transitions_supported_strict": 0.288,
+     "supported_keys_strict": 431,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 3,
+     "deliveries": 73,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 47
+    },
+    {
+     "agent": 5,
+     "transitions": 28000,
+     "unique_keys": 15212,
+     "frac_transitions_supported_strict": 0.228,
+     "supported_keys_strict": 420,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 6,
+     "deliveries": 131,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 71
+    }
+   ],
+   "pairs_strict": {
+    "mutual_queries": [
+     98,
+     183,
+     73,
+     261,
+     118,
+     130,
+     142,
+     125,
+     188,
+     82,
+     188,
+     123,
+     98,
+     170,
+     152
+    ],
+    "mutual_reward_bearing": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "decided": 15,
+    "accepted_same": 0,
+    "accepted_cross": 0,
+    "auroc_mean_distance": 0.5741,
+    "auroc_reward_bearing_distance": null,
+    "auroc_mean_distance_without_agent0": 0.5417
+   },
+   "pairs_loose": {
+    "mutual_queries": [
+     99,
+     185,
+     73,
+     262,
+     119,
+     134,
+     148,
+     127,
+     192,
+     86,
+     191,
+     127,
+     99,
+     174,
+     154
+    ],
+    "mutual_reward_bearing": [
+     0,
+     2,
+     0,
+     0,
+     0,
+     4,
+     6,
+     1,
+     4,
+     4,
+     3,
+     4,
+     1,
+     4,
+     1
+    ],
+    "decided": 15,
+    "accepted_same": 4,
+    "accepted_cross": 6,
+    "auroc_mean_distance": 0.4815,
+    "auroc_reward_bearing_distance": 0.3333,
+    "auroc_mean_distance_without_agent0": 0.5417
+   }
+  },
+  "no agents, 3x3": {
+   "per_agent": [
+    {
+     "agent": 0,
+     "transitions": 28000,
+     "unique_keys": 3705,
+     "frac_transitions_supported_strict": 0.768,
+     "supported_keys_strict": 501,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 0,
+     "deliveries": 2,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 2
+    },
+    {
+     "agent": 1,
+     "transitions": 28000,
+     "unique_keys": 6384,
+     "frac_transitions_supported_strict": 0.62,
+     "supported_keys_strict": 658,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 3,
+     "deliveries": 113,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 85
+    },
+    {
+     "agent": 2,
+     "transitions": 28000,
+     "unique_keys": 5975,
+     "frac_transitions_supported_strict": 0.651,
+     "supported_keys_strict": 659,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 12,
+     "deliveries": 175,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 151
+    },
+    {
+     "agent": 3,
+     "transitions": 28000,
+     "unique_keys": 6255,
+     "frac_transitions_supported_strict": 0.616,
+     "supported_keys_strict": 652,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 6,
+     "deliveries": 150,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 123
+    },
+    {
+     "agent": 4,
+     "transitions": 28000,
+     "unique_keys": 5390,
+     "frac_transitions_supported_strict": 0.692,
+     "supported_keys_strict": 627,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 4,
+     "deliveries": 73,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 60
+    },
+    {
+     "agent": 5,
+     "transitions": 28000,
+     "unique_keys": 6056,
+     "frac_transitions_supported_strict": 0.633,
+     "supported_keys_strict": 644,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 7,
+     "deliveries": 131,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 102
+    }
+   ],
+   "pairs_strict": {
+    "mutual_queries": [
+     208,
+     263,
+     176,
+     298,
+     214,
+     383,
+     432,
+     367,
+     426,
+     352,
+     432,
+     366,
+     342,
+     432,
+     360
+    ],
+    "mutual_reward_bearing": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "decided": 15,
+    "accepted_same": 0,
+    "accepted_cross": 0,
+    "auroc_mean_distance": 0.7593,
+    "auroc_reward_bearing_distance": null,
+    "auroc_mean_distance_without_agent0": 1.0
+   },
+   "pairs_loose": {
+    "mutual_queries": [
+     209,
+     266,
+     177,
+     300,
+     215,
+     392,
+     440,
+     373,
+     434,
+     361,
+     439,
+     374,
+     347,
+     440,
+     365
+    ],
+    "mutual_reward_bearing": [
+     0,
+     3,
+     0,
+     2,
+     0,
+     7,
+     5,
+     5,
+     5,
+     7,
+     6,
+     8,
+     4,
+     6,
+     4
+    ],
+    "decided": 15,
+    "accepted_same": 4,
+    "accepted_cross": 6,
+    "auroc_mean_distance": 0.5,
+    "auroc_reward_bearing_distance": 0.5,
+    "auroc_mean_distance_without_agent0": 0.75
+   }
+  },
+  "landmarks only (wall/shelf/goal)": {
+   "per_agent": [
+    {
+     "agent": 0,
+     "transitions": 28000,
+     "unique_keys": 10897,
+     "frac_transitions_supported_strict": 0.439,
+     "supported_keys_strict": 518,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 0,
+     "deliveries": 2,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 2
+    },
+    {
+     "agent": 1,
+     "transitions": 28000,
+     "unique_keys": 16220,
+     "frac_transitions_supported_strict": 0.174,
+     "supported_keys_strict": 372,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 6,
+     "deliveries": 113,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 65
+    },
+    {
+     "agent": 2,
+     "transitions": 28000,
+     "unique_keys": 14243,
+     "frac_transitions_supported_strict": 0.287,
+     "supported_keys_strict": 454,
+     "supported_reward_bearing_strict": 1,
+     "supported_reward_bearing_loose": 9,
+     "deliveries": 175,
+     "deliveries_with_strict_support": 10,
+     "deliveries_with_loose_support": 124
+    },
+    {
+     "agent": 3,
+     "transitions": 28000,
+     "unique_keys": 16230,
+     "frac_transitions_supported_strict": 0.164,
+     "supported_keys_strict": 336,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 7,
+     "deliveries": 150,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 86
+    },
+    {
+     "agent": 4,
+     "transitions": 28000,
+     "unique_keys": 14097,
+     "frac_transitions_supported_strict": 0.293,
+     "supported_keys_strict": 440,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 3,
+     "deliveries": 73,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 47
+    },
+    {
+     "agent": 5,
+     "transitions": 28000,
+     "unique_keys": 15077,
+     "frac_transitions_supported_strict": 0.23,
+     "supported_keys_strict": 425,
+     "supported_reward_bearing_strict": 0,
+     "supported_reward_bearing_loose": 6,
+     "deliveries": 131,
+     "deliveries_with_strict_support": 0,
+     "deliveries_with_loose_support": 71
+    }
+   ],
+   "pairs_strict": {
+    "mutual_queries": [
+     98,
+     183,
+     74,
+     262,
+     120,
+     131,
+     147,
+     126,
+     189,
+     83,
+     188,
+     123,
+     100,
+     172,
+     154
+    ],
+    "mutual_reward_bearing": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "decided": 15,
+    "accepted_same": 0,
+    "accepted_cross": 0,
+    "auroc_mean_distance": 0.5741,
+    "auroc_reward_bearing_distance": null,
+    "auroc_mean_distance_without_agent0": 0.5417
+   },
+   "pairs_loose": {
+    "mutual_queries": [
+     99,
+     185,
+     74,
+     263,
+     121,
+     135,
+     153,
+     128,
+     193,
+     87,
+     191,
+     127,
+     101,
+     176,
+     156
+    ],
+    "mutual_reward_bearing": [
+     0,
+     2,
+     0,
+     0,
+     0,
+     4,
+     6,
+     1,
+     4,
+     4,
+     3,
+     4,
+     1,
+     4,
+     1
+    ],
+    "decided": 15,
+    "accepted_same": 4,
+    "accepted_cross": 6,
+    "auroc_mean_distance": 0.4815,
+    "auroc_reward_bearing_distance": 0.3333,
+    "auroc_mean_distance_without_agent0": 0.5417
+   }
+  }
+ },
+ "4_mlp_all_experience": {
+  "predictor_check": [
+   {
+    "agent": 0,
+    "heldout_mse": 0.0002,
+    "heldout_own_delivery_pred": 0.0147,
+    "heldout_nonevent_pred": 0.0
+   },
+   {
+    "agent": 1,
+    "heldout_mse": 0.0069,
+    "heldout_own_delivery_pred": 0.7858,
+    "heldout_nonevent_pred": 0.0045
+   },
+   {
+    "agent": 2,
+    "heldout_mse": 0.0104,
+    "heldout_own_delivery_pred": 0.8848,
+    "heldout_nonevent_pred": 0.006
+   },
+   {
+    "agent": 3,
+    "heldout_mse": 0.0054,
+    "heldout_own_delivery_pred": 0.8407,
+    "heldout_nonevent_pred": 0.0069
+   },
+   {
+    "agent": 4,
+    "heldout_mse": 0.0037,
+    "heldout_own_delivery_pred": 0.3428,
+    "heldout_nonevent_pred": 0.0053
+   },
+   {
+    "agent": 5,
+    "heldout_mse": 0.0078,
+    "heldout_own_delivery_pred": 0.4847,
+    "heldout_nonevent_pred": 0.0086
+   }
+  ],
+  "probes": {
+   "C random experience (3000)": {
+    "n": 3000,
+    "auroc_mean_abs": 0.8148,
+    "auroc_q95_abs": 0.5926,
+    "auroc_mean_abs_without_agent0": 0.9167,
+    "same_team_mean_distance": 0.0122,
+    "cross_team_mean_distance": 0.0158
+   },
+   "C delivery/return events": {
+    "n": 1068,
+    "auroc_mean_abs": 1.0,
+    "auroc_q95_abs": 0.9074,
+    "auroc_mean_abs_without_agent0": 1.0,
+    "same_team_mean_distance": 0.2576,
+    "cross_team_mean_distance": 0.5359
+   },
+   "A mirrored events": {
+    "n": 1068,
+    "auroc_mean_abs": 0.9074,
+    "auroc_q95_abs": 0.8889,
+    "auroc_mean_abs_without_agent0": 1.0,
+    "same_team_mean_distance": 0.2468,
+    "cross_team_mean_distance": 0.4468
+   }
+  },
+  "delivery_table": {
+   "agent0 (team 0)": {
+    "C delivery at team0 goal": 0.003,
+    "C delivery at team1 goal": 0.001,
+    "A mirror of team0-goal delivery": 0.001,
+    "A mirror of team1-goal delivery": 0.003
+   },
+   "agent1 (team 1)": {
+    "C delivery at team0 goal": 0.001,
+    "C delivery at team1 goal": 0.781,
+    "A mirror of team0-goal delivery": 0.76,
+    "A mirror of team1-goal delivery": 0.001
+   },
+   "agent2 (team 0)": {
+    "C delivery at team0 goal": 0.887,
+    "C delivery at team1 goal": 0.003,
+    "A mirror of team0-goal delivery": 0.003,
+    "A mirror of team1-goal delivery": 0.865
+   },
+   "agent3 (team 1)": {
+    "C delivery at team0 goal": 0.001,
+    "C delivery at team1 goal": 0.818,
+    "A mirror of team0-goal delivery": 0.813,
+    "A mirror of team1-goal delivery": 0.0
+   },
+   "agent4 (team 0)": {
+    "C delivery at team0 goal": 0.401,
+    "C delivery at team1 goal": 0.006,
+    "A mirror of team0-goal delivery": 0.007,
+    "A mirror of team1-goal delivery": 0.376
+   },
+   "agent5 (team 1)": {
+    "C delivery at team0 goal": -0.005,
+    "C delivery at team1 goal": 0.646,
+    "A mirror of team0-goal delivery": 0.576,
+    "A mirror of team1-goal delivery": -0.006
+   }
+  }
+ },
+ "4_mlp_experience_to_1.5M": {
+  "predictor_check": [
+   {
+    "agent": 0,
+    "heldout_mse": 0.0002,
+    "heldout_own_delivery_pred": 0.0215,
+    "heldout_nonevent_pred": 0.0005
+   },
+   {
+    "agent": 1,
+    "heldout_mse": 0.0071,
+    "heldout_own_delivery_pred": 0.1648,
+    "heldout_nonevent_pred": -0.0002
+   },
+   {
+    "agent": 2,
+    "heldout_mse": 0.009,
+    "heldout_own_delivery_pred": 0.3232,
+    "heldout_nonevent_pred": 0.0012
+   },
+   {
+    "agent": 3,
+    "heldout_mse": 0.0064,
+    "heldout_own_delivery_pred": 0.2788,
+    "heldout_nonevent_pred": 0.0012
+   },
+   {
+    "agent": 4,
+    "heldout_mse": 0.0051,
+    "heldout_own_delivery_pred": 0.0034,
+    "heldout_nonevent_pred": 0.0001
+   },
+   {
+    "agent": 5,
+    "heldout_mse": 0.0082,
+    "heldout_own_delivery_pred": 0.1201,
+    "heldout_nonevent_pred": 0.0027
+   }
+  ],
+  "probes": {
+   "C random experience (3000)": {
+    "n": 3000,
+    "auroc_mean_abs": 0.5185,
+    "auroc_q95_abs": 0.463,
+    "auroc_mean_abs_without_agent0": 0.5417,
+    "same_team_mean_distance": 0.0086,
+    "cross_team_mean_distance": 0.0087
+   },
+   "C delivery/return events": {
+    "n": 1068,
+    "auroc_mean_abs": 0.6667,
+    "auroc_q95_abs": 0.463,
+    "auroc_mean_abs_without_agent0": 0.7083,
+    "same_team_mean_distance": 0.1018,
+    "cross_team_mean_distance": 0.133
+   },
+   "A mirrored events": {
+    "n": 1068,
+    "auroc_mean_abs": 0.5741,
+    "auroc_q95_abs": 0.5926,
+    "auroc_mean_abs_without_agent0": 0.625,
+    "same_team_mean_distance": 0.1037,
+    "cross_team_mean_distance": 0.1232
+   }
+  },
+  "delivery_table": {
+   "agent0 (team 0)": {
+    "C delivery at team0 goal": 0.005,
+    "C delivery at team1 goal": -0.004,
+    "A mirror of team0-goal delivery": -0.004,
+    "A mirror of team1-goal delivery": 0.005
+   },
+   "agent1 (team 1)": {
+    "C delivery at team0 goal": -0.002,
+    "C delivery at team1 goal": 0.138,
+    "A mirror of team0-goal delivery": 0.143,
+    "A mirror of team1-goal delivery": -0.002
+   },
+   "agent2 (team 0)": {
+    "C delivery at team0 goal": 0.357,
+    "C delivery at team1 goal": -0.007,
+    "A mirror of team0-goal delivery": -0.007,
+    "A mirror of team1-goal delivery": 0.341
+   },
+   "agent3 (team 1)": {
+    "C delivery at team0 goal": -0.004,
+    "C delivery at team1 goal": 0.279,
+    "A mirror of team0-goal delivery": 0.306,
+    "A mirror of team1-goal delivery": -0.004
+   },
+   "agent4 (team 0)": {
+    "C delivery at team0 goal": 0.003,
+    "C delivery at team1 goal": 0.0,
+    "A mirror of team0-goal delivery": 0.0,
+    "A mirror of team1-goal delivery": 0.003
+   },
+   "agent5 (team 1)": {
+    "C delivery at team0 goal": 0.003,
+    "C delivery at team1 goal": 0.12,
+    "A mirror of team0-goal delivery": 0.118,
+    "A mirror of team1-goal delivery": 0.003
+   }
+  }
+ },
+ "meta": {
+  "transitions": 168000,
+  "agents": 6,
+  "teams": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "ckpt_steps": [
+   256000,
+   768000,
+   1536000,
+   2560000,
+   3584000,
+   4864000,
+   5000192
+  ],
+  "pairs": 15,
+  "same_pairs": 6,
+  "config": {
+   "min_samples": 8,
+   "min_episodes": 3,
+   "max_std": 0.1,
+   "max_stderr": 0.04,
+   "min_queries": 4,
+   "min_signal": 0.2,
+   "threshold": 0.12
+  }
+ }
+}

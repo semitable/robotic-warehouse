@@ -1,0 +1,21 @@
+
+[ippo checkpoint_01000.pt] corr(V_k, G_i) all states: own 0.49 same 0.34 cross 0.27
+[ippo checkpoint_01000.pt] carrying, own goal IN view : own 0.73 same 0.69 cross 0.66
+[ippo checkpoint_01000.pt] carrying, own goal OUT of view: own 0.56 same 0.65 cross 0.56
+[ippo checkpoint_01000.pt] mean relu uplift for lag receivers (n=11): same-team 0.346  cross-team 0.336
+[ippo checkpoint_01000.pt] mean relu uplift for lead receivers (n=7): same-team 0.029  cross-team 0.154
+[ippo checkpoint_01000.pt] mean bias vs own return: own V +0.025  max(own,same) +0.247  max(own,cross) +0.290
+
+[ippo checkpoint_02000.pt] corr(V_k, G_i) all states: own 0.56 same 0.39 cross 0.31
+[ippo checkpoint_02000.pt] carrying, own goal IN view : own 0.69 same 0.67 cross 0.58
+[ippo checkpoint_02000.pt] carrying, own goal OUT of view: own 0.59 same 0.66 cross 0.53
+[ippo checkpoint_02000.pt] mean relu uplift for lag receivers (n=6): same-team 1.188  cross-team 0.715
+[ippo checkpoint_02000.pt] mean relu uplift for lead receivers (n=12): same-team 0.132  cross-team 0.563
+[ippo checkpoint_02000.pt] mean bias vs own return: own V +0.273  max(own,same) +0.757  max(own,cross) +0.887
+
+[ippo checkpoint_03000.pt] corr(V_k, G_i) all states: own 0.41 same 0.41 cross 0.31
+[ippo checkpoint_03000.pt] carrying, own goal IN view : own 0.78 same 0.74 cross 0.69
+[ippo checkpoint_03000.pt] carrying, own goal OUT of view: own 0.39 same 0.48 cross 0.50
+[ippo checkpoint_03000.pt] mean relu uplift for lag receivers (n=3): same-team 1.072  cross-team 1.116
+[ippo checkpoint_03000.pt] mean relu uplift for lead receivers (n=15): same-team 0.176  cross-team 0.246
+[ippo checkpoint_03000.pt] mean bias vs own return: own V +0.127  max(own,same) +0.452  max(own,cross) +0.518

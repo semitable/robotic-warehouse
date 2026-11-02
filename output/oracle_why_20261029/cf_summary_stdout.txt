@@ -1,0 +1,68 @@
+
+===== acs1_1M  mature [True, True, True, True, False, True]
+laggard same  n= 33 corr(dV,dMC)=+0.48  dMC>0 overall 0.82  mean dMC +0.180  mean dV +0.26
+      dV>0.2   n= 20 mean dMC +0.281  dMC>0 1.00  sig gain 0.40  sig loss 0.00
+      dV<=0.2  n= 13 mean dMC +0.026  dMC>0 0.54  sig gain 0.23  sig loss 0.15
+laggard cross n= 21 corr(dV,dMC)=+0.16  dMC>0 overall 0.95  mean dMC +0.076  mean dV +0.34
+      dV>0.2   n= 20 mean dMC +0.080  dMC>0 1.00  sig gain 0.65  sig loss 0.00
+      dV<=0.2  n=  1 mean dMC -0.006  dMC>0 0.00  sig gain 0.00  sig loss 0.00
+leader  same  n= 39 corr(dV,dMC)=+0.67  dMC>0 overall 0.46  mean dMC -0.116  mean dV -0.22
+      dV>0.2   n=  2 mean dMC +0.142  dMC>0 1.00  sig gain 0.50  sig loss 0.00
+      dV<=0.2  n= 37 mean dMC -0.130  dMC>0 0.43  sig gain 0.22  sig loss 0.32
+leader  cross n= 24 corr(dV,dMC)=+0.31  dMC>0 overall 0.42  mean dMC -0.179  mean dV +0.09
+      dV>0.2   n= 11 mean dMC +0.004  dMC>0 0.55  sig gain 0.36  sig loss 0.09
+      dV<=0.2  n= 13 mean dMC -0.335  dMC>0 0.31  sig gain 0.00  sig loss 0.69
+action level (laggard states n=21): spearman vs MC Q(own continuation): A_self +0.33¡¾0.10 (n=21)  A_max +0.20¡¾0.14 (n=21)
+      vs MC Q(leader continuation): A_self +0.15¡¾0.11 (n=21)  A_max +0.18¡¾0.13 (n=21)  | Q_own vs Q_leader agreement +0.20¡¾0.13 (n=21)
+      top-1 match with MC best: A_self 0.33  A_max 0.29  chance 0.25
+gate laggard receivers n=7: mature teammate in range 0.46 of steps; uplift>.05 from gated donors 0.42 vs whole team 0.96; mean uplift gated 0.140 vs team 0.358; h=0 selection flips 0.02
+gate leader  receivers n=8: mature teammate in range 0.54 of steps; uplift>.05 from gated donors 0.14 vs whole team 0.25; mean uplift gated 0.016 vs team 0.036; h=0 selection flips 0.06
+
+===== acs1_2M  mature [True, True, True, True, False, True]
+laggard same  n=  9 corr(dV,dMC)=-0.35  dMC>0 overall 1.00  mean dMC +0.480  mean dV +1.21
+      dV>0.2   n=  9 mean dMC +0.480  dMC>0 1.00  sig gain 0.89  sig loss 0.00
+laggard cross n=  9 corr(dV,dMC)=-0.55  dMC>0 overall 1.00  mean dMC +0.079  mean dV +0.56
+      dV>0.2   n=  9 mean dMC +0.079  dMC>0 1.00  sig gain 0.56  sig loss 0.00
+leader  same  n= 63 corr(dV,dMC)=+0.52  dMC>0 overall 0.59  mean dMC -0.018  mean dV -0.15
+      dV>0.2   n= 14 mean dMC +0.076  dMC>0 0.71  sig gain 0.21  sig loss 0.14
+      dV<=0.2  n= 49 mean dMC -0.044  dMC>0 0.55  sig gain 0.10  sig loss 0.22
+leader  cross n= 36 corr(dV,dMC)=+0.18  dMC>0 overall 0.44  mean dMC -0.111  mean dV +0.37
+      dV>0.2   n= 27 mean dMC -0.055  dMC>0 0.48  sig gain 0.04  sig loss 0.22
+      dV<=0.2  n=  9 mean dMC -0.279  dMC>0 0.33  sig gain 0.00  sig loss 0.33
+action level (laggard states n=9): spearman vs MC Q(own continuation): A_self +0.39¡¾0.17 (n=9)  A_max -0.27¡¾0.18 (n=9)
+      vs MC Q(leader continuation): A_self -0.01¡¾0.16 (n=9)  A_max +0.20¡¾0.24 (n=9)  | Q_own vs Q_leader agreement +0.24¡¾0.25 (n=9)
+      top-1 match with MC best: A_self 0.22  A_max 0.00  chance 0.26
+gate laggard receivers n=3: mature teammate in range 0.20 of steps; uplift>.05 from gated donors 0.20 vs whole team 1.00; mean uplift gated 0.284 vs team 1.283; h=0 selection flips 0.00
+gate leader  receivers n=12: mature teammate in range 0.60 of steps; uplift>.05 from gated donors 0.32 vs whole team 0.50; mean uplift gated 0.079 vs team 0.123; h=0 selection flips 0.18
+
+===== corner1M_s1  mature [False, True, True, False, True, False]
+laggard same  n=  9 corr(dV,dMC)=+0.62  dMC>0 overall 1.00  mean dMC +0.583  mean dV +0.63
+      dV>0.2   n=  9 mean dMC +0.583  dMC>0 1.00  sig gain 0.78  sig loss 0.00
+laggard cross n=  9 corr(dV,dMC)=-0.78  dMC>0 overall 0.11  mean dMC -0.012  mean dV -0.01
+      dV<=0.2  n=  9 mean dMC -0.012  dMC>0 0.11  sig gain 0.00  sig loss 0.67
+leader  same  n=  9 corr(dV,dMC)=+0.85  dMC>0 overall 0.33  mean dMC -0.314  mean dV -0.40
+      dV<=0.2  n=  9 mean dMC -0.314  dMC>0 0.33  sig gain 0.11  sig loss 0.22
+leader  cross n=  9 corr(dV,dMC)=+0.81  dMC>0 overall 0.33  mean dMC -0.414  mean dV -0.31
+      dV<=0.2  n=  9 mean dMC -0.414  dMC>0 0.33  sig gain 0.22  sig loss 0.56
+action level (laggard states n=9): spearman vs MC Q(own continuation): A_self +0.43¡¾0.09 (n=9)  A_max +0.38¡¾0.18 (n=9)
+      vs MC Q(leader continuation): A_self +0.28¡¾0.14 (n=9)  A_max +0.30¡¾0.16 (n=9)  | Q_own vs Q_leader agreement +0.49¡¾0.15 (n=9)
+      top-1 match with MC best: A_self 0.22  A_max 0.56  chance 0.26
+gate laggard receivers n=3: mature teammate in range 0.28 of steps; uplift>.05 from gated donors 0.28 vs whole team 1.00; mean uplift gated 0.180 vs team 0.627; h=0 selection flips 0.00
+gate leader  receivers n=3: mature teammate in range 0.28 of steps; uplift>.05 from gated donors 0.00 vs whole team 0.00; mean uplift gated 0.000 vs team 0.000; h=0 selection flips 0.00
+
+===== corner1M_s2  mature [True, True, True, True, True, False]
+laggard same  n= 60 corr(dV,dMC)=+0.64  dMC>0 overall 0.53  mean dMC +0.080  mean dV +0.13
+      dV>0.2   n= 18 mean dMC +0.279  dMC>0 0.67  sig gain 0.50  sig loss 0.28
+      dV<=0.2  n= 42 mean dMC -0.005  dMC>0 0.48  sig gain 0.24  sig loss 0.26
+laggard cross n= 39 corr(dV,dMC)=+0.46  dMC>0 overall 0.79  mean dMC +0.070  mean dV +0.26
+      dV>0.2   n= 18 mean dMC +0.144  dMC>0 0.89  sig gain 0.67  sig loss 0.00
+      dV<=0.2  n= 21 mean dMC +0.006  dMC>0 0.71  sig gain 0.29  sig loss 0.00
+leader  same  n= 12 corr(dV,dMC)=+0.07  dMC>0 overall 0.33  mean dMC -0.214  mean dV -0.52
+      dV<=0.2  n= 12 mean dMC -0.214  dMC>0 0.33  sig gain 0.17  sig loss 0.33
+leader  cross n=  6 corr(dV,dMC)=+0.08  dMC>0 overall 0.33  mean dMC -0.225  mean dV -0.45
+      dV<=0.2  n=  6 mean dMC -0.225  dMC>0 0.33  sig gain 0.17  sig loss 0.33
+action level (laggard states n=39): spearman vs MC Q(own continuation): A_self +0.19¡¾0.09 (n=39)  A_max +0.20¡¾0.07 (n=39)
+      vs MC Q(leader continuation): A_self +0.15¡¾0.10 (n=39)  A_max +0.23¡¾0.09 (n=39)  | Q_own vs Q_leader agreement +0.33¡¾0.10 (n=39)
+      top-1 match with MC best: A_self 0.23  A_max 0.26  chance 0.25
+gate laggard receivers n=13: mature teammate in range 0.31 of steps; uplift>.05 from gated donors 0.10 vs whole team 0.46; mean uplift gated 0.064 vs team 0.301; h=0 selection flips 0.00
+gate leader  receivers n=2: mature teammate in range 0.38 of steps; uplift>.05 from gated donors 0.00 vs whole team 0.00; mean uplift gated 0.000 vs team 0.000; h=0 selection flips 0.00

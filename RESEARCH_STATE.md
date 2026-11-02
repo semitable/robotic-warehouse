@@ -1,5 +1,92 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-02 KST, Claude Code (T173, IJCAI-27 형식 전환)
+
+- **논문(D106)**: 영어판은 IJCAI-27 공식 템플릿, 7쪽(본문 약 5.6 + 참고문헌 약 1.2), 보조 자료 2쪽, Overleaf용 `paper/overleaf_ijcai27.zip`. 한국어판은 내용 동기화.
+- **남은 일**: 재현성 체크리스트, Overleaf pdfLaTeX 최종 빌드, 분기 결과로 표·그래프 채우기. 실행 중인 두 분기 실험은 그대로다.
+
+## 최신 확인 — 2026-11-02 18:45 KST, Claude Code (T172)
+
+- **실행 중**: 1단계 분기 PID 28892(`runs/maxgae_br1M_20261102_165216`, 12 job, `ippo_s1` 0.18M, 11-05 오전 무렵 종료 추정). 2단계 PID 25380(`runs/pgctd2_br1M_20261102_180212`, 사용자가 18:02 시작, `oracle_mature_max`·`pgct_max` × seed 1·3·5, 6 job, 11-04 새벽 무렵 종료 추정).
+- **2단계 초기**: 성숙 agent a2·a3·a5뿐, 뒤처진 a0·a1·a4는 미성숙. donor는 앞선 같은 팀 2 arc.
+- **IJCAI 2027(D105)**: 공식 키트 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트가 필요하다. 마감은 초록 01-04, 본문 01-11.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T171, 논문·발표자료 재작성)
+
+- **산출물(D104, E72)**: `paper/english/main.pdf`, `paper/korean/main.pdf`(각 8쪽), `presentation/pgct_beamer.pdf`(17장), `presentation/pgct_script_ko.md`, 참고용 `pgct_presentation.pptx`. 안내는 `PGCT_DELIVERABLES_README.md`. 원본은 `output/pgct_docs_20261102/`.
+- **주장 경계**: 핵심 기여는 잠재 팀 발견. 학습 비교는 pending. 그래프는 실제 로그 재계산값.
+- **실행 상태**: v1 `pgct_s2`는 18:01에 중단됨(KeyboardInterrupt). 1단계 분기는 진행 중.
+- **남은 일**: 분기 결과로 표·그래프·대본 갱신, IJCAI 공식 양식, 발표자 정보.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T169, PGCT-D2 v2 비교의 인과성 수정)
+
+- **수정(D103, E71)**: `pgct_max`·`oracle_mature_max`는 v2를 rollout 시작 스냅샷(사건 probe·성숙·예측기 버전)으로 rollout 접촉 쌍과 먼저 비교하고, 그 뒤 재학습한다(`contact_snapshot`). 기존 v2 증류 모드는 그대로다. 플래그 없는 옛 PGCT-D2 계획은 거부한다. pytest 77개 통과.
+- **남은 것**: 논문 초안의 알고리즘 단계 문구(재학습 후 비교 → 스냅샷 비교 후 재학습)와 테스트 수, 승인 유효기간, EV 필터 시 `allk` 수 맞춤, 1단계 분기 결과 확인 뒤 2단계 실행(명령은 T169 최종 답변).
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T168, Codex PGCT-D2 구현 검토)
+
+- **판정(D102, E70)**: 배선은 맞고 실행을 막는 버그는 없다. 72개 테스트 통과, 자연 경로 smoke에서 rollout 접촉 비교 → 승인 → donor = 접촉 ∧ 승인, trainer allocation 0을 확인했다.
+- **결정 필요**: Codex가 v2 비교를 update 직전 이웃 → rollout 접촉으로 바꿨다. 재학습 뒤 비교라 접촉 뒤의 정보를 쓴다(인과성). 통신 가정 명시(i) 또는 재학습 전 비교·probe 스냅샷(ii). `pgct_max` 분기 실행 전에 정해야 한다.
+- **실행 상태**: `runs/maxgae_br1M_20261102_165216`(PID 28892)의 `ippo_s1` running. Codex 수정 전에 시작한 단일 프로세스라 영향 없음.
+
+## 최신 확인 — 2026-11-02 KST, Codex (T167, 논문·발표자료 제작; 정확한 시각 기록하지 않음)
+
+- **산출물(D101, E69)**: `paper/english/main.{tex,pdf}`, `paper/korean/main.{tex,pdf}`(각 7쪽), 공통 수식·BibTeX·그림, `presentation/pgct_beamer.{tex,pdf}`·편집 가능한 `pgct_presentation.pptx`(17장), 슬라이드별 한국어 대본. 전체 묶음과 안내는 `PGCT_DELIVERABLES_README.md`.
+- **최종 알고리즘 일치**: 개인 보상 예측·공개 사건 probe·EMA/성숙/지속 승인·rollout 접촉·선택 Critic 가중치 접근·자기 관측열 replay·mask/shrink Max-GAE Actor·자기 return Critic. 한영 공통 수식 11개와 인용 7개·label·발표 순서 확인. 실제 최종 PGCT 장기 학습 결과는 Pending으로 남겼다.
+- **근거 재집계(읽기 전용)**: 기존 보상 발견 seed 1 약 5M 로그는 구성요소 진단으로 한정했다(같은 팀/다른 팀 allocation 5,252/352, 비중 93.72%). update 종료 접촉을 사용한 로그이므로 최종 donor 정밀도·성능으로 설명하지 않는다. 독립 PPO s1 평가 곡선만 기준선으로 사용했다. 진행 중 분기 부분 결과는 최종 비교에서 제외했다.
+- **첨부**: ICCAS PDF 16장 전체 구성/렌더링 참고. M4A는 812.9793초의 메타데이터만 확인했으며 전사·청취 분석 못 함. Multi-UAV 연구 내용·식·성능·그림은 가져오지 않았다.
+- **검증**: PDF 3개 실제 컴파일, overfull/누락 glyph 오류 없음. PPTX 렌더링·구조·배치 확인, native chart 2·table 3, 대본 notes 17개. PowerPoint 앱에서 직접 열어 검증한 것은 아니다. 공식 목표 연도 IJCAI 양식 전환은 남아 있다.
+- **범위**: 이번 turn은 문서 제작뿐이다. 연구 코드·학습 설정·기존 실험 변경 없음, 새 학습·환경 rollout·pytest 재실행 없음. E68의 기존 검증 결과를 인용했다. 커밋 없음.
+
+## 최신 확인 — 2026-11-02 KST, Codex (T166, PGCT-D2 구현; 정확한 시각 기록하지 않음)
+
+- **구현(D100, E68)**: v2의 접촉 독립·대칭 `approved()`와 현재 `maturity()`, Max-GAE donor 규칙 `gate`·`oracle_mature`, 실행 모드 `pgct_max`·`oracle_mature_max`, 실제 donor/승인/성숙 감사 로그. 두 새 모드는 `--reward-probe-ac --ac-gate v2`가 필요하다. Max-GAE가 완료 rollout의 접촉으로 v2를 직접 활성화하고 trainer 증류 allocation은 0이다.
+- **검증**: 새 15개 + 기존 57개, 총 72개 통과. 공통 A+C IPPO s1 checkpoint(update 1000, 1,024,000 step)에서 모서리·개인·seed 1·CPU·64 step/job smoke 9 job. 승인 없음 → IPPO와 비트 동등; 테스트용 정답 승인/성숙 주입 → Oracle-max와 비트 동등; EV 필터 차단 → IPPO와 비트 동등; warm-up 차단/해제 확인. 자연스러운 온라인 승인·학습 가속의 증거는 아니다.
+- **critic EV 조건**: `--max-gae-min-critic-ev` 선택 옵션 구현, 기본 비활성. D99대로 실측 로그를 보고 임계값을 정할 일은 남아 있다. 보상 예측기 성숙과 critic 성숙을 구분한다. 보상 사건이 없는 agent 및 E65 후반 다른 팀 오승인은 미해결이다.
+- **실제 분기 진행 확인(읽기 전용)**: `runs/maxgae_br1M_20261102_165216` manifest가 있으며 IPPO s1 로그에서 6,144 step(분기 이후)을 확인했다. `job_status.json`은 running이다. CIM 프로세스 조회는 권한 제한으로 실패했으므로 PID 생존은 확정하지 않았다. 기존 실행을 중단·재시작하지 않았다.
+- **근거**: `docs/MAX_GAE.md`, `tests/test_pgct_max.py`, `output/pgct_d2_validation_20261102/README.md`, `pytest_final.xml`. trainer·`rware/`·`examples/` 소스 수정 없음. 새 본 학습 시작·커밋 없음.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T164, D98 필수 수정 1–4 구현)
+
+- **구현(D99, E67)**: 분기 goal 배치 검사, D2 `shrink` 척도(`--max-gae-scale` 기본값 relative → shrink), rollout 첫 7 step Δ = 0, agent별 critic explained variance 로그. pytest 57개 통과. smoke에서 donor를 끈 동등성(비트 단위), 1M 분기, seed 2 거부를 확인했다.
+- **분기 실행 명령**은 T164 최종 답변에 있다(seed 1·3·5, `--ac-gate v2`, 4 모드, 12 job, 사용자 실행). 아직 시작하지 않았다.
+- **남은 것**: PGCT-D2(필수 5–8), donor critic 성숙 조건, 보상 사건이 없는 agent(a0·a4) 처리.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T163, PGCT-D2 통합 전 코드 검토)
+
+- **PGCT-D2는 미구현이다.** Max-GAE 모드에서 v2는 돌지 않고(learn=False), donor는 정답 라벨 ∧ rollout 접촉뿐이다. v2 승인을 donor로 잇는 코드(`approved()`, donor 규칙 gate, `pgct_max`)가 필요하다(D98).
+- **T154의 1M 분기 명령은 그대로 실행하지 않는다.** seed 2는 goal 좌우가 바뀐다(`env_candidates.py:104`). D2 기본 `relative` 척도는 작은 b를 키워 IPPO로 연속 퇴화하지 않는다. rollout 첫 7 step 가림이 양의 편향을 만든다(E66).
+- **성숙 조건 충돌**: A+C IPPO s1에서 a0·a4는 1–1.5M에 배송·반납이 0이다. v2 규칙으로는 receiver가 될 수 없다.
+- `runs/`에 `maxgae_br1M_*` 폴더가 없다(프로세스는 확인하지 않음). 학습·코드 변경 없음.
+- **미결(사용자 결정)**: 필수 수정 구현 범위, D2 donor 접촉 기준(권고: rollout 접촉), 보상 사건이 없는 agent 처리(연구 범위 축소 또는 shaping probe로 v2 변경).
+
+## 최신 확인 — 2026-10-29 KST, Claude Code (T143–T147, 정확한 시각은 대화 기록 참고)
+
+- **실행 상태(10:40)**: A+C v1 run `runs/ac_20261023_185556`에서 IPPO·PGCT·Oracle s1은 complete다. All s1은 1.6M에서 진행 중이고, seed 2의 job 4개가 대기 중이다. Claude는 시작·중단하지 않았다. v2 실행 명령만 안내했다(T143, T144).
+- **Oracle s1(E61, D90)**: 정답 팀원 critic 전이로도 IPPO보다 빠르지 않았다. 1M 배송 0.4 대 2.4, 4.5M 21.5 대 21.7. 증류는 probe 위 팀원 V를 150–250배 맞췄지만, 실제 방문 상태에서는 후반에 효과가 없다. 같은 팀이어도 팀원 critic은 내 return을 2–4배 못 맞힌다. 원인은 증류 세기가 아니라 대상(V^{π_j})으로 본다.
+- **JS 가중 제안(T147)**: 미성숙일 때 가중이 최대이고 배울수록 줄어 방향이 반대다. 권하지 않는다.
+- **PGCT `probe/cross_team_gate`**: 물리 이웃 비율일 뿐이다. 실제 v1 다른 팀 전이는 0이다. v2 run에서도 이 그래프는 같으므로 `update/*_arcs`·`update/ac_v2_audit_*`를 본다.
+- **전이 재설계(D91, E62, T148)**: 권고는 팀원 critic의 max를 advantage에 쓰는 방식이다(GPI/MAMBA 계열). V_i는 자기 return으로 학습한다. r̂ 전이는 철회한다(발견은 병목이 아니다). 오프라인 점검 결과, 뒤처진 agent만 상향되고 다른 팀 critic은 가짜 상향을 준다. 팀 특이성은 작고 과대추정 위험이 있다.
+- **반사실 점검(E63, D92, T149)**: 팀원 정책을 내 자리에서 실행해 보니, 뒤처진 agent에게 같은 팀 critic이 높게 나오면 대체로 실제로 더 나은 정책이 있었다(dV>.2에서 dMC>0이 67–100%). 다른 팀은 이득이 작고, 앞선 agent에게 가짜 상향을 준다. 행동 수준의 이득은 미입증이다. 통신 범위와 성숙 제한으로 기회는 21–40%다. 질의는 L8 window를 쓴다. 근거는 MAMBA로 고쳤다.
+- **전이 방향 논의(T150–T153, D93–D95)**: B(팀 평균 보상)보다 D(max 결합 advantage)를 유지한다. MAMBA는 방법의 출처로만 인용하고 보장은 주장하지 않는다. 오프라인 행동 검증 대신 1M checkpoint 분기 학습을 관문으로 둔다.
+- **Max-GAE 구현(E64, D96, T154)**: `latent_team/max_gae.py`, 모드 `oracle_max`·`oracle_maxd1`·`all_max`·`allk_max`, `--init-checkpoint` 분기를 구현했다. 테스트 49개가 통과했다. donor가 없으면 IPPO와 비트 단위로 같다. 규모 측정에서 raw Δ가 뒤처진 agent의 자기 advantage보다 2.6–12배 커서, D2는 상대 척도를 기본으로 했다. 학습은 시작하지 않았다.
+- **실행 상태(11-02 13시 무렵)**: v1 run(PID 18880)은 seed 2 PGCT가 진행 중이다. v2 PGCT s1(`runs/acv2_s1_20261029_084340`)은 complete이고 아직 분석하지 않았다.
+- **희소 보상과 r̂(E65, D97, T155)**: 우리 환경은 shaping·감점으로 agent-step의 25–55%에 보상이 있지만, 팀을 가르는 사건(배송·반납, r ≥ .5)은 1M 이전 전이의 .01–.03%다. v2 PGCT s1에서는 0.25M 무렵 같은 팀 거리 .25 대 다른 팀 .99로 갈렸다. 다른 팀 전이 352개는 모두 4.28M 이후다(원인 미분석). 보상 사건을 겪지 않은 agent는 보상 기반으로 식별할 수 없다는 한계를 논문 조건으로 명시하기를 권했다.
+- **미결(사용자 결정)**: 1M 분기 실험(12 job) 실행, v1 run 처리, v2 PGCT s1의 후반 다른 팀 승인 원인 분석.
+
+## 최신 확인 — 2026-10-26 13:22 KST, Claude Code
+
+- **원칙(D82)**: PGCT는 각 agent의 개인 보상만 쓴다. 사용자가 절대 바꾸지 말라고 했다. 옛 팀 보상 run은 `env_candidates.py`의 후보 fallback 때문이었다.
+- **방향(D83)**: 식별은 A+C 보상 프로브가 중심이다(개인 보상 예측기 + 경험 기반 사건 probe + 변형). B(정책+보상 결합)는 후속.
+- **실행 중**: A+C v1 본 학습 `runs/ac_20261023_185556`(PID 18880, 사용자 10-23 18:55 시작, 8 job 순차, 모서리·개인, 좌표 마스킹). IPPO s1 complete(5M, 평가 배송 24.1/ep, 6명 중 5명 학습, agent 1은 0). PGCT s1은 13:22에 3.01M. 다음 순서는 Oracle s1, All s1, 이어서 seed 2의 IPPO·PGCT·Oracle·All이다. 사용자는 T132에서 진행 중 실험을 멈출 생각이라고 했지만, 이후 직접 이 run을 걸었다. Claude는 시작·중단하지 않았다.
+- **v1 gate 진단(E56, E57)**: 2.87M까지 승인 5회, 전이 update 3개. 첫 전이 전까지 PGCT s1은 IPPO s1과 비트 단위로 같았다. 원인은 정확 일치 lookup·분산 필터·평균 희석·엄격한 τ. W&B `probe/*` gate 그래프는 물리 이웃 수일 뿐이다.
+- **gate v2(E58, D84)**: `--reward-probe-ac --ac-gate v2`(기본 v1 유지). MLP 개인 보상 예측기 + 자기 보상 사건 probe·좌우 대칭 + 미성숙 보류 + 정규화 거리 < .5 + W&B `update/ac_v2_*`. 테스트 18개·smoke 통과. 본 학습은 사용자가 시작한다(권고: v2 PGCT만 seed 1·2, 기존 IPPO·Oracle·All을 비교군으로 사용).
+- **오프라인 판정 비교(E59)**: A+C IPPO s1 5M 경험 재생에서 v2는 결정한 10쌍 모두 정답, 다른 팀 승인 0(같은 팀 거리 .14–.18, 다른 팀 .58–.70). v1은 정확도 .25–.63. 1M 모델은 배운 agent가 적어 v2가 모두 보류.
+- **미결(사용자 결정 대기, D85)**: 배송을 못 배운 agent는 보상 probe로 식별되지 않는다. 배송 전 보상(pickup·shaping)으로 식별을 시도할지, 주장을 '식별된 팀원끼리 학습 가속'으로 줄일지. 그 밖에 v2 시점별 온라인 정확도, 인접 배치(음성 사례 후보), v1 PGCT s2를 계속 돌릴 가치.
+- **설계 검토(D87, 같은 날)**: v2의 '2.56M 첫 승인'은 대부분 오프라인 재생 설정의 산물이다. 학습 로그상 agent마다 0–0.1M에 배송 기록이 12–23회 있다. 온라인 시점은 미확인. 초기 팀 신호 후보는 goal 진척 shaping의 방향 부호(관측이 북쪽 고정)다. pickup은 관측상 식별 불가다. 권고는 V2.1(대조 부호 비교)이며 V3(가상 궤적)는 근거가 약하다. 속도 상한은 Oracle s1로 먼저 확인한다.
+- **초기 식별 측정(E60, D88, 같은 날 저녁)**: 실제 경험량으로 재생하면 V2 gate의 첫 같은 팀 승인은 모서리 0.26–0.32M, 인접 0.86M, 다른 팀 승인 0. 초기 팀 신호는 goal 진척 방향(모서리만)과 goal 근처 배송(두 배치)이고, pickup은 식별 불가. 대조 부호는 순위를 더 일찍 맞추지만 판정에는 보류 규칙이 필요하다. 남은 핵심은 증류의 학습 가속(Oracle s1).
+- `docs/SESSION_HANDOFF.md`는 10-23 17:33 스냅샷이라 현재 상태와 다르다.
+
 ## 최신 변경 — 2026-10-23 KST, Codex (정확한 시각 미기록)
 
 - 사용자 승인으로 A+C 실행 경로를 구현했다. `latent_team/train_from_scratch.py --reward-probe-ac`가 선택 옵션이다. 개인 보상만 사용하고 정책/critic/평가의 self_x/y를 마스킹한다.

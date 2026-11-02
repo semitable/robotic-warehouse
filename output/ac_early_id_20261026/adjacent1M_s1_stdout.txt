@@ -1,0 +1,63 @@
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\utils\passive_env_checker.py:244: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+   20480 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 None (2) corr 0.7592592592592593 (15) sign 0.5370370370370371 (15) 106s
+   40960 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.4857142857142857 (12) corr 0.6296296296296297 (15) sign 0.7777777777777778 (15) 215s
+   61440 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.5238095238095238 (13) corr 0.9074074074074074 (15) sign 0.9444444444444444 (15) 327s
+   81920 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.5476190476190477 (13) corr 0.8888888888888888 (15) sign 0.5555555555555556 (15) 444s
+  102400 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.5476190476190477 (13) corr 0.8333333333333334 (15) sign 0.6666666666666666 (15) 554s
+  122880 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.6190476190476191 (13) corr 0.8703703703703703 (15) sign 0.875 (13) 667s
+  143360 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.625 (14) corr 0.9259259259259259 (15) sign 0.9166666666666666 (10) 783s
+  163840 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.9259259259259259 (15) sign 0.8928571428571429 (11) 899s
+  184320 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.7777777777777778 (15) corr 0.9629629629629629 (15) sign 1.0 (10) 1018s
+  204800 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.7592592592592593 (15) corr 1.0 (15) sign 1.0 (11) 1136s
+  225280 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.7777777777777778 (15) corr 1.0 (15) sign 1.0 (10) 1258s
+  245760 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 1.0 (15) sign 1.0 (10) 1379s
+done checkpoint_00250.pt at 256000 steps, 512 episodes, 1437s
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+  266240 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 1.0 (15) sign 0.9642857142857143 (11) 1495s
+  286720 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 1615s
+  307200 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 0.9444444444444444 (15) sign 1.0 (10) 1732s
+  327680 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.9259259259259259 (15) sign 0.9 (11) 1846s
+  348160 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.9074074074074074 (15) sign 1.0 (10) 1964s
+  368640 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7592592592592593 (15) corr 0.9444444444444444 (15) sign 1.0 (10) 2081s
+  389120 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 0.9629629629629629 (15) sign 1.0 (10) 2199s
+  409600 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 2316s
+  430080 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7777777777777778 (15) corr 1.0 (15) sign 1.0 (10) 2433s
+  450560 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.9629629629629629 (15) sign 1.0 (10) 2550s
+  471040 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 1.0 (15) sign 1.0 (10) 2667s
+  491520 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.9444444444444444 (15) sign 1.0 (10) 2785s
+  512000 checkpoint_00500.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 2902s
+done checkpoint_00500.pt at 512000 steps, 1024 episodes, 2902s
+  532480 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.9259259259259259 (15) sign 1.0 (10) 3020s
+  552960 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.9814814814814815 (15) sign 1.0 (10) 3137s
+  573440 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.9074074074074074 (15) sign 1.0 (10) 3255s
+  593920 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 3372s
+  614400 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 3486s
+  634880 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7407407407407407 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 3603s
+  655360 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 3719s
+  675840 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.6851851851851852 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 3836s
+  696320 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.6851851851851852 (15) corr 0.9074074074074074 (15) sign 1.0 (10) 3953s
+  716800 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7592592592592593 (15) corr 0.9629629629629629 (15) sign 1.0 (10) 4070s
+  737280 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7037037037037037 (15) corr 0.8888888888888888 (15) sign 1.0 (10) 4187s
+  757760 checkpoint_00750.pt mature 2 gate s/c 0/0 v2 0.7222222222222222 (15) corr 0.9259259259259259 (15) sign 1.0 (10) 4303s
+done checkpoint_00750.pt at 768000 steps, 1536 episodes, 4362s
+  778240 final.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9259259259259259 (15) 4421s
+  798720 final.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9814814814814815 (15) 4537s
+  819200 final.pt mature 4 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4655s
+  839680 final.pt mature 4 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4772s
+  860160 final.pt mature 4 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4889s
+  880640 final.pt mature 4 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5006s
+  901120 final.pt mature 4 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5120s
+  921600 final.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5236s
+  942080 final.pt mature 5 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5353s
+  962560 final.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5470s
+  983040 final.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5587s
+done final.pt at 1000448 steps, 2001 episodes, 5686s
+saved adjacent1M_s1

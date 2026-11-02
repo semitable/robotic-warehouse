@@ -1,0 +1,212 @@
+== acs1
+  <= 0.26M (256000 steps/agent)
+    dir|delivery                 nonzero     139 gap 0.329 rank 6 agentAUROC 0.5740740740740741
+    dir|return_                  nonzero      11 gap 0.73 rank 3 agentAUROC 0.5
+    dir|pickup                   nonzero    3788 gap 0.256 rank 7 agentAUROC 0.4074074074074074
+    dir|goal_progress            nonzero   23782 gap 0.47 rank 1 agentAUROC 0.8703703703703703
+    dir|rest                     nonzero  387138 gap 0.272 rank 4 agentAUROC 0.46296296296296297
+    dir|reward                   nonzero  387149 gap 0.296 rank 3 agentAUROC 0.5
+    dir+landmark|delivery        nonzero     139 gap 1.0 rank 1 agentAUROC 0.46296296296296297
+    dir+landmark|return_         nonzero      11 gap 1.0 rank 1 agentAUROC 0.2962962962962963
+    dir+landmark|pickup          nonzero    3788 gap 0.489 rank 6 agentAUROC 0.2962962962962963
+    dir+landmark|goal_progress   nonzero   23782 gap 0.507 rank 1 agentAUROC 0.8518518518518519
+    dir+landmark|rest            nonzero  387138 gap 0.224 rank 6 agentAUROC 0.5555555555555556
+    dir+landmark|reward          nonzero  387149 gap 0.307 rank 1 agentAUROC 0.48148148148148145
+  <= 0.51M (512000 steps/agent)
+    dir|delivery                 nonzero     236 gap 0.386 rank 6 agentAUROC 0.5185185185185185
+    dir|return_                  nonzero      20 gap 0.377 rank 5 agentAUROC 0.46296296296296297
+    dir|pickup                   nonzero    5596 gap 0.338 rank 3 agentAUROC 0.5
+    dir|goal_progress            nonzero   37283 gap 0.488 rank 1 agentAUROC 0.9074074074074074
+    dir|rest                     nonzero  813094 gap 0.29 rank 5 agentAUROC 0.5
+    dir|reward                   nonzero  813114 gap 0.307 rank 4 agentAUROC 0.48148148148148145
+    dir+landmark|delivery        nonzero     236 gap 1.0 rank 1 agentAUROC 0.5
+    dir+landmark|return_         nonzero      20 gap 0.789 rank 4 agentAUROC 0.23148148148148148
+    dir+landmark|pickup          nonzero    5596 gap 0.541 rank 5 agentAUROC 0.42592592592592593
+    dir+landmark|goal_progress   nonzero   37283 gap 0.489 rank 1 agentAUROC 0.8148148148148148
+    dir+landmark|rest            nonzero  813094 gap 0.223 rank 5 agentAUROC 0.5555555555555556
+    dir+landmark|reward          nonzero  813114 gap 0.305 rank 1 agentAUROC 0.5
+  <= 0.77M (768000 steps/agent)
+    dir|delivery                 nonzero    1326 gap 0.397 rank 3 agentAUROC 0.5740740740740741
+    dir|return_                  nonzero     225 gap 0.288 rank 5 agentAUROC 0.42592592592592593
+    dir|pickup                   nonzero    7787 gap 0.112 rank 8 agentAUROC 0.37037037037037035
+    dir|goal_progress            nonzero  153161 gap 0.442 rank 4 agentAUROC 0.6481481481481481
+    dir|rest                     nonzero 1352928 gap 0.365 rank 3 agentAUROC 0.6111111111111112
+    dir|reward                   nonzero 1353153 gap 0.289 rank 6 agentAUROC 0.5185185185185185
+    dir+landmark|delivery        nonzero    1326 gap 1.0 rank 1 agentAUROC 0.5740740740740741
+    dir+landmark|return_         nonzero     225 gap 0.96 rank 1 agentAUROC 0.4537037037037037
+    dir+landmark|pickup          nonzero    7787 gap 0.241 rank 10 agentAUROC 0.42592592592592593
+    dir+landmark|goal_progress   nonzero  153161 gap 0.639 rank 1 agentAUROC 0.5740740740740741
+    dir+landmark|rest            nonzero 1352928 gap 0.408 rank 1 agentAUROC 0.48148148148148145
+    dir+landmark|reward          nonzero 1353153 gap 0.477 rank 1 agentAUROC 0.5
+  <= 1.02M (1024000 steps/agent)
+    dir|delivery                 nonzero    3015 gap 0.561 rank 2 agentAUROC 0.5370370370370371
+    dir|return_                  nonzero     659 gap 0.419 rank 5 agentAUROC 0.42592592592592593
+    dir|pickup                   nonzero   10614 gap 0.148 rank 6 agentAUROC 0.3888888888888889
+    dir|goal_progress            nonzero  299887 gap 0.449 rank 5 agentAUROC 0.6481481481481481
+    dir|rest                     nonzero 1935674 gap 0.299 rank 3 agentAUROC 0.6666666666666666
+    dir|reward                   nonzero 1936326 gap 0.398 rank 3 agentAUROC 0.5
+    dir+landmark|delivery        nonzero    3015 gap 1.0 rank 1 agentAUROC 0.5370370370370371
+    dir+landmark|return_         nonzero     659 gap 0.71 rank 2 agentAUROC 0.42592592592592593
+    dir+landmark|pickup          nonzero   10614 gap 0.202 rank 7 agentAUROC 0.3888888888888889
+    dir+landmark|goal_progress   nonzero  299887 gap 0.561 rank 3 agentAUROC 0.5925925925925926
+    dir+landmark|rest            nonzero 1935674 gap 0.349 rank 4 agentAUROC 0.5185185185185185
+    dir+landmark|reward          nonzero 1936326 gap 0.51 rank 2 agentAUROC 0.5
+== corner1M_s1
+  <= 0.26M (256000 steps/agent)
+    dir|delivery                 nonzero     101 gap 0.598 rank 3 agentAUROC 0.6666666666666666
+    dir|return_                  nonzero      12 gap 0.824 rank 10 agentAUROC 0.48148148148148145
+    dir|pickup                   nonzero    4923 gap 0.149 rank 8 agentAUROC 0.3888888888888889
+    dir|goal_progress            nonzero   22124 gap 0.448 rank 1 agentAUROC 1.0
+    dir|rest                     nonzero  376653 gap 0.276 rank 1 agentAUROC 0.7222222222222222
+    dir|reward                   nonzero  376665 gap 0.324 rank 1 agentAUROC 0.7222222222222222
+    dir+landmark|delivery        nonzero     101 gap 1.0 rank 1 agentAUROC 0.6666666666666666
+    dir+landmark|return_         nonzero      12 gap 1.0 rank 1 agentAUROC 0.2777777777777778
+    dir+landmark|pickup          nonzero    4923 gap 0.728 rank 2 agentAUROC 0.46296296296296297
+    dir+landmark|goal_progress   nonzero   22124 gap 0.523 rank 1 agentAUROC 0.9629629629629629
+    dir+landmark|rest            nonzero  376653 gap 0.214 rank 1 agentAUROC 0.6666666666666666
+    dir+landmark|reward          nonzero  376665 gap 0.307 rank 1 agentAUROC 0.7222222222222222
+  <= 0.51M (512000 steps/agent)
+    dir|delivery                 nonzero     235 gap 0.619 rank 2 agentAUROC 0.6851851851851852
+    dir|return_                  nonzero      33 gap 0.539 rank 9 agentAUROC 0.46296296296296297
+    dir|pickup                   nonzero    6960 gap 0.325 rank 4 agentAUROC 0.4444444444444444
+    dir|goal_progress            nonzero   40001 gap 0.5 rank 1 agentAUROC 0.9814814814814815
+    dir|rest                     nonzero  847259 gap 0.248 rank 3 agentAUROC 0.7037037037037037
+    dir|reward                   nonzero  847292 gap 0.309 rank 1 agentAUROC 0.7592592592592593
+    dir+landmark|delivery        nonzero     235 gap 1.0 rank 1 agentAUROC 0.6666666666666666
+    dir+landmark|return_         nonzero      33 gap 1.0 rank 1 agentAUROC 0.3611111111111111
+    dir+landmark|pickup          nonzero    6960 gap 0.541 rank 4 agentAUROC 0.42592592592592593
+    dir+landmark|goal_progress   nonzero   40001 gap 0.509 rank 1 agentAUROC 0.9444444444444444
+    dir+landmark|rest            nonzero  847259 gap 0.175 rank 1 agentAUROC 0.6851851851851852
+    dir+landmark|reward          nonzero  847292 gap 0.272 rank 1 agentAUROC 0.6851851851851852
+  <= 0.77M (768000 steps/agent)
+    dir|delivery                 nonzero     801 gap 0.757 rank 3 agentAUROC 0.5555555555555556
+    dir|return_                  nonzero     106 gap 0.668 rank 4 agentAUROC 0.5
+    dir|pickup                   nonzero    9608 gap 0.906 rank 2 agentAUROC 0.5185185185185185
+    dir|goal_progress            nonzero  109864 gap 0.726 rank 2 agentAUROC 0.7037037037037037
+    dir|rest                     nonzero 1341243 gap 0.51 rank 2 agentAUROC 0.5740740740740741
+    dir|reward                   nonzero 1341349 gap 0.485 rank 5 agentAUROC 0.5185185185185185
+    dir+landmark|delivery        nonzero     801 gap 1.0 rank 1 agentAUROC 0.6296296296296297
+    dir+landmark|return_         nonzero     106 gap 1.0 rank 1 agentAUROC 0.3148148148148148
+    dir+landmark|pickup          nonzero    9608 gap 0.717 rank 6 agentAUROC 0.5185185185185185
+    dir+landmark|goal_progress   nonzero  109864 gap 0.688 rank 1 agentAUROC 0.6851851851851852
+    dir+landmark|rest            nonzero 1341243 gap 0.335 rank 9 agentAUROC 0.5555555555555556
+    dir+landmark|reward          nonzero 1341349 gap 0.434 rank 1 agentAUROC 0.5740740740740741
+  <= 1.00M (1000448 steps/agent)
+    dir|delivery                 nonzero    1418 gap 0.83 rank 4 agentAUROC 0.5555555555555556
+    dir|return_                  nonzero     331 gap 0.865 rank 4 agentAUROC 0.5
+    dir|pickup                   nonzero   10508 gap 0.935 rank 2 agentAUROC 0.5185185185185185
+    dir|goal_progress            nonzero  163192 gap 0.777 rank 2 agentAUROC 0.7037037037037037
+    dir|rest                     nonzero 1832803 gap 0.498 rank 5 agentAUROC 0.48148148148148145
+    dir|reward                   nonzero 1833133 gap 0.56 rank 6 agentAUROC 0.46296296296296297
+    dir+landmark|delivery        nonzero    1418 gap 1.0 rank 1 agentAUROC 0.6296296296296297
+    dir+landmark|return_         nonzero     331 gap 0.937 rank 4 agentAUROC 0.3888888888888889
+    dir+landmark|pickup          nonzero   10508 gap 0.83 rank 6 agentAUROC 0.5
+    dir+landmark|goal_progress   nonzero  163192 gap 0.748 rank 1 agentAUROC 0.7037037037037037
+    dir+landmark|rest            nonzero 1832803 gap 0.355 rank 9 agentAUROC 0.5555555555555556
+    dir+landmark|reward          nonzero 1833133 gap 0.488 rank 4 agentAUROC 0.5740740740740741
+== corner1M_s2
+  <= 0.26M (256000 steps/agent)
+    dir|delivery                 nonzero      92 gap 0.416 rank 2 agentAUROC 0.7037037037037037
+    dir|return_                  nonzero      13 gap 0.394 rank 9 agentAUROC 0.46296296296296297
+    dir|pickup                   nonzero    4910 gap 0.716 rank 1 agentAUROC 0.5
+    dir|goal_progress            nonzero   19928 gap 0.457 rank 1 agentAUROC 0.9814814814814815
+    dir|rest                     nonzero  408806 gap 0.178 rank 8 agentAUROC 0.5185185185185185
+    dir|reward                   nonzero  408819 gap 0.282 rank 4 agentAUROC 0.6666666666666666
+    dir+landmark|delivery        nonzero      92 gap 1.0 rank 1 agentAUROC 0.6296296296296297
+    dir+landmark|return_         nonzero      13 gap 1.0 rank 1 agentAUROC 0.3888888888888889
+    dir+landmark|pickup          nonzero    4910 gap 0.653 rank 3 agentAUROC 0.3148148148148148
+    dir+landmark|goal_progress   nonzero   19928 gap 0.491 rank 1 agentAUROC 0.9259259259259259
+    dir+landmark|rest            nonzero  408806 gap 0.191 rank 5 agentAUROC 0.6111111111111112
+    dir+landmark|reward          nonzero  408819 gap 0.281 rank 1 agentAUROC 0.6481481481481481
+  <= 0.51M (512000 steps/agent)
+    dir|delivery                 nonzero     146 gap 0.436 rank 1 agentAUROC 0.8148148148148148
+    dir|return_                  nonzero      15 gap 0.494 rank 6 agentAUROC 0.48148148148148145
+    dir|pickup                   nonzero    6331 gap 0.647 rank 1 agentAUROC 0.5185185185185185
+    dir|goal_progress            nonzero   28895 gap 0.451 rank 1 agentAUROC 0.9814814814814815
+    dir|rest                     nonzero  849608 gap 0.187 rank 7 agentAUROC 0.6851851851851852
+    dir|reward                   nonzero  849623 gap 0.27 rank 6 agentAUROC 0.6851851851851852
+    dir+landmark|delivery        nonzero     146 gap 1.0 rank 1 agentAUROC 0.5370370370370371
+    dir+landmark|return_         nonzero      15 gap 1.0 rank 1 agentAUROC 0.3333333333333333
+    dir+landmark|pickup          nonzero    6331 gap 0.64 rank 2 agentAUROC 0.3888888888888889
+    dir+landmark|goal_progress   nonzero   28895 gap 0.471 rank 1 agentAUROC 0.9444444444444444
+    dir+landmark|rest            nonzero  849608 gap 0.181 rank 1 agentAUROC 0.7777777777777778
+    dir+landmark|reward          nonzero  849623 gap 0.255 rank 1 agentAUROC 0.7407407407407407
+  <= 0.77M (768000 steps/agent)
+    dir|delivery                 nonzero     515 gap 0.754 rank 1 agentAUROC 0.6666666666666666
+    dir|return_                  nonzero      81 gap 0.648 rank 6 agentAUROC 0.5
+    dir|pickup                   nonzero    8894 gap 0.835 rank 1 agentAUROC 0.5185185185185185
+    dir|goal_progress            nonzero   69299 gap 0.681 rank 1 agentAUROC 0.7592592592592593
+    dir|rest                     nonzero 1288473 gap 0.426 rank 6 agentAUROC 0.5740740740740741
+    dir|reward                   nonzero 1288554 gap 0.428 rank 5 agentAUROC 0.5555555555555556
+    dir+landmark|delivery        nonzero     515 gap 1.0 rank 1 agentAUROC 0.48148148148148145
+    dir+landmark|return_         nonzero      81 gap 0.892 rank 4 agentAUROC 0.2777777777777778
+    dir+landmark|pickup          nonzero    8894 gap 0.79 rank 2 agentAUROC 0.4444444444444444
+    dir+landmark|goal_progress   nonzero   69299 gap 0.628 rank 1 agentAUROC 0.7222222222222222
+    dir+landmark|rest            nonzero 1288473 gap 0.289 rank 2 agentAUROC 0.5925925925925926
+    dir+landmark|reward          nonzero 1288554 gap 0.376 rank 1 agentAUROC 0.5925925925925926
+  <= 1.00M (1000448 steps/agent)
+    dir|delivery                 nonzero    1150 gap 0.856 rank 1 agentAUROC 0.6666666666666666
+    dir|return_                  nonzero     376 gap 0.882 rank 5 agentAUROC 0.4444444444444444
+    dir|pickup                   nonzero   10350 gap 0.875 rank 2 agentAUROC 0.5
+    dir|goal_progress            nonzero  120824 gap 0.764 rank 1 agentAUROC 0.7592592592592593
+    dir|rest                     nonzero 1764811 gap 0.483 rank 6 agentAUROC 0.5185185185185185
+    dir|reward                   nonzero 1765186 gap 0.593 rank 5 agentAUROC 0.5370370370370371
+    dir+landmark|delivery        nonzero    1150 gap 1.0 rank 1 agentAUROC 0.46296296296296297
+    dir+landmark|return_         nonzero     376 gap 0.973 rank 2 agentAUROC 0.3888888888888889
+    dir+landmark|pickup          nonzero   10350 gap 0.834 rank 3 agentAUROC 0.42592592592592593
+    dir+landmark|goal_progress   nonzero  120824 gap 0.722 rank 1 agentAUROC 0.7222222222222222
+    dir+landmark|rest            nonzero 1764811 gap 0.341 rank 2 agentAUROC 0.5370370370370371
+    dir+landmark|reward          nonzero 1765186 gap 0.474 rank 2 agentAUROC 0.5185185185185185
+== adjacent1M_s1
+  <= 0.26M (256000 steps/agent)
+    dir|delivery                 nonzero      87 gap 0.171 rank 8 agentAUROC 0.42592592592592593
+    dir|return_                  nonzero       6 gap 0.616 rank 6 agentAUROC 0.5
+    dir|pickup                   nonzero    3523 gap 0.275 rank 5 agentAUROC 0.5
+    dir|goal_progress            nonzero   19563 gap 0.167 rank 6 agentAUROC 0.35185185185185186
+    dir|rest                     nonzero  410138 gap 0.166 rank 6 agentAUROC 0.5
+    dir|reward                   nonzero  410144 gap 0.207 rank 6 agentAUROC 0.46296296296296297
+    dir+landmark|delivery        nonzero      87 gap 1.0 rank 1 agentAUROC 0.8333333333333334
+    dir+landmark|return_         nonzero       6 gap 1.0 rank 1 agentAUROC 0.5185185185185185
+    dir+landmark|pickup          nonzero    3523 gap 0.329 rank 10 agentAUROC 0.48148148148148145
+    dir+landmark|goal_progress   nonzero   19563 gap 0.218 rank 3 agentAUROC 0.4444444444444444
+    dir+landmark|rest            nonzero  410138 gap 0.149 rank 2 agentAUROC 0.5555555555555556
+    dir+landmark|reward          nonzero  410144 gap 0.255 rank 1 agentAUROC 0.8148148148148148
+  <= 0.51M (512000 steps/agent)
+    dir|delivery                 nonzero     147 gap 0.149 rank 9 agentAUROC 0.4444444444444444
+    dir|return_                  nonzero      11 gap 0.779 rank 6 agentAUROC 0.4444444444444444
+    dir|pickup                   nonzero    5164 gap 0.271 rank 7 agentAUROC 0.42592592592592593
+    dir|goal_progress            nonzero   28877 gap 0.155 rank 7 agentAUROC 0.4444444444444444
+    dir|rest                     nonzero  856333 gap 0.166 rank 5 agentAUROC 0.48148148148148145
+    dir|reward                   nonzero  856344 gap 0.19 rank 5 agentAUROC 0.48148148148148145
+    dir+landmark|delivery        nonzero     147 gap 1.0 rank 1 agentAUROC 0.6851851851851852
+    dir+landmark|return_         nonzero      11 gap 1.0 rank 1 agentAUROC 0.5
+    dir+landmark|pickup          nonzero    5164 gap 0.353 rank 10 agentAUROC 0.46296296296296297
+    dir+landmark|goal_progress   nonzero   28877 gap 0.202 rank 2 agentAUROC 0.46296296296296297
+    dir+landmark|rest            nonzero  856333 gap 0.132 rank 3 agentAUROC 0.6111111111111112
+    dir+landmark|reward          nonzero  856344 gap 0.233 rank 1 agentAUROC 0.7407407407407407
+  <= 0.77M (768000 steps/agent)
+    dir|delivery                 nonzero     162 gap 0.213 rank 9 agentAUROC 0.4444444444444444
+    dir|return_                  nonzero      11 gap 0.771 rank 6 agentAUROC 0.4444444444444444
+    dir|pickup                   nonzero    5424 gap 0.267 rank 5 agentAUROC 0.46296296296296297
+    dir|goal_progress            nonzero   31744 gap 0.133 rank 8 agentAUROC 0.42592592592592593
+    dir|rest                     nonzero 1345301 gap 0.242 rank 7 agentAUROC 0.5740740740740741
+    dir|reward                   nonzero 1345312 gap 0.262 rank 7 agentAUROC 0.5555555555555556
+    dir+landmark|delivery        nonzero     162 gap 1.0 rank 1 agentAUROC 0.7037037037037037
+    dir+landmark|return_         nonzero      11 gap 1.0 rank 1 agentAUROC 0.5
+    dir+landmark|pickup          nonzero    5424 gap 0.35 rank 9 agentAUROC 0.4444444444444444
+    dir+landmark|goal_progress   nonzero   31744 gap 0.193 rank 2 agentAUROC 0.5
+    dir+landmark|rest            nonzero 1345301 gap 0.167 rank 4 agentAUROC 0.6666666666666666
+    dir+landmark|reward          nonzero 1345312 gap 0.245 rank 1 agentAUROC 0.7037037037037037
+  <= 1.00M (1000448 steps/agent)
+    dir|delivery                 nonzero     323 gap 0.128 rank 6 agentAUROC 0.3888888888888889
+    dir|return_                  nonzero      14 gap 0.78 rank 2 agentAUROC 0.6111111111111112
+    dir|pickup                   nonzero    7733 gap 0.266 rank 5 agentAUROC 0.46296296296296297
+    dir|goal_progress            nonzero   50916 gap 0.136 rank 4 agentAUROC 0.3888888888888889
+    dir|rest                     nonzero 1761096 gap 0.236 rank 4 agentAUROC 0.5740740740740741
+    dir|reward                   nonzero 1761110 gap 0.242 rank 6 agentAUROC 0.5740740740740741
+    dir+landmark|delivery        nonzero     323 gap 1.0 rank 1 agentAUROC 0.8888888888888888
+    dir+landmark|return_         nonzero      14 gap 1.0 rank 1 agentAUROC 0.4444444444444444
+    dir+landmark|pickup          nonzero    7733 gap 0.363 rank 6 agentAUROC 0.48148148148148145
+    dir+landmark|goal_progress   nonzero   50916 gap 0.167 rank 3 agentAUROC 0.6296296296296297
+    dir+landmark|rest            nonzero 1761096 gap 0.149 rank 2 agentAUROC 0.5925925925925926
+    dir+landmark|reward          nonzero 1761110 gap 0.265 rank 1 agentAUROC 0.8518518518518519

@@ -1,0 +1,36 @@
+
+[acs1 checkpoint_01000.pt] laggard receivers 14, leader receivers 10
+[acs1 checkpoint_01000.pt] donor value vs full recurrent: corr h0 0.86  L8 1.00 | same-team uplift corr h0 0.81  L8 1.00 | advantage corr h0 vs recurrent 0.89
+[acs1 checkpoint_01000.pt] laggard: z(A) gap for teammate-leader's top action: own 0.10  max-same 0.13  max-same-cap 0.13  max-same-h0 0.16  max-all 0.18
+[acs1 checkpoint_01000.pt] control (other-team leader's top action): own 0.10  max-same 0.20  max-all 0.22
+[acs1 checkpoint_01000.pt] leaders: corr(A_max-same, A_own) 0.95
+
+[acs1 checkpoint_02000.pt] laggard receivers 9, leader receivers 15
+[acs1 checkpoint_02000.pt] donor value vs full recurrent: corr h0 0.79  L8 0.88 | same-team uplift corr h0 0.33  L8 0.52 | advantage corr h0 vs recurrent 0.69
+[acs1 checkpoint_02000.pt] laggard: z(A) gap for teammate-leader's top action: own 0.13  max-same 0.14  max-same-cap 0.10  max-same-h0 0.17  max-all 0.14
+[acs1 checkpoint_02000.pt] control (other-team leader's top action): own 0.05  max-same 0.14  max-all 0.15
+[acs1 checkpoint_02000.pt] leaders: corr(A_max-same, A_own) 0.94
+
+[corner1M_s1 checkpoint_00750.pt] laggard receivers 8, leader receivers 4
+[corner1M_s1 checkpoint_00750.pt] donor value vs full recurrent: corr h0 0.69  L8 0.99 | same-team uplift corr h0 0.73  L8 1.00 | advantage corr h0 vs recurrent 0.92
+[corner1M_s1 checkpoint_00750.pt] laggard: z(A) gap for teammate-leader's top action: own 0.09  max-same 0.13  max-same-cap 0.11  max-same-h0 0.11  max-all 0.13
+[corner1M_s1 checkpoint_00750.pt] control (other-team leader's top action): own   -   max-same   -   max-all   - 
+[corner1M_s1 checkpoint_00750.pt] leaders: corr(A_max-same, A_own) 0.98
+
+[corner1M_s1 final.pt] laggard receivers 8, leader receivers 4
+[corner1M_s1 final.pt] donor value vs full recurrent: corr h0 0.65  L8 1.00 | same-team uplift corr h0 0.64  L8 0.99 | advantage corr h0 vs recurrent 0.82
+[corner1M_s1 final.pt] laggard: z(A) gap for teammate-leader's top action: own 0.03  max-same 0.13  max-same-cap 0.06  max-same-h0 0.12  max-all 0.13
+[corner1M_s1 final.pt] control (other-team leader's top action): own   -   max-same   -   max-all   - 
+[corner1M_s1 final.pt] leaders: corr(A_max-same, A_own) 1.00
+
+[corner1M_s2 checkpoint_00750.pt] laggard receivers 8, leader receivers 4
+[corner1M_s2 checkpoint_00750.pt] donor value vs full recurrent: corr h0 0.61  L8 0.99 | same-team uplift corr h0 0.75  L8 1.00 | advantage corr h0 vs recurrent 0.79
+[corner1M_s2 checkpoint_00750.pt] laggard: z(A) gap for teammate-leader's top action: own 0.07  max-same 0.19  max-same-cap 0.19  max-same-h0 0.24  max-all 0.18
+[corner1M_s2 checkpoint_00750.pt] control (other-team leader's top action): own 0.11  max-same 0.07  max-all 0.16
+[corner1M_s2 checkpoint_00750.pt] leaders: corr(A_max-same, A_own) 0.92
+
+[corner1M_s2 final.pt] laggard receivers 8, leader receivers 4
+[corner1M_s2 final.pt] donor value vs full recurrent: corr h0 0.55  L8 0.99 | same-team uplift corr h0 0.68  L8 0.99 | advantage corr h0 vs recurrent 0.75
+[corner1M_s2 final.pt] laggard: z(A) gap for teammate-leader's top action: own 0.07  max-same 0.15  max-same-cap 0.03  max-same-h0 0.22  max-all 0.15
+[corner1M_s2 final.pt] control (other-team leader's top action): own   -   max-same   -   max-all   - 
+[corner1M_s2 final.pt] leaders: corr(A_max-same, A_own) 1.00

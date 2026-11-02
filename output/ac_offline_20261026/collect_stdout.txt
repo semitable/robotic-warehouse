@@ -1,0 +1,14 @@
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\utils\passive_env_checker.py:244: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+checkpoint_00250.pt: env_steps 256000, transitions 24000, deliveries 3, 18s
+checkpoint_00750.pt: env_steps 768000, transitions 24000, deliveries 22, 19s
+checkpoint_01500.pt: env_steps 1536000, transitions 24000, deliveries 58, 17s
+checkpoint_02500.pt: env_steps 2560000, transitions 24000, deliveries 79, 19s
+checkpoint_03500.pt: env_steps 3584000, transitions 24000, deliveries 110, 19s
+checkpoint_04750.pt: env_steps 4864000, transitions 24000, deliveries 169, 18s
+final.pt: env_steps 5000192, transitions 24000, deliveries 203, 19s
+saved C:\RWARE\MARL_RWARE\third_party\robotic-warehouse\output\ac_offline_20261026\rollouts.npz {'before': (168000, 281), 'after': (168000, 281), 'action': (168000,), 'reward': (168000,), 'agent': (168000,), 'team': (168000,), 'episode': (168000,), 'ckpt': (168000,), 'pos_before': (168000, 2), 'pos_after': (168000, 2), 'req_before': (168000,), 'delivered': (168000,), 'returned': (168000,), 'goal_after': (168000,)}

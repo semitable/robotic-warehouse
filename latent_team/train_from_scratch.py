@@ -11,6 +11,11 @@ set of the existing critic peer loss differs:
   wrong   cross-team physical neighbours only
   random  PGCT's measured per-update arc count, donors drawn at random among physical
           neighbours (needs --random-reference <PGCT transfer.jsonl>; random_gated.py)
+  oracle_max / oracle_maxd1 / all_max / allk_max
+          IPPO environment and critics; only the actor advantage uses the max over met
+          teammates' (oracle), anyone's (all) or count-matched random agents' (allk) critics
+          (max_gae.py; D2 eta=--max-gae-eta, maxd1 = D1 eta 1). --init-checkpoint branches a run; the
+          job's goal layout must match the checkpoint's (even seeds swap the sides, env_candidates.py).
 
 The original trainer is reused unchanged. Settings come from the completed E1/E2
 PGCT run of the spatial experiment, except: no initial checkpoint, and the
@@ -19,6 +24,7 @@ learning rate / entropy of the earlier successful from-scratch run (2e-4 / .05).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
 import json
 import math
@@ -26,7 +32,7 @@ import os
 import sys
 import time
 import traceback
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -41,6 +47,8 @@ try:
     from .random_gated import RandomGatedAllocator, reference_targets
     from . import env_candidates as EC
     from . import reward_probe_ac as AC
+    from . import reward_probe_ac_v2 as AC2
+    from . import max_gae as MG
 except ImportError:
     import common as C
     from exp_b_oracle_consensus import matched_transfer, transfer_summary
@@ -49,11 +57,18 @@ except ImportError:
     from random_gated import RandomGatedAllocator, reference_targets
     import env_candidates as EC
     import reward_probe_ac as AC
+    import reward_probe_ac_v2 as AC2
+    import max_gae as MG
 
 from examples import train_recurrent_ippo_consensus as T
 from examples.train_pgct_spatial_experiments import MAPS, experiment_logging
 
-SHARING_MODES = ["ippo", "pgct", "oracle", "all", "wrong", "random"]
+# Max-GAE modes: (donor rule, eta, scale); None = --max-gae-eta / --max-gae-scale. Same architecture as IPPO.
+MAX_MODES = {"oracle_max": ("oracle", None, None), "oracle_maxd1": ("oracle", 1.0, "raw"),
+             "all_max": ("all", None, None), "allk_max": ("allk", None, None),
+             "pgct_max": ("gate", None, None), "oracle_mature_max": ("oracle_mature", None, None)}
+AC_MAX_MODES = {"pgct_max", "oracle_mature_max"}
+SHARING_MODES = ["ippo", "pgct", "oracle", "all", "wrong", "random"] + list(MAX_MODES)
 MODES = SHARING_MODES + B.ALGORITHMS  # mappo / seps / hetdps: separate learners, same env/budget/evaluation
 # random: the trainer prepares the All peer loss; random_gated.py then replaces the donor set.
 GRAPH = {"pgct": "policy", "oracle": "oracle", "all": "unrestricted", "wrong": "wrong", "random": "unrestricted"}
@@ -91,7 +106,7 @@ def mode_config(cfg, mode, name):
     cfg = copy.deepcopy(cfg)
     cfg.update(exp_name=name, wandb_name=name, wandb_tags=cfg["wandb_tags"] + f",{mode}")
     config = T.TrainConfig(**cfg)
-    if mode == "ippo" or mode in B.ALGORITHMS:
+    if mode == "ippo" or mode in B.ALGORITHMS or mode in MAX_MODES:  # Max-GAE needs no trainer communication
         config.communication_enabled = False
         T.enforce_communication_config(config)
         env = json.loads(config.env_kwargs_json)
@@ -116,6 +131,22 @@ def build_bank(cfg, path, *, strip_coordinates=False):
                     note="Shared by every mode of this map/seed; built from a fresh reset."), path)
 
 
+def checkpoint_goal_layout(path):
+    """team_goal_positions the checkpoint was trained with (None if it did not set any)."""
+    saved = torch.load(path, map_location="cpu", weights_only=False)
+    env = dict(saved.get("effective_env_kwargs") or json.loads(saved["config"]["env_kwargs_json"]))
+    return env.get("team_goal_positions")
+
+
+def check_branch_layout(source, cfg, name):
+    """A branch continues the checkpoint's task: refuse a job whose goal sides differ (D98, E2)."""
+    target = json.loads(cfg["env_kwargs_json"]).get("team_goal_positions")
+    if json.dumps(source) != json.dumps(target):
+        raise ValueError(f"{name}: goal layout {target} differs from the checkpoint's {source}; "
+                         "on candidate maps even seeds swap the goal sides, so branch with seeds of the "
+                         "checkpoint's parity")
+
+
 def plan(args):
     reference = json.loads((args.reference_experiment / "experiment.json").read_text(encoding="utf-8"))
     output = (args.output_dir or C.ROOT / "runs" / ("scratch_" + datetime.now().strftime("%Y%m%d_%H%M%S"))).resolve()
@@ -127,11 +158,31 @@ def plan(args):
     args.team_reward = getattr(args, "team_reward", "individual")
     args.random_reference = getattr(args, "random_reference", None)
     ac_enabled = getattr(args, "reward_probe_ac", False)
-    ac_config = AC.ACConfig(**(json.loads(Path(args.ac_config).read_text(encoding="utf-8"))
-                               if getattr(args, "ac_config", None) else {})) if ac_enabled else None
+    ac_v2 = ac_enabled and getattr(args, "ac_gate", "v1") == "v2"  # gate v2: reward_probe_ac_v2.py
+    ac_config = ((AC2.ACV2Config if ac_v2 else AC.ACConfig)(
+        **(json.loads(Path(args.ac_config).read_text(encoding="utf-8")) if getattr(args, "ac_config", None) else {}))
+        if ac_enabled else None)
     if ac_enabled and (args.team_reward != "individual" or args.probe_bank != "canonical"
-                       or not set(args.modes) <= {"ippo", "pgct", "oracle", "all", "wrong"}):
-        raise ValueError("A+C requires --team-reward individual, canonical bank, and IPPO/PGCT/oracle/all/wrong modes")
+                       or not set(args.modes) <= {"ippo", "pgct", "oracle", "all", "wrong", *MAX_MODES}):
+        raise ValueError("A+C requires --team-reward individual, canonical bank, and IPPO/PGCT/oracle/all/wrong "
+                         "or Max-GAE modes")
+    max_modes = [m for m in args.modes if m in MAX_MODES]
+    if set(args.modes) & AC_MAX_MODES and not ac_v2:
+        raise ValueError("pgct_max/oracle_mature_max require --reward-probe-ac --ac-gate v2")
+    if max_modes and args.team_reward != "individual":
+        raise ValueError("Max-GAE modes keep individual rewards (D82); use --team-reward individual")
+    init_checkpoint = getattr(args, "init_checkpoint", None)
+    transfer_warmup = getattr(args, "transfer_warmup", None)
+    max_eta = getattr(args, "max_gae_eta", .5)
+    max_scale = getattr(args, "max_gae_scale", "shrink")
+    max_lambda = getattr(args, "max_gae_lambda", None)
+    max_cap = getattr(args, "max_gae_cap", None)
+    min_critic_ev = getattr(args, "max_gae_min_critic_ev", None)
+    if init_checkpoint is not None:
+        init_checkpoint = Path(init_checkpoint).resolve()
+        if not init_checkpoint.is_file():
+            raise ValueError(f"--init-checkpoint not found: {init_checkpoint}")
+        source_layout = checkpoint_goal_layout(init_checkpoint)
     if "random" in args.modes:
         if not args.random_reference:
             raise ValueError("--modes random needs --random-reference <PGCT transfer.jsonl>.")
@@ -144,22 +195,31 @@ def plan(args):
                               save_video=args.save_video, smoke=args.smoke_test, stage=args.stage_label,
                               wandb_project=args.wandb_project, wandb_mode=args.wandb_mode,
                               env_variant=args.env_variant, team_reward=args.team_reward)
+            if init_checkpoint is not None:
+                # Branch: every mode starts from the same saved weights (fresh optimizers, step counter from 0).
+                check_branch_layout(source_layout, cfg, f"{map_name} seed {seed}")
+                cfg["init_checkpoint"] = str(init_checkpoint)
             if ac_enabled:
                 env_kwargs = json.loads(cfg["env_kwargs_json"])
                 # This explicit opt-in takes precedence over old candidates' team fallback.
                 env_kwargs["team_reward_mode"] = "individual"
                 cfg["env_kwargs_json"] = json.dumps(env_kwargs)
-                if cfg["observation_format"] != "semantic" or cfg["sensor_range"] < ac_config.radius + 1:
-                    raise ValueError("A+C requires semantic observations with radius+1 visible cells")
+                visible = ac_config.radius if ac_v2 else ac_config.radius + 1  # v1 also simulates one step
+                if cfg["observation_format"] != "semantic" or cfg["sensor_range"] < visible:
+                    raise ValueError(f"A+C requires semantic observations with {visible} visible cells")
             label = args.env_variant if args.env_variant != "e1" else map_name
             if ac_enabled:
-                label += "_ac"
+                label += "_acv2" if ac_v2 else "_ac"
             if args.team_reward != "individual":
                 label += f"_{args.team_reward}rew"
+            if init_checkpoint is not None:
+                label += "_br" + "".join(ch for ch in init_checkpoint.stem if ch.isdigit())
             bank = output / (f"canonical_bank_{label}_s{seed}.pt" if args.probe_bank == "canonical"
                              else f"probe_bank_v2_{label}_s{seed}.pt")
             banks[str(bank)] = cfg
             warmup = 0 if args.smoke_test else cfg["pgct_warmup_updates"]
+            if transfer_warmup is not None:
+                warmup = int(transfer_warmup)
             for mode in args.modes:
                 name = f"{label}_{mode}_s{seed}"
                 config = mode_config(cfg, mode, name)
@@ -167,12 +227,22 @@ def plan(args):
                     # Disable policy-JS gating; the local reward controller supplies actual donors.
                     config["graph_mode"] = "unrestricted"
                 job = dict(name=name, map=map_name, mode=mode, seed=seed, config=config,
-                           canonical_bank=None if mode == "ippo" or mode in B.ALGORITHMS else str(bank),
+                           canonical_bank=None if mode == "ippo" or mode in B.ALGORITHMS or mode in MAX_MODES
+                           else str(bank),
                            transfer_warmup_updates=warmup,
                            effective_timesteps=math.ceil(config["total_timesteps"] / config["rollout_steps"])
                            * config["rollout_steps"])
                 if ac_enabled:
-                    job["reward_probe_ac"] = asdict(ac_config)
+                    # D102 (ii): PGCT-D2 modes compare on rollout contacts, so only the rollout-start state
+                    # (what an agent could send on such a contact) is compared, before the refit.
+                    options = replace(ac_config, contact_snapshot=True) if mode in AC_MAX_MODES else ac_config
+                    job["reward_probe_ac_v2" if ac_v2 else "reward_probe_ac"] = asdict(options)
+                if mode in MAX_MODES:
+                    donors, eta, scale = MAX_MODES[mode]
+                    job["max_gae"] = asdict(MG.MaxGAEConfig(
+                        donors=donors, eta=max_eta if eta is None else eta, scale=scale or max_scale,
+                        gae_lambda=max_lambda, cap=max_cap, warmup_updates=warmup, seed=seed * 1000 + 17,
+                        min_critic_ev=min_critic_ev))
                 if mode == "random":
                     updates = job["effective_timesteps"] // config["rollout_steps"]
                     if steps_per_update != config["rollout_steps"] and not args.smoke_test:
@@ -192,16 +262,32 @@ def plan(args):
             v2, summary = P2.build_bank(cfg["env_id"], json.loads(cfg["env_kwargs_json"]), seed=cfg["seed"])
             P2.save_bank(v2, summary, Path(path))
     manifest = dict(created=datetime.now().astimezone().isoformat(timespec="seconds"),
-                    initialization="random (no checkpoint, no curriculum)", home_ratio=args.home_ratio,
-                    env_variant=args.env_variant, probe_bank=args.probe_bank, team_reward=args.team_reward,
-                    reward_probe_ac=asdict(ac_config) if ac_enabled else None,
+                    initialization=("random (no checkpoint, no curriculum)" if init_checkpoint is None else
+                                    f"branch: weights from {init_checkpoint}; fresh optimizers; steps from 0"),
+                    home_ratio=args.home_ratio,
+                    env_variant=args.env_variant, 
+                    probe_bank=args.probe_bank, 
+                    team_reward=args.team_reward,
+                    reward_probe_ac=asdict(ac_config) if ac_enabled and not ac_v2 else None,
+                    **(dict(reward_probe_ac_v2=asdict(ac_config)) if ac_v2 else {}),
                     random_reference=str(Path(args.random_reference).resolve()) if args.random_reference else None,
-                    stage=args.stage_label, wandb_project=args.wandb_project if args.track else None,
-                    learning_rate=args.learning_rate, entropy_coef=args.entropy_coef,
-                    reference_experiment=str(args.reference_experiment.resolve()), eval_seed=args.eval_seed,
-                    smoke_test=args.smoke_test, jobs=jobs,
+                    **(dict(init_checkpoint=str(init_checkpoint)) if init_checkpoint is not None else {}),
+                    **(dict(transfer_warmup_override=int(transfer_warmup)) if transfer_warmup is not None else {}),
+                    **(dict(max_gae=dict(eta=max_eta, scale=max_scale, gae_lambda=max_lambda, cap=max_cap,
+                                        min_critic_ev=min_critic_ev))
+                       if max_modes else {}),
+                    stage=args.stage_label,
+                    wandb_project=args.wandb_project if args.track else None,
+                    learning_rate=args.learning_rate, 
+                    entropy_coef=args.entropy_coef,
+                    reference_experiment=str(args.reference_experiment.resolve()), 
+                    eval_seed=args.eval_seed,
+                    smoke_test=args.smoke_test, 
+                    jobs=jobs,
                     note="Same seed => same random initial weights for every mode (checked via "
-                         "initial_weights_sha256.txt). Only the critic peer-loss donor set differs.")
+                         "initial_weights_sha256.txt). " +
+                         ("Max-GAE changes actor advantages; critics retain own-return targets."
+                          if max_modes else "Only the critic peer-loss donor set differs."))
     (output / "experiment.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return output, manifest
 
@@ -265,17 +351,38 @@ def run_job(output, manifest, name, eval_seed):
             else:
                 override = (RandomGatedAllocator(job["random_reference"], job["seed"])
                             if job["mode"] == "random" else None)
-                if job.get("reward_probe_ac") is not None:
-                    options = AC.ACConfig(**job["reward_probe_ac"])
-                    with AC.install(cfg, run_dir, options, learn=job["mode"] == "pgct") as controller:
-                        with matched_transfer(cfg, run_dir, job["mode"], bank_path=job["canonical_bank"],
+                # Max-GAE jobs run the IPPO trainer path (no critic peer loss); max_gae.py wraps it innermost.
+                transfer_mode = "ippo" if job["mode"] in MAX_MODES else job["mode"]
+                max_gae = (lambda controller=None: MG.install(cfg, run_dir, MG.MaxGAEConfig(**job["max_gae"]),
+                                                              controller=controller)
+                           if job.get("max_gae") else contextlib.nullcontext())
+                if job.get("reward_probe_ac_v2") is not None or job.get("reward_probe_ac") is not None:
+                    v2 = job.get("reward_probe_ac_v2") is not None
+                    module = AC2 if v2 else AC
+                    options = (AC2.ACV2Config(**job["reward_probe_ac_v2"]) if v2
+                               else AC.ACConfig(**job["reward_probe_ac"]))
+                    ac_max = job["mode"] in AC_MAX_MODES
+                    if ac_max and not options.contact_snapshot:
+                        raise ValueError(f"{name}: planned before the rollout-start snapshot rule (D103); "
+                                         "re-plan this PGCT-D2 job")
+                    with module.install(cfg, run_dir, options, learn=job["mode"] == "pgct" or ac_max) as controller:
+                        # Max-GAE calls the controller once with rollout contacts before entering
+                        # matched_transfer. Here we only attach its audit fields and keep peer loss off.
+                        def max_audit(update, neighbors, active):
+                            return np.zeros_like(neighbors, dtype=np.float32), dict(
+                                **controller.last_log, ac_model="mlp_reward_event_probe_v2",
+                                ac_probe_update=controller.last_probe_update,
+                                ac_own_events=[p.events_seen for p in controller.predictors])
+                        with matched_transfer(cfg, run_dir, transfer_mode, bank_path=job["canonical_bank"],
                                               warmup_updates=job["transfer_warmup_updates"],
-                                              allocation_override=controller):
-                            T.train(cfg)
+                                              allocation_override=max_audit if ac_max else controller):
+                            with max_gae(controller if ac_max else None):
+                                T.train(cfg)
                 else:
-                    with matched_transfer(cfg, run_dir, job["mode"], bank_path=job["canonical_bank"],
+                    with matched_transfer(cfg, run_dir, transfer_mode, bank_path=job["canonical_bank"],
                                           warmup_updates=job["transfer_warmup_updates"], allocation_override=override):
-                        T.train(cfg)
+                        with max_gae():
+                            T.train(cfg)
         if not (run_dir / "final.pt").is_file():
             raise RuntimeError("Training did not produce final.pt")
         job_status(run_dir, status="complete",
@@ -361,9 +468,31 @@ def main():
     parser.add_argument("--modes", nargs="+", choices=MODES, default=["ippo", "pgct", "oracle", "all"])
     parser.add_argument("--reward-probe-ac", action="store_true",
                         help="Opt in to individual-reward, coordinate-free A+C gating (PGCT); matched baselines also mask coordinates.")
-    parser.add_argument("--ac-config", type=Path, help="Optional JSON overrides for reward_probe_ac.ACConfig.")
+    parser.add_argument("--ac-gate", choices=["v1", "v2"], default="v1",
+                        help="With --reward-probe-ac: v1 exact-match empirical gate (default); v2 MLP reward "
+                             "predictor on own reward-event probes (reward_probe_ac_v2.py, job names *_acv2_*).")
+    parser.add_argument("--ac-config", type=Path,
+                        help="Optional JSON overrides for reward_probe_ac.ACConfig (v1) or ACV2Config (v2).")
     parser.add_argument("--random-reference", type=Path,
                         help="PGCT transfer.jsonl whose per-update arc counts the random mode reproduces.")
+    parser.add_argument("--max-gae-eta", type=float, default=.5,
+                        help="Max-GAE modes: actor advantage A_self + eta (A_max - A_self); oracle_maxd1 uses 1.")
+    parser.add_argument("--max-gae-scale", choices=["shrink", "raw", "relative"], default="shrink",
+                        help="Max-GAE D2 modes: 'shrink' (default) scales A_max - A_self down to at most std(A_self) "
+                             "per receiver, never up (the raw term is 3-12x larger for laggards); 'raw' as is; "
+                             "'relative' always rescales to std(A_self), also inflating a near-zero term (record "
+                             "only, D98). oracle_maxd1 is always raw.")
+    parser.add_argument("--max-gae-lambda", type=float,
+                        help="Max-GAE modes: GAE lambda for A_max (default: the trainer's lambda).")
+    parser.add_argument("--max-gae-cap", type=float, help="Max-GAE modes: upper bound on the uplift b (default none).")
+    parser.add_argument("--max-gae-min-critic-ev", type=float,
+                        help="Optional donor-only explained-variance floor on its own current rollout. "
+                             "Default: disabled; no maturity threshold has been selected yet. Nonfinite EV abstains.")
+    parser.add_argument("--init-checkpoint", type=Path,
+                        help="Branch every mode from this training checkpoint (weights only; fresh optimizers). "
+                             "Job names get _br<update>.")
+    parser.add_argument("--transfer-warmup", type=int,
+                        help="Override the transfer warm-up updates (e.g. 0 for a branch from a trained checkpoint).")
     parser.add_argument("--seeds", type=int, nargs="+", default=[1])
     parser.add_argument("--timesteps", type=int, default=10000000)
     parser.add_argument("--home-ratio", type=float, default=.5)
@@ -405,6 +534,8 @@ def main():
         parser.error("--env-variant e1f applies to the E1 map only.")
     if not .5 <= args.home_ratio <= 1 or args.timesteps <= 0 or args.save_interval < 0:
         parser.error("Home ratio must be in [.5, 1]; timesteps positive; save interval nonnegative.")
+    if args.transfer_warmup is not None and args.transfer_warmup < 0:
+        parser.error("--transfer-warmup must be nonnegative.")
     try:
         output, manifest = plan(args)
     except ValueError as exc:

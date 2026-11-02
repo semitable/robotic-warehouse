@@ -1,0 +1,7364 @@
+{
+ "run": "C:\\RWARE\\MARL_RWARE\\third_party\\robotic-warehouse\\runs\\queue_20261022_140114_b6_adjacent_indiv_pen005\\b6_adjacent_indiv_pen005_ippo_s1",
+ "ckpts": [
+  [
+   "checkpoint_00250.pt",
+   256000
+  ],
+  [
+   "checkpoint_00500.pt",
+   512000
+  ],
+  [
+   "checkpoint_00750.pt",
+   768000
+  ],
+  [
+   "final.pt",
+   1000448
+  ]
+ ],
+ "teams": [
+  0,
+  1,
+  0,
+  1,
+  0,
+  1
+ ],
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   0,
+   2
+  ],
+  [
+   0,
+   3
+  ],
+  [
+   0,
+   4
+  ],
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   1,
+   5
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "unmasked_policy": true,
+ "landmarks": 41,
+ "curve": [
+  {
+   "env_steps": 5120,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 10240,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 15360,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    1,
+    2,
+    1,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 20480,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    1,
+    3,
+    2,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": null,
+   "v2_pairs": 2,
+   "contrast_corr_auroc": 0.7592592592592593,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.5370370370370371,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.8392,
+    null,
+    null,
+    null,
+    null,
+    0.8011,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "contrast_corr": [
+    -0.6748,
+    0.4056,
+    -0.0443,
+    0.0231,
+    0.0885,
+    -0.9238,
+    0.1037,
+    -0.0093,
+    -0.1934,
+    0.1468,
+    0.0472,
+    0.0902,
+    -0.4061,
+    0.2362,
+    -0.0048
+   ],
+   "contrast_sign": [
+    0.47,
+    0.6339,
+    0.5424,
+    0.325,
+    0.4494,
+    0.4375,
+    0.6032,
+    0.322,
+    0.2887,
+    0.5424,
+    0.4118,
+    0.7158,
+    0.1379,
+    0.551,
+    0.5102
+   ]
+  },
+  {
+   "env_steps": 25600,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    2,
+    3,
+    2,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 30720,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    3,
+    3,
+    4,
+    0,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 35840,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    3,
+    6,
+    4,
+    1,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 40960,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    4,
+    9,
+    5,
+    1,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 0.4857142857142857,
+   "v2_pairs": 12,
+   "contrast_corr_auroc": 0.6296296296296297,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.7777777777777778,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.8768,
+    0.404,
+    0.9865,
+    0.9998,
+    0.9982,
+    0.8744,
+    0.8524,
+    0.9996,
+    0.9969,
+    0.8842,
+    0.9988,
+    0.9965,
+    null,
+    null,
+    null
+   ],
+   "contrast_corr": [
+    -0.6657,
+    0.6363,
+    -0.1992,
+    0.0164,
+    0.2326,
+    -0.6902,
+    -0.0844,
+    -0.014,
+    -0.1151,
+    -0.4533,
+    0.1347,
+    0.153,
+    0.0615,
+    -0.0381,
+    -0.0366
+   ],
+   "contrast_sign": [
+    0.3717,
+    0.7524,
+    0.4167,
+    0.28,
+    0.5185,
+    0.374,
+    0.5843,
+    0.5122,
+    0.507,
+    0.4304,
+    0.7714,
+    0.4231,
+    0.5238,
+    0.5294,
+    0.4286
+   ]
+  },
+  {
+   "env_steps": 46080,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    10,
+    5,
+    1,
+    0,
+    0
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 51200,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    11,
+    6,
+    2,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 56320,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    11,
+    6,
+    2,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 61440,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    13,
+    8,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.5238095238095238,
+   "v2_pairs": 13,
+   "contrast_corr_auroc": 0.9074074074074074,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9444444444444444,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9236,
+    0.4942,
+    0.9764,
+    1.0,
+    0.8797,
+    0.9031,
+    0.7681,
+    0.999,
+    0.6489,
+    0.9648,
+    0.9992,
+    0.9572,
+    null,
+    0.9874,
+    null
+   ],
+   "contrast_corr": [
+    -0.6251,
+    0.5753,
+    -0.1753,
+    0.0041,
+    -0.7615,
+    -0.7232,
+    0.1732,
+    -0.2059,
+    0.468,
+    -0.6435,
+    0.0791,
+    -0.3968,
+    0.1031,
+    -0.0129,
+    0.0609
+   ],
+   "contrast_sign": [
+    0.3,
+    0.6939,
+    0.4921,
+    0.6154,
+    0.3514,
+    0.3385,
+    0.4868,
+    0.2647,
+    0.5667,
+    0.36,
+    0.6364,
+    0.4,
+    0.6,
+    0.6377,
+    0.4062
+   ]
+  },
+  {
+   "env_steps": 66560,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    15,
+    8,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 71680,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    17,
+    8,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 76800,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    5,
+    18,
+    10,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 81920,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    18,
+    10,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.5476190476190477,
+   "v2_pairs": 13,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.5555555555555556,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9555,
+    0.5856,
+    0.985,
+    0.9998,
+    0.9155,
+    0.9671,
+    0.6507,
+    0.9992,
+    0.7361,
+    0.986,
+    0.9981,
+    0.9838,
+    null,
+    0.9921,
+    null
+   ],
+   "contrast_corr": [
+    -0.5715,
+    0.4398,
+    -0.1478,
+    -0.016,
+    -0.8017,
+    -0.7693,
+    0.4078,
+    0.0605,
+    0.4019,
+    -0.6708,
+    0.0762,
+    -0.2321,
+    0.0428,
+    -0.012,
+    0.0615
+   ],
+   "contrast_sign": [
+    0.3028,
+    0.617,
+    0.4918,
+    0.2308,
+    0.3043,
+    0.3853,
+    0.5753,
+    0.6875,
+    0.5062,
+    0.5319,
+    0.75,
+    0.3382,
+    0.8667,
+    0.6053,
+    0.8889
+   ]
+  },
+  {
+   "env_steps": 87040,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    19,
+    12,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 92160,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    21,
+    12,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 97280,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    23,
+    12,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 102400,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    25,
+    13,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 0.5476190476190477,
+   "v2_pairs": 13,
+   "contrast_corr_auroc": 0.8333333333333334,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.6666666666666666,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9519,
+    0.5856,
+    0.9811,
+    0.9997,
+    0.9481,
+    0.9478,
+    0.6332,
+    0.9987,
+    0.8337,
+    0.9903,
+    0.9982,
+    0.9834,
+    null,
+    0.9978,
+    null
+   ],
+   "contrast_corr": [
+    -0.4737,
+    0.4313,
+    -0.1047,
+    -0.1834,
+    -0.7555,
+    -0.7705,
+    0.4213,
+    -0.0552,
+    0.274,
+    -0.6499,
+    -0.0941,
+    -0.2856,
+    0.1554,
+    -0.0125,
+    0.1787
+   ],
+   "contrast_sign": [
+    0.4646,
+    0.5844,
+    0.4667,
+    0.55,
+    0.5143,
+    0.3817,
+    0.54,
+    0.4444,
+    0.6351,
+    0.3704,
+    0.4722,
+    0.2642,
+    0.625,
+    0.3,
+    1.0
+   ]
+  },
+  {
+   "env_steps": 107520,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    26,
+    14,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 112640,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    27,
+    14,
+    3,
+    0,
+    1
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 117760,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    27,
+    14,
+    3,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 122880,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    27,
+    14,
+    3,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6,
+   "v2_auroc": 0.6190476190476191,
+   "v2_pairs": 13,
+   "contrast_corr_auroc": 0.8703703703703703,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.875,
+   "sign_pairs": 13,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9709,
+    0.6536,
+    0.9903,
+    1.0,
+    0.7234,
+    0.9735,
+    0.5728,
+    0.9992,
+    0.7316,
+    0.9925,
+    0.998,
+    0.913,
+    null,
+    0.9651,
+    null
+   ],
+   "contrast_corr": [
+    -0.504,
+    0.3534,
+    -0.0649,
+    -0.1347,
+    -0.6772,
+    -0.7831,
+    0.4984,
+    -0.0599,
+    0.3935,
+    -0.6667,
+    -0.0259,
+    -0.3376,
+    -0.024,
+    0.0876,
+    0.2147
+   ],
+   "contrast_sign": [
+    0.433,
+    0.6351,
+    0.5312,
+    null,
+    0.4167,
+    0.2966,
+    0.5797,
+    0.3636,
+    0.5593,
+    0.2353,
+    0.625,
+    0.5333,
+    null,
+    0.6452,
+    0.9286
+   ]
+  },
+  {
+   "env_steps": 128000,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    6,
+    27,
+    16,
+    3,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 133120,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    7,
+    30,
+    16,
+    3,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 138240,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    31,
+    16,
+    3,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 143360,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    31,
+    16,
+    4,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.625,
+   "v2_pairs": 14,
+   "contrast_corr_auroc": 0.9259259259259259,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9166666666666666,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9703,
+    0.3625,
+    0.7022,
+    0.9986,
+    0.8774,
+    0.972,
+    0.3126,
+    0.9995,
+    0.7912,
+    0.6901,
+    0.9985,
+    0.9663,
+    0.9996,
+    0.9691,
+    null
+   ],
+   "contrast_corr": [
+    -0.7639,
+    0.6939,
+    -0.7451,
+    0.0369,
+    -0.6269,
+    -0.7725,
+    0.8302,
+    -0.2612,
+    0.178,
+    -0.8651,
+    0.0212,
+    -0.2703,
+    0.0797,
+    0.0057,
+    0.0096
+   ],
+   "contrast_sign": [
+    0.408,
+    0.7407,
+    0.3871,
+    null,
+    0.5429,
+    0.3058,
+    0.6479,
+    null,
+    0.5,
+    0.2788,
+    null,
+    0.5667,
+    null,
+    0.5921,
+    null
+   ]
+  },
+  {
+   "env_steps": 148480,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    32,
+    16,
+    4,
+    0,
+    2
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 153600,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    33,
+    16,
+    4,
+    0,
+    3
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 158720,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    34,
+    16,
+    4,
+    0,
+    3
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 163840,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    34,
+    16,
+    4,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9259259259259259,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.8928571428571429,
+   "sign_pairs": 11,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9837,
+    0.449,
+    0.8278,
+    0.9993,
+    0.7951,
+    0.9834,
+    0.2982,
+    0.9986,
+    0.3673,
+    0.844,
+    0.9987,
+    0.8116,
+    0.9989,
+    0.2441,
+    0.9988
+   ],
+   "contrast_corr": [
+    -0.6826,
+    0.6073,
+    -0.7209,
+    -0.1747,
+    -0.7914,
+    -0.7311,
+    0.8309,
+    -0.0834,
+    0.753,
+    -0.8429,
+    0.0275,
+    -0.7454,
+    0.0517,
+    0.7624,
+    0.0045
+   ],
+   "contrast_sign": [
+    0.266,
+    0.597,
+    0.4783,
+    null,
+    0.6429,
+    0.3175,
+    0.72,
+    0.2941,
+    0.5842,
+    0.4624,
+    null,
+    0.2784,
+    null,
+    0.5867,
+    null
+   ]
+  },
+  {
+   "env_steps": 168960,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    8,
+    35,
+    17,
+    4,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 174080,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    9,
+    35,
+    17,
+    4,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 179200,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    10,
+    36,
+    17,
+    4,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 184320,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    10,
+    36,
+    18,
+    4,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7777777777777778,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9629629629629629,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9801,
+    0.4115,
+    0.867,
+    0.9987,
+    0.9192,
+    0.9873,
+    0.2865,
+    0.9994,
+    0.3915,
+    0.8752,
+    0.9988,
+    0.9343,
+    0.9999,
+    0.3135,
+    0.9998
+   ],
+   "contrast_corr": [
+    -0.7879,
+    0.628,
+    -0.6894,
+    -0.0663,
+    -0.7843,
+    -0.7674,
+    0.8192,
+    -0.0891,
+    0.7273,
+    -0.8326,
+    -0.0265,
+    -0.7533,
+    0.0124,
+    0.7684,
+    -0.0808
+   ],
+   "contrast_sign": [
+    0.3267,
+    0.6463,
+    0.339,
+    null,
+    0.4133,
+    0.1584,
+    0.7975,
+    null,
+    0.7143,
+    0.2833,
+    null,
+    0.4844,
+    null,
+    0.5106,
+    null
+   ]
+  },
+  {
+   "env_steps": 189440,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    10,
+    36,
+    18,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 194560,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    10,
+    36,
+    19,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 199680,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    false,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    10,
+    36,
+    19,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 204800,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    11,
+    37,
+    21,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 0.7592592592592593,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 11,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9669,
+    0.3594,
+    0.8852,
+    0.9995,
+    0.9479,
+    0.9685,
+    0.2342,
+    0.9992,
+    0.4348,
+    0.9178,
+    0.9991,
+    0.9644,
+    0.9998,
+    0.2878,
+    0.9998
+   ],
+   "contrast_corr": [
+    -0.7005,
+    0.7237,
+    -0.8369,
+    0.1182,
+    -0.8118,
+    -0.8046,
+    0.829,
+    -0.1722,
+    0.6616,
+    -0.9133,
+    0.0678,
+    -0.75,
+    0.0136,
+    0.8264,
+    -0.1069
+   ],
+   "contrast_sign": [
+    0.233,
+    0.7603,
+    0.1802,
+    null,
+    0.3286,
+    0.3162,
+    0.8286,
+    null,
+    0.7273,
+    0.2566,
+    null,
+    0.5065,
+    0.0,
+    0.7714,
+    null
+   ]
+  },
+  {
+   "env_steps": 209920,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    11,
+    39,
+    21,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 215040,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    11,
+    40,
+    21,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 220160,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    11,
+    40,
+    22,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 225280,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    11,
+    40,
+    22,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 0.7777777777777778,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9906,
+    0.4008,
+    0.947,
+    0.9984,
+    0.9821,
+    0.9824,
+    0.2472,
+    0.9995,
+    0.4533,
+    0.9553,
+    0.9992,
+    0.9837,
+    0.9999,
+    0.3579,
+    0.9993
+   ],
+   "contrast_corr": [
+    -0.6455,
+    0.6254,
+    -0.7454,
+    0.2079,
+    -0.7288,
+    -0.8006,
+    0.8149,
+    -0.2586,
+    0.6765,
+    -0.8812,
+    0.1852,
+    -0.746,
+    -0.1129,
+    0.7741,
+    -0.2055
+   ],
+   "contrast_sign": [
+    0.2875,
+    0.6552,
+    0.4474,
+    null,
+    0.3478,
+    0.2959,
+    0.8272,
+    null,
+    0.75,
+    0.3103,
+    null,
+    0.3514,
+    null,
+    0.5439,
+    null
+   ]
+  },
+  {
+   "env_steps": 230400,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    42,
+    22,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 235520,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    43,
+    23,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 240640,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    45,
+    23,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 245760,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    45,
+    23,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.994,
+    0.3447,
+    0.97,
+    0.9984,
+    0.995,
+    0.9877,
+    0.2158,
+    0.9995,
+    0.4173,
+    0.9704,
+    0.9991,
+    0.9926,
+    0.9999,
+    0.3918,
+    0.9983
+   ],
+   "contrast_corr": [
+    -0.6693,
+    0.67,
+    -0.799,
+    0.2073,
+    -0.7322,
+    -0.8371,
+    0.8348,
+    -0.2377,
+    0.689,
+    -0.8791,
+    0.0696,
+    -0.7209,
+    -0.1255,
+    0.7119,
+    -0.1377
+   ],
+   "contrast_sign": [
+    0.2564,
+    0.7442,
+    0.3462,
+    null,
+    0.4667,
+    0.2743,
+    0.7931,
+    null,
+    0.625,
+    0.284,
+    null,
+    0.2353,
+    null,
+    0.5,
+    null
+   ]
+  },
+  {
+   "env_steps": 250880,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    47,
+    23,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 256000,
+   "ckpt": "checkpoint_00250.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    47,
+    24,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 10
+  },
+  {
+   "env_steps": 261120,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    47,
+    25,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 266240,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    47,
+    25,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9642857142857143,
+   "sign_pairs": 11,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9943,
+    0.3696,
+    0.9716,
+    0.9988,
+    0.9956,
+    0.979,
+    0.2254,
+    0.9992,
+    0.4764,
+    0.9545,
+    0.9996,
+    0.9688,
+    0.9997,
+    0.4699,
+    0.9996
+   ],
+   "contrast_corr": [
+    -0.6759,
+    0.6235,
+    -0.7675,
+    0.1173,
+    -0.6825,
+    -0.8635,
+    0.838,
+    -0.1248,
+    0.6564,
+    -0.8432,
+    0.0347,
+    -0.6448,
+    -0.0154,
+    0.6026,
+    -0.057
+   ],
+   "contrast_sign": [
+    0.25,
+    0.7303,
+    0.377,
+    null,
+    0.3548,
+    0.1966,
+    0.6733,
+    null,
+    0.7867,
+    0.2872,
+    null,
+    0.4655,
+    0.625,
+    0.5,
+    null
+   ]
+  },
+  {
+   "env_steps": 271360,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    47,
+    25,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 276480,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    12,
+    48,
+    26,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 281600,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    51,
+    26,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 286720,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    52,
+    26,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9951,
+    0.3744,
+    0.9683,
+    0.999,
+    0.9967,
+    0.9711,
+    0.2735,
+    0.9992,
+    0.5262,
+    0.948,
+    0.9999,
+    0.956,
+    1.0,
+    0.4767,
+    0.9991
+   ],
+   "contrast_corr": [
+    -0.6594,
+    0.6191,
+    -0.7803,
+    -0.0632,
+    -0.7003,
+    -0.8404,
+    0.8019,
+    0.0996,
+    0.6272,
+    -0.8455,
+    -0.1172,
+    -0.6055,
+    0.0684,
+    0.5958,
+    0.013
+   ],
+   "contrast_sign": [
+    0.3535,
+    0.6709,
+    0.3061,
+    null,
+    0.3571,
+    0.3087,
+    0.7647,
+    null,
+    0.6479,
+    0.2,
+    null,
+    0.2712,
+    null,
+    0.7391,
+    null
+   ]
+  },
+  {
+   "env_steps": 291840,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    52,
+    26,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 296960,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    54,
+    28,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 302080,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    54,
+    28,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 307200,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    55,
+    28,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9444444444444444,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9958,
+    0.3813,
+    0.9695,
+    0.9995,
+    0.9972,
+    0.9723,
+    0.2585,
+    0.9997,
+    0.5109,
+    0.9531,
+    0.9996,
+    0.9662,
+    0.9999,
+    0.4861,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.6503,
+    0.6049,
+    -0.779,
+    0.0228,
+    -0.6898,
+    -0.8267,
+    0.8222,
+    0.0061,
+    0.6205,
+    -0.8203,
+    -0.0395,
+    -0.6042,
+    0.0258,
+    0.5887,
+    -0.0782
+   ],
+   "contrast_sign": [
+    0.2571,
+    0.642,
+    0.3696,
+    null,
+    0.4667,
+    0.4388,
+    0.6136,
+    null,
+    0.7534,
+    0.25,
+    null,
+    0.3871,
+    null,
+    0.6897,
+    null
+   ]
+  },
+  {
+   "env_steps": 312320,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    55,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 317440,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    56,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 322560,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    56,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 327680,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    56,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9259259259259259,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9,
+   "sign_pairs": 11,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9907,
+    0.3673,
+    0.9806,
+    0.9997,
+    0.9964,
+    0.9734,
+    0.256,
+    0.9991,
+    0.5002,
+    0.9723,
+    0.9995,
+    0.9748,
+    0.9999,
+    0.4879,
+    0.9996
+   ],
+   "contrast_corr": [
+    -0.6357,
+    0.6173,
+    -0.7815,
+    -0.066,
+    -0.6936,
+    -0.8159,
+    0.8104,
+    -0.2838,
+    0.6654,
+    -0.8216,
+    -0.1249,
+    -0.6116,
+    -0.0646,
+    0.58,
+    -0.054
+   ],
+   "contrast_sign": [
+    0.3267,
+    0.747,
+    0.4,
+    null,
+    0.2143,
+    0.3542,
+    0.6145,
+    null,
+    0.8125,
+    0.1967,
+    0.2222,
+    0.2143,
+    null,
+    0.9286,
+    null
+   ]
+  },
+  {
+   "env_steps": 332800,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    59,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 337920,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    59,
+    29,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 343040,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    60,
+    30,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 348160,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    60,
+    30,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9074074074074074,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9955,
+    0.3755,
+    0.9761,
+    0.9994,
+    0.9959,
+    0.9831,
+    0.2489,
+    0.9995,
+    0.5242,
+    0.9699,
+    0.9995,
+    0.9759,
+    0.9999,
+    0.4895,
+    0.9993
+   ],
+   "contrast_corr": [
+    -0.6274,
+    0.6319,
+    -0.7772,
+    -0.1166,
+    -0.6733,
+    -0.8333,
+    0.8225,
+    -0.1552,
+    0.595,
+    -0.827,
+    -0.2981,
+    -0.663,
+    -0.0018,
+    0.5746,
+    0.0465
+   ],
+   "contrast_sign": [
+    0.2561,
+    0.6023,
+    0.3611,
+    null,
+    0.1905,
+    0.3065,
+    0.75,
+    null,
+    0.9,
+    0.28,
+    null,
+    0.1633,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 353280,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    64,
+    31,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 358400,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    65,
+    31,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 363520,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    66,
+    31,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 8
+  },
+  {
+   "env_steps": 368640,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    68,
+    32,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7592592592592593,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9444444444444444,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9916,
+    0.3844,
+    0.9709,
+    0.9994,
+    0.9962,
+    0.9763,
+    0.2564,
+    0.9996,
+    0.5228,
+    0.9734,
+    0.9996,
+    0.9856,
+    0.9999,
+    0.4962,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.6737,
+    0.6039,
+    -0.7768,
+    0.1559,
+    -0.6659,
+    -0.8397,
+    0.8401,
+    -0.0297,
+    0.6536,
+    -0.8295,
+    -0.0763,
+    -0.6367,
+    -0.0144,
+    0.5599,
+    0.0202
+   ],
+   "contrast_sign": [
+    0.2889,
+    0.7375,
+    0.0455,
+    null,
+    0.16,
+    0.2703,
+    0.7969,
+    null,
+    0.85,
+    0.1406,
+    null,
+    0.1852,
+    null,
+    0.8889,
+    null
+   ]
+  },
+  {
+   "env_steps": 373760,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    69,
+    32,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 378880,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    69,
+    33,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 384000,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    69,
+    33,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 389120,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    71,
+    33,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9629629629629629,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.993,
+    0.3865,
+    0.9681,
+    0.9992,
+    0.9952,
+    0.9822,
+    0.2551,
+    0.9997,
+    0.4846,
+    0.9717,
+    0.9997,
+    0.9858,
+    1.0,
+    0.4941,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.7116,
+    0.6001,
+    -0.7803,
+    0.1314,
+    -0.6653,
+    -0.8123,
+    0.8079,
+    -0.0994,
+    0.6333,
+    -0.8142,
+    -0.0678,
+    -0.6293,
+    -0.028,
+    0.5613,
+    0.0209
+   ],
+   "contrast_sign": [
+    0.1923,
+    0.5341,
+    0.0857,
+    null,
+    0.3714,
+    0.4088,
+    0.7391,
+    null,
+    0.8511,
+    0.2333,
+    null,
+    0.1579,
+    null,
+    0.8824,
+    null
+   ]
+  },
+  {
+   "env_steps": 394240,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    73,
+    34,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 399360,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    75,
+    34,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 404480,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    75,
+    34,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 409600,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    75,
+    34,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9897,
+    0.3824,
+    0.9735,
+    0.9989,
+    0.9953,
+    0.9791,
+    0.2388,
+    0.9997,
+    0.467,
+    0.9787,
+    0.9993,
+    0.9876,
+    0.9997,
+    0.4838,
+    0.9985
+   ],
+   "contrast_corr": [
+    -0.734,
+    0.6071,
+    -0.7835,
+    -0.0757,
+    -0.6703,
+    -0.82,
+    0.808,
+    0.1347,
+    0.6645,
+    -0.8195,
+    -0.3437,
+    -0.6502,
+    0.111,
+    0.591,
+    0.0363
+   ],
+   "contrast_sign": [
+    0.1692,
+    0.8548,
+    0.05,
+    null,
+    0.0556,
+    0.4145,
+    0.7812,
+    null,
+    0.7925,
+    0.18,
+    null,
+    0.1111,
+    null,
+    0.9091,
+    null
+   ]
+  },
+  {
+   "env_steps": 414720,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    75,
+    35,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 419840,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    75,
+    35,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 424960,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    76,
+    35,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 430080,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    76,
+    35,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 0.7777777777777778,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.996,
+    0.3646,
+    0.9802,
+    0.9988,
+    0.9979,
+    0.9844,
+    0.2363,
+    0.9995,
+    0.4814,
+    0.9803,
+    0.9993,
+    0.987,
+    0.9997,
+    0.4827,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.7041,
+    0.6169,
+    -0.77,
+    0.2103,
+    -0.6577,
+    -0.8009,
+    0.8154,
+    -0.098,
+    0.6303,
+    -0.8115,
+    0.0316,
+    -0.6572,
+    -0.0179,
+    0.5902,
+    -0.0606
+   ],
+   "contrast_sign": [
+    0.2533,
+    0.7089,
+    0.1892,
+    null,
+    0.2903,
+    0.3125,
+    0.8065,
+    null,
+    0.8605,
+    0.2,
+    null,
+    0.2245,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 435200,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    77,
+    36,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 440320,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    78,
+    37,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 445440,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    79,
+    37,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 450560,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    79,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9629629629629629,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9964,
+    0.3588,
+    0.9745,
+    0.9993,
+    0.9968,
+    0.9812,
+    0.246,
+    0.9993,
+    0.4409,
+    0.9729,
+    0.9999,
+    0.9843,
+    1.0,
+    0.4816,
+    0.9991
+   ],
+   "contrast_corr": [
+    -0.7287,
+    0.6487,
+    -0.7715,
+    0.0123,
+    -0.6648,
+    -0.8355,
+    0.8174,
+    -0.1227,
+    0.6771,
+    -0.8474,
+    -0.0925,
+    -0.7092,
+    -0.0332,
+    0.5909,
+    -0.0073
+   ],
+   "contrast_sign": [
+    0.2297,
+    0.8143,
+    0.1795,
+    null,
+    0.3125,
+    0.3333,
+    0.7705,
+    null,
+    0.8667,
+    0.1034,
+    null,
+    0.1628,
+    null,
+    0.75,
+    null
+   ]
+  },
+  {
+   "env_steps": 455680,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    79,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 460800,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    82,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 465920,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    82,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 471040,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    83,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9963,
+    0.3678,
+    0.9798,
+    0.9989,
+    0.998,
+    0.9842,
+    0.22,
+    0.9996,
+    0.4315,
+    0.9796,
+    0.9999,
+    0.99,
+    1.0,
+    0.4814,
+    0.9995
+   ],
+   "contrast_corr": [
+    -0.7414,
+    0.6544,
+    -0.7791,
+    0.0661,
+    -0.6474,
+    -0.861,
+    0.8346,
+    -0.1272,
+    0.7048,
+    -0.8506,
+    0.0508,
+    -0.7222,
+    -0.076,
+    0.5889,
+    -0.0282
+   ],
+   "contrast_sign": [
+    0.2078,
+    0.6782,
+    0.1667,
+    null,
+    0.25,
+    0.3768,
+    0.7077,
+    null,
+    0.8148,
+    0.253,
+    null,
+    0.1509,
+    null,
+    0.6316,
+    null
+   ]
+  },
+  {
+   "env_steps": 476160,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    84,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 481280,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    86,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 486400,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    13,
+    89,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 491520,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    89,
+    38,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9444444444444444,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9381,
+    0.295,
+    0.9201,
+    1.0,
+    0.9712,
+    0.9903,
+    0.2087,
+    0.9992,
+    0.4137,
+    0.9857,
+    0.999,
+    0.9943,
+    0.9994,
+    0.48,
+    0.9985
+   ],
+   "contrast_corr": [
+    -0.826,
+    0.7086,
+    -0.8054,
+    0.1182,
+    -0.7293,
+    -0.884,
+    0.8692,
+    -0.078,
+    0.7857,
+    -0.8382,
+    -0.0817,
+    -0.6895,
+    -0.03,
+    0.591,
+    0.0761
+   ],
+   "contrast_sign": [
+    0.2807,
+    0.6765,
+    0.3158,
+    null,
+    0.1212,
+    0.2241,
+    0.8462,
+    null,
+    0.8475,
+    0.1277,
+    null,
+    0.1316,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 496640,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    92,
+    39,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 501760,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    39,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 506880,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    39,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 512000,
+   "ckpt": "checkpoint_00500.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    39,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9859,
+    0.3215,
+    0.9659,
+    0.9999,
+    0.9863,
+    0.9883,
+    0.2198,
+    0.9998,
+    0.3927,
+    0.9862,
+    0.9994,
+    0.9946,
+    0.9996,
+    0.4693,
+    0.9988
+   ],
+   "contrast_corr": [
+    -0.8098,
+    0.6829,
+    -0.812,
+    -0.0291,
+    -0.6842,
+    -0.857,
+    0.825,
+    0.1312,
+    0.7167,
+    -0.8476,
+    -0.161,
+    -0.6908,
+    0.0205,
+    0.6071,
+    0.0903
+   ],
+   "contrast_sign": [
+    0.4953,
+    0.7229,
+    0.2,
+    null,
+    0.0435,
+    0.3009,
+    0.7541,
+    null,
+    0.7692,
+    0.0,
+    null,
+    0.0571,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 517120,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 522240,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 527360,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    95,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 532480,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    96,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9259259259259259,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9908,
+    0.3064,
+    0.962,
+    0.9996,
+    0.9887,
+    0.9932,
+    0.2084,
+    0.999,
+    0.3895,
+    0.9799,
+    0.9996,
+    0.9953,
+    0.9999,
+    0.4678,
+    0.9989
+   ],
+   "contrast_corr": [
+    -0.8243,
+    0.6973,
+    -0.8106,
+    0.0383,
+    -0.6746,
+    -0.8816,
+    0.8625,
+    -0.047,
+    0.7573,
+    -0.8586,
+    -0.2195,
+    -0.7115,
+    0.2114,
+    0.6097,
+    0.0282
+   ],
+   "contrast_sign": [
+    0.1705,
+    0.8072,
+    0.2353,
+    null,
+    0.0833,
+    0.1624,
+    0.75,
+    null,
+    0.94,
+    0.0256,
+    null,
+    0.025,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 537600,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    96,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 542720,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    96,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 547840,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 552960,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9814814814814815,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.991,
+    0.3069,
+    0.9588,
+    0.9997,
+    0.9875,
+    0.9921,
+    0.193,
+    0.9994,
+    0.3635,
+    0.9765,
+    0.9999,
+    0.9924,
+    0.9999,
+    0.454,
+    1.0
+   ],
+   "contrast_corr": [
+    -0.8208,
+    0.6948,
+    -0.8167,
+    0.1531,
+    -0.6774,
+    -0.8796,
+    0.8509,
+    -0.1548,
+    0.7524,
+    -0.8661,
+    0.0191,
+    -0.7136,
+    0.0617,
+    0.6259,
+    -0.0197
+   ],
+   "contrast_sign": [
+    0.2737,
+    0.7969,
+    0.1071,
+    null,
+    0.0909,
+    0.2857,
+    0.8947,
+    null,
+    0.9583,
+    0.0,
+    null,
+    0.0789,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 558080,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 563200,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 568320,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 573440,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    97,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9074074074074074,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9884,
+    0.3012,
+    0.9541,
+    0.9995,
+    0.9864,
+    0.992,
+    0.2008,
+    0.9991,
+    0.3695,
+    0.972,
+    0.9999,
+    0.994,
+    1.0,
+    0.4596,
+    0.999
+   ],
+   "contrast_corr": [
+    -0.8267,
+    0.7076,
+    -0.822,
+    0.0487,
+    -0.7112,
+    -0.8788,
+    0.8475,
+    0.0319,
+    0.7577,
+    -0.8611,
+    -0.0707,
+    -0.7188,
+    0.1093,
+    0.624,
+    0.108
+   ],
+   "contrast_sign": [
+    0.3553,
+    0.84,
+    0.1351,
+    null,
+    0.1765,
+    0.1923,
+    0.8444,
+    null,
+    0.8043,
+    0.0526,
+    null,
+    0.1765,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 578560,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    98,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 583680,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    98,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 588800,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 593920,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 8,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9917,
+    0.3023,
+    0.9567,
+    0.9994,
+    0.9883,
+    0.9922,
+    0.1984,
+    0.9993,
+    0.3673,
+    0.9731,
+    0.9999,
+    0.9942,
+    0.9999,
+    0.4562,
+    0.9995
+   ],
+   "contrast_corr": [
+    -0.8362,
+    0.707,
+    -0.8245,
+    -0.1077,
+    -0.7075,
+    -0.8856,
+    0.8583,
+    0.0193,
+    0.7728,
+    -0.8652,
+    -0.1692,
+    -0.7181,
+    0.0624,
+    0.6289,
+    -0.0535
+   ],
+   "contrast_sign": [
+    0.3494,
+    0.84,
+    0.2326,
+    null,
+    0.1515,
+    0.1881,
+    0.8197,
+    null,
+    0.9038,
+    0.05,
+    null,
+    0.0789,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 599040,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 8
+  },
+  {
+   "env_steps": 604160,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 609280,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 614400,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9958,
+    0.3402,
+    0.964,
+    0.9994,
+    0.9922,
+    0.99,
+    0.1944,
+    0.9992,
+    0.371,
+    0.9717,
+    0.9999,
+    0.9927,
+    0.9999,
+    0.4537,
+    0.9995
+   ],
+   "contrast_corr": [
+    -0.7856,
+    0.6432,
+    -0.8014,
+    -0.027,
+    -0.6782,
+    -0.876,
+    0.8519,
+    -0.0267,
+    0.7554,
+    -0.8698,
+    -0.1536,
+    -0.7173,
+    0.1278,
+    0.6303,
+    -0.0256
+   ],
+   "contrast_sign": [
+    0.2174,
+    0.8621,
+    0.087,
+    null,
+    0.087,
+    0.202,
+    0.8393,
+    null,
+    0.8182,
+    0.0,
+    null,
+    0.1842,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 619520,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 624640,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 629760,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 634880,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 0.7407407407407407,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9944,
+    0.325,
+    0.9654,
+    0.9991,
+    0.9904,
+    0.9903,
+    0.1996,
+    0.9986,
+    0.3737,
+    0.9759,
+    0.9992,
+    0.9922,
+    0.9993,
+    0.4534,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.8012,
+    0.6665,
+    -0.8083,
+    -0.0104,
+    -0.6895,
+    -0.8806,
+    0.8481,
+    0.1527,
+    0.7593,
+    -0.8707,
+    -0.0303,
+    -0.718,
+    0.1313,
+    0.6307,
+    0.1206
+   ],
+   "contrast_sign": [
+    0.1159,
+    0.7831,
+    0.15,
+    null,
+    0.2593,
+    0.1124,
+    0.8571,
+    null,
+    0.9524,
+    0.0,
+    null,
+    0.0882,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 640000,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 645120,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    99,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 650240,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    100,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 655360,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    100,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.995,
+    0.3237,
+    0.9672,
+    0.9994,
+    0.9885,
+    0.9918,
+    0.1851,
+    0.9987,
+    0.3417,
+    0.9779,
+    0.9998,
+    0.9911,
+    0.9998,
+    0.4533,
+    0.9997
+   ],
+   "contrast_corr": [
+    -0.8101,
+    0.6663,
+    -0.8024,
+    -0.2644,
+    -0.6937,
+    -0.8863,
+    0.8637,
+    0.3442,
+    0.7811,
+    -0.8656,
+    -0.4839,
+    -0.7232,
+    0.1708,
+    0.6274,
+    0.254
+   ],
+   "contrast_sign": [
+    0.2564,
+    0.873,
+    0.1852,
+    null,
+    0.0476,
+    0.0463,
+    1.0,
+    null,
+    0.7368,
+    0.0,
+    null,
+    0.1538,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 660480,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    100,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 665600,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    101,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 670720,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    102,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 675840,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    103,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 0.6851851851851852,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9948,
+    0.3221,
+    0.9636,
+    0.9996,
+    0.9871,
+    0.9914,
+    0.1584,
+    0.9986,
+    0.3526,
+    0.9773,
+    0.9998,
+    0.9918,
+    0.9997,
+    0.4436,
+    0.9994
+   ],
+   "contrast_corr": [
+    -0.801,
+    0.6654,
+    -0.8092,
+    -0.2234,
+    -0.7025,
+    -0.8863,
+    0.8768,
+    0.1825,
+    0.7764,
+    -0.8728,
+    -0.3611,
+    -0.7272,
+    0.1757,
+    0.6445,
+    0.1858
+   ],
+   "contrast_sign": [
+    0.2603,
+    0.8209,
+    0.0833,
+    null,
+    0.0417,
+    0.2551,
+    0.6986,
+    null,
+    0.7586,
+    0.0263,
+    null,
+    0.1026,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 680960,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 686080,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 9
+  },
+  {
+   "env_steps": 691200,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 696320,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.6851851851851852,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9074074074074074,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9957,
+    0.3281,
+    0.9656,
+    0.9992,
+    0.99,
+    0.9906,
+    0.1808,
+    0.9983,
+    0.3217,
+    0.9764,
+    0.9998,
+    0.9909,
+    0.9997,
+    0.4397,
+    0.9992
+   ],
+   "contrast_corr": [
+    -0.7954,
+    0.6662,
+    -0.8123,
+    0.0418,
+    -0.6968,
+    -0.906,
+    0.9015,
+    0.0196,
+    0.8255,
+    -0.8756,
+    0.0024,
+    -0.7317,
+    0.1631,
+    0.6505,
+    0.1431
+   ],
+   "contrast_sign": [
+    0.194,
+    0.7231,
+    0.3103,
+    null,
+    0.0909,
+    0.2222,
+    0.9032,
+    null,
+    0.7931,
+    0.093,
+    null,
+    0.2093,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 701440,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 706560,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    106,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 711680,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    107,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 716800,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    107,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 0.7592592592592593,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9629629629629629,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9945,
+    0.3242,
+    0.9673,
+    0.9992,
+    0.9877,
+    0.9888,
+    0.1605,
+    0.9994,
+    0.3245,
+    0.9773,
+    0.9997,
+    0.9893,
+    0.9998,
+    0.414,
+    0.9997
+   ],
+   "contrast_corr": [
+    -0.8235,
+    0.6676,
+    -0.8265,
+    0.1037,
+    -0.7093,
+    -0.8877,
+    0.8818,
+    -0.0416,
+    0.8072,
+    -0.8858,
+    -0.0334,
+    -0.7463,
+    0.029,
+    0.6848,
+    0.0249
+   ],
+   "contrast_sign": [
+    0.0435,
+    0.8548,
+    0.375,
+    null,
+    0.0455,
+    0.1098,
+    0.9545,
+    null,
+    0.9487,
+    0.1458,
+    null,
+    0.0278,
+    null,
+    0.8571,
+    null
+   ]
+  },
+  {
+   "env_steps": 721920,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    108,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 727040,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    108,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 732160,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    108,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 737280,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    108,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 0.7037037037037037,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.8888888888888888,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9922,
+    0.3233,
+    0.9699,
+    0.9994,
+    0.9866,
+    0.9864,
+    0.1674,
+    0.999,
+    0.3076,
+    0.9781,
+    0.9999,
+    0.9875,
+    0.9998,
+    0.4126,
+    0.9997
+   ],
+   "contrast_corr": [
+    -0.8336,
+    0.669,
+    -0.8259,
+    0.0129,
+    -0.7115,
+    -0.8917,
+    0.888,
+    0.097,
+    0.8164,
+    -0.8869,
+    -0.0094,
+    -0.7482,
+    0.0256,
+    0.6889,
+    0.0456
+   ],
+   "contrast_sign": [
+    0.1091,
+    0.8302,
+    0.0476,
+    null,
+    0.0556,
+    0.1489,
+    0.8936,
+    null,
+    0.9474,
+    0.1064,
+    null,
+    0.175,
+    null,
+    1.0,
+    null
+   ]
+  },
+  {
+   "env_steps": 742400,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 747520,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 752640,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 757760,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1,
+   "v2_auroc": 0.7222222222222222,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 0.9259259259259259,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 10,
+   "v2_auroc_mature_pairs": null,
+   "v2_distance": [
+    0.9917,
+    0.3214,
+    0.9586,
+    0.9995,
+    0.9874,
+    0.9869,
+    0.1536,
+    0.9994,
+    0.3238,
+    0.9647,
+    0.9997,
+    0.9877,
+    0.9996,
+    0.4142,
+    0.9997
+   ],
+   "contrast_corr": [
+    -0.8396,
+    0.6722,
+    -0.8279,
+    0.0438,
+    -0.7121,
+    -0.8947,
+    0.8996,
+    0.0553,
+    0.8201,
+    -0.8854,
+    -0.0001,
+    -0.7478,
+    -0.0036,
+    0.6885,
+    0.1092
+   ],
+   "contrast_sign": [
+    0.2258,
+    0.8615,
+    0.2222,
+    null,
+    0.0435,
+    0.1412,
+    0.7963,
+    null,
+    0.9211,
+    0.1064,
+    null,
+    0.1316,
+    null,
+    0.7143,
+    null
+   ]
+  },
+  {
+   "env_steps": 762880,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 768000,
+   "ckpt": "checkpoint_00750.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    14,
+    109,
+    40,
+    6,
+    0,
+    4
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 773120,
+   "ckpt": "final.pt",
+   "mature": [
+    false,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    17,
+    109,
+    40,
+    6,
+    0,
+    6
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 778240,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    22,
+    109,
+    40,
+    6,
+    1,
+    7
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9259259259259259,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9123,
+    0.3124,
+    0.8658,
+    0.5406,
+    0.9145,
+    0.9897,
+    0.1559,
+    0.9509,
+    0.2374,
+    0.9662,
+    0.5965,
+    0.9894,
+    0.9244,
+    0.3303,
+    0.9814
+   ],
+   "contrast_corr": [
+    -0.8098,
+    0.6416,
+    -0.7944,
+    0.6362,
+    -0.7224,
+    -0.8836,
+    0.8917,
+    -0.6214,
+    0.8344,
+    -0.8891,
+    0.452,
+    -0.7826,
+    -0.7443,
+    0.7745,
+    -0.5339
+   ],
+   "contrast_sign": [
+    0.2766,
+    0.7848,
+    0.2766,
+    0.5233,
+    0.2442,
+    0.1753,
+    0.8033,
+    0.5263,
+    0.7647,
+    0.0,
+    0.4051,
+    0.2069,
+    0.4634,
+    0.6875,
+    0.4211
+   ]
+  },
+  {
+   "env_steps": 783360,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    23,
+    109,
+    40,
+    6,
+    1,
+    9
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 788480,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    24,
+    109,
+    40,
+    6,
+    3,
+    10
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 793600,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    25,
+    109,
+    40,
+    6,
+    5,
+    11
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 798720,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    25,
+    109,
+    40,
+    7,
+    5,
+    12
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 0.9814814814814815,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9807,
+    0.3607,
+    0.7123,
+    0.5758,
+    0.9568,
+    0.9892,
+    0.2559,
+    0.9824,
+    0.2148,
+    0.6888,
+    0.4161,
+    0.976,
+    0.6404,
+    0.3101,
+    0.9604
+   ],
+   "contrast_corr": [
+    -0.7908,
+    0.5667,
+    -0.8748,
+    0.4526,
+    -0.7268,
+    -0.8823,
+    0.7816,
+    -0.7269,
+    0.8745,
+    -0.907,
+    0.6049,
+    -0.8548,
+    -0.763,
+    0.7849,
+    -0.774
+   ],
+   "contrast_sign": [
+    0.2208,
+    0.8261,
+    0.2432,
+    0.3871,
+    0.2475,
+    0.1753,
+    0.8133,
+    0.3636,
+    0.76,
+    0.2619,
+    0.6,
+    0.2708,
+    0.4483,
+    0.7282,
+    0.2133
+   ]
+  },
+  {
+   "env_steps": 803840,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    25,
+    109,
+    40,
+    7,
+    6,
+    14
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 808960,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    false
+   ],
+   "own_events": [
+    26,
+    109,
+    40,
+    7,
+    8,
+    16
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 814080,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    27,
+    109,
+    40,
+    7,
+    10,
+    22
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 819200,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    27,
+    109,
+    40,
+    7,
+    10,
+    23
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9895,
+    0.3407,
+    0.8625,
+    0.5208,
+    0.9833,
+    0.9898,
+    0.2061,
+    0.9708,
+    0.2162,
+    0.837,
+    0.4297,
+    0.9917,
+    0.7628,
+    0.2254,
+    0.9649
+   ],
+   "contrast_corr": [
+    -0.7871,
+    0.5885,
+    -0.858,
+    0.498,
+    -0.7327,
+    -0.8846,
+    0.7984,
+    -0.7011,
+    0.8034,
+    -0.9022,
+    0.5656,
+    -0.8643,
+    -0.8227,
+    0.7865,
+    -0.7731
+   ],
+   "contrast_sign": [
+    0.2706,
+    0.8205,
+    0.3067,
+    0.7439,
+    0.3304,
+    0.1868,
+    0.7714,
+    0.2911,
+    0.8198,
+    0.2319,
+    0.6588,
+    0.1837,
+    0.3944,
+    0.8415,
+    0.2476
+   ]
+  },
+  {
+   "env_steps": 824320,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    28,
+    109,
+    40,
+    7,
+    10,
+    26
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 829440,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    29,
+    109,
+    40,
+    7,
+    11,
+    27
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 834560,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    32,
+    109,
+    40,
+    7,
+    11,
+    28
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 839680,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    33,
+    109,
+    40,
+    7,
+    11,
+    31
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9915,
+    0.3464,
+    0.8752,
+    0.4494,
+    0.9711,
+    0.9901,
+    0.2073,
+    0.9653,
+    0.2517,
+    0.8654,
+    0.3607,
+    0.9805,
+    0.8057,
+    0.2239,
+    0.9459
+   ],
+   "contrast_corr": [
+    -0.7883,
+    0.5918,
+    -0.8648,
+    0.5774,
+    -0.7202,
+    -0.8703,
+    0.794,
+    -0.8159,
+    0.7865,
+    -0.8962,
+    0.6478,
+    -0.8598,
+    -0.8091,
+    0.8523,
+    -0.7377
+   ],
+   "contrast_sign": [
+    0.1932,
+    0.8242,
+    0.2278,
+    0.77,
+    0.3231,
+    0.1839,
+    0.8254,
+    0.1884,
+    0.86,
+    0.1475,
+    0.7703,
+    0.13,
+    0.4198,
+    0.7419,
+    0.2479
+   ]
+  },
+  {
+   "env_steps": 844800,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    33,
+    109,
+    40,
+    7,
+    11,
+    36
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 849920,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    33,
+    109,
+    40,
+    7,
+    11,
+    38
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 855040,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    35,
+    109,
+    40,
+    7,
+    11,
+    39
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 5
+  },
+  {
+   "env_steps": 860160,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    35,
+    109,
+    40,
+    7,
+    11,
+    41
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 1,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9927,
+    0.3661,
+    0.8915,
+    0.5069,
+    0.9754,
+    0.9883,
+    0.2088,
+    0.9834,
+    0.2341,
+    0.8885,
+    0.3958,
+    0.9738,
+    0.8416,
+    0.1948,
+    0.9593
+   ],
+   "contrast_corr": [
+    -0.7807,
+    0.5501,
+    -0.8216,
+    0.5478,
+    -0.7024,
+    -0.882,
+    0.8436,
+    -0.8169,
+    0.7913,
+    -0.8874,
+    0.6346,
+    -0.839,
+    -0.7075,
+    0.888,
+    -0.7433
+   ],
+   "contrast_sign": [
+    0.1587,
+    0.8228,
+    0.1356,
+    0.766,
+    0.3274,
+    0.125,
+    0.8431,
+    0.1714,
+    0.8247,
+    0.0984,
+    0.8058,
+    0.2252,
+    0.3933,
+    0.6465,
+    0.2714
+   ]
+  },
+  {
+   "env_steps": 865280,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    35,
+    110,
+    40,
+    7,
+    12,
+    44
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 870400,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    35,
+    110,
+    40,
+    7,
+    12,
+    47
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 7
+  },
+  {
+   "env_steps": 875520,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    37,
+    110,
+    40,
+    7,
+    14,
+    48
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 880640,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    37,
+    110,
+    40,
+    7,
+    14,
+    50
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 3,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.966,
+    0.3703,
+    0.8956,
+    0.3738,
+    0.9779,
+    0.9672,
+    0.1987,
+    0.8692,
+    0.2143,
+    0.9041,
+    0.3578,
+    0.9827,
+    0.8112,
+    0.1857,
+    0.9105
+   ],
+   "contrast_corr": [
+    -0.7806,
+    0.5413,
+    -0.8006,
+    0.6472,
+    -0.6654,
+    -0.8833,
+    0.8348,
+    -0.8027,
+    0.802,
+    -0.8811,
+    0.6289,
+    -0.8389,
+    -0.7701,
+    0.8594,
+    -0.7135
+   ],
+   "contrast_sign": [
+    0.1098,
+    0.8551,
+    0.1429,
+    0.7432,
+    0.3684,
+    0.1358,
+    0.8679,
+    0.3148,
+    0.7236,
+    0.1373,
+    0.6747,
+    0.1776,
+    0.2687,
+    0.6837,
+    0.3592
+   ]
+  },
+  {
+   "env_steps": 885760,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    38,
+    110,
+    40,
+    7,
+    15,
+    53
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 890880,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    38,
+    110,
+    40,
+    7,
+    16,
+    56
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 896000,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    38,
+    110,
+    40,
+    7,
+    17,
+    60
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 901120,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    38,
+    110,
+    40,
+    7,
+    17,
+    61
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.984,
+    0.383,
+    0.9049,
+    0.3836,
+    0.9839,
+    0.98,
+    0.206,
+    0.9465,
+    0.1541,
+    0.9123,
+    0.4077,
+    0.9793,
+    0.8327,
+    0.1957,
+    0.9404
+   ],
+   "contrast_corr": [
+    -0.7599,
+    0.5377,
+    -0.7904,
+    0.6052,
+    -0.7047,
+    -0.8695,
+    0.789,
+    -0.7626,
+    0.855,
+    -0.8813,
+    0.5822,
+    -0.8717,
+    -0.7629,
+    0.8567,
+    -0.709
+   ],
+   "contrast_sign": [
+    0.1538,
+    0.8356,
+    0.1231,
+    0.7816,
+    0.3571,
+    0.1047,
+    0.8358,
+    0.2551,
+    0.8151,
+    0.1356,
+    0.8182,
+    0.1724,
+    0.2105,
+    0.732,
+    0.3493
+   ]
+  },
+  {
+   "env_steps": 906240,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    39,
+    110,
+    40,
+    7,
+    18,
+    61
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 911360,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    false,
+    true
+   ],
+   "own_events": [
+    40,
+    110,
+    40,
+    7,
+    18,
+    62
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 916480,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    40,
+    110,
+    40,
+    7,
+    20,
+    62
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 921600,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    40,
+    110,
+    40,
+    7,
+    20,
+    62
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9901,
+    0.3849,
+    0.9071,
+    0.3951,
+    0.9884,
+    0.9815,
+    0.2146,
+    0.9689,
+    0.1649,
+    0.9094,
+    0.3718,
+    0.9819,
+    0.8579,
+    0.1958,
+    0.9628
+   ],
+   "contrast_corr": [
+    -0.7729,
+    0.5427,
+    -0.7697,
+    0.5831,
+    -0.6239,
+    -0.8758,
+    0.8194,
+    -0.8156,
+    0.819,
+    -0.8773,
+    0.6196,
+    -0.8158,
+    -0.7619,
+    0.8167,
+    -0.6763
+   ],
+   "contrast_sign": [
+    0.175,
+    0.7564,
+    0.1406,
+    0.6765,
+    0.4674,
+    0.0286,
+    0.8776,
+    0.2198,
+    0.8352,
+    0.2222,
+    0.7431,
+    0.1667,
+    0.24,
+    0.8052,
+    0.2992
+   ]
+  },
+  {
+   "env_steps": 926720,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    41,
+    110,
+    40,
+    7,
+    21,
+    62
+   ],
+   "gate_same_arcs": 4,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 931840,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    43,
+    110,
+    40,
+    7,
+    24,
+    65
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  },
+  {
+   "env_steps": 936960,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    43,
+    110,
+    40,
+    7,
+    26,
+    67
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 942080,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    44,
+    110,
+    40,
+    7,
+    26,
+    68
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9793,
+    0.3094,
+    0.8926,
+    0.2924,
+    0.962,
+    0.981,
+    0.2118,
+    0.9224,
+    0.1543,
+    0.9114,
+    0.3242,
+    0.9781,
+    0.8352,
+    0.1685,
+    0.9268
+   ],
+   "contrast_corr": [
+    -0.841,
+    0.68,
+    -0.8586,
+    0.7242,
+    -0.7909,
+    -0.8803,
+    0.8219,
+    -0.7921,
+    0.838,
+    -0.8793,
+    0.6785,
+    -0.8192,
+    -0.814,
+    0.8474,
+    -0.745
+   ],
+   "contrast_sign": [
+    0.1111,
+    0.8519,
+    0.1167,
+    0.7686,
+    0.2136,
+    0.04,
+    0.7719,
+    0.2083,
+    0.913,
+    0.1273,
+    0.8333,
+    0.1771,
+    0.266,
+    0.7952,
+    0.2612
+   ]
+  },
+  {
+   "env_steps": 947200,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    44,
+    110,
+    40,
+    7,
+    27,
+    73
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 6
+  },
+  {
+   "env_steps": 952320,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    44,
+    110,
+    40,
+    7,
+    29,
+    75
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 957440,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    44,
+    110,
+    40,
+    7,
+    29,
+    77
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 962560,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    44,
+    110,
+    40,
+    7,
+    29,
+    80
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 2,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9939,
+    0.3489,
+    0.9093,
+    0.3377,
+    0.984,
+    0.9832,
+    0.2166,
+    0.9534,
+    0.2167,
+    0.914,
+    0.3462,
+    0.9793,
+    0.8684,
+    0.2264,
+    0.9561
+   ],
+   "contrast_corr": [
+    -0.8332,
+    0.6149,
+    -0.8255,
+    0.648,
+    -0.7489,
+    -0.88,
+    0.8255,
+    -0.8121,
+    0.7737,
+    -0.8786,
+    0.6196,
+    -0.8011,
+    -0.8724,
+    0.7795,
+    -0.8158
+   ],
+   "contrast_sign": [
+    0.0635,
+    0.9375,
+    0.125,
+    0.8111,
+    0.2043,
+    0.0875,
+    0.9565,
+    0.1786,
+    0.8242,
+    0.0755,
+    0.8384,
+    0.1538,
+    0.2105,
+    0.7528,
+    0.2431
+   ]
+  },
+  {
+   "env_steps": 967680,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    46,
+    110,
+    40,
+    7,
+    30,
+    80
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 972800,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    46,
+    110,
+    40,
+    7,
+    30,
+    81
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 977920,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    49,
+    110,
+    40,
+    7,
+    31,
+    83
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 4
+  },
+  {
+   "env_steps": 983040,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    50,
+    110,
+    40,
+    7,
+    32,
+    84
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 5,
+   "v2_auroc": 1.0,
+   "v2_pairs": 15,
+   "contrast_corr_auroc": 1.0,
+   "contrast_pairs": 15,
+   "contrast_sign_auroc": 1.0,
+   "sign_pairs": 15,
+   "v2_auroc_mature_pairs": 1.0,
+   "v2_distance": [
+    0.9845,
+    0.2944,
+    0.9204,
+    0.2794,
+    0.9781,
+    0.9856,
+    0.2144,
+    0.9204,
+    0.18,
+    0.9257,
+    0.3448,
+    0.9809,
+    0.8401,
+    0.2102,
+    0.9425
+   ],
+   "contrast_corr": [
+    -0.8459,
+    0.6715,
+    -0.852,
+    0.7324,
+    -0.7931,
+    -0.8795,
+    0.8453,
+    -0.8125,
+    0.7965,
+    -0.8984,
+    0.6594,
+    -0.8034,
+    -0.8961,
+    0.8341,
+    -0.8094
+   ],
+   "contrast_sign": [
+    0.0822,
+    0.9091,
+    0.1186,
+    0.8496,
+    0.3048,
+    0.0286,
+    0.9302,
+    0.1477,
+    0.8415,
+    0.0238,
+    0.8095,
+    0.2381,
+    0.1304,
+    0.7821,
+    0.3154
+   ]
+  },
+  {
+   "env_steps": 988160,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    51,
+    110,
+    40,
+    7,
+    33,
+    85
+   ],
+   "gate_same_arcs": 2,
+   "gate_cross_arcs": 0,
+   "contacts": 3
+  },
+  {
+   "env_steps": 993280,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    51,
+    110,
+    40,
+    7,
+    33,
+    88
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 1
+  },
+  {
+   "env_steps": 998400,
+   "ckpt": "final.pt",
+   "mature": [
+    true,
+    true,
+    true,
+    false,
+    true,
+    true
+   ],
+   "own_events": [
+    52,
+    110,
+    40,
+    7,
+    35,
+    92
+   ],
+   "gate_same_arcs": 0,
+   "gate_cross_arcs": 0,
+   "contacts": 2
+  }
+ ]
+}

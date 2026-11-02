@@ -1,0 +1,252 @@
+% Copyright 2003--2007 by Till Tantau
+% Copyright 2010 by Vedran Mileti\'c
+% Copyright 2012,2013,2015 by Vedran Mileti\'c, Joseph Wright
+% Copyright 2016
+% Copyright 2017,2018 by Louis Stuart, Joseph Wright
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Public License.
+%
+% See the file doc/licenses/LICENSE for more details.
+
+% Force e-TeX and provide \patchcmd
+\RequirePackage{etoolbox}
+
+% Booleans for options available for both beamer and beamerarticle
+\newif\ifbeamer@blocks    \beamer@blockstrue
+\newif\ifbeamer@ams       \beamer@amstrue
+\newif\ifbeamer@amssymb   \beamer@amssymbtrue
+\newif\ifbeamer@countsect \beamer@countsectfalse % A no-op but for clarity
+\newif\ifbeamer@keywords  \beamer@keywordstrue
+
+% Scratch space
+\newbox\beamer@tempbox
+\newcount\beamer@tempcount
+
+% The pauses counter is public and global, and required by both
+% beamer and beamerarticle
+\newcounter{beamerpauses}
+
+\RequirePackage{beamerbasedecode}
+
+%
+% Presentation/article stuff
+%
+% Copyright notice: Part of the following code is taken from the
+% package comment.sty by Victor Eijkhout
+%
+
+%
+% Comment stuff. This will also be needed, if we switch to another
+% class, so define it here already.
+%
+\newif\ifbeamer@inpresentation
+\beamer@inpresentationtrue
+
+\def\beamer@startcomment{%
+  \begingroup
+    \let\do\@makeother\dospecials
+    \catcode`\^^L=12 % and whatever other special cases
+    \endlinechar`\^^M %
+    \catcode`\^^M=12 %
+    \beamer@processline}
+
+\begingroup
+  \catcode`\^^M=12\relax\endlinechar=-1\relax%
+  \long\gdef\beamer@processline#1^^M{%
+    \def\beamer@test{#1}%
+    \ifx\beamer@test\beamer@stopmodestar%
+      \let\next=\beamer@modeoutsideframe%
+    \else%
+      \ifx\beamer@test\beamer@stopmode%
+        \let\next=\mode%
+      \else%
+        \ifx\beamer@test\beamer@stoparticle%
+          \let\next=\article%
+        \else%
+          \ifx\beamer@test\beamer@stoppresentation%
+            \let\next=\presentation%
+          \else%
+            \ifx\beamer@test\beamer@stopcommon%
+              \let\next=\common%
+            \else%
+              \ifx\beamer@test\beamer@stopdocument%
+                \let\next=\beamer@enddocument%
+              \else
+                \ifx\beamer@test\beamer@begindocument%
+                  \let\next=\beamer@startdocument%
+                \else
+                  \let\next=\beamer@processline%
+                \fi%
+              \fi%
+            \fi%
+          \fi%
+        \fi%
+      \fi%
+    \fi%
+    \next}
+\endgroup
+
+\def\beamer@enddocument{\beamer@closer\end{document}}
+\def\beamer@startdocument{%
+  \beamer@closer
+  \begin{document}%
+  \gdef\beamer@closer{}%
+  \mode<all>}
+\def\beamer@closer{}
+\begingroup
+  \escapechar=-1\relax
+  \xdef\beamer@stopmode{\string\\mode}
+  \xdef\beamer@stopmodestar{\string\\mode*}
+  \xdef\beamer@stoparticle{\string\\article}
+  \xdef\beamer@stoppresentation{\string\\presentation}
+  \xdef\beamer@stopcommon{\string\\common}
+  \xdef\beamer@stopdocument{\string\\end\string\{document\string\}}
+  \xdef\beamer@begindocument{\string\\begin\string\{document\string\}}
+\endgroup
+
+\newbox\beamer@commentbox
+\def\beamer@startcommentinframe{%
+  \begingroup
+    \xdef\beamer@closer{\egroup\beamer@closer}%
+    \setbox\beamer@commentbox=\vbox\bgroup\leavevmode}
+
+\def\beamer@outsidemode{\afterassignment\beamer@treat\let\beamer@nexttoken=}
+
+% Deals with the various tokens that need to be 'active' even when skipping
+% material outside frames
+\def\beamer@treat{%
+  \ifx\beamer@nexttoken\frame\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\lecture\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\note\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\appendix\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\beamer@appendixwrite\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\againframe\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\section\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\subsection\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\subsubsection\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\part\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\article\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\mode\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\common\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\presentation\let\next=\beamer@stopoutsidemode\fi
+  \ifx\beamer@nexttoken\begin\let\next=\beamer@checkbeginframe\fi
+  \ifx\beamer@nexttoken\end\let\next=\beamer@checkenddoc\fi
+  \next}
+
+\def\beamer@stopoutsidemode{\beamer@nexttoken}
+\def\beamer@checkenddoc#1{%
+  \def\beamer@temp{#1}%
+  \ifx\beamer@temp\beamer@enddoc
+    \let\next=\beamer@enddocument
+  \else
+    \let\next=\beamer@outsidemode
+  \fi
+  \next}
+\def\beamer@enddoc{document}
+
+\def\beamer@checkbeginframe#1{%
+  \def\beamer@temp{#1}%
+  \ifx\beamer@temp\beamer@frametext
+    \let\next=\beamer@beginframeenv
+  \else
+    \let\next=\beamer@outsidemode
+  \fi
+  \next}
+\def\beamer@beginframeenv{\begin{frame}}
+
+\def\beamer@modeoutsideframe{%
+  \beamer@closer
+  \gdef\beamer@closer{}%
+  \gdef\beamer@mode{\beamer@modeoutsideframe}%
+  \ifbeamer@inpresentation
+    \let\next=\beamer@outsidemode
+  \else
+    \let\next=\relax
+  \fi%
+  \next}
+
+% Obsolete, do not use!
+\newrobustcmd*\presentation{\mode<presentation>}
+\newrobustcmd*\article{\mode<article>}
+\newrobustcmd*\common{\mode<all>}
+
+%
+% Mode command
+%
+\newrobustcmd*\mode{\@ifstar\beamer@modeoutsideframe\beamer@@@mode}
+\def\beamer@@@mode<#1>{%
+  \beamer@closer
+  \@ifnextchar\bgroup
+    {\beamer@modeinline<#1>}%
+    {\beamer@switchmode<#1>}}
+\long\def\beamer@modeinline<#1>#2{%
+  \gdef\beamer@closer{}%
+  \gdef\beamer@doifnotinframe{\@gobble}%
+  \def\beamer@doifinframe{\@firstofone}%
+  \begingroup
+    \beamer@saveanother
+    \beamer@slideinframe=1\relax%
+    \beamer@masterdecode{#1}%
+    \beamer@restoreanother
+  \endgroup
+  \beamer@donow{#2}%
+  \beamer@mode\par}
+\def\beamer@switchmode<#1>{%
+  \gdef\beamer@mode{\beamer@switchmode<#1>}%
+  \gdef\beamer@doifnotinframe{%
+    \let\next=\beamer@startcomment
+    \gdef\beamer@closer{\endgroup}%
+  }%
+  \def\beamer@doifinframe{%
+    \let\next=\relax
+    \gdef\beamer@closer{}%
+  }%
+  \begingroup
+    \beamer@saveanother
+    \beamer@slideinframe=1\relax%
+    \beamer@masterdecode{#1}%
+    \beamer@restoreanother
+  \endgroup
+  \beamer@donow
+  \next}
+
+\def\beamer@saveanother{\let\beamer@savedif=\ifbeamer@anotherslide}
+\def\beamer@restoreanother{\global\let\ifbeamer@anotherslide=\beamer@savedif}
+
+\mode
+<all>
+
+\newcount\beamer@modecount
+\def\beamer@pushmode#1{%
+  \expandafter\gdef\csname beamer@savedmode@\the\beamer@modecount\endcsname{#1}%
+  \global\advance\beamer@modecount by1\relax}
+\def\beamer@popmode{
+  \global\advance\beamer@modecount by-1\relax%
+  \csname beamer@savedmode@\the\beamer@modecount\endcsname}
+
+\def\beamer@savemode{\expandafter\beamer@pushmode\expandafter{\beamer@mode}}
+\def\beamer@resumemode{\beamer@popmode}
+
+%
+% Stuff needed in both article and presentation version
+%
+\newcommand*\jobnamebeamerversion{}
+
+\newrobustcmd*\includeslide[2][]{%
+  \ifx\jobnamebeamerversion\@empty
+    \ClassError{beamer}{Invoke macro "setjobnamebeamerversion" first}\@ehc
+  \else
+    \edef\beamer@args
+      {[{#1,page=\csname beamer@slide#2\endcsname}]{\jobnamebeamerversion}}%
+    \expandafter\pgfimage\beamer@args
+  \fi}
+
+\newrobustcmd*\setjobnamebeamerversion[1]{%
+  \gdef\jobnamebeamerversion{#1}%
+  \begingroup
+    \makeatletter
+    \@input{\jobnamebeamerversion.snm}%
+  \endgroup}

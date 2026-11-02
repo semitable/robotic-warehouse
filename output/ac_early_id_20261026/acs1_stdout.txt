@@ -1,0 +1,65 @@
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\utils\passive_env_checker.py:244: UserWarning: [33mWARN: The reward returned by `step()` must be a float, int, np.integer or np.floating, actual type: <class 'list'>[0m
+  logger.warn(
+   20480 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.45 (9) corr 0.8703703703703703 (15) sign 0.6851851851851852 (15) 105s
+   40960 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.6285714285714286 (12) corr 1.0 (15) sign 0.8148148148148148 (15) 214s
+   61440 checkpoint_00250.pt mature 0 gate s/c 0/0 v2 0.5428571428571428 (12) corr 0.8703703703703703 (15) sign 0.8703703703703703 (15) 325s
+   81920 checkpoint_00250.pt mature 1 gate s/c 0/0 v2 0.5714285714285714 (12) corr 0.9629629629629629 (15) sign 0.8518518518518519 (15) 442s
+  102400 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.8285714285714286 (12) corr 0.9629629629629629 (15) sign 0.75 (14) 551s
+  122880 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.875 (13) corr 1.0 (15) sign 0.7592592592592593 (15) 664s
+  143360 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 0.8333333333333334 (15) corr 1.0 (15) sign 0.9259259259259259 (15) 779s
+  163840 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.7962962962962963 (15) 894s
+  184320 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9629629629629629 (15) 1012s
+  204800 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.8148148148148148 (15) 1131s
+  225280 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 1251s
+  245760 checkpoint_00250.pt mature 2 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9259259259259259 (15) 1372s
+done checkpoint_00250.pt at 256000 steps, 512 episodes, 1430s
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:231: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+C:\Users\95101\anaconda3\envs\RWARE_MARL\Lib\site-packages\gymnasium\spaces\box.py:297: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+  266240 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9259259259259259 (15) 1489s
+  286720 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.8888888888888888 (15) 1607s
+  307200 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 1724s
+  327680 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 1837s
+  348160 checkpoint_00500.pt mature 3 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 1953s
+  368640 checkpoint_00500.pt mature 3 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2070s
+  389120 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 0.9629629629629629 (15) 2186s
+  409600 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2302s
+  430080 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2418s
+  450560 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2534s
+  471040 checkpoint_00500.pt mature 3 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2651s
+  491520 checkpoint_00500.pt mature 3 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2768s
+  512000 checkpoint_00500.pt mature 3 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 2884s
+done checkpoint_00500.pt at 512000 steps, 1024 episodes, 2884s
+  532480 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3001s
+  552960 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3118s
+  573440 checkpoint_00750.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3235s
+  593920 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3352s
+  614400 checkpoint_00750.pt mature 5 gate s/c 6/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3465s
+  634880 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3580s
+  655360 checkpoint_00750.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3697s
+  675840 checkpoint_00750.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3813s
+  696320 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 3929s
+  716800 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4045s
+  737280 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4161s
+  757760 checkpoint_00750.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4277s
+done checkpoint_00750.pt at 768000 steps, 1536 episodes, 4335s
+  778240 checkpoint_01000.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4393s
+  798720 checkpoint_01000.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4510s
+  819200 checkpoint_01000.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4627s
+  839680 checkpoint_01000.pt mature 5 gate s/c 6/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4744s
+  860160 checkpoint_01000.pt mature 5 gate s/c 6/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4860s
+  880640 checkpoint_01000.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 4977s
+  901120 checkpoint_01000.pt mature 5 gate s/c 6/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5091s
+  921600 checkpoint_01000.pt mature 5 gate s/c 0/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5205s
+  942080 checkpoint_01000.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5321s
+  962560 checkpoint_01000.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5437s
+  983040 checkpoint_01000.pt mature 5 gate s/c 6/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5553s
+ 1003520 checkpoint_01000.pt mature 5 gate s/c 2/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5670s
+ 1024000 checkpoint_01000.pt mature 5 gate s/c 4/0 v2 1.0 (15) corr 1.0 (15) sign 1.0 (15) 5775s
+done checkpoint_01000.pt at 1024000 steps, 2048 episodes, 5775s
+saved acs1

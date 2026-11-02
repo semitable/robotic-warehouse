@@ -1,0 +1,24 @@
+% Figure 1: overall PGCT pipeline of one agent i (all steps are local to i; peers only exchange on contact).
+\begin{tikzpicture}[pg]
+\tikzset{stage/.append style={text width=3.25cm,minimum height=1.7cm}}
+\node[stage] (s1) at (0,0)     {\stagetitle{Independent learning}\\[2pt]own rollout and own\\reward $r_i$; log contacts};
+\node[stage] (s2) at (4.1,0)   {\stagetitle{Individual reward}\\\stagetitle{prediction}\\[2pt]MLP $\widehat r_i$ fitted to own $r_i$};
+\node[stage] (s3) at (8.2,0)   {\stagetitle{Reward probe}\\[2pt]public events of $i$ and $j$\\plus mirrored copies};
+\node[stage] (s4) at (12.3,0)  {\stagetitle{Latent team}\\\stagetitle{discovery}\\[2pt]response distance $\to$ approval};
+\node[stage] (s5) at (12.3,-3.1){\stagetitle{Peer Critic}\\\stagetitle{selection}\\[2pt]approved \emph{and} met\\in this rollout};
+\node[stage] (s6) at (8.2,-3.1) {\stagetitle{Advantage}\\\stagetitle{estimation}\\[2pt]Max-GAE on own history};
+\node[stage] (s7) at (4.1,-3.1) {\stagetitle{PPO update}\\[2pt]Actor: $A^{\rm PGCT}$\\Critic: own return only};
+\foreach \k [count=\n] in {s1,s2,s3,s4,s5,s6,s7} {\node[num] at (\k.north west) {\n};}
+\draw[flow] (s1) -- (s2); \draw[flow] (s2) -- (s3); \draw[flow] (s3) -- (s4);
+\draw[flow] (s4) -- (s5); \draw[flow] (s5) -- (s6); \draw[flow] (s6) -- (s7);
+\draw[flow] (s7.south) -- ++(0,-0.5) -| ($(s1.west)+(-0.5,0)$)
+  node[lbl,pos=.75,rotate=90,above]{next rollout} -- (s1.west);
+\node[card,text width=3.15cm,align=left,font=\sffamily\scriptsize] (info) at (0,-3.1)
+  {\textbf{Shared only on contact}\\[1pt]
+   \textcolor{pggreen}{\textbf{sent:}} public event views,\\ predicted responses, Critic weights\\[2pt]
+   \textcolor{pgorange}{\textbf{never sent:}} rewards,\\ team labels, Actor weights};
+\begin{scope}[on background layer]
+\node[band,fill=pgsky,fit=(s1)(s4),label={[font=\sffamily\small\bfseries,text=pgblue,anchor=south east]north east:Discover latent teammates from own reward}] {};
+\node[band,fill=pgsand,fit=(s5)(s7),label={[font=\sffamily\small\bfseries,text=pgorange,anchor=north east]south east:Use discovered teammates in learning}] {};
+\end{scope}
+\end{tikzpicture}

@@ -1,0 +1,54 @@
+{
+  "paper/english/main": {
+    "pages": 7,
+    "overfull_or_missing_glyphs": [],
+    "size_bytes": 274766
+  },
+  "paper/korean/main": {
+    "pages": 7,
+    "overfull_or_missing_glyphs": [],
+    "size_bytes": 376921
+  },
+  "presentation/pgct_beamer": {
+    "pages": 17,
+    "overfull_or_missing_glyphs": [],
+    "size_bytes": 177865
+  },
+  "consistency": {
+    "shared_equation_blocks": [
+      "\\ModelEquation",
+      "\\RewardLossEquation",
+      "\\ProbeEquation",
+      "\\DistanceEquation",
+      "\\ApprovalEquation",
+      "\\DonorEquation",
+      "\\MaxEquation",
+      "\\GAEEquation",
+      "\\BlendEquation",
+      "\\PPOEquation",
+      "\\BoundEquation"
+    ],
+    "citations": [
+      "benchmark",
+      "gae",
+      "mamba",
+      "modelling",
+      "ppo",
+      "seac",
+      "seps"
+    ],
+    "matching_labels": true,
+    "matching_slide_script_order": true,
+    "slides": 17,
+    "charts": 2,
+    "tables": 3,
+    "research_code_hashes_unchanged": true,
+    "pptx_equation_image_slides": [
+      8,
+      10,
+      12,
+      13
+    ],
+    "audio_transcribed": false
+  }
+}

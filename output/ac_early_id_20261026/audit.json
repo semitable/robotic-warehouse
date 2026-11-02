@@ -1,0 +1,2474 @@
+{
+ "acs1": {
+  "teams": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "ckpt_ends": [
+   256000,
+   512000,
+   768000,
+   1024000
+  ],
+  "windows": {
+   "ckpt0": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 139,
+     "team_gap": 0.329,
+     "split_rank": 6,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|return_": {
+     "nonzero": 11,
+     "team_gap": 0.73,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 3788,
+     "team_gap": 0.256,
+     "split_rank": 7,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir|goal_progress": {
+     "nonzero": 23782,
+     "team_gap": 0.47,
+     "split_rank": 1,
+     "agent_auroc": 0.8703703703703703
+    },
+    "dir|rest": {
+     "nonzero": 387138,
+     "team_gap": 0.272,
+     "split_rank": 4,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|reward": {
+     "nonzero": 387149,
+     "team_gap": 0.296,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 139,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 11,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.2962962962962963
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 3788,
+     "team_gap": 0.489,
+     "split_rank": 6,
+     "agent_auroc": 0.2962962962962963
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 23782,
+     "team_gap": 0.507,
+     "split_rank": 1,
+     "agent_auroc": 0.8518518518518519
+    },
+    "dir+landmark|rest": {
+     "nonzero": 387138,
+     "team_gap": 0.224,
+     "split_rank": 6,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 387149,
+     "team_gap": 0.307,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    }
+   },
+   "ckpt1": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 97,
+     "team_gap": 0.472,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|return_": {
+     "nonzero": 9,
+     "team_gap": 0.624,
+     "split_rank": 4,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir|pickup": {
+     "nonzero": 1808,
+     "team_gap": 0.701,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 13501,
+     "team_gap": 0.521,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir|rest": {
+     "nonzero": 425956,
+     "team_gap": 0.355,
+     "split_rank": 7,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|reward": {
+     "nonzero": 425965,
+     "team_gap": 0.379,
+     "split_rank": 7,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 97,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|return_": {
+     "nonzero": 9,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 1808,
+     "team_gap": 0.542,
+     "split_rank": 5,
+     "agent_auroc": 0.5092592592592593
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 13501,
+     "team_gap": 0.587,
+     "split_rank": 1,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir+landmark|rest": {
+     "nonzero": 425956,
+     "team_gap": 0.247,
+     "split_rank": 3,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 425965,
+     "team_gap": 0.3,
+     "split_rank": 6,
+     "agent_auroc": 0.5370370370370371
+    }
+   },
+   "ckpt2": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 1090,
+     "team_gap": 0.454,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir|return_": {
+     "nonzero": 205,
+     "team_gap": 0.325,
+     "split_rank": 5,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 2191,
+     "team_gap": 0.069,
+     "split_rank": 6,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir|goal_progress": {
+     "nonzero": 115878,
+     "team_gap": 0.474,
+     "split_rank": 2,
+     "agent_auroc": 0.5925925925925926
+    },
+    "dir|rest": {
+     "nonzero": 539834,
+     "team_gap": 0.436,
+     "split_rank": 2,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir|reward": {
+     "nonzero": 540039,
+     "team_gap": 0.301,
+     "split_rank": 4,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 1090,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.37037037037037035
+    },
+    "dir+landmark|return_": {
+     "nonzero": 205,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5462962962962963
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2191,
+     "team_gap": 0.215,
+     "split_rank": 7,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 115878,
+     "team_gap": 0.586,
+     "split_rank": 3,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|rest": {
+     "nonzero": 539834,
+     "team_gap": 0.584,
+     "split_rank": 2,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|reward": {
+     "nonzero": 540039,
+     "team_gap": 0.635,
+     "split_rank": 1,
+     "agent_auroc": 0.5370370370370371
+    }
+   },
+   "ckpt3": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 1689,
+     "team_gap": 0.709,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|return_": {
+     "nonzero": 434,
+     "team_gap": 0.531,
+     "split_rank": 4,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|pickup": {
+     "nonzero": 2827,
+     "team_gap": 0.224,
+     "split_rank": 8,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|goal_progress": {
+     "nonzero": 146726,
+     "team_gap": 0.493,
+     "split_rank": 2,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir|rest": {
+     "nonzero": 582746,
+     "team_gap": 0.326,
+     "split_rank": 4,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir|reward": {
+     "nonzero": 583173,
+     "team_gap": 0.559,
+     "split_rank": 2,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 1689,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|return_": {
+     "nonzero": 434,
+     "team_gap": 0.623,
+     "split_rank": 4,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2827,
+     "team_gap": 0.24,
+     "split_rank": 8,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 146726,
+     "team_gap": 0.533,
+     "split_rank": 4,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir+landmark|rest": {
+     "nonzero": 582746,
+     "team_gap": 0.325,
+     "split_rank": 4,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|reward": {
+     "nonzero": 583173,
+     "team_gap": 0.597,
+     "split_rank": 4,
+     "agent_auroc": 0.5
+    }
+   },
+   "<= 0.26M": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 139,
+     "team_gap": 0.329,
+     "split_rank": 6,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|return_": {
+     "nonzero": 11,
+     "team_gap": 0.73,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 3788,
+     "team_gap": 0.256,
+     "split_rank": 7,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir|goal_progress": {
+     "nonzero": 23782,
+     "team_gap": 0.47,
+     "split_rank": 1,
+     "agent_auroc": 0.8703703703703703
+    },
+    "dir|rest": {
+     "nonzero": 387138,
+     "team_gap": 0.272,
+     "split_rank": 4,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|reward": {
+     "nonzero": 387149,
+     "team_gap": 0.296,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 139,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 11,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.2962962962962963
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 3788,
+     "team_gap": 0.489,
+     "split_rank": 6,
+     "agent_auroc": 0.2962962962962963
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 23782,
+     "team_gap": 0.507,
+     "split_rank": 1,
+     "agent_auroc": 0.8518518518518519
+    },
+    "dir+landmark|rest": {
+     "nonzero": 387138,
+     "team_gap": 0.224,
+     "split_rank": 6,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 387149,
+     "team_gap": 0.307,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    }
+   },
+   "<= 0.51M": {
+    "transitions_per_agent": 512000,
+    "dir|delivery": {
+     "nonzero": 236,
+     "team_gap": 0.386,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|return_": {
+     "nonzero": 20,
+     "team_gap": 0.377,
+     "split_rank": 5,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|pickup": {
+     "nonzero": 5596,
+     "team_gap": 0.338,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 37283,
+     "team_gap": 0.488,
+     "split_rank": 1,
+     "agent_auroc": 0.9074074074074074
+    },
+    "dir|rest": {
+     "nonzero": 813094,
+     "team_gap": 0.29,
+     "split_rank": 5,
+     "agent_auroc": 0.5
+    },
+    "dir|reward": {
+     "nonzero": 813114,
+     "team_gap": 0.307,
+     "split_rank": 4,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 236,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|return_": {
+     "nonzero": 20,
+     "team_gap": 0.789,
+     "split_rank": 4,
+     "agent_auroc": 0.23148148148148148
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 5596,
+     "team_gap": 0.541,
+     "split_rank": 5,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 37283,
+     "team_gap": 0.489,
+     "split_rank": 1,
+     "agent_auroc": 0.8148148148148148
+    },
+    "dir+landmark|rest": {
+     "nonzero": 813094,
+     "team_gap": 0.223,
+     "split_rank": 5,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 813114,
+     "team_gap": 0.305,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    }
+   },
+   "<= 0.77M": {
+    "transitions_per_agent": 768000,
+    "dir|delivery": {
+     "nonzero": 1326,
+     "team_gap": 0.397,
+     "split_rank": 3,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|return_": {
+     "nonzero": 225,
+     "team_gap": 0.288,
+     "split_rank": 5,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|pickup": {
+     "nonzero": 7787,
+     "team_gap": 0.112,
+     "split_rank": 8,
+     "agent_auroc": 0.37037037037037035
+    },
+    "dir|goal_progress": {
+     "nonzero": 153161,
+     "team_gap": 0.442,
+     "split_rank": 4,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir|rest": {
+     "nonzero": 1352928,
+     "team_gap": 0.365,
+     "split_rank": 3,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir|reward": {
+     "nonzero": 1353153,
+     "team_gap": 0.289,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 1326,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir+landmark|return_": {
+     "nonzero": 225,
+     "team_gap": 0.96,
+     "split_rank": 1,
+     "agent_auroc": 0.4537037037037037
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 7787,
+     "team_gap": 0.241,
+     "split_rank": 10,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 153161,
+     "team_gap": 0.639,
+     "split_rank": 1,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1352928,
+     "team_gap": 0.408,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1353153,
+     "team_gap": 0.477,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    }
+   },
+   "<= 1.02M": {
+    "transitions_per_agent": 1024000,
+    "dir|delivery": {
+     "nonzero": 3015,
+     "team_gap": 0.561,
+     "split_rank": 2,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir|return_": {
+     "nonzero": 659,
+     "team_gap": 0.419,
+     "split_rank": 5,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|pickup": {
+     "nonzero": 10614,
+     "team_gap": 0.148,
+     "split_rank": 6,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|goal_progress": {
+     "nonzero": 299887,
+     "team_gap": 0.449,
+     "split_rank": 5,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir|rest": {
+     "nonzero": 1935674,
+     "team_gap": 0.299,
+     "split_rank": 3,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|reward": {
+     "nonzero": 1936326,
+     "team_gap": 0.398,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 3015,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|return_": {
+     "nonzero": 659,
+     "team_gap": 0.71,
+     "split_rank": 2,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 10614,
+     "team_gap": 0.202,
+     "split_rank": 7,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 299887,
+     "team_gap": 0.561,
+     "split_rank": 3,
+     "agent_auroc": 0.5925925925925926
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1935674,
+     "team_gap": 0.349,
+     "split_rank": 4,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1936326,
+     "team_gap": 0.51,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    }
+   }
+  }
+ },
+ "corner1M_s1": {
+  "teams": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "ckpt_ends": [
+   256000,
+   512000,
+   768000,
+   1000448
+  ],
+  "windows": {
+   "ckpt0": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 101,
+     "team_gap": 0.598,
+     "split_rank": 3,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|return_": {
+     "nonzero": 12,
+     "team_gap": 0.824,
+     "split_rank": 10,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|pickup": {
+     "nonzero": 4923,
+     "team_gap": 0.149,
+     "split_rank": 8,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|goal_progress": {
+     "nonzero": 22124,
+     "team_gap": 0.448,
+     "split_rank": 1,
+     "agent_auroc": 1.0
+    },
+    "dir|rest": {
+     "nonzero": 376653,
+     "team_gap": 0.276,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir|reward": {
+     "nonzero": 376665,
+     "team_gap": 0.324,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 101,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|return_": {
+     "nonzero": 12,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.2777777777777778
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 4923,
+     "team_gap": 0.728,
+     "split_rank": 2,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 22124,
+     "team_gap": 0.523,
+     "split_rank": 1,
+     "agent_auroc": 0.9629629629629629
+    },
+    "dir+landmark|rest": {
+     "nonzero": 376653,
+     "team_gap": 0.214,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|reward": {
+     "nonzero": 376665,
+     "team_gap": 0.307,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    }
+   },
+   "ckpt1": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 134,
+     "team_gap": 0.609,
+     "split_rank": 2,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|return_": {
+     "nonzero": 21,
+     "team_gap": 0.449,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|pickup": {
+     "nonzero": 2037,
+     "team_gap": 0.293,
+     "split_rank": 8,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 17877,
+     "team_gap": 0.563,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir|rest": {
+     "nonzero": 470606,
+     "team_gap": 0.325,
+     "split_rank": 2,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|reward": {
+     "nonzero": 470627,
+     "team_gap": 0.392,
+     "split_rank": 1,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 134,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|return_": {
+     "nonzero": 21,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2037,
+     "team_gap": 0.577,
+     "split_rank": 7,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 17877,
+     "team_gap": 0.56,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|rest": {
+     "nonzero": 470606,
+     "team_gap": 0.213,
+     "split_rank": 1,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir+landmark|reward": {
+     "nonzero": 470627,
+     "team_gap": 0.302,
+     "split_rank": 1,
+     "agent_auroc": 0.6111111111111112
+    }
+   },
+   "ckpt2": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 566,
+     "team_gap": 0.78,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    },
+    "dir|return_": {
+     "nonzero": 73,
+     "team_gap": 0.783,
+     "split_rank": 1,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir|pickup": {
+     "nonzero": 2648,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|goal_progress": {
+     "nonzero": 69863,
+     "team_gap": 0.867,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir|rest": {
+     "nonzero": 493984,
+     "team_gap": 0.743,
+     "split_rank": 5,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|reward": {
+     "nonzero": 494057,
+     "team_gap": 0.762,
+     "split_rank": 5,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 566,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5092592592592593
+    },
+    "dir+landmark|return_": {
+     "nonzero": 73,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2648,
+     "team_gap": 0.98,
+     "split_rank": 2,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 69863,
+     "team_gap": 0.88,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|rest": {
+     "nonzero": 493984,
+     "team_gap": 0.45,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|reward": {
+     "nonzero": 494057,
+     "team_gap": 0.504,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    }
+   },
+   "ckpt3": {
+    "transitions_per_agent": 232448,
+    "dir|delivery": {
+     "nonzero": 617,
+     "team_gap": 0.92,
+     "split_rank": 3,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|return_": {
+     "nonzero": 225,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 900,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir|goal_progress": {
+     "nonzero": 53328,
+     "team_gap": 0.931,
+     "split_rank": 4,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|rest": {
+     "nonzero": 491560,
+     "team_gap": 0.698,
+     "split_rank": 3,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|reward": {
+     "nonzero": 491784,
+     "team_gap": 0.814,
+     "split_rank": 2,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 617,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 225,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 900,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 53328,
+     "team_gap": 0.984,
+     "split_rank": 3,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|rest": {
+     "nonzero": 491560,
+     "team_gap": 0.458,
+     "split_rank": 5,
+     "agent_auroc": 0.6481481481481481
+    },
+    "dir+landmark|reward": {
+     "nonzero": 491784,
+     "team_gap": 0.401,
+     "split_rank": 9,
+     "agent_auroc": 0.6481481481481481
+    }
+   },
+   "<= 0.26M": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 101,
+     "team_gap": 0.598,
+     "split_rank": 3,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|return_": {
+     "nonzero": 12,
+     "team_gap": 0.824,
+     "split_rank": 10,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|pickup": {
+     "nonzero": 4923,
+     "team_gap": 0.149,
+     "split_rank": 8,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|goal_progress": {
+     "nonzero": 22124,
+     "team_gap": 0.448,
+     "split_rank": 1,
+     "agent_auroc": 1.0
+    },
+    "dir|rest": {
+     "nonzero": 376653,
+     "team_gap": 0.276,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir|reward": {
+     "nonzero": 376665,
+     "team_gap": 0.324,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 101,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|return_": {
+     "nonzero": 12,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.2777777777777778
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 4923,
+     "team_gap": 0.728,
+     "split_rank": 2,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 22124,
+     "team_gap": 0.523,
+     "split_rank": 1,
+     "agent_auroc": 0.9629629629629629
+    },
+    "dir+landmark|rest": {
+     "nonzero": 376653,
+     "team_gap": 0.214,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|reward": {
+     "nonzero": 376665,
+     "team_gap": 0.307,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    }
+   },
+   "<= 0.51M": {
+    "transitions_per_agent": 512000,
+    "dir|delivery": {
+     "nonzero": 235,
+     "team_gap": 0.619,
+     "split_rank": 2,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir|return_": {
+     "nonzero": 33,
+     "team_gap": 0.539,
+     "split_rank": 9,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|pickup": {
+     "nonzero": 6960,
+     "team_gap": 0.325,
+     "split_rank": 4,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|goal_progress": {
+     "nonzero": 40001,
+     "team_gap": 0.5,
+     "split_rank": 1,
+     "agent_auroc": 0.9814814814814815
+    },
+    "dir|rest": {
+     "nonzero": 847259,
+     "team_gap": 0.248,
+     "split_rank": 3,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|reward": {
+     "nonzero": 847292,
+     "team_gap": 0.309,
+     "split_rank": 1,
+     "agent_auroc": 0.7592592592592593
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 235,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|return_": {
+     "nonzero": 33,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.3611111111111111
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 6960,
+     "team_gap": 0.541,
+     "split_rank": 4,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 40001,
+     "team_gap": 0.509,
+     "split_rank": 1,
+     "agent_auroc": 0.9444444444444444
+    },
+    "dir+landmark|rest": {
+     "nonzero": 847259,
+     "team_gap": 0.175,
+     "split_rank": 1,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|reward": {
+     "nonzero": 847292,
+     "team_gap": 0.272,
+     "split_rank": 1,
+     "agent_auroc": 0.6851851851851852
+    }
+   },
+   "<= 0.77M": {
+    "transitions_per_agent": 768000,
+    "dir|delivery": {
+     "nonzero": 801,
+     "team_gap": 0.757,
+     "split_rank": 3,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|return_": {
+     "nonzero": 106,
+     "team_gap": 0.668,
+     "split_rank": 4,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 9608,
+     "team_gap": 0.906,
+     "split_rank": 2,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 109864,
+     "team_gap": 0.726,
+     "split_rank": 2,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|rest": {
+     "nonzero": 1341243,
+     "team_gap": 0.51,
+     "split_rank": 2,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|reward": {
+     "nonzero": 1341349,
+     "team_gap": 0.485,
+     "split_rank": 5,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 801,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 106,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.3148148148148148
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 9608,
+     "team_gap": 0.717,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 109864,
+     "team_gap": 0.688,
+     "split_rank": 1,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1341243,
+     "team_gap": 0.335,
+     "split_rank": 9,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1341349,
+     "team_gap": 0.434,
+     "split_rank": 1,
+     "agent_auroc": 0.5740740740740741
+    }
+   },
+   "<= 1.00M": {
+    "transitions_per_agent": 1000448,
+    "dir|delivery": {
+     "nonzero": 1418,
+     "team_gap": 0.83,
+     "split_rank": 4,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|return_": {
+     "nonzero": 331,
+     "team_gap": 0.865,
+     "split_rank": 4,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 10508,
+     "team_gap": 0.935,
+     "split_rank": 2,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 163192,
+     "team_gap": 0.777,
+     "split_rank": 2,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|rest": {
+     "nonzero": 1832803,
+     "team_gap": 0.498,
+     "split_rank": 5,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|reward": {
+     "nonzero": 1833133,
+     "team_gap": 0.56,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 1418,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 331,
+     "team_gap": 0.937,
+     "split_rank": 4,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 10508,
+     "team_gap": 0.83,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 163192,
+     "team_gap": 0.748,
+     "split_rank": 1,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1832803,
+     "team_gap": 0.355,
+     "split_rank": 9,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1833133,
+     "team_gap": 0.488,
+     "split_rank": 4,
+     "agent_auroc": 0.5740740740740741
+    }
+   }
+  }
+ },
+ "corner1M_s2": {
+  "teams": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "ckpt_ends": [
+   256000,
+   512000,
+   768000,
+   1000448
+  ],
+  "windows": {
+   "ckpt0": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 92,
+     "team_gap": 0.416,
+     "split_rank": 2,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|return_": {
+     "nonzero": 13,
+     "team_gap": 0.394,
+     "split_rank": 9,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|pickup": {
+     "nonzero": 4910,
+     "team_gap": 0.716,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 19928,
+     "team_gap": 0.457,
+     "split_rank": 1,
+     "agent_auroc": 0.9814814814814815
+    },
+    "dir|rest": {
+     "nonzero": 408806,
+     "team_gap": 0.178,
+     "split_rank": 8,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|reward": {
+     "nonzero": 408819,
+     "team_gap": 0.282,
+     "split_rank": 4,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 92,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 13,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 4910,
+     "team_gap": 0.653,
+     "split_rank": 3,
+     "agent_auroc": 0.3148148148148148
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 19928,
+     "team_gap": 0.491,
+     "split_rank": 1,
+     "agent_auroc": 0.9259259259259259
+    },
+    "dir+landmark|rest": {
+     "nonzero": 408806,
+     "team_gap": 0.191,
+     "split_rank": 5,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir+landmark|reward": {
+     "nonzero": 408819,
+     "team_gap": 0.281,
+     "split_rank": 1,
+     "agent_auroc": 0.6481481481481481
+    }
+   },
+   "ckpt1": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 54,
+     "team_gap": 0.478,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir|return_": {
+     "nonzero": 2,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|pickup": {
+     "nonzero": 1421,
+     "team_gap": 0.589,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 8967,
+     "team_gap": 0.441,
+     "split_rank": 1,
+     "agent_auroc": 0.7962962962962963
+    },
+    "dir|rest": {
+     "nonzero": 440802,
+     "team_gap": 0.232,
+     "split_rank": 8,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|reward": {
+     "nonzero": 440804,
+     "team_gap": 0.279,
+     "split_rank": 8,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 54,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir+landmark|return_": {
+     "nonzero": 2,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 1421,
+     "team_gap": 0.621,
+     "split_rank": 7,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 8967,
+     "team_gap": 0.56,
+     "split_rank": 1,
+     "agent_auroc": 0.5925925925925926
+    },
+    "dir+landmark|rest": {
+     "nonzero": 440802,
+     "team_gap": 0.201,
+     "split_rank": 2,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|reward": {
+     "nonzero": 440804,
+     "team_gap": 0.233,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    }
+   },
+   "ckpt2": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 369,
+     "team_gap": 0.86,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir|return_": {
+     "nonzero": 66,
+     "team_gap": 0.445,
+     "split_rank": 4,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir|pickup": {
+     "nonzero": 2563,
+     "team_gap": 0.874,
+     "split_rank": 4,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|goal_progress": {
+     "nonzero": 40404,
+     "team_gap": 0.829,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|rest": {
+     "nonzero": 438865,
+     "team_gap": 0.647,
+     "split_rank": 6,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|reward": {
+     "nonzero": 438931,
+     "team_gap": 0.577,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 369,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir+landmark|return_": {
+     "nonzero": 66,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2563,
+     "team_gap": 0.788,
+     "split_rank": 5,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 40404,
+     "team_gap": 0.81,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|rest": {
+     "nonzero": 438865,
+     "team_gap": 0.486,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 438931,
+     "team_gap": 0.563,
+     "split_rank": 1,
+     "agent_auroc": 0.6111111111111112
+    }
+   },
+   "ckpt3": {
+    "transitions_per_agent": 232448,
+    "dir|delivery": {
+     "nonzero": 635,
+     "team_gap": 0.916,
+     "split_rank": 6,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|return_": {
+     "nonzero": 295,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|pickup": {
+     "nonzero": 1456,
+     "team_gap": 0.661,
+     "split_rank": 6,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir|goal_progress": {
+     "nonzero": 51525,
+     "team_gap": 0.823,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|rest": {
+     "nonzero": 476338,
+     "team_gap": 0.616,
+     "split_rank": 9,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|reward": {
+     "nonzero": 476632,
+     "team_gap": 0.761,
+     "split_rank": 8,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 635,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|return_": {
+     "nonzero": 295,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 1456,
+     "team_gap": 0.659,
+     "split_rank": 4,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 51525,
+     "team_gap": 0.767,
+     "split_rank": 5,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|rest": {
+     "nonzero": 476338,
+     "team_gap": 0.528,
+     "split_rank": 1,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|reward": {
+     "nonzero": 476632,
+     "team_gap": 0.668,
+     "split_rank": 2,
+     "agent_auroc": 0.42592592592592593
+    }
+   },
+   "<= 0.26M": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 92,
+     "team_gap": 0.416,
+     "split_rank": 2,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir|return_": {
+     "nonzero": 13,
+     "team_gap": 0.394,
+     "split_rank": 9,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|pickup": {
+     "nonzero": 4910,
+     "team_gap": 0.716,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 19928,
+     "team_gap": 0.457,
+     "split_rank": 1,
+     "agent_auroc": 0.9814814814814815
+    },
+    "dir|rest": {
+     "nonzero": 408806,
+     "team_gap": 0.178,
+     "split_rank": 8,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|reward": {
+     "nonzero": 408819,
+     "team_gap": 0.282,
+     "split_rank": 4,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 92,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 13,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 4910,
+     "team_gap": 0.653,
+     "split_rank": 3,
+     "agent_auroc": 0.3148148148148148
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 19928,
+     "team_gap": 0.491,
+     "split_rank": 1,
+     "agent_auroc": 0.9259259259259259
+    },
+    "dir+landmark|rest": {
+     "nonzero": 408806,
+     "team_gap": 0.191,
+     "split_rank": 5,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir+landmark|reward": {
+     "nonzero": 408819,
+     "team_gap": 0.281,
+     "split_rank": 1,
+     "agent_auroc": 0.6481481481481481
+    }
+   },
+   "<= 0.51M": {
+    "transitions_per_agent": 512000,
+    "dir|delivery": {
+     "nonzero": 146,
+     "team_gap": 0.436,
+     "split_rank": 1,
+     "agent_auroc": 0.8148148148148148
+    },
+    "dir|return_": {
+     "nonzero": 15,
+     "team_gap": 0.494,
+     "split_rank": 6,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|pickup": {
+     "nonzero": 6331,
+     "team_gap": 0.647,
+     "split_rank": 1,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 28895,
+     "team_gap": 0.451,
+     "split_rank": 1,
+     "agent_auroc": 0.9814814814814815
+    },
+    "dir|rest": {
+     "nonzero": 849608,
+     "team_gap": 0.187,
+     "split_rank": 7,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir|reward": {
+     "nonzero": 849623,
+     "team_gap": 0.27,
+     "split_rank": 6,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 146,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|return_": {
+     "nonzero": 15,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.3333333333333333
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 6331,
+     "team_gap": 0.64,
+     "split_rank": 2,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 28895,
+     "team_gap": 0.471,
+     "split_rank": 1,
+     "agent_auroc": 0.9444444444444444
+    },
+    "dir+landmark|rest": {
+     "nonzero": 849608,
+     "team_gap": 0.181,
+     "split_rank": 1,
+     "agent_auroc": 0.7777777777777778
+    },
+    "dir+landmark|reward": {
+     "nonzero": 849623,
+     "team_gap": 0.255,
+     "split_rank": 1,
+     "agent_auroc": 0.7407407407407407
+    }
+   },
+   "<= 0.77M": {
+    "transitions_per_agent": 768000,
+    "dir|delivery": {
+     "nonzero": 515,
+     "team_gap": 0.754,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|return_": {
+     "nonzero": 81,
+     "team_gap": 0.648,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 8894,
+     "team_gap": 0.835,
+     "split_rank": 1,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 69299,
+     "team_gap": 0.681,
+     "split_rank": 1,
+     "agent_auroc": 0.7592592592592593
+    },
+    "dir|rest": {
+     "nonzero": 1288473,
+     "team_gap": 0.426,
+     "split_rank": 6,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|reward": {
+     "nonzero": 1288554,
+     "team_gap": 0.428,
+     "split_rank": 5,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 515,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|return_": {
+     "nonzero": 81,
+     "team_gap": 0.892,
+     "split_rank": 4,
+     "agent_auroc": 0.2777777777777778
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 8894,
+     "team_gap": 0.79,
+     "split_rank": 2,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 69299,
+     "team_gap": 0.628,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1288473,
+     "team_gap": 0.289,
+     "split_rank": 2,
+     "agent_auroc": 0.5925925925925926
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1288554,
+     "team_gap": 0.376,
+     "split_rank": 1,
+     "agent_auroc": 0.5925925925925926
+    }
+   },
+   "<= 1.00M": {
+    "transitions_per_agent": 1000448,
+    "dir|delivery": {
+     "nonzero": 1150,
+     "team_gap": 0.856,
+     "split_rank": 1,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir|return_": {
+     "nonzero": 376,
+     "team_gap": 0.882,
+     "split_rank": 5,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|pickup": {
+     "nonzero": 10350,
+     "team_gap": 0.875,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 120824,
+     "team_gap": 0.764,
+     "split_rank": 1,
+     "agent_auroc": 0.7592592592592593
+    },
+    "dir|rest": {
+     "nonzero": 1764811,
+     "team_gap": 0.483,
+     "split_rank": 6,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|reward": {
+     "nonzero": 1765186,
+     "team_gap": 0.593,
+     "split_rank": 5,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 1150,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 376,
+     "team_gap": 0.973,
+     "split_rank": 2,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 10350,
+     "team_gap": 0.834,
+     "split_rank": 3,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 120824,
+     "team_gap": 0.722,
+     "split_rank": 1,
+     "agent_auroc": 0.7222222222222222
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1764811,
+     "team_gap": 0.341,
+     "split_rank": 2,
+     "agent_auroc": 0.5370370370370371
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1765186,
+     "team_gap": 0.474,
+     "split_rank": 2,
+     "agent_auroc": 0.5185185185185185
+    }
+   }
+  }
+ },
+ "adjacent1M_s1": {
+  "teams": [
+   0,
+   1,
+   0,
+   1,
+   0,
+   1
+  ],
+  "ckpt_ends": [
+   256000,
+   512000,
+   768000,
+   1000448
+  ],
+  "windows": {
+   "ckpt0": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 87,
+     "team_gap": 0.171,
+     "split_rank": 8,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|return_": {
+     "nonzero": 6,
+     "team_gap": 0.616,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 3523,
+     "team_gap": 0.275,
+     "split_rank": 5,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 19563,
+     "team_gap": 0.167,
+     "split_rank": 6,
+     "agent_auroc": 0.35185185185185186
+    },
+    "dir|rest": {
+     "nonzero": 410138,
+     "team_gap": 0.166,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|reward": {
+     "nonzero": 410144,
+     "team_gap": 0.207,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 87,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.8333333333333334
+    },
+    "dir+landmark|return_": {
+     "nonzero": 6,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 3523,
+     "team_gap": 0.329,
+     "split_rank": 10,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 19563,
+     "team_gap": 0.218,
+     "split_rank": 3,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|rest": {
+     "nonzero": 410138,
+     "team_gap": 0.149,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 410144,
+     "team_gap": 0.255,
+     "split_rank": 1,
+     "agent_auroc": 0.8148148148148148
+    }
+   },
+   "ckpt1": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 60,
+     "team_gap": 0.177,
+     "split_rank": 9,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|return_": {
+     "nonzero": 5,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|pickup": {
+     "nonzero": 1641,
+     "team_gap": 0.434,
+     "split_rank": 9,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 9314,
+     "team_gap": 0.137,
+     "split_rank": 9,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|rest": {
+     "nonzero": 446195,
+     "team_gap": 0.224,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|reward": {
+     "nonzero": 446200,
+     "team_gap": 0.237,
+     "split_rank": 6,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 60,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5462962962962963
+    },
+    "dir+landmark|return_": {
+     "nonzero": 5,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 1641,
+     "team_gap": 0.42,
+     "split_rank": 5,
+     "agent_auroc": 0.5277777777777778
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 9314,
+     "team_gap": 0.248,
+     "split_rank": 4,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir+landmark|rest": {
+     "nonzero": 446195,
+     "team_gap": 0.17,
+     "split_rank": 5,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir+landmark|reward": {
+     "nonzero": 446200,
+     "team_gap": 0.25,
+     "split_rank": 3,
+     "agent_auroc": 0.5
+    }
+   },
+   "ckpt2": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 15,
+     "team_gap": 0.888,
+     "split_rank": 6,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|return_": {
+     "nonzero": 0,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 260,
+     "team_gap": 0.623,
+     "split_rank": 5,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir|goal_progress": {
+     "nonzero": 2867,
+     "team_gap": 0.448,
+     "split_rank": 9,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir|rest": {
+     "nonzero": 488968,
+     "team_gap": 0.591,
+     "split_rank": 8,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|reward": {
+     "nonzero": 488968,
+     "team_gap": 0.596,
+     "split_rank": 8,
+     "agent_auroc": 0.4074074074074074
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 15,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|return_": {
+     "nonzero": 0,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 260,
+     "team_gap": null,
+     "split_rank": null,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 2867,
+     "team_gap": 0.518,
+     "split_rank": 8,
+     "agent_auroc": 0.37037037037037035
+    },
+    "dir+landmark|rest": {
+     "nonzero": 488968,
+     "team_gap": 0.264,
+     "split_rank": 6,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 488968,
+     "team_gap": 0.266,
+     "split_rank": 6,
+     "agent_auroc": 0.5555555555555556
+    }
+   },
+   "ckpt3": {
+    "transitions_per_agent": 232448,
+    "dir|delivery": {
+     "nonzero": 161,
+     "team_gap": 0.131,
+     "split_rank": 9,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|return_": {
+     "nonzero": 3,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5462962962962963
+    },
+    "dir|pickup": {
+     "nonzero": 2309,
+     "team_gap": 0.161,
+     "split_rank": 9,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir|goal_progress": {
+     "nonzero": 19172,
+     "team_gap": 0.258,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|rest": {
+     "nonzero": 415795,
+     "team_gap": 0.287,
+     "split_rank": 7,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|reward": {
+     "nonzero": 415798,
+     "team_gap": 0.292,
+     "split_rank": 7,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 161,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|return_": {
+     "nonzero": 3,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 2309,
+     "team_gap": 0.295,
+     "split_rank": 9,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 19172,
+     "team_gap": 0.199,
+     "split_rank": 9,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|rest": {
+     "nonzero": 415795,
+     "team_gap": 0.214,
+     "split_rank": 7,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|reward": {
+     "nonzero": 415798,
+     "team_gap": 0.404,
+     "split_rank": 3,
+     "agent_auroc": 0.6111111111111112
+    }
+   },
+   "<= 0.26M": {
+    "transitions_per_agent": 256000,
+    "dir|delivery": {
+     "nonzero": 87,
+     "team_gap": 0.171,
+     "split_rank": 8,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|return_": {
+     "nonzero": 6,
+     "team_gap": 0.616,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|pickup": {
+     "nonzero": 3523,
+     "team_gap": 0.275,
+     "split_rank": 5,
+     "agent_auroc": 0.5
+    },
+    "dir|goal_progress": {
+     "nonzero": 19563,
+     "team_gap": 0.167,
+     "split_rank": 6,
+     "agent_auroc": 0.35185185185185186
+    },
+    "dir|rest": {
+     "nonzero": 410138,
+     "team_gap": 0.166,
+     "split_rank": 6,
+     "agent_auroc": 0.5
+    },
+    "dir|reward": {
+     "nonzero": 410144,
+     "team_gap": 0.207,
+     "split_rank": 6,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 87,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.8333333333333334
+    },
+    "dir+landmark|return_": {
+     "nonzero": 6,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5185185185185185
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 3523,
+     "team_gap": 0.329,
+     "split_rank": 10,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 19563,
+     "team_gap": 0.218,
+     "split_rank": 3,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|rest": {
+     "nonzero": 410138,
+     "team_gap": 0.149,
+     "split_rank": 2,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|reward": {
+     "nonzero": 410144,
+     "team_gap": 0.255,
+     "split_rank": 1,
+     "agent_auroc": 0.8148148148148148
+    }
+   },
+   "<= 0.51M": {
+    "transitions_per_agent": 512000,
+    "dir|delivery": {
+     "nonzero": 147,
+     "team_gap": 0.149,
+     "split_rank": 9,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|return_": {
+     "nonzero": 11,
+     "team_gap": 0.779,
+     "split_rank": 6,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|pickup": {
+     "nonzero": 5164,
+     "team_gap": 0.271,
+     "split_rank": 7,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|goal_progress": {
+     "nonzero": 28877,
+     "team_gap": 0.155,
+     "split_rank": 7,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|rest": {
+     "nonzero": 856333,
+     "team_gap": 0.166,
+     "split_rank": 5,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir|reward": {
+     "nonzero": 856344,
+     "team_gap": 0.19,
+     "split_rank": 5,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 147,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.6851851851851852
+    },
+    "dir+landmark|return_": {
+     "nonzero": 11,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 5164,
+     "team_gap": 0.353,
+     "split_rank": 10,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 28877,
+     "team_gap": 0.202,
+     "split_rank": 2,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir+landmark|rest": {
+     "nonzero": 856333,
+     "team_gap": 0.132,
+     "split_rank": 3,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir+landmark|reward": {
+     "nonzero": 856344,
+     "team_gap": 0.233,
+     "split_rank": 1,
+     "agent_auroc": 0.7407407407407407
+    }
+   },
+   "<= 0.77M": {
+    "transitions_per_agent": 768000,
+    "dir|delivery": {
+     "nonzero": 162,
+     "team_gap": 0.213,
+     "split_rank": 9,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|return_": {
+     "nonzero": 11,
+     "team_gap": 0.771,
+     "split_rank": 6,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir|pickup": {
+     "nonzero": 5424,
+     "team_gap": 0.267,
+     "split_rank": 5,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|goal_progress": {
+     "nonzero": 31744,
+     "team_gap": 0.133,
+     "split_rank": 8,
+     "agent_auroc": 0.42592592592592593
+    },
+    "dir|rest": {
+     "nonzero": 1345301,
+     "team_gap": 0.242,
+     "split_rank": 7,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|reward": {
+     "nonzero": 1345312,
+     "team_gap": 0.262,
+     "split_rank": 7,
+     "agent_auroc": 0.5555555555555556
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 162,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.7037037037037037
+    },
+    "dir+landmark|return_": {
+     "nonzero": 11,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 5424,
+     "team_gap": 0.35,
+     "split_rank": 9,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 31744,
+     "team_gap": 0.193,
+     "split_rank": 2,
+     "agent_auroc": 0.5
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1345301,
+     "team_gap": 0.167,
+     "split_rank": 4,
+     "agent_auroc": 0.6666666666666666
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1345312,
+     "team_gap": 0.245,
+     "split_rank": 1,
+     "agent_auroc": 0.7037037037037037
+    }
+   },
+   "<= 1.00M": {
+    "transitions_per_agent": 1000448,
+    "dir|delivery": {
+     "nonzero": 323,
+     "team_gap": 0.128,
+     "split_rank": 6,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|return_": {
+     "nonzero": 14,
+     "team_gap": 0.78,
+     "split_rank": 2,
+     "agent_auroc": 0.6111111111111112
+    },
+    "dir|pickup": {
+     "nonzero": 7733,
+     "team_gap": 0.266,
+     "split_rank": 5,
+     "agent_auroc": 0.46296296296296297
+    },
+    "dir|goal_progress": {
+     "nonzero": 50916,
+     "team_gap": 0.136,
+     "split_rank": 4,
+     "agent_auroc": 0.3888888888888889
+    },
+    "dir|rest": {
+     "nonzero": 1761096,
+     "team_gap": 0.236,
+     "split_rank": 4,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir|reward": {
+     "nonzero": 1761110,
+     "team_gap": 0.242,
+     "split_rank": 6,
+     "agent_auroc": 0.5740740740740741
+    },
+    "dir+landmark|delivery": {
+     "nonzero": 323,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.8888888888888888
+    },
+    "dir+landmark|return_": {
+     "nonzero": 14,
+     "team_gap": 1.0,
+     "split_rank": 1,
+     "agent_auroc": 0.4444444444444444
+    },
+    "dir+landmark|pickup": {
+     "nonzero": 7733,
+     "team_gap": 0.363,
+     "split_rank": 6,
+     "agent_auroc": 0.48148148148148145
+    },
+    "dir+landmark|goal_progress": {
+     "nonzero": 50916,
+     "team_gap": 0.167,
+     "split_rank": 3,
+     "agent_auroc": 0.6296296296296297
+    },
+    "dir+landmark|rest": {
+     "nonzero": 1761096,
+     "team_gap": 0.149,
+     "split_rank": 2,
+     "agent_auroc": 0.5925925925925926
+    },
+    "dir+landmark|reward": {
+     "nonzero": 1761110,
+     "team_gap": 0.265,
+     "split_rank": 1,
+     "agent_auroc": 0.8518518518518519
+    }
+   }
+  }
+ }
+}

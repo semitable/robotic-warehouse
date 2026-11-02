@@ -9966,3 +9966,7205 @@ $acRun = Join-Path 'runs' ('ac_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
 ```
 
 총 **8개 학습**이며 동시에 실행하지 않습니다. 모든 비교군에서 절대좌표를 마스킹하고, PGCT에만 A+C gate를 적용합니다. 현재 구현한 **경험 평균 예측기**를 사용하는 실행입니다.
+
+## 원문 기록 T132 — 2026-10-23 KST, Claude Code
+
+정확한 시각 미기록. 새 세션의 첫 turn. 사용자 지시('우선 파일을 수정하거나 학습을 실행하지 마')에 따라 T132–T138은 그때그때 기록하지 않았고, T140 요청으로 2026-10-26에 한꺼번에 기록했다.
+
+### 사용자 — 원문
+
+첨부 이미지: `C:\Users\95101\AppData\Local\Temp\claude\C--RWARE-MARL-RWARE-third-party-robotic-warehouse\49f9b35a-9d20-45dd-9b28-363b2bf1b584\images\1.png`. 제목 '1. A+C를 통합한 PGCT 구조'. 개인 경험 수집(지역 관측, 행동, 다음 관측, 개인 보상) → 개인 보상 예측기 학습 r̂_i(o,a,o') → 경험 기반 공통 프로브 생성(실제로 관측 가능한 사건을 중심으로 구성하고, 가능한 범위에서 변형) → 이웃 간 보상 예측 응답 비교 D^R_ij = (1/M) Σ_m |r̂_i(q_m) − r̂_j(q_m)| → 팀 관계 추론 → Selective Critic Transfer 도식.
+
+CLAUDE.md와 docs/RESEARCH_CONTEXT.md,
+docs/EXPERIMENT_HISTORY.md,
+docs/SESSION_HANDOFF.md를 읽어줘.
+추가적으로 현재 프로젝트에 있는 로그들이 많으니 그것도 참고해줘
+
+이 문서들을 바탕으로 이전 세션의 연구 맥락을
+파악해줘.
+
+우선 파일을 수정하거나 학습을 실행하지 마.
+
+그리고 현재 진행되는 실험은 일단 멈출꺼야. 그리고
+PGCT의 보상에서 너가 실험 도중 문제로 전체 보상을 가져와 버린다는 것을 확인했어. 
+나는 각 에이전트가 단일 보상으로 진행하기를 바래(이게 PGCT와 맞아. 이 부분은 절대 바꾸지마)
+
+나의 기획은 
+
+(붙여넣은 외부 답변 — 원문)
+
+네. A와 B는 거의 정확하게 이해하셨습니다. 다만 A가 현재 RWARE 환경에서 팀을 쉽게 구분할 것이라는 예상에는 중요한 조건이 있고, C는 사실 A와 독립적인 방법이라고 보기 어렵습니다.
+
+먼저 세 후보의 차이를 정리하겠습니다.
+
+| 후보                 | 핵심 아이디어                           | 무엇을 비교하나?                     |
+| ------------------ | --------------------------------- | ----------------------------- |
+| A. 보상 반응 프로브       | 가상의 상태·행동·결과를 만들어 보상 예측기에 입력      | 같은 상황에서 각 에이전트가 예측한 보상        |
+| B. 행동·보상 결합 프로브    | 정책과 보상 예측기의 응답을 동시에 활용            | 행동 확률분포 + 예측 보상               |
+| C. 실제 경험 기반 보상 프로브 | 실제 경험으로 보상 예측기를 학습하고 경험 기반 질의로 비교 | A와 동일한 보상 반응이지만 실제 데이터 분포를 중시 |
+
+따라서 C는 A의 대안이라기보다는 A의 학습 데이터와 프로브 생성 방법을 구체화한 변형에 가깝습니다. 제가 이전 답변에서 지나치게 독립적인 후보처럼 구분했습니다.
+
+## 1. 후보 A — 가상 궤적에 대한 보상 예측 비교
+
+이해하신 대로입니다. 다만 완전히 임의로 생성한 궤적보다는 팀별 보상 차이가 드러날 가능성이 높은, 환경에서 실현 가능한 궤적을 사용하는 것이 좋습니다.
+
+각 에이전트가 자신의 경험을 통해 보상 예측기 \\(\hat r_i\\)를 학습했다고 가정하겠습니다.
+
+\\[ \hat r_i(o_t,a_t,o\_{t+1}) \\]
+
+공통 프로브 \\(q_m=(o_m,a_m,o'\_m)\\)에 대해
+
+\\[ D\_{ij}^{R} = \frac1M\sum\_{m=1}^{M} \left| \hat r_i(q_m)-\hat r_j(q_m) \right| \\]
+
+을 계산할 수 있습니다.
+
+### 지금 RWARE에서는 쉽게 구분할 수 있을까?
+
+예시: 팀마다 배송 목표가 다른 개인 보상 환경
+
+두 개의 배송 목표
+
+| 에이전트 | G1 배송 | G2 배송 |
+| ---- | ----- | ----- |
+| A팀   | 1     | 0     |
+| B팀   | 0     | 1     |
+
+예시 값은 실제 실험 결과가 아니라 목표별로 보상이 분명하게 다른 경우의 가정입니다.
+
+이렇게 동일한 배송 사건에 대한 보상 반응이 팀에 따라 다르다면, A는 매우 효과적일 수 있습니다.
+
+그러나 실제로는 두 가지 장벽이 있습니다.
+
+첫째, 보상 예측기가 해당 사건을 학습했는가?
+
+에이전트가 G1에서 배송한 경험만 가지고 있고 G2에서 배송하는 상황은 본 적이 없다면, G2에 대한 보상 예측은 신뢰하기 어렵습니다. 실제로 보상이 0이어야 하는지, 단지 학습하지 못했기 때문에 0으로 예측하는지 구별해야 합니다.
+
+둘째, 에이전트가 목표 차이를 관측할 수 있는가?
+
+G1과 G2가 절대좌표상 다른 위치라도, CNN 입력에서 둘 다 단순히 '내 목표'로 표시된다면 두 프로브는 동일하게 보일 수 있습니다.
+
+즉, 서로 다른 실제 상태가 동일한 지역 관측으로 표현된다면 어떤 CNN도 그 차이를 알아낼 수 없습니다.
+
+### 보상 함수가 복잡해지면 A가 더 유리할까?
+
+가능성은 있습니다. 특히 행동이 비슷하지만 보상 목적이 다를 때 행동 기반 프로브보다 보상 기반 프로브가 유리할 수 있습니다.
+
+다만 보상 함수가 복잡할수록 A가 더 좋아진다고 일반화할 수는 없습니다.
+
+보상 예측이 어려워지고 더 많은 경험이 필요할 수도 있습니다. CNN은 공간적 특징을 처리하는 수단이지, 복잡한 보상 함수를 자동으로 올바르게 학습한다는 보장은 아닙니다.
+
+또한 서로 다른 보상 함수가 비슷한 최적 행동을 유도할 수 있다는 것은 역강화학습의 식별 가능성 연구에서도 잘 알려진 문제입니다.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://papers.neurips.cc\&sz=32)
+
+NeurIPS Papers
+
+
+
+무엇보다 첨부하신 E36–E39에서는 이미 인위적인 프로브의 약 2%에서만 팀별 보상이 달랐습니다. 따라서 지금 환경에서도 실제로 쉬울 것이라고 단정할 수 없습니다.&#x20;
+
+EXPERIMENT_STORY.pdf
+
+
+
+A의 성공 조건은 보상 함수의 복잡성이 아니라, 팀마다 다른 보상 반응을 관측 가능하고 신뢰할 수 있게 예측할 수 있느냐입니다.
+
+## 2. 후보 B — 행동 응답과 예측 보상을 결합
+
+이 역시 이해하신 것이 맞습니다.
+
+같은 프로브 \\(q_m\\)에 대해 다음 두 응답을 구합니다.
+
+\\[ p_i^m=\pi_i(\cdot\mid q_m) \\]
+
+\\[ \hat{\mathbf r}\_i^m = \left[ \hat r_i(q_m,a_1),\ldots,\hat r_i(q_m,a_K) \right] \\]
+
+그리고 행동 유사도와 보상 유사도를 결합합니다.
+
+\\[ D\_{ij}^{B} = \alpha D\_{ij}^{\pi} + (1-\alpha)D\_{ij}^{R} \\]
+
+단, 실제 구현에서는 두 거리의 척도를 맞춰야 합니다.
+
+이 방식은 행동이 비슷한 팀원과 보상 구조가 비슷한 팀원을 동시에 고려한다는 장점이 있습니다.
+
+하지만 중요한 단점도 있습니다.
+
+예를 들어 다른 팀의 에이전트들이 동일한 통로를 지나면서 비슷한 행동을 한다면, 행동 유사도는 오히려 잘못된 팀을 지지할 수 있습니다.
+
+반대로 같은 팀이어도 맡은 역할에 따라 행동이 다를 수 있습니다.
+
+따라서 개인적으로는 B를 가장 먼저 구현할 방법으로 추천하지 않습니다. A가 단독으로 얼마나 식별력이 있는지 먼저 확인한 다음, 행동 정보를 추가했을 때 얼마나 개선되는지 검증해야 합니다.
+
+## 3. 후보 C — A와 정확히 무엇이 다른가?
+
+실질적인 차이는 프로브를 어디에서 얻는가입니다.
+
+A: 가상 프로브 기반
+
+환경에서 가능한 가상 배송 사건 생성
+
+각 에이전트의 보상 예측기에 입력
+
+예측 보상 차이 계산
+
+C: 실제 경험 기반
+
+실제 방문 상태와 사건을 수집
+
+실제 경험에 가까운 프로브 구성
+
+예측 보상 차이 계산
+
+둘 모두 실제 경험으로 학습된 보상 예측기를 사용할 수 있습니다. A가 반드시 가상 데이터로 예측기를 학습한다는 뜻은 아닙니다.
+
+A는 팀 차이가 명확히 드러나는 사건을 의도적으로 설계하기 쉽지만, 학습 데이터에 없는 사건을 사용할 위험이 큽니다.
+
+C는 실제 데이터 분포에 더 가깝지만, 팀을 구별하는 사건이 희귀하면 효과가 약할 수 있습니다.
+
+따라서 별도 알고리즘 세 개를 개발하는 것보다는 A와 C를 하나의 보상 기반 프로브로 합치고, 프로브 뱅크를 어떻게 구성하는지를 비교하는 편이 더 낫습니다.
+
+## 4. 제가 지금 가장 추천하는 실험
+
+지금은 CNN 보상 예측기를 바로 새로 학습시키기보다, 먼저 보상 함수에 팀 식별 정보가 얼마나 있는지 확인하는 편이 좋습니다.
+
+다음 실험을 추천합니다.
+
+| 실험                  | 질문                           |
+| ------------------- | ---------------------------- |
+| 실제 보상 함수 + 가상 프로브   | 이 환경의 보상 구조만으로 팀을 구분할 수 있는가? |
+| 학습된 보상 예측기 + 동일 프로브 | 에이전트가 실제 경험만으로 그 구조를 학습했는가?  |
+| 학습된 예측기 + 실제 경험 프로브 | 현실적인 지역 경험에서도 팀을 구분할 수 있는가?  |
+
+첫 번째에서는 오프라인 진단 목적으로만 실제 보상 함수를 호출합니다. 이것은 실행 시 에이전트가 사용할 수 있는 정보가 아니므로 PGCT 알고리즘 자체에는 포함하면 안 됩니다.
+
+두 번째와 세 번째는 실제 DTDE 조건에서 학습한 예측기로 검증해야 합니다.
+
+이렇게 하면 실패 원인을 구분할 수 있습니다.
+
+가상 프로브에서는 실제 보상으로도 구분이 안 된다면 프로브 자체가 문제입니다. 실제 보상에서는 구분되는데 보상 예측기에서는 실패한다면 학습 데이터나 모델의 문제입니다. 가상 프로브에서는 잘 되는데 실제 경험 기반에서는 실패한다면 관측 가능성과 데이터 분포 문제일 수 있습니다.
+
+## 결론
+
+세 후보 중 제 우선순위는 다음과 같습니다.
+
+A를 중심으로 하되, C의 실제 경험 기반 접근을 결합하고, B는 후속 실험으로 미루는 것입니다.
+
+그리고 현재 RWARE가 팀별 목표 위치로 구분되는 구조라면 A가 팀을 잘 구분할 가능성은 있습니다. 그러나 목표 위치만으로 팀을 완벽하게 구분하게 되면, 심사위원은 이것이 사실상 목표 정보 식별에 불과한 것 아니냐고 질문할 수 있습니다.
+
+따라서 최종적으로는 다른 목표 배치나 다른 보상 구조에서도 프로브가 작동하는지 확인해야 합니다.
+
+가장 중요한 것은 현재 환경에서 보상 프로브가 AUROC 1.00을 만드는 것이 아니라, 에이전트가 자기 개인 보상 경험만으로 학습한 예측기가 다른 팀의 보상 구조까지 올바르게 구별할 수 있느냐입니다.
+
+이 부분이 해결된다면 기존 정책 JS 프로브보다 설득력 있는 팀 발견 메커니즘을 만들 수 있다고 생각합니다.
+
+(붙여넣기 끝)
+
+이렇게 되는거야
+내 목표는 A+C이고, 이를 기반으로 실험을 재설계할꺼야
+기억해둬
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽음: `CLAUDE.md`, `AGENTS.md`, `docs/SESSION_HANDOFF.md`, `docs/RESEARCH_CONTEXT.md`, `docs/EXPERIMENT_HISTORY.md`, `RESEARCH_STATE.md` 앞부분, `CONVERSATION_LOG.md` 끝부분.
+- 확인(읽기 전용): 실행 중 python 4개(인접 칸 IPPO), 메인 대기열 launcher PID 32236 없음. 보상 경로(`rware/__init__.py`, `rware/multi_team_warehouse.py` `_reward_delivery`, `latent_team/env_candidates.py` `env_overrides`, trainer GAE), run별 `team_reward_mode`.
+- Claude 메모리에 'PGCT는 개인 보상만'과 'A+C 계획'을 저장했다(저장소 밖). 저장소 파일 수정, 학습 시작·중단 없음.
+
+### Assistant — 진행 안내
+
+Reward 경로를 추적 중입니다. 환경 쪽은 확인했고, 지금 trainer에서 보상이 agent별로 들어가는지 보고 있습니다.
+
+### Assistant — 최종 답변
+
+문서와 로그를 모두 읽었습니다. A+C 기획과 "개인 보상만 쓴다"는 원칙은 메모리에 저장했습니다. 프로젝트 파일은 고치지 않았고, 학습을 시작하거나 멈추지도 않았습니다. 같은 이유로 이번 turn은 `CONVERSATION_LOG.md`에 기록하지 않았습니다. 기록 허락을 주시면 그때 남기겠습니다.
+
+## 1. 이전 세션까지의 맥락
+
+- **목표**: 팀 라벨 없이 probe 응답으로 같은 팀원을 찾고(Q1), 찾은 팀원끼리만 critic을 증류합니다(Q2). 기여 후보는 식별 가능성 조건 두 가지입니다. 하나는 goal 기하가 팀마다 다른 경우, 다른 하나는 보상이 팀 안에서 결합된 경우입니다. 목표 학회는 IJCAI 2027입니다.
+- **정책 JS probe는 실패했습니다**:
+  - E1 고정 모델: AUROC .375–.5
+  - E1-F 1.5M: 우연 수준
+  - pen005 1M: .43–.74
+  - 판별 probe 13개만 써도 평균 .493
+- **보상 쪽 신호**:
+  - 학습된 보상 예측기에 인공 상태를 넣으면 .25–.62였습니다(E31, E36). 인공 probe 중 팀별로 실제 보상이 다른 것이 2–7.5%뿐이었습니다.
+  - 실제 롤아웃 상태로 질의하면 처음부터 학습한 계보에서 .71–.79였습니다(E38). 그 신호는 주로 실제 보상 차이(shaping)에서 왔습니다(E39).
+  - 보상 결합 probe는 팀 보상에서 1.00이지만 그 설정에서는 자명합니다. 개인 보상에서는 15쌍 중 5–9쌍을 오판정했습니다(E49, E52).
+- **마지막 방향(10-23)**: 메인을 모서리·개인 칸(`b6_corner_indiv_pen005`)으로 잡고(D81), 판정은 5M에서 합니다(D78). 식별 신호 후보는 goal 방향 축이었습니다(D80). 팀당 요청 수 pilot을 먼저 할지는 답을 받지 못한 채 끝났습니다.
+
+## 2. 지금 실행 상태 (직접 확인)
+
+- **학습 중인 python 4개**: 인접·팀 IPPO s1/s2(PID 32376, 21104), 인접·개인 IPPO s1/s2(PID 30744, 31960). 사용자께서 직접 멈추시면 됩니다. 멈출 때는 자식 `wandb-core`도 함께 종료해야 W&B에 crashed로 정리됩니다(E24).
+- **메인 대기열 launcher(PID 32236)는 이미 없습니다.** 대기열 로그에는 계획 9개만 있고 시작한 job은 없습니다. 그래서 5M 메인이 자동으로 시작되지는 않습니다.
+
+## 3. 보상 문제: 코드에서 확인한 경로
+
+trainer 자체는 agent별 보상 벡터로 각자 GAE를 계산합니다(`examples/train_recurrent_ippo_consensus.py:2435`, `:2785`). 다른 agent의 보상이 섞이는 지점은 환경 설정이고, 두 곳이 겹쳐 있습니다.
+
+1. **환경 기본값이 팀 보상입니다.** `rware/__init__.py:70`, `:96`에서 `team_reward_mode=TEAM`으로 등록돼 있습니다. 팀 모드에서는 배송·반납 보상이 팀 전원에게 갑니다(`rware/multi_team_warehouse.py:621`).
+2. **후보 환경이 팀 보상을 강제합니다.** `latent_team/env_candidates.py:97`은 `LAYOUT`에 없는 후보를 `reward="team"`으로 처리하고, CLI의 `--team-reward`보다 우선합니다.
+   - 그래서 A, B, B nopen, B pen005(모서리·팀), 인접·팀 run은 모두 팀 보상으로 학습됐습니다.
+   - 반대로 모서리·개인, 인접·개인, 버려진 5M 메인 계획은 `experiment.json`에서 `individual`로 확인했습니다.
+
+이 결과는 연구 결론에 직접 영향을 줍니다.
+
+- **E49·E50의 보상 결합 AUROC 1.00은 팀 보상 run에서만 나온 값입니다.** PGCT 근거로 쓰면 안 됩니다.
+- **E43–E48의 환경 진단(pickup 정체, 감점 sweep)도 팀 보상 환경에서 나왔습니다.** 개인 보상에서 그대로 성립하는지 따로 확인해야 합니다.
+
+제가 찾은 경로와 사용자께서 보신 문제가 다르면 알려 주세요. 수정은 지시가 있을 때 기본값을 바꾸지 않는 방향으로 하고, 제안 순서는 이렇습니다.
+
+- `env_candidates.py`의 팀 보상 fallback을 없앱니다.
+- 새 계획은 `experiment.json`의 `team_reward_mode`가 모두 `individual`인지 확인하는 검사를 거쳐야만 넘어가게 합니다.
+
+## 4. A+C에 대한 의견
+
+방향에는 동의합니다. 다만 실험 재설계 전에 짚을 점이 세 가지 있습니다.
+
+- **관측 좌표 문제.** 관측 채널은 팀 기준입니다. "내 goal", "내 팀 요청 선반"이 전용 채널로 들어갑니다. 그래서 r̂_i(o,a,o')에 같은 probe를 넣어도 두 팀의 예측이 같아질 수 있습니다(명제 3). A+C가 성립하려면 probe가 이런 공통 좌표 사건을 담아야 합니다. 예를 들어 "절대 위치 (0,10)에서 배송"이 관측에서 구분돼야 합니다. 그런데 지금 관측은 다른 팀의 goal 칸을 따로 표시하지 않을 가능성이 큽니다. 첫 작업으로 코드에서 확인해야 합니다.
+- **안 본 사건 문제.** 개인 보상에서는 상대 팀 goal 배송을 자기가 겪을 일이 거의 없습니다. 그래서 r̂_i가 0을 내도 "실제로 0"인지 "학습하지 못해 0"인지 가를 수 없습니다. 판정 보류 규칙이나 예측 불확실성이 처음부터 설계에 들어가야 합니다.
+- **검증 순서.** 붙여주신 3단계 사다리를 그대로 쓰는 것을 권합니다. 순서는 (i) 실제 보상 함수 + 가상 probe(오프라인 진단 전용), (ii) 학습 예측기 + 같은 probe, (iii) 학습 예측기 + 경험 probe입니다. (i)은 학습 없이 바로 할 수 있습니다. 대상은 모서리·개인 1M checkpoint(seed 2개)입니다.
+
+다음에는 이 세 가지를 반영해 A+C 실험 설계안을 문서 초안으로 드릴 수 있습니다. 파일 수정과 학습은 지시가 있을 때만 하겠습니다.
+
+### Assistant — 다음 단계 상자
+
+Docs and logs read; A+C plan and the individual-reward-only rule are saved to memory. No project files edited, nothing trained or stopped. Four adjacent-cell IPPO jobs are still running; the main queue launcher is already gone.
+
+## 원문 기록 T133 — 2026-10-23–26 사이 KST(정확한 날짜·시각 미상), Claude Code
+
+### 사용자 — 원문
+
+1. 파란팀이 빨간팀의 목표에 배송했을때 점수가 들어오냐를 말하는거 같은데, 이건 당연히 점수가 안들어오는게 맞아. 만약 이게 안되는 상태라면 수정해줘.
+   1. SMAC에서 상대팀 일꾼이 내 기지에다가 미네랄을 갖다놓는게 안되는 것처럼
+2. 절대좌표는 당연히 없어야돼 
+3. 파란 팀 A는 파란색 목표를 goal 1로 관측, 빨간 팀 B는 빨간색 목표를 goal 2로 관측, 이때 두 팀이 보상 규칙을 완벽히 학습한다면 
+   1. hat_r_A(my_goal = 1, del) = 1
+   2. hat_r_B(my_goal = 1, del) = 1 로 둘이 동일하게 계산될꺼야
+   3. 이를 해결할 방법이 있을까? 
+      1. 예시로 두 팀의 계산이 반대로 되도록 하거나
+4. 첫째, 공통 프로브가 서로 다른 팀의 보상 차이를 드러낼 수 있어야 한다.
+
+둘째, 보상 예측기가 그 프로브에 대해 충분히 정확한 예측을 해야 한다.
+
+
+지금 말들에 틀린게 있으면 반박해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: 배송 판정(`rware/multi_team_warehouse.py:1474–1530`, `require_matching_team_goal` 기본 True), 관측 생성(`rware/utils/semantic_observation.py` ego `self_x/self_y`, 채널 4·11·12). 파일 수정·학습 없음.
+
+### Assistant — 진행 안내
+
+관측 채널 구성을 확인하는 중입니다(goal이 '내 goal'로만 보이는지, 절대 위치가 들어가는지).
+
+### Assistant — 최종 답변
+
+코드를 읽어서 확인한 결과입니다. 파일은 고치지 않았습니다. 1번은 보상 면에서는 이미 원하시는 대로 되어 있습니다. 2번은 지금 코드가 원칙과 다릅니다. 3번 지적은 맞고, 해법이 있습니다. 4번은 맞지만 빠진 조건이 있습니다.
+
+## 1. 파란 팀이 빨간 goal에 배송하면 보상이 들어오나
+
+**개인 보상에서는 들어오지 않습니다.** 고칠 필요가 없습니다.
+
+- 배송은 선반의 팀과 goal의 팀이 같아야 성립합니다(`rware/multi_team_warehouse.py:1490`). 이 설정(`require_matching_team_goal=True`)은 기본값이고, run 설정에서도 바꾸지 않았습니다.
+- 그래서 파란 agent가 파란 선반을 빨간 goal에 가져가면 배송 자체가 일어나지 않습니다.
+- 남는 경우가 하나 있습니다. 파란 agent가 빨간 팀 요청 선반을 집어서(−.05) 빨간 goal에 놓는 경우입니다.
+  - 개인 보상에서는 아무도 보상을 받지 않습니다(`:617`). 운반자의 팀이 선반의 팀과 달라서입니다.
+  - 그러나 이 사건은 빨간 팀의 배송으로 집계되고, 빨간 팀의 요청 하나가 소모됩니다. SMAC에 비유하면 적 일꾼이 내 기지에 미네랄을 놓았을 때 점수는 없지만 미네랄이 사라지는 셈입니다.
+  - 팀 보상 run(A, B, pen005 모서리·팀, 인접·팀)에서는 이때 빨간 팀 전원이 +1을 받았습니다. 그 run들의 결과에는 이 영향이 섞여 있을 수 있습니다.
+
+이 집계까지 막으려면 `rware/`를 고쳐야 합니다. 그런데 `rware/`는 수정 금지 대상이라 바로 고치지 않았습니다. 이 사건이 실제로 얼마나 자주 일어났는지는 세어 보지 않았습니다.
+
+## 2. 절대좌표 — 지금 관측에 들어 있습니다
+
+원칙에는 동의합니다. 다만 현재 코드가 그렇지 않습니다.
+
+- ego 특징의 첫 두 값이 `self_x`, `self_y`입니다(`rware/utils/semantic_observation.py:24`, `:144`). 지도 크기로 정규화한 절대 위치입니다.
+- 지금까지의 모든 run과 probe bank가 이 관측으로 학습됐습니다. 따라서 빼려면 새 관측 옵션과 처음부터 다시 하는 학습이 필요하고, 기존 checkpoint와는 입력 차원이 맞지 않습니다.
+- 한 가지 구분할 것이 있습니다. 절대좌표는 없애더라도, 시야 안의 벽(`out_of_bounds` 채널)이나 지도 모양 같은 국소 지형은 남아야 합니다. 이것까지 없애면 아래 3번 때문에 어떤 probe로도 팀을 가를 수 없습니다.
+
+## 3. "내 goal" 관측이면 두 팀의 예측기가 같아진다
+
+**맞습니다.** 명제 3을 보상 예측기에 적용한 결과입니다. 원인 채널도 코드에서 확인했습니다.
+
+- 12번 채널 `relevant_goal`: 자기 팀 goal만 표시합니다.
+- 4번 채널 `requested_shelf`: 자기 팀 요청 선반만 표시합니다.
+
+두 팀이 보상을 완벽히 배우면 r̂는 "relevant_goal 칸에서 배송 → 1"이라는 같은 함수가 됩니다. 그래서 두 팀 모두 r̂(q)=1이 나옵니다.
+
+"계산을 반대로 하게 만든다"는 방향은 맞습니다. 다만 그러려면 두 팀이 **같은 의미로 읽는 공통 기준**이 관측에 있어야 하고, 팀 기준 채널은 빠져야 합니다. 방법은 두 가지입니다.
+
+| | (가) 국소 지형만 사용 | (나) 팀과 무관한 goal 종류 채널 |
+|---|---|---|
+| 관측 변경 | `self_x/y`, ch12, ch4를 뺀다. 모든 goal은 ch11 "goal"로만 보인다 | ch12·ch4 대신 "goal 종류 1/2", "요청 종류 1/2" 채널을 넣는다. 어느 쪽이 내 것인지는 표시하지 않는다 |
+| 예측기가 배우는 것 | "왼쪽에 벽이 있는 goal에서 배송 → 1"(빨강), "→ 0"(파랑) | "종류 1 goal에서 배송 → 1"(빨강), "→ 0"(파랑) |
+| 같은 probe에 대한 응답 | 반대로 나온다 | 반대로 나온다 |
+| 한계 | 인접 배치처럼 지형이 같은 goal은 구분하지 못한다. 대신 조건 (가)의 음성 사례로 쓸 수 있다 | "종류 표시가 사실상 팀 라벨 아니냐"는 반론이 나올 수 있다. agent의 팀은 표시하지 않고 사물만 구분한다고 답할 수 있다 |
+| 학습 난이도 | 어렵다. 어느 goal이 내 것인지 보상으로만 알아내야 한다 | 중간 |
+
+두 방법 모두 자기 goal을 관측이 아니라 보상으로 알아내야 해서, 지금보다 학습이 느려질 것입니다. 5M 일정을 다시 잡아야 할 수 있습니다.
+
+**저는 (가)를 권합니다.** 추가하는 가정이 없고, 모서리 배치(성공 예상)와 인접 배치(실패 예상)가 그대로 식별 조건의 양성·음성 사례가 됩니다.
+
+## 4. 두 조건
+
+둘 다 맞지만 필요조건일 뿐이고, 다음을 보태야 합니다.
+
+- **조건 1을 관측 기준으로 다시 써야 합니다.** "실제 상태에서 팀별 보상이 다르다"로는 부족하고, "관측(o, a, o')에서 팀별 보상이 다르다"가 필요합니다. 3번 문제가 바로 이 차이에서 생깁니다.
+- **조건 2는 정확도보다 커버리지가 핵심입니다.** 파랑의 r̂가 "빨간 goal → 0"을 맞히려면, 파랑이 그 사건(빨간 goal에 놓았는데 보상 없음)을 실제로 겪어 봤어야 합니다. 겪어 보지 않았으면 0이 학습된 0인지 외삽인지 가를 수 없습니다. 이것은 E36–E39에서 이미 드러난 문제입니다.
+- **완벽한 정확도는 필요 없습니다.** 명제 1처럼 오차가 팀 간 마진의 절반보다 작기만 하면 됩니다.
+- **세 번째 조건이 필요합니다.** 같은 팀끼리는 응답이 같아야 하고, 이웃끼리 만나서 비교할 기회가 충분해야 합니다. 개인 보상에서는 같은 팀의 보상 함수가 같으니 첫 부분은 성립합니다. 만남 빈도는 측정해야 합니다(B 칸에서 팀원 가용 44%, E40).
+
+관측을 바꾸는 것이 A+C 재설계의 첫 결정입니다. 정하시면 `latent_team/`에 새 관측 옵션으로 설계안을 쓰겠습니다. 기존 기본값과 checkpoint는 그대로 둡니다.
+
+### Assistant — 다음 단계 상자
+
+Checked wrong-goal delivery and the observation code, read-only. Under individual reward, no one is rewarded for delivering to the other team's goal. But the observation includes absolute position (self_x, self_y) and a 'my goal' channel. No files changed.
+
+질문: Which observation fix should the A+C redesign use? (버튼: Landmarks only / Goal-type channels)
+
+## 원문 기록 T134 — 2026-10-26 KST, Claude Code
+
+정확한 시각 미기록(PGCT s1 2.87M을 11:44 스냅샷으로 읽었다).
+
+### 사용자 — 원문
+
+(붙여넣은 Codex 답변 — 원문)
+
+앱 밖 PowerShell에서 아래 명령을 실행하세요. 모서리·개인 보상 환경에서 IPPO / A+C PGCT / Oracle / All × seed 1·2, 각 5M step을 새 폴더에 순차 실행합니다. W&B도 기록합니다.
+
+```
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+
+$acRun = Join-Path 'runs' ('ac_' + (Get-Date -Format 'yyyyMMdd_HHmmss'))
+
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' `
+  latent_team/train_from_scratch.py `
+  --env-variant b6_corner_indiv_pen005 `
+  --reward-probe-ac `
+  --team-reward individual `
+  --modes ippo pgct oracle all `
+  --seeds 1 2 `
+  --timesteps 5000000 `
+  --track `
+  --stage-label ac_main `
+  --output-dir $acRun
+```
+
+총 8개 학습이며 동시에 실행하지 않습니다. 모든 비교군에서 절대좌표를 마스킹하고, PGCT에만 A+C gate를 적용합니다. 현재 구현한 경험 평균 예측기를 사용하는 실행입니다.
+
+(붙여넣기 끝)
+
+현재 이렇게 학습을 추가했어
+현재 학습방향이 맞는지 확인해주고,
+지금 학습이 어떻게 되고 있는지도 분석해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용: `latent_team/reward_probe_ac.py` 전체, `train_from_scratch.py` A+C 경로, `runs/ac_20261023_185556`의 `experiment.json`·`job_status.json`·`metrics.jsonl`·`transfer.jsonl`·checkpoint 02750의 예측기 상태. 집계 스크립트는 scratchpad에 두었다. 학습 시작·중단, 저장소 파일 수정 없음.
+
+### Assistant — 진행 안내
+
+A+C 실행의 실제 설정과 gate 로그를 집계하고 있습니다. (시스템 python이 없어 프로젝트 python으로 다시 돌립니다.)
+
+에이전트별 배송 수와 팀 구성을 뽑고 있습니다.
+
+### Assistant — 최종 답변
+
+코드와 로그만 읽었습니다. 학습은 건드리지 않았습니다. 이번 대화도 `CONVERSATION_LOG.md`에 기록하지 않았습니다.
+
+**결론: 지켜야 할 원칙은 모두 맞게 구현됐지만, A+C gate가 거의 열리지 않습니다. 그래서 PGCT s1은 지금까지 사실상 IPPO의 복사본이고, 이대로면 Q1(식별)에 답할 수 없습니다.**
+
+## 1. 방향 점검: 맞게 된 것
+
+- **개인 보상이 강제됩니다.** `team_reward_mode`가 `individual`이 아니면 A+C 설치 단계에서 에러를 냅니다(`latent_team/reward_probe_ac.py:348`). 실행 설정과 checkpoint의 `effective_env_kwargs`도 `individual`로 확인했습니다.
+- **절대좌표를 지웠습니다.** 4개 mode 모두 정책 관측과 probe에서 `self_x/self_y`를 0으로 바꿉니다. 입력 차원은 그대로 둡니다.
+- **질의에 "내 goal" 채널이 들어가지 않습니다.** 질의는 ch4(내 팀 요청 선반), ch12(내 goal), 개인 ego(15번 이후)를 뺀 공용 특징만 씁니다. 지난번 3번 문제를 국소 지형으로 푸는 방식, 즉 제가 권한 (가)입니다.
+- **보상 예측은 자기 보상만으로 합니다.** 경험이 부족한 질의에는 판정을 보류합니다.
+
+## 2. 학습 진행 (모서리·개인, seed 1)
+
+| job | 상태 | 평가 배송/ep(20 ep) | agent별 배송/ep |
+|---|---|---|---|
+| IPPO s1 | complete, 5.0M | 24.1(4.75–5M 평균) | 0 / 4.64 / 5.38 / 5.05 / 4.20 / 4.85 |
+| PGCT s1 | running, 2.87M(10-26 11:44) | 11.5 | 0 / 2.05 / 3.49 / 2.27 / 1.38 / 2.29 |
+
+- **IPPO 5M에서 독주가 풀렸습니다.** 6명 중 5명이 배웠고(기준 ≥0.25/ep), 배송은 4.2–5.4/ep입니다. agent 1(팀 0)만 끝까지 0입니다. "1M 결과로 판단하지 말라"는 D78이 맞았습니다.
+  - 다만 seed 1개입니다. 또 옛 1M run(좌표 있음, 0.99)과 관측이 달라서, 좋아진 것을 좌표 제거 덕으로 볼 수 없습니다.
+- **PGCT는 2.5M까지 IPPO와 평가값이 소수점까지 같습니다.** 전이가 일어나지 않아 같은 학습을 반복한 것입니다.
+- **일정**: 한 번에 하나씩 돌고 job당 약 42시간입니다. PGCT s1은 10-27 새벽 5시 무렵 끝납니다. 남은 6개까지 마치려면 약 11일, 11월 6–7일 무렵입니다.
+
+## 3. 문제: gate가 거의 열리지 않는다
+
+PGCT s1의 0–2.87M 기록(`transfer.jsonl`)을 집계했습니다.
+
+| 항목 | 값 |
+|---|---|
+| 이웃 쌍 비교 | 11,275회 |
+| 판정 보류(공통 질의 부족) | 6,022회 |
+| 거리·신호 미달 | 5,248회 |
+| **승인** | **5회(전부 2.5M 이후, agent 4–6 쌍 하나)** |
+| 실제 전이가 있었던 update | 2,807개 중 3개(0.1%) |
+| 신호 ≥ .2인 비교 | 5,253회 중 5회. 99%가 .034 이하 |
+| A(가상 질의)가 답을 받은 횟수 | **0회** |
+
+승인된 쌍(agent 4와 6)은 같은 팀이 맞습니다. 팀 구성은 0·2·4 대 1·3·5입니다. 즉 오판정은 없지만, 거의 판정 자체를 하지 않습니다.
+
+원인은 세 가지입니다.
+
+1. **경험 커버리지(조건 2) 부족.** 예측기가 5×5 국소 장면을 해시로 **정확히 일치**할 때만 답합니다. 다른 agent 위치까지 같아야 해서 같은 장면이 거의 반복되지 않습니다.
+   - 저장소 4,096칸이 오래된 것부터 지워져서, 대략 최근 몇 episode만 기억합니다.
+   - 2.75M checkpoint에서 agent마다 답할 수 있는 장면은 16–165개이고, 그중 보상이 큰 장면(|평균| ≥ .2)은 1–2개뿐입니다.
+2. **A는 실제로 작동하지 않습니다.** 가상 분기에는 라벨이 없어서, 받는 쪽이 똑같은 전이를 직접 겪었을 때만 답이 나옵니다. 다른 agent는 정지해 있다고 가정해서 만든 가상 장면은 실제 경험과 일치하지 않습니다. 그래서 지금은 사실상 C만 남았습니다.
+3. **팀을 가르는 근거가 "보상 차이"가 아닙니다.** 개인 보상에서 파랑은 빨간 모서리에 배송하러 가지 않습니다. 그래서 다른 팀 쌍에서는 "같은 질의, 다른 보상"이 계산될 일이 없고, 근거가 없어 판정이 보류될 뿐입니다. 승인은 "둘 다 같은 장면에서 보상을 받아 봤다"는 공통 경험으로만 일어납니다.
+   - 이것은 기획하신 D^R 비교와 다른 메커니즘입니다. 실제로 하는 일은 "같은 goal 장면을 공유하는가"에 가까워서, 심사위원의 "goal 식별 아니냐" 반론에 더 가까워집니다.
+   - 거리를 최대 64개 질의의 평균으로 내기 때문에, 판별 질의 하나의 차이(1.0)가 1/64로 희석됩니다. 지금 문턱(.12)이면 다른 팀 쌍도 통과할 수 있는 구조적 위험이 있습니다.
+
+## 4. 의견
+
+- **Q2(전이)는 이 실행으로 볼 수 있습니다.** IPPO, Oracle, All 비교는 그대로 의미가 있습니다. 순서상 다음 job이 Oracle s1, All s1입니다.
+- **Q1(식별)에는 PGCT s1·s2가 거의 정보를 주지 않습니다.** gate가 지금처럼 거의 열리지 않으면 IPPO와 같은 결과가 나옵니다. PGCT s2에 쓸 약 42시간은 아까운 쪽입니다.
+- **5M 학습을 더 걸기 전에 학습 없이 할 수 있는 측정이 있습니다.** 저장된 checkpoint(IPPO s1 5M 등)로 다음을 오프라인으로 재면, gate를 고칠지 며칠 안에 판단할 수 있습니다.
+  - 정확 일치 대신 장면 사이에서 일반화하는 예측기(작은 CNN·MLP)를 쓰거나, 질의 특징을 더 거칠게 잡았을 때 공통 지지 질의와 신호가 얼마나 느는지
+  - 3단계 검증의 (i) "실제 보상 함수 + 가상 probe"가 두 팀을 가르는지
+  - 평균 대신 판별 질의 위주(예: 최대 차이)로 거리를 쟀을 때 결과
+
+실행 중인 학습은 사용자께서 정하실 일이라 그대로 두었습니다.
+
+### Assistant — 다음 단계 상자
+
+Read-only review: the A+C run keeps individual reward and masks coordinates correctly. But the PGCT gate has accepted only 5 of 11,275 comparisons, so pgct_s1 has been almost a copy of IPPO. Nothing was changed, stopped or started.
+
+질문: Measure the gate offline on saved checkpoints before the remaining runs? (버튼: Yes, offline check / Let it run as is)
+
+## 원문 기록 T135·T136 — 2026-10-26 KST, Claude Code
+
+정확한 시각 미기록. T136 메시지는 T135 작업 도중 도착했고, 두 질문에 한 번에 답했다. 최종 답변이 영어로 나갔다(T137에서 사용자가 지적).
+
+### 사용자 — 원문 (T135)
+
+1. 방향 점검
+   1. 개인 보상이 강제되는건 맞아. 애초에 PGCT를 처음 생각할때부터 전체 보상은 고려하지 않았어
+   2. 절대좌표는 있든 없든 사실 내 알바 아니긴해
+   3. 보상 예측은 내 보상만으로 하는게 맞지
+   4. 옛날에 4명이서 돌릴때도 독주 풀리는거는 좀 시간이 지나야했어. 8M 까지 걸렸던거로 기억해
+   5. team_gate 그래프가 요동치는데 전이가 일어나지 않을수가 있나?
+2. 프로브 보상함수의 설계 자체가 살짝 잘못 만들어졌다고 볼수있나?
+3. PGCT s1 vs PGCT s2의 차이
+4. Gate 수정 방향을 알려줘
+5. Without training, measure with the saved checkpoints why support is lacking and how a generalizing predictor and coarser queries would change identification.
+
+### 사용자 — 원문 (T136, 작업 도중)
+
+추가로 암만 seed 같다고 한들 이렇게까지 eval 값이 같은적은 없었는데 이유도 설명해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 폴더 `output/ac_offline_20261026/`에 `collect.py`, `analyze.py`, `details.py`, `divergence.py`와 결과(`rollouts.npz`, `results.json`, `details.json`, stdout)를 만들었다. checkpoint 롤아웃(추론만)이며 학습은 없다(E57). W&B gate 지표 대조, s1·s2 설정 비교, IPPO·PGCT 비트 일치 확인(E56). `details.py`의 배송 key 통계는 비교 버그를 찾아 고친 뒤 다시 돌렸다.
+
+### Assistant — 진행 안내
+
+저장된 checkpoint로 오프라인 측정을 준비하고 있습니다. 기존 롤아웃 코드를 재사용해 새 폴더 `output/ac_offline_20261026/`에 스크립트와 결과를 둡니다.
+
+롤아웃 수집이 돌아가는 동안 분석 스크립트를 씁니다.
+
+Analysis while waiting: the W&B "team_gate" graph matched the trainer's own physical-neighbor graph 1:1 across all 2,826 logs. Rollout collection will take a few more minutes.
+
+Generalizing-predictor results are in, and identification works well. I'm fixing a small error in the follow-up script (delivery-key stats and distance matrix).
+
+Answering the seed question too: I'll pin down, from the logs, exactly where the IPPO and PGCT values start to differ and when the first real transfer happened.
+
+The cross-check shows the delivery-key stat in `details.py` was a comparison bug (the `analyze.py` value was right). I'm fixing it and rerunning so the saved file isn't wrong.
+
+### Assistant — 최종 답변 (영어로 나감)
+
+The offline measurements are done. The A+C idea itself works; the problem is how the predictor and distance are implemented. I put the scripts and results in a new folder, `output/ac_offline_20261026/`. I did not touch the running training or the existing records. This conversation is still not logged in `CONVERSATION_LOG.md`.
+
+## 1. Direction check
+
+**1.4 Takeover resolving late**: Agreed. Your memory matches the record that the old 4-agent setup had all agents learned at 8M (D78). Here, at 5M, 5 of 6 agents learned, and agent 1 is still at 0. I won't judge it before the remaining runs finish.
+
+**1.5 Can the team_gate graph fluctuate without transfer happening? Yes.**
+- What the W&B graph shows (`probe/pgct_gate_arcs`, `probe/same_team_gate`, `probe/cross_team_gate`) is not the A+C gate. It is the trainer's own gate.
+- PGCT mode is set to the `unrestricted` graph, so that value is just "neighbors within communication range".
+- In all 2,826 logs it equals the physical-neighbor count (`update/physical_candidate_arcs`) exactly. The fluctuation is agents moving in and out of communication range.
+- A+C overwrites the allocation afterward. The actual transfer (`update/actual_transfer_arcs`) is nonzero in only 3 logs.
+- This display is misleading, so the A+C gate itself should be logged to W&B.
+
+## 2. Why the eval values were exactly identical
+
+**PGCT s1 was bit-identical to IPPO s1 until the first transfer.**
+
+- Before the first actual transfer (2,821,120 steps, update 2755, the 4↔6 pair), the return, value loss, policy loss and entropy matched to the last decimal in all 2,754 logged updates.
+- At update 2755 the value loss first differs, at the sixth decimal (.019429 vs .019432).
+- Evaluation first differs at 2.87M (10.9 vs 12.35).
+
+Why earlier runs never matched like this:
+
+- **Old PGCT/Oracle/All started critic distillation right after warm-up** (100 updates, about 0.1M). The gradients differed from IPPO from that point, so they were never identical to begin with.
+- **The 1.4–1.6M split in E24 was about rerunning the same mode.** GPU nondeterminism in the peer-loss path caused it. IPPO, which has no peer loss, matched exactly up to 2.46M even then.
+- **This time PGCT never computed a peer loss until 2.82M**, so it ran exactly IPPO's operations. Both modes also used the same A+C observation wrapper (coordinates masked). The A+C gate itself uses no random numbers (deterministic sampling), so it doesn't shift the training random stream either.
+
+So the identical values are direct evidence that "the gate never opened, so the run was IPPO".
+
+## 3. Is the probe reward design wrong?
+
+**The idea is right; the implementation choices block the very information you need.** Sections 5 and 6 have the evidence.
+
+1. **Exact-match lookup predictor.** It doesn't generalize to similar scenes.
+   - Only 5–27% of an agent's transitions repeat ≥8 times across ≥3 episodes.
+   - In the actual run, the LRU memory (4,096 entries) shrinks this further: at the end, agents have only 24–166 answerable scenes.
+2. **The variance filter (std ≤ .10) throws out exactly the delivery events.**
+   - The same public transition (move onto the goal while carrying a shelf) sometimes pays +1 and sometimes 0. The hidden part is whether the carried shelf is a current request.
+   - Of the 278 delivery keys, 17 have enough samples; their median paid fraction is .45 and median std .45. Only 1 passes std ≤ .10.
+3. **A (virtual queries) can't contribute structurally.** It has no labels and is answered only on an exact match, so in the actual run it got 0 answers.
+4. **Distance is averaged over all common queries.** One informative event's difference is diluted by up to 1/64. With coarser keys, this actually produced 6 cross-team approvals.
+5. **The threshold τ=.12 is too strict for the reward-difference scale.** With a well-trained predictor, same-team distances are .16–.34 (section 5).
+
+**A correction to what I said last time.** I said "under individual reward, blue never goes to the red corner". That is wrong. In the experience data, each agent carried a shelf onto the other team's goal 31–136 times (agent 1 excepted), and the reward was about 0. So the negative examples that condition 2 needs do exist.
+
+## 4. PGCT s1 vs PGCT s2
+
+In `experiment.json`, only these differ:
+
+- **Seed**: initial weights and environment randomness.
+- **Goal sides**: in s1 team 0 is at the left corner (0,10); in s2 team 0 is at the right (9,10).
+- **Canonical bank file**: built per seed. The A+C gate doesn't use it; it is only for the critic-distillation probes.
+
+Everything else is identical, including the A+C config, individual reward and coordinate masking. s2 hasn't started yet. If the gate stays closed, IPPO s2 and PGCT s2 will be bit-identical until the first transfer too.
+
+## 5. Offline measurement results (no training)
+
+**Setup**: IPPO s1 (A+C run, coordinates masked) checkpoints at 7 points from 0.26M to 5M, 8 episodes each with the stochastic policy. That is 168,000 agent transitions. Team labels are used only for scoring. 15 pairs: 6 same-team, 9 cross-team.
+
+| Item | Result |
+|---|---|
+| Condition 1: can the two goals be told apart in the public view? | **Yes.** Deliveries at the two goals share 0 public views (wall and goal positions differ) |
+| Condition 2: are there negative examples? | **Yes.** Carrying onto the other team's goal: 31–136 times per agent, reward ≈ 0 |
+| Exact-match lookup (current rule) | Common reward-event queries 0 per pair. Approvals 0. Mean-distance AUROC .80 is just tiny shaping-scale differences |
+| Coarse keys (other agents removed, 3×3) | Support rises to 62–77%, but the variance filter still blocks events. Without the filter: 6 cross-team approvals |
+| **Generalizing predictor (small MLP per agent, own reward only), event probes (C)** | **AUROC 1.00** (same .26 vs cross .54 average distance) |
+| Same, left-right mirrored event probes (A) | AUROC .91; 1.00 without agent 1 |
+| Same, random experience probes | .81 |
+| Experience only up to 1.5M | Event probes .67, mirrored .57 |
+
+The generalizing predictor's answers to delivery-event probes work exactly as you asked, with the calculation reversing by team:
+
+| | Delivery at team-0 goal | Delivery at team-1 goal | Mirror of team-0 delivery | Mirror of team-1 delivery |
+|---|---|---|---|---|
+| agent 3 (team 0) | **.89** | .00 | .00 | **.87** |
+| agent 2 (team 1) | .00 | **.78** | **.76** | .00 |
+| agent 4 (team 1) | .00 | **.82** | **.81** | .00 |
+
+In the distance matrix, every agent's two nearest are its teammates. The largest same-team distance (.34) is below the smallest cross-team distance (.39).
+
+Limitations:
+
+- **Agent 1 never delivered**, so its predictor outputs about 0 everywhere. It ended up near its teammates only because they too are weak predictors, which is weak evidence. The margin is thin (.34 vs .39).
+- **Single seed and few pairs.** One run (seed 1), 15 pairs.
+- **The experience is an approximation.** It is rollouts from 7 checkpoints, not the actual training stream.
+- **Event probes are partly in-sample.** They include the delivering agent's own training transitions.
+- **Identification comes late.** The signal appears only after agents have learned to deliver (around 2M+).
+
+## 6. Gate fix direction (gate v2)
+
+1. **Predictor**: replace exact lookup with a small parametric r̂_i(o, a, o') on the public view (MLP or CNN). Train it online on each agent's own experience buffer only, oversampling reward events.
+2. **Probes**: center them on events.
+   - C: delivery/return events that neighbors experienced. Exchange the public views only, not the rewards.
+   - A: feasible transforms of those events, such as left-right mirroring.
+3. **When to abstain**: drop the std filter and use predictor maturity instead, e.g. enough of the agent's own reward events and ensemble agreement. An agent that has never been rewarded, like agent 1, abstains rather than matching anyone.
+4. **Distance and threshold**: mean |Δ| over event probes only. τ=.12 is too strict. A relative rule (nearest neighbors, or the gap from cross-team distances) is safer than a fixed τ.
+5. **Logging**: log the A+C gate's own approvals and same/cross arcs to W&B.
+6. **Timing**: identification only becomes possible after about 2M, so transfer starts late. That makes it harder to see an early learning-speedup effect, which is a risk to state in the paper.
+
+Implementation would go into `latent_team/` as a new option with defaults unchanged, up to smoke tests only. The running PGCT s1 and the queue stay as they are. With the current gate, PGCT s2 will again be almost identical to IPPO, so it may be better to decide on s2 after gate v2 is ready.
+
+### Assistant — 다음 단계 상자
+
+Offline check done without training. Exact-match lookup can't separate teams, but a small generalizing reward predictor gets AUROC 1.00 on delivery/return-event probes. Pre-transfer IPPO/PGCT identity is also confirmed. Scripts and results are only in the new folder; the running training and the notes are untouched.
+
+질문: Implement gate v2 as a new option, up to smoke tests only? (버튼: Yes, implement / Record notes first)
+
+## 원문 기록 T137 — 2026-10-26 KST, Claude Code
+
+### 사용자 — 원문
+
+한국어로 대답해야지
+
+### 수행 기록 — 원문 대화와 별도
+
+- T135·T136 답변을 같은 내용으로 한국어로 다시 보냈다. 새 분석 없음.
+
+### Assistant — 최종 답변
+
+죄송합니다. 앞 답변을 한국어로 다시 드립니다. 내용은 같습니다.
+
+오프라인 측정을 마쳤습니다. A+C 아이디어 자체는 작동하고, 문제는 예측기와 거리 계산의 구현 방식입니다. 스크립트와 결과는 새 폴더 `output/ac_offline_20261026/`에 두었습니다. 실행 중인 학습과 기존 기록은 건드리지 않았습니다. 이번 대화는 아직 `CONVERSATION_LOG.md`에 기록하지 않았습니다.
+
+## 1. 방향 점검
+
+**1.4 독주가 늦게 풀리는 것**: 동의합니다. 옛 4-agent 설정에서 모두 배운 모델이 8M에 나왔다는 기록(D78)과 기억이 맞습니다. 이번에는 5M에서 6명 중 5명이 배웠고, agent 1은 아직 0입니다. 남은 run이 끝나기 전에는 판단하지 않겠습니다.
+
+**1.5 team_gate 그래프가 요동치는데 전이가 없을 수 있나 — 있습니다.**
+- W&B 그래프(`probe/pgct_gate_arcs`, `probe/same_team_gate`, `probe/cross_team_gate`)는 A+C gate가 아니라 trainer 자체 gate입니다.
+- PGCT mode는 `unrestricted` 그래프로 설정돼 있어서, 그 값은 그냥 "통신 범위 안의 이웃"입니다.
+- 2,826개 로그 모두에서 물리 이웃 수(`update/physical_candidate_arcs`)와 정확히 같습니다. 요동은 agent들이 통신 범위를 드나드는 것입니다.
+- A+C는 그 뒤에 allocation을 덮어씁니다. 실제 전이(`update/actual_transfer_arcs`)는 3번의 로그에서만 0이 아닙니다.
+- 이 표시는 오해를 부르므로, A+C gate 자체를 W&B에 기록해야 합니다.
+
+## 2. eval 값이 완전히 같았던 이유
+
+**PGCT s1은 첫 전이 전까지 IPPO s1과 비트 단위로 같았습니다.**
+
+- 첫 실제 전이(2,821,120 step, update 2755, 4↔6 쌍) 전까지 기록된 2,754개 update 전부에서 return, value loss, policy loss, entropy가 마지막 자리까지 같습니다.
+- update 2755에서 value loss가 소수점 여섯째 자리부터 처음 갈립니다(.019429 대 .019432).
+- 평가는 2.87M에서 처음 다릅니다(10.9 대 12.35).
+
+예전에 이렇게 같은 적이 없었던 이유:
+
+- **옛 PGCT·Oracle·All은 warm-up(100 update, 약 0.1M) 직후부터 critic 증류를 시작했습니다.** 그때부터 gradient가 IPPO와 달랐으므로 애초에 같을 수 없었습니다.
+- **E24의 1.4–1.6M 분기는 같은 mode를 다시 돌린 경우입니다.** peer loss 경로의 GPU 비결정성 때문이었습니다. peer loss가 없는 IPPO는 그때도 2.46M까지 정확히 같았습니다.
+- **이번 PGCT는 2.82M까지 peer loss를 한 번도 계산하지 않았습니다.** 그래서 IPPO와 똑같은 연산만 했습니다. 두 mode는 같은 A+C 관측 wrapper(좌표 마스킹)도 썼습니다. A+C gate 자체는 난수를 쓰지 않아서(결정적 샘플링) 학습 난수 흐름도 바뀌지 않습니다.
+
+즉 값이 같다는 것은 "gate가 열리지 않아 IPPO와 같았다"는 직접 증거입니다.
+
+## 3. 프로브 보상 설계가 잘못된 것인가
+
+**아이디어는 맞고, 구현 선택이 정작 필요한 정보를 막고 있습니다.** 근거는 5·6절에 있습니다.
+
+1. **정확 일치 lookup 예측기.** 비슷한 장면으로 일반화하지 못합니다.
+   - agent 경험 중 같은 전이가 3 episode 이상에서 8번 이상 반복되는 것은 5–27%뿐입니다.
+   - 실제 run에서는 LRU 메모리(4,096칸) 때문에 더 줄어, 마지막에 agent마다 답할 수 있는 장면이 24–166개뿐입니다.
+2. **분산 필터(std ≤ .10)가 바로 배송 사건을 버립니다.**
+   - 같은 공용 전이(선반을 들고 goal로 이동)가 어떤 때는 +1, 어떤 때는 0을 줍니다. 숨은 변수는 들고 있는 선반이 현재 요청 선반인지입니다.
+   - 배송 key 278개 중 표본이 충분한 17개의 보상 비율 중앙값은 .45, std 중앙값도 .45입니다. std ≤ .10을 통과한 것은 1개뿐입니다.
+3. **A(가상 질의)는 구조적으로 기여할 수 없습니다.** 라벨이 없고 정확히 일치할 때만 답이 나와서, 실제 run에서 답을 받은 횟수가 0입니다.
+4. **거리를 모든 공통 질의의 평균으로 냅니다.** 판별 사건 하나의 차이가 최대 1/64로 희석됩니다. key를 거칠게 했을 때는 실제로 다른 팀 승인이 6건 나왔습니다.
+5. **문턱 τ=.12가 보상 차이 규모에 비해 너무 엄격합니다.** 잘 학습된 예측기에서도 같은 팀 거리가 .16–.34입니다(5절).
+
+**지난 답변 정정.** "개인 보상에서는 파랑이 빨간 모서리에 가지 않는다"고 했는데 틀렸습니다. 경험 데이터에서 각 agent가 다른 팀 goal에 선반을 들고 간 횟수는 31–136번이고(agent 1 제외), 그때 보상은 약 0이었습니다. 조건 2에 필요한 음성 예시는 존재합니다.
+
+## 4. PGCT s1과 PGCT s2의 차이
+
+`experiment.json`에서 다른 항목은 다음뿐입니다.
+
+- **seed**: 초기 가중치와 환경 난수가 다릅니다.
+- **goal 좌우**: s1은 팀 0이 왼쪽 모서리 (0,10), s2는 오른쪽 (9,10)입니다.
+- **canonical bank 파일**: seed별로 만듭니다. A+C gate는 이 파일을 쓰지 않고, critic 증류용 probe에만 씁니다.
+
+A+C 설정, 개인 보상, 좌표 마스킹을 포함해 나머지는 모두 같습니다. s2는 아직 시작하지 않았습니다. gate가 지금처럼 닫혀 있으면 IPPO s2와 PGCT s2도 첫 전이 전까지 비트 단위로 같을 것입니다.
+
+## 5. 오프라인 측정 결과 (학습 없음)
+
+**설정**: IPPO s1(A+C run, 좌표 마스킹) checkpoint 7개(0.26M–5M), 각각 확률 정책으로 8 episode. agent 전이 168,000개입니다. 팀 라벨은 채점에만 썼습니다. 쌍은 15개로, 같은 팀 6쌍, 다른 팀 9쌍입니다.
+
+| 항목 | 결과 |
+|---|---|
+| 조건 1: 공용 관측에서 두 goal이 구분되나 | **구분된다.** 두 goal 배송 장면이 겹치는 관측은 0개다(벽·goal 위치가 다름) |
+| 조건 2: 음성 예시가 있나 | **있다.** 다른 팀 goal에 선반을 들고 간 횟수가 agent마다 31–136번, 보상 ≈ 0 |
+| 정확 일치 lookup(현재 규칙) | 쌍마다 공통 보상 사건 질의 0개, 승인 0. 평균 거리 AUROC .80은 shaping 수준의 아주 작은 차이일 뿐이다 |
+| 거친 key(다른 agent 제거, 3×3) | 지지율은 62–77%로 오르지만 분산 필터가 여전히 사건을 막는다. 필터를 빼면 다른 팀 승인 6건 |
+| **일반화 예측기(agent별 작은 MLP, 자기 보상만), 사건 probe(C)** | **AUROC 1.00** (평균 거리 같은 팀 .26, 다른 팀 .54) |
+| 같은 예측기, 좌우 대칭 사건 probe(A) | AUROC .91, agent 1을 빼면 1.00 |
+| 같은 예측기, 무작위 경험 probe | .81 |
+| 1.5M까지의 경험만 사용 | 사건 probe .67, 대칭 probe .57 |
+
+배송 사건 probe에 대한 일반화 예측기의 응답은, 원하셨던 대로 팀에 따라 계산이 반대로 나옵니다.
+
+| | 팀 0 goal 배송 | 팀 1 goal 배송 | 팀 0 배송의 대칭 | 팀 1 배송의 대칭 |
+|---|---|---|---|---|
+| agent 3 (팀 0) | **.89** | .00 | .00 | **.87** |
+| agent 2 (팀 1) | .00 | **.78** | **.76** | .00 |
+| agent 4 (팀 1) | .00 | **.82** | **.81** | .00 |
+
+거리 행렬에서는 모든 agent의 가장 가까운 두 명이 팀원입니다. 같은 팀 최대 거리(.34)가 다른 팀 최소 거리(.39)보다 작습니다.
+
+한계:
+
+- **agent 1은 배송을 한 번도 못 했습니다.** 그래서 예측기가 거의 모든 곳에서 0을 냅니다. 팀원 쪽이 가깝게 나온 것은 팀원들도 약한 예측기라서이고, 약한 증거입니다. 여유도 얇습니다(.34 대 .39).
+- **seed와 쌍이 적습니다.** run 1개(seed 1), 15쌍입니다.
+- **경험은 근사입니다.** 실제 학습 흐름이 아니라 checkpoint 7개의 롤아웃입니다.
+- **사건 probe 일부는 표본 내입니다.** 배송한 agent 자신의 학습 전이가 포함됩니다.
+- **식별이 늦게 됩니다.** 배송을 배운 뒤(약 2M 이후)에야 신호가 나옵니다.
+
+## 6. Gate 수정 방향 (gate v2)
+
+1. **예측기**: 정확 일치 lookup 대신, 공용 관측을 입력으로 하는 작은 모수적 r̂_i(o, a, o')(MLP 또는 CNN)를 씁니다. 각 agent의 자기 경험 버퍼만으로 온라인 학습하고, 보상 사건은 과표집합니다.
+2. **probe**: 사건 중심으로 구성합니다.
+   - C: 이웃이 겪은 배송·반납 사건. 보상은 교환하지 않고 공용 관측만 교환합니다.
+   - A: 그 사건의 가능한 변형(좌우 대칭 등).
+3. **판정 보류 기준**: 분산 필터를 없애고 예측기 성숙도로 바꿉니다. 예를 들어 자기 보상 사건이 충분하고 앙상블 예측이 일치할 때만 판정합니다. agent 1처럼 보상을 받아 본 적 없는 agent는 아무와도 묶지 않고 보류합니다.
+4. **거리와 문턱**: 사건 probe에서만 평균 |Δ|를 냅니다. τ=.12는 너무 엄격합니다. 고정 τ보다 상대 규칙(가장 가까운 이웃, 다른 팀 거리와의 격차)이 안전합니다.
+5. **기록**: A+C gate의 승인 수와 같은 팀·다른 팀 arc를 W&B에 기록합니다.
+6. **시점**: 식별은 약 2M 이후에야 가능하므로 전이도 늦게 시작됩니다. 초반 학습 가속 효과는 보기 어려울 수 있고, 논문에서 위험으로 적어야 합니다.
+
+구현은 `latent_team/`에 새 옵션으로 넣고 기본값은 그대로 두며, smoke test까지만 하겠습니다. 실행 중인 PGCT s1과 대기열은 그대로 둡니다. 현재 gate로는 PGCT s2도 IPPO와 거의 같게 나올 것이므로, s2는 gate v2가 준비된 뒤 정하는 편이 나을 수 있습니다.
+
+## 원문 기록 T138 — 2026-10-26 KST, Claude Code
+
+### 사용자 — 원문
+
+(붙여넣은 외부 답변 — 원문)
+
+이 질문은 PGCT 연구에서 굉장히 중요한 부분입니다. 특히 \*\*잘하는 에이전트의 critic을 못하는 에이전트에게 전달하면 실제로 학습이 좋아지는가?\*\*라는 문제는 지금 연구에서 별도로 검증해야 합니다.
+
+결론부터 말하면, 잘하는 에이전트의 critic을 못하는 에이전트에게 전달하는 것은 가능하지만, 무조건 긍정적인 값을 전달하면 안 됩니다.
+
+## 1. Critic이 정확히 무엇인가?
+
+강화학습의 Actor-Critic 구조에서 두 신경망은 역할이 다릅니다.
+
+- Actor(정책): 현재 관측에서 어떤 행동을 할지 결정합니다.
+- Critic(가치 함수): 현재 상황에서 앞으로 얼마나 많은 보상을 얻을 것으로 예상하는지 평가합니다.
+
+지금 사용 중인 IPPO의 일반적인 value critic은 다음을 근사합니다.
+
+\\[ V_i^{\pi_i}(o_i) \approx \mathbb E\left[ \sum\_{t=0}^{\infty}\gamma^t r\_{i,t} \mid o_i,\pi_i \right] \\]
+
+엄밀히는 다른 에이전트의 정책과 관측에 포함되지 않은 상태도 기대값에 영향을 줍니다.
+
+예를 들어 RWARE에서,
+
+- 선반을 집어서 배송할 수 있는 유망한 상황: \\(V(o)=5\\)
+- 선반이 멀리 있고 배송하기 어려운 상황: \\(V(o)=0.5\\)
+
+처럼 예상할 수 있습니다.
+
+Critic은 행동을 직접 지시하는 것이 아니라, Actor가 실제로 한 행동이 예상보다 좋았는지 나빴는지 판단하는 기준을 제공합니다.
+
+## 2. 잘하는 에이전트와 못하는 에이전트가 연결된다면?
+
+예를 들어 같은 팀의 두 에이전트를 생각해 보겠습니다.
+
+Agent A
+
+배송 학습 성공
+
+# 5회 / ep
+
+배송하는 방법을 알고 있음
+
+Critic: 배송 가능한 상황의 가치를 높게 평가
+
+Agent B
+
+배송 학습 실패
+
+# 0회 / ep
+
+배송 방법을 아직 모름
+
+Critic: 성공 경험이 없어 가치를 낮게 평가할 수 있음
+
+이때 A의 critic을 B에게 전달한다면?
+
+가령 동일한 관측 \\(o\\)에서
+
+\\[ V_A(o)=5,\qquad V_B(o)=0 \\]
+
+라고 합시다.
+
+B의 critic을 A의 critic에 가깝게 학습시키는 방법은 다음과 같습니다.
+
+\\[ \mathcal L\_{\mathrm{transfer}} = \left(V_B(o)-\operatorname{sg}[V_A(o)]\right)^2 \\]
+
+여기서 \\(\operatorname{sg}\\)는 stop-gradient입니다.
+
+이렇게 하면 B의 critic이 A와 비슷한 가치를 출력하도록 학습할 수 있습니다.
+
+하지만 여기에는 문제가 있습니다.
+
+A는 배송을 할 줄 알기 때문에 앞으로 보상 5를 기대하는 것이고, B는 배송을 못하기 때문에 보상 0을 기대하는 것이 실제로 더 정확할 수 있습니다.
+
+즉,
+
+\\[ V^{\pi_A}(o)\neq V^{\pi_B}(o) \\]
+
+일 수 있습니다.
+
+같은 팀이고 동일한 관측을 공유하더라도 정책이 다르면 올바른 가치 함수 역시 달라질 수 있다는 뜻입니다.
+
+## 3. 그럼 긍정적인 critic을 받으면 오히려 나빠질 수도 있나?
+
+맞습니다. 충분히 가능합니다.
+
+PPO에서 Actor 업데이트에 사용하는 Advantage는 대략 다음 형태의 TD 오차를 바탕으로 계산합니다.
+
+\\[ \delta_t = r_t+\gamma V(o\_{t+1})-V(o_t) \\]
+
+B가 배송을 못해서 현재 보상도 없고 앞으로의 예상 보상도 0이라고 가정하겠습니다.
+
+원래 critic이 \\(V_B(o_t)=0\\)이면 TD 오차는 0입니다.
+
+그런데 A에게서 critic을 전이받아 \\(V_B(o_t)=5\\)가 되었지만 B의 행동 능력은 그대로라면, 다음 상태 가치가 0일 때
+
+\\[ \delta_t=0+0-5=-5 \\]
+
+가 됩니다.
+
+결국 B의 Actor는 현재 행동을 예상보다 훨씬 나쁜 행동으로 평가할 수 있습니다.
+
+물론 실제 PPO에서는 다음 상태 가치, GAE, 가치 재학습 등에 따라 결과가 달라지지만, 높은 critic 값을 주입하는 것만으로는 좋은 행동을 학습시킬 수 없다는 점은 같습니다.
+
+## 4. 그렇다면 PGCT는 무엇을 전달해야 하나?
+
+핵심은 긍정적인 critic 값이 아니라, 정확하고 유용한 학습 정보를 전달하는 것입니다.
+
+여기서 세 가지 접근을 구분해야 합니다.
+
+| 방법                     | 전달하는 정보             | 한계                         |
+| ---------------------- | ------------------- | -------------------------- |
+| Value distillation     | A의 \\(V_A(o)\\)     | B의 정책이 다르면 잘못된 가치일 수 있음    |
+| Q / Advantage transfer | 특정 행동의 가치 또는 상대적 이점 | 정책 차이와 행동 가치 추정 오차를 고려해야 함 |
+| Actor imitation        | A가 선택하는 행동 분포       | A의 행동이 B에게도 실행 가능하고 유리해야 함 |
+
+예를 들어 A가 특정 선반 앞에서 TOGGLE을 해야 한다는 사실을 학습했다면, B에게 정말 필요한 정보는 단순히 "여기서 보상 5를 받을 수 있다"가 아닙니다.
+
+\*\*"이 상황에서는 TOGGLE을 하는 것이 다른 행동보다 유리하다"\*\*는 정보가 더 직접적으로 도움이 됩니다.
+
+다만 일반적인 \\(V(o)\\) critic에는 행동별 정보가 직접 들어 있지 않습니다.
+
+따라서 지금 PGCT가 value critic만 증류한다면, 실제로는 \*배송 행동을 가르치는 것\*이 아니라 \*상황의 가치 평가를 맞추는 것\*에 가깝습니다.
+
+## 5. 현재 PGCT 연구에는 어떤 의미가 있나?
+
+저는 현재 연구의 gate를 두 단계로 구분하는 방향을 권합니다.
+
+Gate 1 — 같은 팀인가?
+
+Reward probe로 잠재 팀 관계를 확인합니다.
+
+Gate 2 — 이 critic을 전달하면 도움이 되는가?
+
+Donor의 학습 성숙도, 가치 예측 오차, 정책 차이, 수신자의 학습 상태 등을 평가합니다.
+
+선택적·비대칭 Critic Transfer
+
+이렇게 하면 A와 B가 같은 팀인 것은 맞더라도,
+
+- A → B: 전달을 허용할 수 있음
+- B → A: 전달을 제한할 수 있음
+
+이라는 비대칭 전이가 가능합니다.
+
+단, 배송 횟수가 높다고 critic의 모든 예측이 정확한 것은 아닙니다. 따라서 학습 성과만으로 전이를 허용하기보다 critic의 예측 신뢰도와 실제 전이 효과를 함께 살펴야 합니다.
+
+## 제 생각에 가장 중요한 부분
+
+현재 PGCT에서 팀 식별의 정확도와 critic transfer의 유용성은 서로 다른 문제입니다.
+
+보상 probe로 같은 팀을 정확히 찾더라도, 학습이 잘된 에이전트와 못된 에이전트의 critic을 무조건 같게 만들면 성능이 나빠질 수 있습니다.
+
+특히 현재 RWARE에서 배송 0회인 agent 1이 다른 팀원에게서 critic을 받는다면, 정말로 배송 방법을 학습하게 되는지 아니면 가치 예측만 높아지는지 구분해야 합니다.
+
+그래서 지금 확인하고 싶은 부분이 하나 있습니다.
+
+현재 PGCT 코드에서 critic transfer는 정확히 `V_i(o)`와 `V_j(o)`를 같게 만드는 value distillation 방식인가요? 아니면 Q-value나 Advantage까지 전달하는 구조인가요?
+
+이 차이에 따라 현재 PGCT가 못하는 에이전트의 학습을 개선할 수 있는 메커니즘 자체가 상당히 달라집니다.
+
+(붙여넣기 끝)
+
+위 내용은 내가 A+C의 보상기반 팀분류, Critic 증류에 관해 생긴 궁금증을 적은거야 어떻게 생각해?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용: trainer의 peer loss(`examples/train_recurrent_ippo_consensus.py:2926–3105`), actor·critic 구조, PPO 설정(γ .99, GAE λ .95, value 계수 .5, max_grad_norm .5). Claude 메모리에 '모든 사용자 대상 문장은 한국어' 규칙을 저장했다(저장소 밖). 파일 수정·학습 없음.
+
+### Assistant — 최종 답변
+
+문제의식은 대부분 맞습니다. 다만 TD 예시(−5)는 과장이고, 이 글에는 더 중요한 문제 하나가 빠져 있습니다. 먼저 글이 마지막에 물은 질문부터 코드로 답하겠습니다.
+
+## 1. 현재 PGCT는 무엇을 전달하나 (코드 확인)
+
+**V 값 증류만 합니다.** Q·advantage·actor는 전달하지 않습니다(`examples/train_recurrent_ippo_consensus.py:3077`).
+
+- 손실은 L_i += 0.01 × Σ_j w_ij × mean_m (V_i(q_m) − V_j(q_m))² 입니다.
+  - donor 값 V_j는 update 전에 gradient 없이 미리 계산합니다(stop-gradient).
+  - q_m은 canonical probe 48개입니다. 모든 agent가 같은 probe를 쓰고, 길이 1, h=0, 좌표 마스킹입니다. 받는 agent가 실제로 방문한 상태가 아닙니다.
+- actor와 critic은 encoder·GRU가 따로입니다. 그래서 증류는 critic 파라미터만 바꾸고, actor에는 advantage를 거쳐서만 영향을 줍니다. 예외가 하나 있습니다. gradient norm clipping(0.5)은 actor와 critic 전체에 한꺼번에 걸려서 간접 영향이 조금 있습니다.
+- **증류의 세기는 작습니다.** 자기 return에 대한 value 손실 계수는 .5이고 peer 손실 계수는 .01입니다.
+  - 받는 agent가 자주 가는 상태에서는 자기 return 학습이 이깁니다.
+  - peer 신호가 우세한 곳은 그 agent가 거의 가지 않는 probe 상태뿐입니다.
+
+## 2. 맞는 지적
+
+- **V^{π_A} ≠ V^{π_B}.** value는 on-policy 값이라, 정책이 다르면 같은 팀이라도 정답 값이 다릅니다. 개인 보상에서는 같은 팀이 요청 선반 3개를 두고 경쟁하므로 실력이 같아도 값이 다를 수 있습니다(D81 위험).
+- **"value 증류는 행동이 아니라 상황 평가를 맞추는 것이다."** 맞습니다. actor는 advantage로만 배웁니다.
+- **팀 식별의 정확도와 전이의 유용성은 별개 문제다.** 맞습니다. AGENTS.md의 구분과도 같습니다.
+
+## 3. 고쳐야 할 지적: TD 예시
+
+V_B(o_t)=5인데 V_B(o_{t+1})=0이라는 가정은 o_t의 값만 올린 경우입니다. 실제로는 다릅니다.
+
+- **값이 고르게 c만큼 오르면** δ는 (γ−1)c = −0.01c만큼만 움직입니다(γ=.99).
+- 게다가 이 코드는 agent별로 advantage의 평균을 빼고 표준화합니다(`normalize_advantages=True`). 그래서 상수 이동은 사라집니다.
+- **의미 있는 것은 상태 사이의 상대적 모양**입니다. 증류로 생긴 차이를 Φ(o) = V_new(o) − V_B(o)라고 하면, δ_new = δ_B + γΦ(o') − Φ(o)입니다.
+  - 이것은 Ng et al.(1999)의 potential-based shaping 항과 같은 꼴입니다.
+  - A의 critic이 "요청 선반을 들고 goal 쪽으로 가는 상태"를 높게 보면, B는 그런 상태로 옮겨 갈 때 양의 advantage를 받습니다.
+  - 즉 탐색을 안내하는 교사 역할을 할 수 있습니다. B가 그 상태를 활용하지 못하면 잘못된 안내가 될 수도 있습니다.
+
+그래서 "높은 critic 값을 넣는 것만으로는 좋은 행동을 학습시킬 수 없다"는 너무 강한 말입니다. 도울 수도, 해칠 수도 있는 경험적 질문입니다. 다만 이 shaping 해석은 GAE 절단, critic 재학습, clipping 때문에 근사이고, 검증하지 않은 가설입니다.
+
+## 4. Gate 2(비대칭 전이)에 대해
+
+- **방향 자체는 이미 지원됩니다.** 코드의 allocation이 receiver×donor 행렬이라 A→B만 허용할 수 있습니다. 현재 A+C gate가 대칭(`gate[i,j]=gate[j,i]`)으로 만들 뿐입니다.
+- **주의할 점이 있습니다.** "전달하면 도움이 되는가"를 따로 판정하기 시작하면 연구 중심이 "전이 적합성 발견"으로 옮겨 갑니다. 이것은 D41·D71에서 피하기로 한 방향이고, Peer Learning(AAAI 2024)과 겹칩니다. 가정도 늘어납니다.
+- **제 권고는 최소 규칙입니다.** donor 조건을 "자기 보상 사건이 충분하고 보상 예측기가 성숙했다"로 둡니다. 이것은 gate v2의 판정 보류 규칙에서 그대로 나오므로 새 신호가 필요 없습니다.
+- 글이 말한 대로 배송 횟수가 critic 정확도는 아닙니다. 필요하면 donor 자신의 TD 오차나 설명 분산(explained variance)을 붙일 수 있고, 둘 다 국소 정보입니다.
+
+## 5. 글에 빠진 가장 중요한 점
+
+**도움이 가장 필요한 agent가 보상 probe로는 식별되지 않습니다.**
+
+- 오프라인 측정에서 배송을 못 한 agent 1의 보상 예측기는 모든 곳에서 약 0을 냈습니다. 받아 본 보상 사건이 없으니 어느 팀인지 드러낼 응답 자체가 없습니다.
+- gate v2의 판정 보류 규칙은 이런 agent를 제외합니다. 그러면 전이는 이미 배운 agent끼리만 일어나고, 정작 도움이 필요한 agent 1에게는 닿지 않습니다.
+- 가능한 길은 두 가지입니다.
+  - (가) **배송 전에 받는 작은 팀별 보상으로 식별**합니다. 자기 팀 요청 선반 pickup은 +.15, 다른 팀 요청 선반 pickup은 −.05이고, goal 쪽 진척 shaping도 있습니다. agent 1도 선반은 집습니다. 오프라인에서 무작위 경험 probe의 AUROC가 .81이었으니 이 수준의 신호는 있을 수 있습니다.
+  - (나) **주장 범위를 줄입니다.** "식별된 팀원끼리 학습을 가속한다"로 하고, "못 배운 agent를 구한다"는 주장하지 않습니다.
+
+## 6. 학습 없이 확인할 방법
+
+- **메인 대기열의 다음 job인 Oracle s1이 Q2를 직접 답합니다.** 같은 seed라서 warm-up(update 100)까지는 IPPO s1과 같고, 그 뒤 정답 팀원 critic을 받습니다. IPPO에서 끝까지 0이었던 agent 1이 배우는지가 핵심 비교입니다. 단, seed 1개입니다.
+- **checkpoint 오프라인 분석**도 가능합니다.
+  - B가 실제로 방문한 상태에서 Φ = V_A − V_B가 B 자신의 이후 return과 양의 관계인지 봅니다. 양이면 증류가 유용한 shaping이 될 수 있습니다.
+  - 배송 못 한 agent를 pickup·shaping 보상만으로 식별할 수 있는지 봅니다(5절 (가)).
+
+참고로 앞 답변이 영어로 나간 실수를 반복하지 않도록, 모든 답변을 한국어로 한다는 원칙을 메모리에 저장했습니다.
+
+### Assistant — 다음 단계 상자
+
+코드에서 확인한 결과, 현재 PGCT는 probe 48개에 대한 V 값만 증류하고 Q·advantage·actor는 전달하지 않습니다. 붙여주신 글의 문제의식은 대부분 맞지만 TD 예시(−5)는 과장입니다. 파일 수정이나 학습은 하지 않았습니다.
+
+질문: 다음으로 학습 없이 무엇을 측정할까요? (버튼: 둘 다 측정 / 식별만 측정)
+
+## 원문 기록 T139 — 2026-10-26 KST, Claude Code
+
+### 사용자 — 원문
+
+```
+'게이트 v2(gate v2)'를 새로운 옵션으로 추가합니다. 여기에는 예측기(predictor) 일반화, 이벤트 프로브(event probes), 임계값 재보정, 그리고 A+C 게이트에 대한 W&B 로깅 기능이 포함됩니다. 기존 기본값은 그대로 유지하며, 스모크 테스트까지 진행할 예정입니다. 저도 직접 학습을 시작해 보겠습니다.
+```
+
+v1, v2와 기존 학습 모델들을 이용해서 게이트 성능 분석도 해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 구현: `latent_team/reward_probe_ac_v2.py`(새 파일), `latent_team/train_from_scratch.py`(`--ac-gate` 옵션, v2 job 분기), `tests/test_reward_probe_ac_v2.py`(새 파일), `docs/REWARD_PROBE_AC.md`(v2 절). 기본값 v1 유지(E58).
+- 검증: pytest 18 + 20 passed, 실제 trainer smoke(scratchpad 출력). 옛 1M run 4개의 checkpoint 롤아웃(추론만)과 gate 재생 비교(E59), 결과는 `output/ac_offline_20261026/`. 본 학습 없음, 커밋 없음.
+
+### Assistant — 진행 안내
+
+기존 A+C 테스트와 설계 문서(`docs/REWARD_PROBE_AC.md`)를 확인한 뒤 gate v2를 새 파일로 구현하겠습니다. 실행 중인 학습 프로세스는 이미 코드를 메모리에 올려 둔 상태라, 새 파일과 옵션을 추가해도 영향을 받지 않습니다.
+
+Now I'll write the gate v2 module.
+
+Now the tests.
+
+v1·v2 테스트 18개가 통과했습니다. 기존 테스트와 실제 trainer로 smoke test를 이어서 돌립니다.
+
+Smoke test passed: `update/ac_v2_*` metrics reach the W&B log, the checkpoint stores the v2 state, and with no reward events the gate correctly abstains. IPPO and PGCT share the same initial hash and eval values, so v2 doesn't disturb the training RNG either.
+
+Next I'll collect rollouts from the older 1M models (corner/adjacent × seeds 1·2) to evaluate the gates.
+
+While the older-model rollouts collect, I'll write the gate evaluation script. It streams the experience into the real v1 and v2 gate classes in time order.
+
+Fixed a JSON serialization error in the gate evaluation script and rerunning it. It replays 5 datasets through both v1 and v2 (with and without mirroring); this takes a few minutes.
+
+오프라인 평가가 끝났습니다. 결과를 정리해 설계 문서와 출력 폴더 README에 적겠습니다.
+
+### Assistant — 최종 답변
+
+gate v2를 새 옵션으로 추가했고 smoke test까지 통과했습니다. 오프라인 평가에서는 v2가 판정한 쌍을 모두 맞혔습니다. 본 학습은 시작하지 않았고, 실행 중인 A+C 학습(PID 18880)에는 영향이 없습니다. 그 프로세스는 시작할 때 코드를 이미 메모리에 올렸고 job도 같은 프로세스 안에서 차례로 돌기 때문입니다.
+
+## 1. 구현
+
+**사용법**: `--reward-probe-ac --ac-gate v2`로 켭니다. 기본값은 v1이고, v1 코드·job 이름(`_ac_`)·동작은 그대로입니다. v2 job 이름에는 `_acv2_`가 붙습니다.
+
+**v2가 하는 일** (`latent_team/reward_probe_ac_v2.py`):
+- **예측기**: agent마다 작은 MLP `r̂_i(공용 before, action, 공용 after)`를 둡니다. 자기 전이와 자기 보상만으로 학습하고, 보상 사건(|r| ≥ .5)은 과표집합니다.
+- **사건 probe**:
+  - C: 두 이웃 각자의 최근 자기 보상 사건의 공용 관측. 보상은 교환하지 않습니다.
+  - A: 그 사건의 좌우 대칭.
+- **판정 보류**: 자기 보상 사건이 20개 미만이거나, 자기 사건을 제대로 예측하지 못하면(평균 예측 < .3) 그 agent는 판정하지 않습니다.
+- **거리와 문턱**: `Σ|a−b| / Σ(|a|+|b|)`이 .5 미만이면 같은 팀으로 봅니다. 응답이 겹치는 비율로 보는 척도라, 데이터에 맞춰 고른 값이 아닙니다. 옛 τ=.12는 쓰지 않습니다.
+- **난수**: 예측기는 별도 난수를 씁니다. 첫 전이 전까지 IPPO와 같은 학습이 유지되고, 테스트와 smoke test(초기 hash와 eval 값 일치)로 확인했습니다.
+
+**W&B 기록**: `update/ac_v2_*` 키로 남깁니다.
+- 성숙 agent 수, 비교한 쌍, 승인한 쌍, gate arc, 예측기 손실, 평균 거리
+- 감사용 `ac_v2_audit_*`: env info의 팀 ID로 같은 팀·다른 팀 승인을 사후에 셉니다. gate 입력에는 쓰지 않습니다.
+- 기존 `probe/*` 그래프는 물리 이웃 수일 뿐이니, 앞으로는 `update/ac_v2_gate_arcs`와 `update/same_team_arcs`를 보시면 됩니다.
+
+**검증**:
+- 테스트: v2 7개 + 기존 v1 11개 = 18개 통과, `test_latent_team.py` 20개 통과.
+- 실제 trainer smoke(6 agent, 64 step): v2 지표가 `metrics.jsonl`에 기록됐고 checkpoint에 v2 상태가 저장됐습니다. 보상 사건이 없으니 판정은 올바르게 보류됐습니다.
+
+## 2. 게이트 성능 분석 (v1 대 v2, 학습 없음)
+
+**방법**: 기존 학습 모델로 확률 정책 롤아웃을 만들고, 그 경험을 시간 순서대로 실제 v1·v2 gate 클래스에 넣었습니다. 1,000 env step마다 판정 round를 돌렸고, 모든 쌍이 매 round 접촉한다고 가정했습니다. 15쌍 중 같은 팀은 6쌍입니다.
+
+| 데이터 | v1 정확도 (결정한 쌍 수) | v1 승인 (같은/다른) | v2 정확도 (결정한 쌍 수) | v2 승인 (같은/다른) |
+|---|---|---|---|---|
+| A+C IPPO s1, 0.26–5M | .63 (8) | 1 / 0 | **1.00 (10)** | **4 / 0** |
+| 모서리 1M s1 | .25 (8) | 0 / 0 | 전부 보류 | 0 / 0 |
+| 모서리 1M s2 | .50 (12) | 0 / 0 | 전부 보류 | 0 / 0 |
+| 인접 1M s1 | .60 (15) | 0 / 0 | 전부 보류 | 0 / 0 |
+| 인접 1M s2 | .56 (9) | 0 / 0 | 전부 보류 | 0 / 0 |
+
+- **5M 경험에서는 v2가 분명히 낫습니다.** 같은 팀 거리는 .14–.18, 다른 팀은 .58–.70으로 문턱 .5와 여유가 큽니다. 보류된 5쌍은 모두 배송을 2번만 한 agent 1이 낀 쌍입니다.
+- **v2의 첫 승인은 2.56M checkpoint 경험 구간에서 나왔습니다.** 모든 round에서 다른 팀 승인은 0이었습니다. 다만 실제 학습은 이번 재생보다 경험이 약 180배 많아서 실제 시점은 다를 수 있습니다.
+- **1M 모델**: 배송하는 agent가 0–2명뿐이라 v2는 전부 보류했고, 오판정은 없습니다. v1은 판정을 내리지만 정확도 .25–.60, 거리 AUROC .30–.42로 우연 수준 이하입니다. 여기서 v1의 "거부"에는 문턱 미달뿐 아니라 신호·round 부족도 섞여 있습니다.
+- **좌우 대칭 probe(A)를 꺼도 결과가 같았습니다.** 이번 데이터에서는 C만으로 충분했습니다.
+- **인접 배치는 검증하지 못했습니다.** 배운 모델이 없어서, 조건 (가)의 음성 사례인지 아직 알 수 없습니다.
+
+**한계**: 5M run은 seed 1 하나이고 15쌍뿐입니다. 접촉은 항상 있다고 가정했습니다. 학습 경험의 약 1/180만 재생했습니다.
+
+## 3. 학습을 거신다면
+
+v2는 IPPO·Oracle·All 경로를 바꾸지 않습니다. 그래서 기존 A+C run(`runs/ac_20261023_185556`)의 IPPO·Oracle·All을 비교군으로 그대로 쓰고, **v2 PGCT만** 돌리면 job당 약 42시간을 아낄 수 있습니다. 시작한 뒤 `initial_weights_sha256.txt`가 기존 s1 값(`d3b03c12…`)과 같은지만 확인하시면 됩니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('acv2_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes pgct --seeds 1 2 --timesteps 5000000 --track --stage-label acv2_main --output-dir $run
+```
+
+기존 A+C 대기열과 동시에 돌리면 GPU를 나눠 쓰게 되어 둘 다 느려집니다. 순서는 정하시면 됩니다.
+
+## 변경 파일
+
+- 새 파일: [latent_team/reward_probe_ac_v2.py](latent_team/reward_probe_ac_v2.py), [tests/test_reward_probe_ac_v2.py](tests/test_reward_probe_ac_v2.py), [output/ac_offline_20261026/](output/ac_offline_20261026/README.md)(스크립트, 롤아웃, 결과 JSON, README)
+- 수정: [latent_team/train_from_scratch.py](latent_team/train_from_scratch.py)(`--ac-gate` 옵션과 v2 job 분기), [docs/REWARD_PROBE_AC.md](docs/REWARD_PROBE_AC.md)(v2 절 추가)
+- 커밋은 하지 않았습니다.
+
+### Assistant — 다음 단계 상자
+
+gate v2를 `--ac-gate v2` 옵션으로 추가하고 테스트 18개와 실제 trainer smoke test까지 통과했습니다(기본값 v1 유지). 오프라인 평가에서는 v2가 5M 경험에서 결정한 10쌍을 모두 맞혔고 다른 팀 승인은 0이었습니다. 본 학습과 연구 노트 갱신은 하지 않았습니다.
+
+질문: 이번 결과를 연구 노트와 대화 기록에 남길까요? (버튼: 기록해줘 / 나중에)
+
+## 원문 기록 T140·T141 — 2026-10-26 KST, Claude Code
+
+13:22 KST 무렵 시작(실행 중인 run 재확인 시각). T141 메시지는 T140 기록 작업 도중 도착했고, 한 번에 답했다.
+
+### 사용자 — 원문 (T140, '기록해줘' 버튼)
+
+이번 세션의 결정·실험·대화를 EXPERIMENTS.md, DECISIONS.md, RESEARCH_STATE.md, CONVERSATION_LOG.md에 기록해줘.
+
+### 사용자 — 원문 (T141, 작업 도중)
+
+현재 V2는 학습이 어느정도 완료된 시점에서의 분류를 성공했어.
+하지만 우리 목표는 에이전트가 탐험 도중 보상을 발견한다면, 똑같이 탐험 도중 보상을 발견한 다른 에이전트와 목적이 같은지를 확인하고, Critic을 증류해서 기존 IPPO보다 전체적인 학습 속도를 올리는 거잖아?
+V2가 해당 목표도 지킬 수 있을지 확인하고 싶어
+
+(붙여넣은 검토 요청 — 원문)
+
+현재 Gate V2 구현과 오프라인 결과를 확인했습니다. 다만 V2의 한계와 기존에 생각했던 Reward Probe의 목적을 다시 검토하고 싶습니다.
+우선 V3는 확정된 알고리즘이 아니라, V2만으로는 해결하기 어려울 수 있는 문제에서 출발한 연구 아이디어입니다. 당장 구현하거나 기존 코드를 수정하지 말고, 연구 방향의 타당성, 문제점, 대안에 대해 비판적으로 검토해 주세요.
+1. 근본적인 연구 의도
+제가 생각하는 DTDE에서는 각 에이전트가 기본적인 탐색과 보상 구조의 발견을 자기 경험으로 수행해야 합니다.
+이후 서로 다른 두 에이전트가 만났을 때, 각자 독립적으로 학습한 정보를 비교하여 다음과 같이 판단하는 것이 원래 의도입니다.
+
+* Agent A: "나는 이런 행동이나 상황에서 보상을 얻는다는 것을 배웠어."
+* Agent B: "나도 비슷한 상황에서 보상을 얻는다는 것을 배웠는데?"
+* 결과: "그렇다면 우리는 같은 목적을 가진 팀원일 가능성이 있겠네."
+
+여기서 중요한 것은 두 에이전트의 Actor 정책이나 학습 성능이 비슷할 필요는 없다는 것입니다.
+배송을 완전히 학습하지 못했더라도, 자기 경험에서 얻은 부분적인 보상 정보만으로 같은 목적이라는 증거를 발견할 수 있으면 충분하다고 생각합니다.
+즉, 목적의 유사성을 식별하는 것과 critic transfer의 유용성은 별개의 문제입니다. 팀 발견을 학습 실패 에이전트의 구제 문제나 donor 성능 평가 문제로 바꾸고 싶지는 않습니다.
+2. V2에 대해 의문이 생긴 이유
+V2는 기존 V1의 정확 일치 lookup 문제를 MLP 일반화로 개선했고, 학습 후반에는 같은 팀을 정확하게 구분했습니다.
+하지만 다음이 걸립니다.
+
+* 1M 모델에서는 여전히 대부분 판정을 보류합니다.
+* 5M 데이터에서도 최초 승인은 2.56M checkpoint 경험 구간에서 나왔습니다.
+* 큰 보상 사건을 중심으로 probe를 구성하기 때문에 배송을 학습하기 전의 작은 보상 차이를 충분히 활용하는지 의문입니다.
+* 좌우 대칭 Probe A를 제거해도 오프라인 결과가 동일했으므로, 현재는 C가 주요 역할을 합니다.
+
+그렇다고 V2가 반드시 실패한다고 단정하지는 않습니다. 실제 온라인 학습에서는 경험량과 신호가 다를 수 있습니다.
+다만 V2의 예측기 성능을 개선하는 것만으로 우리가 원래 의도했던 초기의 부분적인 목적 유사성 발견이 가능할지 의문이 생겼습니다.
+3. V3를 생각하게 된 배경
+예전에 Reward Probe를 논의할 때, Actor와 독립적으로 임의의 행동 궤적을 만들어 각 에이전트의 보상 예측기에 입력하고, 해당 궤적에 대한 예상 보상 응답을 비교하는 방법을 생각했습니다.
+예를 들어 공통 궤적 (\tau)에 대해
+[
+S_i(\tau)=\sum_t \gamma^t\hat r_i(o_t,a_t,o_{t+1})
+]
+를 계산하고, 두 에이전트의 보상 응답이 얼마나 비슷한 방향을 나타내는지 비교하는 것입니다.
+이렇게 하면 정책이 다르더라도 동일한 가상의 상황에 대해 자신이 학습한 목적을 평가할 수 있지 않을까 생각했습니다.
+하지만 이 방법을 채택하겠다는 의미는 아닙니다. 오히려 여기서 상당히 근본적인 문제가 발견되었습니다.
+4. 가장 큰 의문: 부분관측에서 가상 Probe의 궤적은 어떻게 정의하는가?
+현재 RWARE는 부분관측 환경입니다.
+에이전트가 이동하면 자기 주변의 관측창도 이동합니다. 따라서 Probe에 가상의 이동 궤적을 넣는다면 다음 문제가 발생합니다.
+
+1. Probe가 이동할 때 관측창도 함께 이동해야 하는가?
+2. 그렇다면 다음 위치에서 보이는 관측은 어떻게 생성하는가?
+3. 원래 관측 범위 밖에 있던 선반이나 다른 에이전트의 상태를 어떻게 알 수 있는가?
+4. 서로 다른 위치에 있는 두 에이전트에게 '동일한 Probe'는 무엇을 의미하는가?
+5. 임의의 가상 궤적을 생성하려면 전체 환경 상태나 별도의 동역학 모델이 필요하지 않은가?
+6. 이런 정보를 이용하면 실제 DTDE에서 허용되지 않는 중앙집중식 정보가 들어오는 것 아닌가?
+
+단순히 공용 관측 채널을 사용하거나 좌표를 마스킹한다고 이 문제가 해결되는지 확신할 수 없습니다.
+더구나 실제 보상은 관측되지 않은 요청 상태 등에도 영향을 받으므로, 동일한 공용 관측 전이가 반드시 동일한 보상 의미를 갖는 것도 아닙니다.
+5. 검토하고 싶은 대안
+현재는 세 가지를 생각하고 있습니다.
+A. 단일 국소 전이 Probe
+실제로 관측된 ((o,a,o'))를 공통 질의로 사용합니다. 가상 관측창을 이동시킬 필요는 없지만, 짧은 전이만으로 목적을 구분할 수 있을지 의문입니다.
+B. 실제로 기록된 짧은 관측 궤적 Probe
+에이전트가 경험한 ((o_0,a_0,o_1,\ldots,o_T))를 사용합니다. 관측창 이동이 실제 경험에 반영되어 있지만, 다른 에이전트가 해당 궤적을 신뢰성 있게 평가할 수 있는지 불확실합니다.
+C. 완전히 가상적인 행동 궤적 Probe
+Actor와 무관한 가상의 이동·행동 궤적을 생성합니다. 원래 아이디어에 가장 가깝지만, 부분관측에서 가상의 관측을 어떻게 생성할지가 가장 어렵습니다.
+이 세 가지 중 어느 것도 확정하지 않았습니다.
+또한 새로운 궤적 Probe를 도입하지 않고, V2에서 pickup이나 progress 같은 작은 보상 사건을 더 잘 활용하는 것만으로 충분할 가능성도 열어 두고 있습니다.
+6. 요청하는 검토
+다음 질문들을 중심으로 의견을 주세요.
+
+1. V2의 한계가 실제로 구조적인 문제인가요? 아니면 보상 사건 선택, 학습 데이터, 성숙 조건을 수정하면 해결 가능한 구현 문제인가요?
+2. Actor와 독립적인 Reward Probe라는 구상이 이론적으로 타당한가요? 실제 Actor 실행과 독립적으로 질의를 평가하는 것과, Actor 경험 없이 보상 함수를 학습하는 것은 구분해 주세요.
+3. 부분관측에서 두 에이전트가 공통으로 평가할 수 있는 Probe를 정의할 수 있나요? 전체 상태를 이용하지 않는 조건에서 가능한 방법과 불가능한 방법을 구분해 주세요.
+4. 보상 목적이 부분적으로 일치한다는 것은 어떻게 정의해야 하나요? 절대 보상 차이, 양·음 방향, 상대적 선호 순서 중 무엇이 적절한지, 그리고 모두 0으로 예측하는 경우를 어떻게 처리할지 검토해 주세요.
+5. 자기 경험에 없는 가상 궤적을 평가하는 것이 실제로 가능한가요? 보상 모델의 일반화 문제와 부분관측으로 인한 식별 불가능성 문제를 구분해 주세요.
+6. V3가 정말 필요한가요? V2를 조금 수정하는 것으로 충분하다면 그 이유를 설명하고, V3가 별도의 연구 가치를 갖는다면 무엇이 본질적으로 다른지 설명해 주세요.
+7. V1·V2·V3 각각의 장점, 단점, 구현 복잡도, DTDE 정보 제약 위반 위험, 초기 팀 식별 가능성을 비교해 주세요.
+8. 추가 학습을 시작하기 전에 기존 checkpoint와 경험 데이터로 어떤 최소 실험을 하면 이 아이디어의 타당성을 판단할 수 있을까요?
+
+7. 검토 원칙
+
+* V3가 V2보다 우수하다고 전제하지 마세요.
+* 제 아이디어에 동의하는 방향으로만 답하지 말고, 구조적으로 성립하기 어려운 부분이 있다면 명확히 지적해 주세요.
+* 임의의 새로운 환경 정보, 팀 라벨, 상대방의 실제 보상을 사용할 수 있다고 가정하지 마세요.
+* 기존 연구 목표인 '완전분산 환경에서의 잠재 팀 발견'을 유지해 주세요.
+* 이론적으로 식별 불가능한 경우와 예측기가 부족해서 실패하는 경우를 구분해 주세요.
+* 이번에는 구현, 신규 학습, 실험 실행을 하지 말고 코드와 기존 결과를 참고한 설계 검토만 해 주세요.
+
+최종적으로 V2를 유지·개선하는 것이 타당한지, V3를 별도의 설계로 연구할 가치가 있는지, 또는 다른 대안이 필요한지 근거와 함께 평가해 주세요.
+
+(붙여넣기 끝)
+
+### 수행 기록 — 원문 대화와 별도
+
+- T140: `EXPERIMENTS.md`에 E56–E59, `DECISIONS.md`에 D82–D87, `RESEARCH_STATE.md` 맨 위에 10-26 상태, 이 파일에 T132–T141을 추가했다. 실행 중인 run을 다시 확인했다(13:22, PGCT s1 3.01M, 전이 update 5개). `research_archive/RESEARCH_ARCHIVE.md` 재생성.
+- T141: 구현·학습·실험 없이 코드와 기존 로그만 읽었다(`rware/multi_team_warehouse.py`의 선반 구역 배정·진척 shaping·거리, A+C IPPO s1 `metrics.jsonl`의 초기 배송·pickup 기록). 검토 결론은 D87.
+
+### Assistant — 진행 안내
+
+노트 네 개의 최신 항목과 번호(E55, D81, T131)를 확인했고, 실행 중인 A+C run의 현재 진행(PGCT s1 3.01M)도 다시 확인했습니다. 이제 항목을 작성합니다.
+
+Now the decisions (D82–D86).
+
+Now the conversation log (T132–T140). I'll write the user messages, progress notes and final answers verbatim and append them with CRLF line endings.
+
+Before finishing the T140 log I'm checking the reward and shelf-placement code for the new review question (reading only, no experiments).
+
+The review draft is done. I'll add it to the notes as D87 and finish the remaining conversation log entries (T138–T141) before answering.
+
+### Assistant — 최종 답변
+
+이번 세션 기록을 네 파일에 남겼고, 이어서 보내 주신 V2·V3 검토에 답합니다. 검토는 지시대로 코드와 기존 결과(학습 로그 포함)만 읽었고, 구현·학습·새 실험은 하지 않았습니다.
+
+## 1. 기록 완료
+
+| 파일 | 추가한 내용 |
+|---|---|
+| `EXPERIMENTS.md` | E56 A+C v1 본 학습 진행, E57 오프라인 진단, E58 gate v2 구현·검증, E59 v1 대 v2 판정 비교 |
+| `DECISIONS.md` | D82 개인 보상 원칙, D83 A+C 채택, D84 v1 원인과 v2, D85 critic 증류와 못 배운 agent 문제, D86 기록 방식, D87 이번 V2·V3 검토 |
+| `RESEARCH_STATE.md` | 맨 위에 10-26 13:22 기준 상태와 검토 요지 |
+| `CONVERSATION_LOG.md` | T132–T141 원문(CRLF) |
+
+`research_archive/RESEARCH_ARCHIVE.md`도 다시 만들었습니다. 시각이 남아 있지 않아 날짜만 적었고, T133은 10-23–26 사이로만 표시했습니다. 영어로 나간 답변과 진행 안내도 원문 그대로 남겼습니다. `docs/SESSION_HANDOFF.md`는 10-23 스냅샷이라 지금 상태와 다릅니다.
+
+## 2. V2가 "탐험 중 보상 발견 → 팀 확인 → 증류로 학습 가속"을 지킬 수 있나
+
+- **식별 시점**: "2.56M에야 첫 승인"은 대부분 오프라인 재생의 산물입니다. 재생은 checkpoint당 8 episode라 실제 경험의 약 1/180입니다. 실제 학습 로그(A+C IPPO s1)를 보면 첫 0.1M 동안 agent마다 기록된 배송이 12–23회입니다. V2의 성숙 기준(자기 보상 사건 20회)은 온라인에서 0.1–0.3M에 도달할 수 있다고 추정합니다. 아직 온라인으로 확인하지는 않았습니다.
+- **구조적 한계는 V2가 아니라 보상 probe 전체에 있습니다.** 팀별로 다른 보상을 아직 받아 본 적 없는 agent는 어떤 예측기·probe로도 식별할 수 없습니다. 다만 "둘 다 보상을 발견한 뒤 비교한다"는 원래 의도와는 충돌하지 않습니다.
+- **학습 가속의 상한은 gate가 아니라 Oracle이 정합니다.** 정답 팀원의 critic을 받아도 IPPO보다 빠르지 않으면, 어떤 gate도 속도를 올릴 수 없습니다. Oracle s1은 대기열 다음 순서이고, 10-27 새벽 무렵 시작할 것으로 봅니다.
+- **V3(가상 궤적)는 권하지 않습니다.** 대신 V2에 작은 보상을 쓰는 비교 방식을 더하는 수정(아래 V2.1)을 권합니다.
+
+정정이 하나 있습니다. 앞에서 "agent 1은 배송을 한 번도 못 했다"고 했는데, 이는 평가와 오프라인 롤아웃 기준이었습니다. 학습 로그를 보면 0–0.5M 구간에 배송 기록이 20·34·45회 있다가 이후 사라졌습니다. 발견했다가 잃어버린 경우입니다.
+
+## 3. 질문별 검토
+
+### Q1. V2의 한계는 구조인가, 구현인가
+
+| 한계 | 성격 | 근거 |
+|---|---|---|
+| 첫 승인 2.56M | 대부분 재생 설정의 산물 | 재생 경험이 실제의 1/180이고, 로그상 초기 배송이 많다 |
+| 1M 모델 대부분 보류 | 그 run 자체의 사정 | 옛 1M run은 배송 agent가 0–2명(독주) |
+| 큰 사건(\|r\| ≥ .5)만 probe | 구현 선택 | 작은 보상 중에도 팀을 가르는 것이 있다(아래) |
+| 절대 차이 거리 | 구현 선택 | 공통 감점이 양쪽 응답에 똑같이 들어가 작은 신호를 묻는다 |
+| 보상을 받아 본 적 없는 agent | 구조 | 팀별 보상 경험이 없으면 비교할 응답이 없다 |
+
+코드에서 작은 보상을 하나씩 보면, 팀을 가를 수 있는 것과 없는 것이 나뉩니다.
+
+- **goal 진척 shaping(±.005/step)**: 자기 요청 선반을 들고 자기 goal에 가까워지면 +, 멀어지면 −입니다(Manhattan 거리).
+  - 관측은 회전하지 않는 북쪽 고정 격자이고, 자기 방향(ego 3–6)이 공용 관측에 들어 있습니다.
+  - 그래서 "선반을 들고 서쪽으로 전진"은 좌표가 없어도 공용 관측에서 구분됩니다. 모서리 배치에서는 이 행동에 두 팀이 반대 부호의 보상을 받습니다.
+  - **초기에 쓸 수 있는 팀 신호 후보**입니다.
+- **pickup(+.15 / −.05)**: 요청 여부가 관측에 없습니다. 또 `shelf_soft_zone_ratio`가 .5라 각 구역 선반의 절반이 상대 팀 소유입니다. 좌표가 있어도 위치로 팀을 알 수 없으므로 **관측상 식별 불가**입니다.
+- **나머지**: 요청 선반 쪽 진척(.002)도 같은 이유로 식별 불가입니다. 반납 진척은 선반 home 기준이라 팀과 무관하고, 감점은 모두에게 같습니다.
+
+즉 V2는 큰 사건만 써서 늦어 보일 수 있지만, 이 환경에는 더 이른 팀 신호(진척 shaping)가 있습니다. 다만 이 신호는 환경 설계자가 넣은 shaping에서 나옵니다. 배송 보상만 있는 희소 보상 환경이라면 첫 배송 전 식별은 원리상 불가능합니다. 논문에서는 이 점을 조건으로 밝혀야 합니다.
+
+### Q2. Actor와 독립적인 reward probe는 타당한가
+
+- **질의를 Actor 실행과 독립적으로 평가하는 것은 타당합니다.** r̂_i는 (o, a, o')의 함수라 어떤 입력에도 값을 냅니다. 문제는 신뢰도로, 자기 경험 분포 밖의 값은 귀납 편향에 기댄 외삽입니다.
+- **Actor 경험 없이 보상 함수를 학습하는 것은 DTDE에서 불가능합니다.** 보상은 자기 궤적에서만 관측되므로, 방문하지 않은 곳의 보상은 데이터로 정해지지 않습니다. 결국 탐험 정책이 보상 학습의 커버리지를 정합니다.
+
+### Q3. 부분관측에서 공통 probe를 정의할 수 있나
+
+agent들은 같은 센서 모델을 쓰므로, "같은 probe"는 같은 위치가 아니라 **같은 관측 입력**을 뜻합니다. 각자 자기 r̂에 그 입력을 넣으면 됩니다. 남는 문제는 그 입력이 두 팀에게 같은 세계 상황을 가리키느냐입니다.
+
+| 가능(전체 상태 불필요) | 불가능하거나 추가 가정 필요 |
+|---|---|
+| 실제로 관측된 단일 전이(o, a, o') | 관측창 밖으로 나가는 여러 step의 가상 궤적: 보이지 않던 칸을 지어내야 하므로 world model이나 전체 상태가 필요하다 |
+| 실제로 기록된 짧은 궤적 | 숨은 요청 상태에 따라 보상이 달라지는 질의(pickup 등): 관측에 없으므로 어떤 방법으로도 불가 |
+| 실제 관측의 국소 변형: 1-step 가상 분기(v1에서 실제 환경과 일치 검증), 좌우 대칭 | 정적 지도로 가상 관측창 그리기: 가능하지만 '지도를 안다'는 가정이 추가되고, 결국 좌표를 쓰는 것과 같다 |
+
+### Q4. "목적이 부분적으로 같다"는 어떻게 정의하나
+
+- **절대 차이**: 규모에 민감하고, 큰 사건과 공통 감점이 지배합니다. 학습 후반에는 잘 되지만 초기의 작은 신호를 묻습니다.
+- **부호(방향)**: 작은 보상에 강하지만 0 근처에서 불안정합니다.
+- **상대 선호 순서**: 보상에 양수를 곱하거나 potential shaping을 더해도 변하지 않으므로 이론상 가장 알맞습니다(Ng et al. 1999). 다만 동점 근처의 순위는 잡음이 큽니다.
+- **제 권고는 대조(contrast)의 부호 일치입니다.**
+  - 같은 관측에서 나온 두 질의의 차이 c_i(q) = r̂_i(q) − r̂_i(q̃)를 비교합니다. q̃는 좌우 대칭이나 다른 행동 분기입니다.
+  - 공통 감점 같은 대칭 성분은 빠지고 팀 고유 성분만 남습니다.
+  - 두 agent가 모두 확신하는 질의에서만 부호 일치율을 셉니다.
+- **모두 0으로 예측하면** 유사성이 아니라 '증거 없음'으로 보고 판정을 보류해야 합니다. v1의 신호 기준과 v2의 성숙 기준이 이 역할을 합니다.
+- **부분 지식의 한계**: A는 진척 shaping만, B는 배송만 안다면 겹치는 질의가 없어 비교할 수 없습니다. 그때는 보류가 맞습니다.
+
+이렇게 정의하면 V2에서 효과가 없던 좌우 대칭(A)이 쓸모를 얻습니다. 추가 probe가 아니라 대조의 짝으로 쓰는 것입니다. 아직 측정하지 않은 가설입니다.
+
+### Q5. 경험에 없는 가상 궤적을 평가할 수 있나
+
+두 문제를 나눠야 합니다.
+
+- **일반화 문제(예측기가 부족해서 실패)**: 값은 나오지만 검증할 수 없습니다. 앙상블 불일치나 지지 밀도를 보고 보류하면 줄일 수 있고, 더 좋은 모델과 더 많은 경험으로 개선됩니다.
+- **관측상 식별 불가(이론적 실패)**: 팀별 보상 차이가 관측에 없는 숨은 변수에 달려 있으면, 최선의 예측기인 E[r | o, a, o']가 두 팀에서 같아집니다. pickup, 인접 goal 배치, 팀별 보상을 겪기 전의 모든 구간이 여기에 속합니다. 예측기를 아무리 고쳐도 해결되지 않습니다.
+
+### Q6. V3가 필요한가
+
+필요하지 않다고 봅니다.
+
+- r̂가 마르코프(o, a, o')라면 S_i(τ) = Σγ^t r̂_i는 구성 전이 질의의 가중합일 뿐입니다. 단일 전이 probe보다 새 정보가 없습니다.
+- 가상 궤적은 관측창 밖을 지어내야 해서 world model, 전체 상태, 또는 지도 가정이 필요합니다. 그런데 식별 가능성의 원천(팀별 보상 차이가 관측에 드러나는가)은 바뀌지 않습니다.
+- **별도 연구 가치가 남는 경우는 하나입니다.** 실제로 기록된 궤적(B)에 기억을 가진 보상 모델(GRU)을 쓰면, 단일 관측으로는 구분되지 않는 위치를 이동 이력으로 추론할 수 있습니다(경로 적분). 하지만 이 환경은 방위가 관측에 있어 필요성이 낮습니다. 예전 궤적 probe(E37·E38)도 이득이 없었습니다(당시는 좌표가 있던 조건).
+
+연구 가치는 V3보다 **식별 가능성 분석**에 있다고 봅니다. "팀별로 다른 보상이 경험되고, 그것이 관측에서 구분되는 시점이 식별 시점의 하한"이라는 명제는 D71의 조건 (가)·(나)를 시간 축으로 넓힙니다.
+
+### Q7. 비교
+
+| | V1(정확 일치) | V2(MLP·큰 사건) | V2.1(제안: 대조·작은 보상 추가) | V3(가상 궤적) |
+|---|---|---|---|---|
+| 장점 | 외삽 없음, 보수적 | 일반화, 학습 후반 정확(오프라인 10/10) | 초기 진척 shaping 활용 가능, 공통 감점 제거 | 원래 구상에 가장 가깝다 |
+| 단점 | 지지 부족, 판별 사건 보류 | 큰 사건 전에는 보류, 절대 차이 | 대조 짝 정의 필요(대칭 가정 또는 분기), 미검증 | 관측 생성 문제, 새 정보 없음 |
+| 구현 복잡도 | 낮음(구현됨) | 중간(구현됨) | 중간(V2 수정) | 높음 |
+| DTDE 위반 위험 | 낮음 | 낮음 | 낮음(대칭은 환경 가정) | 높음(전체 상태 또는 지도) |
+| 초기 식별 | 거의 불가 | 첫 배송 사건 이후(온라인 미확인) | 첫 요청 선반 운반 이후 가능성(가설) | 원천이 같아 이득 불분명 |
+
+### Q8. 학습 전 최소 실험 (기존 checkpoint·경험 사용, 지시가 있을 때 실행)
+
+1. **보상 성분별 식별 가능성 감사**(사다리 (i), 오프라인 진단 전용)
+   - 기존 checkpoint 롤아웃에서 보상 성분(배송·반납·pickup·진척·감점)을 따로 기록합니다.
+   - 공용 관측 특징 묶음(운반 × 방향 × 행동 × 지형)별로 팀 조건부 평균을 내서, 어떤 성분이 관측상 팀을 가르는지 봅니다.
+   - 예측기 실패와 원리적 불가를 가를 수 있습니다.
+2. **초기 식별 곡선**: 가장 이른 checkpoint(0.256M)를 실제 경험량에 맞게(약 200 episode ≈ 0.1M step) 재생합니다. V2 절대 차이와 대조 부호 방식의 AUROC를 경험 구간별로 비교합니다.
+3. **음성 대조**: 이미 수집한 인접 배치 1M 경험에서 대조 방식이 실패하는지 봅니다.
+4. **속도 상한**: Oracle s1 결과(대기열 진행 중)로 IPPO 대비 이득과 그 이득이 나는 시점을 봅니다.
+   - 이득이 보상 발견 전 구간에서만 난다면, 보상 기반 gate로는 얻을 수 없습니다.
+   - 이를 가르려면 이후에 '지연 Oracle'(두 agent가 자기 보상 사건을 k번 겪은 뒤에만 전이) 학습이 필요합니다.
+
+## 4. 최종 평가
+
+- **V2는 유지하고 고칠 가치가 있습니다.** 늦다는 인상은 주로 재생 설정에서 왔고, 남은 문제는 작은 보상을 쓰는 비교 방식이라는 구현 선택입니다.
+- **V3(가상 궤적)는 별도 설계로 연구할 근거가 약합니다.** 식별의 원천을 바꾸지 못하고 DTDE 위험만 늘립니다.
+- **먼저 할 일은 두 가지입니다.** Oracle s1로 "증류가 속도를 올리는가"를 확인하는 것, 그리고 1번(성분별 감사)과 2번(초기 식별 곡선)으로 V2.1이 초기 식별을 할 수 있는지 판단하는 것입니다.
+
+## 원문 기록 T142 — 2026-10-26 KST, Claude Code
+
+13:50 KST 무렵 분석 프로세스 시작, 15:28 무렵 종료(결과 파일 시각 기준).
+
+### 사용자 — 원문
+
+기존 checkpoint로 보상 성분별 식별 가능성 감사(1번)와 실제 경험량에 맞춘 초기 식별 곡선(2번, V2 절대 차이 대 대조 부호)을 진행해줘. 학습은 하지 마.
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 폴더 `output/ac_early_id_20261026/`: `stream_eval.py`, `audit.py`, `summarize.py`, 결과(`*_curve.json`, `*_audit.npz`, `audit.json`, `summary.json`, stdout), `README.md`. 정책 추론만 했고 학습 없음(E60).
+- 처음 띄운 분석 프로세스 4개를 메모리 우려로 Claude가 멈추고(실행 중 학습 PID 18880은 건드리지 않음) 배열 사전 할당으로 고쳐 다시 실행했다.
+- 작업 중 `latent_team/train_from_scratch.py`가 14:09에 외부에서 수정됐다(manifest 인자 줄바꿈 정리). 되돌리지 않았고, v2 plan·runner 테스트 2개를 다시 돌려 통과를 확인했다.
+- 기록: `EXPERIMENTS.md` E60, `DECISIONS.md` D88, `RESEARCH_STATE.md` 항목 추가, 이 T142, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Components check out (pickup −.05/−.005/+.15, goal progress ±.005, remainder ≤ .031). The early contrast signal already shows up at 20k steps. Launching the full runs (four datasets, ~80 min each, in parallel).
+
+While the runs go, I'll write the audit analysis (component × feature set × experience window).
+
+Projected memory per process (~2GB of Python lists) could squeeze the running training (PID 18880). I'll stop my four analysis processes only, switch to preallocated numpy arrays, and relaunch.
+
+네 개의 분석 프로세스를 다시 시작했습니다(각각 약 1.5시간 예상). 끝나면 감사 스크립트를 자동으로 돌리도록 대기 작업을 걸어 두겠습니다.
+
+While waiting, I'll prepare a summary script for the identification curves.
+
+The four runs take about 1.5 hours. I'll wait in 10-minute blocks and check progress.
+
+Throughput is ~186 steps/s, so about 80 minutes remain. Early signs: in the A+C s1 data the contrast measure already shows AUROC .96 at 0.08–0.1M. The adjacent layout, which I expected as a negative control, also shows .83–.89, so the confounding check (split rank) will matter.
+
+Note: `latent_team/train_from_scratch.py` was changed on disk by someone else (the user or another tool). I won't touch it, but I'll check that the v2 option is still intact.
+
+The outside edit (14:09) only reformatted the manifest arguments onto separate lines; the v2 code is intact. A quick syntax and plan test to confirm:
+
+네 개 분석이 0.74M까지 진행됐습니다(약 25분 남음). 모서리 배치에서는 V2 절대 차이와 대조 부호 모두 0.2–0.3M부터 AUROC 1.00이고, 인접 배치는 대조 .89, V2 .70 수준입니다. 끝나면 성분별 감사를 자동으로 돌립니다.
+
+감사 결과가 나왔습니다. 방향만 쓴 특징(운반·방향·행동)에서는 모서리 배치의 goal 진척 shaping이 초기(≤0.26M)부터 10개 분할 중 1위로 팀을 가릅니다. 인접 배치에서는 같은 성분이 팀을 가르지 못합니다. 지형을 더한 특징도 확인합니다.
+
+결과를 정리해 기록하겠습니다(출력 폴더 README, E60, D88, 상태, 대화 기록).
+
+### Assistant — 최종 답변
+
+학습 없이 두 실험을 마쳤습니다. 결과는 세 가지입니다.
+
+- **V2는 실제 경험량에서는 늦지 않습니다.** 첫 같은 팀 승인이 모서리 배치에서 0.26–0.32M에 나왔고, 다른 팀 승인은 네 데이터 모두 한 번도 없었습니다. 앞서 본 "2.56M"은 재생량이 실제의 1/180이어서 생긴 값이었습니다.
+- **초기 팀 신호는 goal 진척 방향과 goal 근처 배송입니다.** pickup은 팀을 가르지 못합니다. 지난 검토의 예상이 맞았습니다.
+- **대조 부호 방식은 순위를 더 일찍 맞춥니다.** 다만 바로 판정에 쓰면 0.1–0.2M에 오판정이 있어 보류 규칙이 필요합니다.
+
+## 방법
+
+- **데이터 4개**:
+  - A+C IPPO s1(정책 입력 좌표 마스킹)
+  - 옛 1M IPPO 모서리 s1·s2, 인접 s1(정책 입력에 좌표 있음, gate 입력에는 없음)
+- **재생 방식**: checkpoint 0.256 / 0.512 / 0.768 / 1.0M가 각 구간을 대표하게 했습니다. 구간 길이만큼(구간당 약 25만 step) 확률 정책으로 굴려, 데이터당 약 100만 env step입니다.
+- **실험 1(성분 감사)**: 자기 보상을 배송·반납·pickup·goal 진척·나머지(감점 등)로 나눴습니다. 공용 특징 묶음마다 조건부 평균을 내서, 어떤 예측기든 배울 수 있는 상한을 봤습니다.
+  - team_gap: 팀 간 차이
+  - 분할 순위: 가능한 3+3 분할 10개 중 실제 팀 분할의 순위(1이면 팀으로 가장 잘 갈림)
+  - agent 쌍 AUROC
+- **실험 2(초기 식별 곡선)**: 같은 경험을 실제 gate v2 클래스(기본 설정)에 학습과 같은 박자로 넣었습니다. round는 5 update(5,120 step)마다, warm-up 0.1M, 통신 범위 안의 실제 이웃만 비교합니다. 4 round마다 같은 예측기로 15쌍을 두 방식으로 채점했습니다.
+  - V2 절대 차이(사건 probe)
+  - 대조: c = r̂(q) − r̂(대칭 q)의 상관(운반 중 전진 probe + 사건)
+
+## 결과 1: 성분별 식별 가능성 (≤0.26M)
+
+| 성분 (특징) | 모서리 3개 데이터 | 인접 | 해석 |
+|---|---|---|---|
+| goal 진척 (방향) | 분할 순위 1/10, agent AUROC .87–1.00 | 순위 6/10, .35 | 모서리에서만 팀을 가른다 |
+| 배송 (방향+지형) | team_gap 1.00, 순위 1/10 | 1.00, 1/10 | goal 근처 지형으로 두 goal이 구분된다(인접 배치도) |
+| pickup | 순위 1–10 혼재, agent AUROC .30–.50 | 순위 5–10, .48 | 관측상 식별 불가 |
+| 나머지(감점 등) | 순위 1–8, .46–.72 | 순위 6, .50 | 대체로 불가 |
+
+- 배송은 팀 수준에서는 완전히 갈리지만, agent 단위 조건부 평균으로는 .46–.83입니다. agent마다 같은 배송 장면을 충분히 겪지 못해서이고, 그래서 일반화 예측기가 필요합니다.
+- 경험이 쌓이면 goal 진척의 agent AUROC(절대 차이 기준)는 .65–.76으로 내려갑니다.
+
+## 결과 2: 실제 경험량 곡선
+
+| 데이터 | V2 gate 첫 같은 팀 승인 | 다른 팀 승인 | V2 절대 차이 AUROC ≥ .9 첫 시점 | 대조 AUROC ≥ .9 첫 시점 | 대조 corr>0 판정 정확도 0.1M / 0.2M / 0.3M |
+|---|---|---|---|---|---|
+| A+C s1 | 0.27M | 0 (200 round) | 0.16M | 0.04M | .93 / 1.00 / 1.00 |
+| 모서리 1M s1 | 0.32M | 0 (195) | 0.27M | 0.20M | .40 / .73 / 1.00 |
+| 모서리 1M s2 | 0.26M | 0 (195) | 0.02M | 0.10M | 1.00 / 1.00 / 1.00 |
+| 인접 1M s1 | 0.86M | 0 (195) | 0.78M | 0.06M | .67 / .93 / .80 |
+
+1M 무렵 성숙 agent는 A+C s1 5/6, 모서리 s1 3/6, s2 5/6, 인접 5/6입니다.
+
+## 해석
+
+1. **V2로도 "탐험 중 보상을 발견한 agent끼리 목적 확인"은 0.3M 무렵에 됩니다**(모서리 배치). 식별 시점을 이유로 V3를 할 필요는 없습니다.
+2. **대조 방식(V2.1)의 이득은 작을 수 있습니다.** 순위는 0.04–0.2M에 맞지만, 0을 기준으로 바로 판정하면 모서리 s1에서 .40–.73, 인접에서 .67–.93의 오판정이 생깁니다. 보류 규칙을 붙이면 V2 대비 이득은 0.1M 안팎일 수 있어, 필수가 아니라 선택 사항입니다.
+3. **인접 배치는 절반만 음성 사례입니다.** 방향 신호로는 갈리지 않지만, 배송은 goal 근처 지형으로 구분돼 결국 식별됩니다(V2 0.86M). 앞서 '인접 = 음성 사례'라고 한 예상을 고칩니다.
+4. **남은 핵심은 학습 가속입니다.** 식별 뒤 증류가 IPPO보다 빠르게 하는지는 여전히 모릅니다. Oracle s1 결과가 상한을 정합니다.
+
+## 한계
+
+- 각 구간을 구간 끝 checkpoint 정책이 대신했습니다. 다만 재생된 초기 배송(A+C s1 ≤0.26M, 6 agent 합 139회)은 학습 로그(0–0.1M 기록 합 112회)보다 적어서, 시점을 앞당기지는 않았다고 봅니다.
+- run마다 seed 하나, 15쌍입니다. 분할이 10개라 우연히 순위 1이 될 확률은 1/10입니다.
+- 같은 팀 agent의 행동 유사성이 신호에 섞였을 가능성을 완전히 배제하지 못했습니다.
+- AUROC는 15쌍 모두 접촉을 가정했습니다. gate 판정은 실제 물리 접촉만 썼습니다.
+- 대조 방식은 분석 스크립트에만 있고, `latent_team`에는 넣지 않았습니다.
+
+## 그 밖에
+
+- 처음 띄운 분석 프로세스 4개는 메모리를 많이 쓸 것으로 보여 제가 멈추고, 배열을 미리 할당하도록 고쳐 다시 돌렸습니다. 실행 중인 A+C 학습(PID 18880)은 건드리지 않았습니다.
+- 작업 중 `latent_team/train_from_scratch.py`가 14:09에 외부에서 수정됐습니다(manifest 인자 줄바꿈 정리). 되돌리지 않았고, v2 관련 테스트가 그대로 통과하는 것을 확인했습니다.
+- 결과는 [output/ac_early_id_20261026/README.md](output/ac_early_id_20261026/README.md)에 있고, E60·D88·RESEARCH_STATE·대화 기록(T142)에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T143 — 2026-10-29 KST, Claude Code
+
+08:38 KST 무렵.
+
+### 사용자 — 원문
+
+V2를 기반으로 PGCT 학습 실행코드 알려줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: `--ac-gate` 옵션 존재, `runs/ac_20261023_185556` 상태(IPPO·PGCT·Oracle s1 complete, All s1 1.43M running, PID 18880), `comparison.md`, IPPO s1 초기 hash. 학습 시작·중단, 코드 수정 없음.
+
+### Assistant — 최종 답변
+
+앱 밖 PowerShell에서 아래 명령을 실행하세요. 모서리·개인 보상 환경에서 **gate v2 PGCT만 seed 1·2, 각 5M step**을 새 폴더에 순차로 돌립니다(job 2개, 각 약 42시간). W&B도 기록합니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('acv2_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes pgct --seeds 1 2 --timesteps 5000000 --track --stage-label acv2_main --output-dir $run
+```
+
+## 왜 PGCT만 돌리나
+
+- v2는 IPPO·Oracle·All 경로를 바꾸지 않습니다. 기존 A+C run(`runs/ac_20261023_185556`)의 IPPO·Oracle·All을 비교군으로 그대로 씁니다.
+- 시작 후 `runs/acv2_*/b6_corner_indiv_pen005_acv2_pgct_s1/initial_weights_sha256.txt`가 기존 s1 값(`d3b03c12…`)과 같은지 확인해 주세요. 같으면 첫 전이 전까지 IPPO s1과 같은 학습이라 직접 비교가 됩니다.
+- W&B에서는 `update/ac_v2_gate_arcs`, `update/ac_v2_mature_agents`, `update/ac_v2_audit_same_accepted`·`cross_accepted`를 보시면 됩니다. 기존 `probe/*` gate 그래프는 물리 이웃 수일 뿐입니다.
+
+## 걸기 전에 알아 두실 것
+
+1. **기존 A+C v1 run이 아직 돌고 있습니다**(PID 18880). 지금 All s1이 1.43M이고, 그 뒤 seed 2의 IPPO·PGCT·Oracle·All 4개가 남아 있습니다. v2를 동시에 걸면 GPU를 나눠 써서 둘 다 느려집니다.
+   - v1 seed 2의 IPPO·Oracle·All은 v2 seed 2의 비교군으로 필요합니다. v1 PGCT s2는 gate가 거의 열리지 않아 IPPO와 비슷할 것이라, 정말 필요한지는 따로 판단하시면 됩니다.
+2. **Oracle s1 결과가 나왔습니다(seed 1, 5M).** 증류의 상한으로 본 값입니다.
+
+   | mode | 평가 배송 AUC | 마지막 10회 평균 |
+   |---|---|---|
+   | IPPO | 10.73 | 22.61 |
+   | Oracle | 10.12 | 22.79 |
+   | PGCT(v1, 전이 거의 없음) | 10.84 | 24.01 |
+
+   정답 팀원의 critic을 받아도 IPPO보다 빠르지 않았습니다. seed 하나라 결론은 이르지만, v2로 팀을 정확히 찾아도 학습이 빨라진다는 보장은 아직 없습니다. seed 2의 Oracle 결과도 함께 봐야 합니다.
+
+## 원문 기록 T144 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문
+
+Seed1 부터 이미 ippo랑 pgct랑 3M 직전까지 그래프가 거의 동일해서 의미가 없어졌어
+그냥 지금 실험 버리고 다시 하는게 좋아보이는데?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용: `runs/ac_20261023_185556`의 IPPO·Oracle·PGCT·All s1 agent별 평가 배송, Oracle·PGCT의 같은 팀 arc update 수. 학습 시작·중단 없음.
+
+### Assistant — 최종 답변
+
+PGCT v1 부분은 버리는 게 맞습니다. 하지만 실험 전체를 버리는 것은 반대합니다. IPPO s1과 Oracle s1은 v2에도 그대로 필요한 비교군이고, 다시 돌리면 약 84시간을 똑같이 반복하게 됩니다.
+
+## 무엇이 의미 없고 무엇이 유효한가
+
+| job | 상태 | 판단 |
+|---|---|---|
+| PGCT v1 s1 | complete | Q1·Q2 근거로는 무의미(2.82M까지 IPPO와 같음, 같은 팀 전이 update 48회) |
+| PGCT v1 s2 | 대기 | 돌릴 이유 없음 |
+| IPPO s1, Oracle s1 | complete | 유효. 좌표 마스킹·개인 보상 조건이 v2와 같다 |
+| All s1 | 1.4M 진행 중 | 유효 |
+| IPPO·Oracle·All s2 | 대기 | 필요. 다만 v2 계획으로 새로 걸어도 같은 조건이다 |
+
+v2 계획의 IPPO·Oracle·All은 v1과 같은 관측(좌표 마스킹)과 같은 학습을 쓰고 gate만 없습니다. 그래서 v1 run을 멈추고 seed 2를 v2 계획으로 새로 걸어도 비교군은 그대로 유효합니다.
+
+## 버리기 전에 더 중요한 것: Oracle s1
+
+seed 1의 agent별 평가 배송/episode(20 episode)입니다.
+
+| 시점 | IPPO | Oracle |
+|---|---|---|
+| 1M | 0 / 0 / 1.1 / 0.8 / 0 / 0.8 (합 2.6) | 0 / 0 / 0.4 / 0 / 0 / 0 (합 0.4) |
+| 2M | 합 7.9 | 합 7.2 |
+| 5M | 0 / 4.6 / 5.4 / 5.0 / 4.2 / 4.8 (합 24.1) | 4.2 / 0 / 3.9 / 6.1 / 4.1 / 4.7 (합 23.0) |
+
+- Oracle은 같은 팀 전이를 18,954 update 동안 했습니다. 그런데도 초반(1M)은 IPPO보다 느렸고, 5M 합계도 비슷합니다.
+- 흥미로운 점은 **누가 배우는지가 바뀌었다**는 것입니다. IPPO에서 끝까지 0이던 agent 1이 Oracle에서는 배웠고(4.2), 대신 agent 2가 0이 됐습니다. 전이가 학습 흐름은 바꾸지만 전체 속도는 올리지 못한 셈입니다.
+- seed 하나라 결론은 이릅니다. 다만 정답 팀원으로도 빨라지지 않으면, v2로 팀을 정확히 찾아도 빨라질 수 없습니다. 그래서 gate 버전보다 이 문제가 먼저입니다.
+
+## 권고 순서
+
+1. **v1 run(PID 18880)을 멈출지 정합니다.** 멈춘다면 All s1(1.4M)은 미완성으로 남습니다. 끝까지 두면 약 1.5일 뒤 seed 2 IPPO로 넘어갑니다. 멈출 때는 python과 자식 `wandb-core`를 함께 끝내야 W&B가 정리됩니다. 저는 지시 없이 멈추지 않습니다.
+2. **seed 2를 v2 계획으로 새로 겁니다.** Oracle을 PGCT보다 먼저 두어, 증류가 도움이 되는지 빨리 봅니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('acv2_s2_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes ippo oracle pgct all --seeds 2 --timesteps 5000000 --track --stage-label acv2_main --output-dir $run
+```
+
+3. **v2 PGCT s1은 따로 겁니다.** 비교군은 기존 IPPO·Oracle s1입니다. 2번과 동시에 걸면 GPU를 나눠 각각 느려집니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('acv2_s1_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes pgct --seeds 1 --timesteps 5000000 --track --stage-label acv2_main --output-dir $run
+```
+
+시작 후 `initial_weights_sha256.txt`가 s1은 `d3b03c12…`와 같은지 확인해 주세요. Oracle s2에서도 이득이 없으면, 더 많은 PGCT run을 걸기 전에 증류 방식 자체(V 증류, λ .01, 공통 probe 48개)를 다시 봐야 합니다.
+
+## 원문 기록 T145 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문
+
+이거 환경이 너무 쉬워서 한번 탐험하면 그냥 바로 성공률이 올라가버리는거 아니야?
+그래서 Critic 증류의 의미가 많이 퇴색되는거고
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용: `runs/ac_20261023_185556`의 IPPO·Oracle s1 `metrics.jsonl`에서 agent별 학습 배송 기록 누적 10회 시점과 평가 ≥ .25(5회 연속 평균) 유지 시작 시점. 학습 시작·중단 없음.
+
+### Assistant — 최종 답변
+
+절반은 맞고 절반은 다릅니다. **보상 발견은 쉽지만, 발견한 뒤 안정된 정책이 되기까지는 오래 걸립니다.** "한 번 탐험하면 바로 성공률이 오른다"는 데이터와 맞지 않습니다.
+
+## 근거 (seed 1, 기존 로그)
+
+| agent | 학습 중 배송 10회 기록 | 평가 ≥ .25/ep 유지 시작 (IPPO) | 같은 지표 (Oracle) |
+|---|---|---|---|
+| 1 | 0.06M | 끝까지 안 됨 | 1.48M |
+| 2 | 0.06M | 1.28M | 끝까지 안 됨 |
+| 3 | 0.04M | 0.61M | 0.77M |
+| 4 | 0.06M | 0.61M | 1.08M |
+| 5 | 0.06M | 2.41M | 1.28M |
+| 6 | 0.05M | 0.67M | 0.92M |
+
+- 모든 agent가 0.04–0.06M 안에 무작위 탐험으로 배송을 10번 이상 겪습니다. 이 부분은 쉽습니다.
+- 그런데 평가에서 안정적으로 배송하기까지는 0.6–2.4M이 걸리고, 한 명은 끝까지 못 합니다. 발견에서 정착까지 0.5–2.4M의 간격이 있습니다.
+
+## 그래서 증류의 의미가 퇴색된 이유는
+
+1. **"보상이 어디 있다"는 정보는 쓸모가 없습니다.** 다들 0.06M 전에 스스로 발견하기 때문입니다. 이 점은 말씀대로입니다.
+2. **병목은 발견 뒤 정착 단계인데, 지금의 증류가 그 단계를 돕지 못합니다.** Oracle s1을 보면 늦게 배우던 agent는 빨라졌지만(5번 2.41 → 1.28M, 1번 미학습 → 1.48M), 일찍 배우던 agent는 느려졌습니다(3번 0.61 → 0.77M, 4번 0.61 → 1.08M, 6번 0.67 → 0.92M). 2번은 아예 못 배웠습니다.
+   - 대칭 증류가 앞선 agent를 덜 배운 팀원 critic 쪽으로 끌어내리고, 뒤처진 agent를 끌어올린 모양입니다. 합계가 IPPO와 비슷하게 나온 이유로 보입니다. Oracle은 warm-up(0.1M) 직후부터, 아직 아무도 못 배운 donor에게서도 전이합니다.
+   - V^{π_A} ≠ V^{π_B} 문제(D85)가 실제로 나타난 것으로 볼 수 있습니다. seed 하나라 가설입니다.
+3. **증류 자체도 약합니다.** λ .01, 고정 probe 48개, 받는 agent가 방문하지 않는 상태에서만 맞춥니다.
+
+## 환경을 어렵게 만들면 되나
+
+조심해야 합니다. 발견을 어렵게 하는 쉬운 방법은 shaping을 빼거나 지도를 키우는 것입니다. 그런데 E60에서 초기 팀 신호가 goal 진척 shaping과 배송에서 나왔습니다. shaping을 빼면 식별도 배송이 생길 때까지 늦어집니다. V2는 배송·반납 사건만 쓰므로 버티겠지만, 시점은 배송 발견 시점에 묶입니다. 어렵게 만들면 전이의 여지와 식별의 어려움이 함께 커집니다.
+
+## 제 의견
+
+지금 바꿀 것은 환경보다 전이 설계라고 봅니다. 데이터가 가리키는 문제는 "미성숙 donor에게서 대칭으로 받는 것"입니다.
+
+- **식별은 그대로 두고, 전이 방향만 정합니다.** 자기 보상 사건과 예측이 충분한 성숙한 agent만 donor가 됩니다. v2의 성숙 판정을 그대로 쓰므로 새 신호나 donor 성능 평가가 필요 없고, 팀 발견을 구제 문제로 바꾸는 것도 아닙니다.
+- **확인 방법**: '성숙 donor만 쓰는 Oracle'을 IPPO·기존 Oracle과 비교합니다. 학습이 필요하므로 지시가 있을 때 설계하겠습니다.
+- 환경 난이도 실험은 그 결과를 본 뒤에 해도 늦지 않습니다.
+
+## 원문 기록 T146 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문
+
+식별은 그대로 두고, 전이 방향만 정합니다
+
+만약 이 방법이면 그냥 KL divergence 써도 되는거 아닌가?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용: `DECISIONS.md`와 trainer(`examples/train_recurrent_ippo_consensus.py`)에서 정책 KL 증류 기존 옵션 검색. trainer의 KL은 gate용 JS 계산과 PPO approx_kl뿐이고 actor 증류 옵션은 없다. 코드 수정·학습 없음.
+- 기록: `DECISIONS.md` D89, 이 T146, 통합 사본 재생성.
+
+### Assistant — 최종 답변
+
+쓸 수 있습니다. 그리고 지금 병목(발견 뒤 정착)만 보면 정책 KL이 critic 증류보다 더 직접적일 수 있습니다. 다만 그냥 바꿔 끼울 문제는 아니고, 바뀌는 것이 세 가지 있습니다. 그리고 질문 덕분에 제 앞 답변의 약점도 하나 드러났습니다.
+
+## KL이 더 나을 수 있는 이유
+
+- **critic 증류는 actor에 간접적으로만 닿습니다.** V는 advantage의 baseline으로만 들어가서, 받은 V가 행동을 바꾸려면 여러 update를 거쳐야 합니다. 정책 KL은 행동 분포를 바로 당깁니다. "배송은 겪었는데 안정된 행동이 안 된다"는 병목에는 KL이 맞는 도구입니다.
+- **같은 팀이면 KL이 의미가 있습니다.** 관측의 요청 선반(ch4)과 자기 goal(ch12)이 팀 기준이라, 같은 팀은 같은 관측에서 같은 행동이 좋습니다.
+- **A+C 식별과 충돌하지 않습니다.** 식별이 보상 예측기 기반이라, KL로 정책이 닮아져도 식별 신호가 오염되지 않습니다. 옛 정책 JS gate였다면 "닮아서 팀으로 보고, 팀이라 더 닮는" 순환이 생겼을 겁니다. 이 점은 A+C로 바꾼 덕분입니다.
+
+## 대신 바뀌는 것
+
+1. **기획의 이름과 기여가 바뀝니다.** PGCT는 critic 전이입니다. 정책 KL은 MARL의 policy distillation이나 action advising, peer imitation 계열과 겹쳐서, 새로움이 거의 식별 쪽에만 남습니다. 원래 기획(D41, D71)을 유지할지는 사용자가 정할 문제입니다.
+2. **오판정 비용이 훨씬 커집니다.** 다른 팀 정책을 KL로 따라가면 다른 팀 goal로 가는 행동을 직접 배웁니다. V 증류(λ .01)는 baseline만 흔드니 상대적으로 덜 해롭습니다.
+   - v2는 다른 팀 승인이 0회였으니 PGCT 자체는 괜찮을 것입니다.
+   - 하지만 All-peer 비교군은 KL에서 크게 망가질 겁니다. gate의 필요성은 선명해지지만, 리뷰어는 일부러 약하게 만든 비교군으로 볼 수 있습니다.
+3. **어디서 KL을 맞추느냐가 그대로 남습니다.** 지금 교환하는 건 공통 probe 48개(h=0)에 대한 응답입니다.
+   - 정책은 recurrent라 h=0 응답이 실제 행동과 다르고, probe는 받는 agent가 실제로 겪는 상태가 아닙니다.
+   - 받는 agent의 실제 상태에서 맞추려면 donor 네트워크나 상태를 주고받아야 해서 통신 가정이 커집니다.
+   - critic 증류의 약점 3번(probe 위에서만 맞춤)은 KL로 바꿔도 해결되지 않습니다.
+
+## 제 앞 답변의 약점
+
+"v2 성숙 판정으로 donor를 정한다"는 제안은 KL에서 특히 위험합니다.
+
+- v2의 성숙은 자기 보상 사건이 20회 이상이고 그 보상을 .3 이상으로 예측한다는 뜻입니다. 보상 모델이 성숙했다는 것이지, 정책이 정착했다는 뜻이 아닙니다.
+- 실제로 첫 성숙·승인은 0.26–0.32M에 나오는데, 평가 배송이 안정되는 건 0.6–2.4M입니다. 그 사이의 donor는 "보상은 알지만 행동은 아직 미정착"인 상태입니다.
+- critic이면 이 오차가 약하게 번지지만, KL이면 미정착 정책을 직접 따라 하게 되고 탐험 엔트로피도 줄어듭니다.
+
+그래서 방향 기준은 성숙 판정만으로는 부족합니다. 이미 교환하는 값으로 할 수 있는 후보가 있습니다. 예를 들어 같은 probe에서 donor의 V가 자기 V보다 높을 때만 받는 단방향 규칙입니다. 이 규칙은 donor 성능 평가 없이 국소 정보만 씁니다. 다만 아직 검증하지 않은 제안입니다.
+
+## 제 의견
+
+critic을 KL로 대체하기보다, Oracle 위에서 전이 채널을 먼저 비교하는 게 맞다고 봅니다. Oracle을 쓰면 식별 오류가 빠지니 "전이 채널이 문제인가"만 깔끔하게 봅니다.
+
+| arm | 전이 |
+|---|---|
+| IPPO | 없음 (기존 s1) |
+| Oracle-V | 기존 대칭 V 증류 (기존 s1) |
+| Oracle-V 단방향 | V 증류, 높은 쪽 → 낮은 쪽만 |
+| Oracle-KL 단방향 | 정책 KL, 같은 방향 규칙 |
+
+- Oracle-KL만 빨라지면 병목은 전이 채널입니다. 그때 PGCT를 정책 전이로 넓힐지 정하면 됩니다.
+- Oracle-V 단방향도 빨라지면 critic 기획을 유지할 수 있습니다.
+- 넷 다 비슷하면 이 환경에서 전이 자체의 여지가 작다는 뜻이니, 그때 환경 난이도를 봅니다.
+
+새 arm 2개는 각 5M 학습이 필요해서 승인 없이는 돌리지 않습니다. 원하시면 `latent_team/`에 새 옵션으로 구현하고(기본값 유지) smoke test까지만 하겠습니다.
+
+이 대화는 `CONVERSATION_LOG.md` T146과 `DECISIONS.md` D89에 기록했습니다. 코드와 학습은 건드리지 않았습니다.
+
+## 원문 기록 T147 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문
+
+아냐 지금 내용은 잊고 다시 돌아가서
+
+1. 왜 저번 실험에서의 Oracle은 학습이 더 느렸을까? 단순 seed 차이라기엔 Oracle로 팀끼리 Critic을 전이시켜서 받는 이득이 훨씬 클꺼 같은데
+   1. Oracle의 제일 큰 문제는 지금 학습여부와 관계없이 무조건 Critic을 전이 시킨다는거야 맞지? 그렇다면 행동이든 보상이든 JS divergence로 유사도를 낸것을 상수처리해서 전이량을 조절하는것은 어떨까?
+   2. 에이전트들이 어느정도 학습됐을때 기준으로는 Oracle이 다른 all, pgct, ippo보다 학습속도가 더 빨라지는게 내 생각상 맞는데 이를 잘 따르고 있는지?
+
+
+2. 그리고 b6_corner_indiv_pen005_ac_pgct_s1에서의 cross team gate를 보면 제대로 분류를 못하고 있는거 같아. 이 부분은 V2가 아직 적용이 안되서 생긴 문제겠지?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 사용자가 T146(정책 KL) 논의는 접어 두라고 했다. D89는 사용자가 보류한 의견으로 남긴다.
+- 읽기 전용 분석 `output/oracle_why_20261029/`(E61): 로그 곡선, peer loss, `transfer.jsonl`, checkpoint critic의 probe·실제 상태 값 비교, 정책 JS. 정책 추론만 했고 학습 시작·중단·코드 수정은 없다. All s1은 1.6M에서 진행 중이다(10:40 기준).
+- trainer 확인: allocation은 receiver별로 합이 1이 되게 정규화되고, peer loss는 weight × mean (V_i − sg V_j)²(probe 48개, h=0)이다. A+C PGCT에서는 trainer gate가 `unrestricted`다.
+- 기록: `EXPERIMENTS.md` E61, `DECISIONS.md` D90, `RESEARCH_STATE.md` 항목, 이 T147, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Oracle·PGCT 로그 구조를 확인했습니다. 지금은 trainer에서 peer loss 계산식과 `probe/cross_team_gate` 지표가 무엇을 세는지 확인하는 중입니다.
+
+Oracle 전이 경로와 `probe/cross_team_gate`의 출처를 확인했습니다. 지금은 모드별 학습 곡선과 peer loss 크기를 뽑는 분석 스크립트를 돌립니다.
+
+Oracle 증류가 probe 위에서는 팀원 critic 차이를 크게 줄였다는 것을 확인했습니다. 다음으로, 그 정렬이 agent가 실제로 겪는 상태에도 이어지는지 짧은 rollout으로 확인합니다. 정책 추론만 하고 학습은 하지 않습니다.
+
+### Assistant — 최종 답변
+
+학습 없이 기존 로그와 checkpoint로 확인했습니다(모서리·개인 보상, seed 1). 결론부터 말씀드리면 다음과 같습니다.
+
+- **Oracle 증류는 약하지 않았습니다.** 팀원끼리 critic 값을 확실히 맞췄습니다. 문제는 맞춘 값이 쓸모 있는 값이 아니었다는 점입니다. 같은 팀이라도 팀원의 critic은 내 return을 내 critic보다 훨씬 못 맞힙니다.
+- **JS 유사도로 가중하면 오히려 방향이 반대가 됩니다.** 덜 배웠을 때 가장 크게 전이하고, 배울수록 전이를 줄입니다.
+- **"어느 정도 배운 뒤 Oracle이 더 빠르다"는 데이터에 없습니다.** 지금 구조에서는 후반에 그렇게 되기도 어렵습니다.
+- **cross team gate 그래프는 분류 결과가 아닙니다.** 통신 범위 안 다른 팀 쌍의 비율일 뿐입니다. v1은 오분류가 아니라 거의 분류를 하지 않았습니다.
+
+제가 T145에서 "증류 자체가 약하다(λ .01)"고 한 말은 틀렸습니다. 아래 근거로 고칩니다.
+
+## 1. Oracle은 왜 느렸나
+
+팀 평가 배송/episode(20 episode, 평가 5회 이동평균)입니다.
+
+| mode | 0.5M | 1M | 1.5M | 2M | 3M | 4M | 4.5M |
+|---|---|---|---|---|---|---|---|
+| IPPO | 0.0 | 2.4 | 5.7 | 8.1 | 11.6 | 17.0 | 21.7 |
+| Oracle | 0.0 | **0.4** | 5.2 | 7.4 | 10.6 | 17.4 | 21.5 |
+| PGCT v1 | 0.0 | 2.4 | 5.7 | 8.1 | 11.7 | 17.9 | 20.5 |
+
+느린 구간은 사실상 0.5–1M뿐이고, 그 뒤로는 따라가다 4M 무렵 같아집니다.
+
+**증류가 실제로 한 일**: 팀원 critic 차이(같은 팀 쌍의 (V_i − V_j)² 평균)를 비교했습니다.
+
+| 시점 | probe 위 IPPO | probe 위 Oracle | 실제 방문 상태 IPPO | 실제 방문 상태 Oracle |
+|---|---|---|---|---|
+| 1M | .060 | .0015 | .080 | .023 |
+| 2M | .870 | .0060 | .674 | .115 |
+| 4.75M | 1.205 | .0048 | 1.194 | 1.223 |
+
+- probe 위에서는 팀원 critic 차이를 IPPO보다 150–250배 줄였습니다. 증류는 제대로 작동했습니다. 로그의 peer loss가 작게 보인 것도 차이가 이미 작게 유지되고 있었기 때문입니다.
+- 실제로 방문하는 상태에서는 2M까지만 효과가 이어지고, 4.75M에는 IPPO와 같아집니다. 후반에는 probe 48개 지점만 맞추고 나머지 상태에는 영향이 없다는 뜻입니다.
+
+**더 근본적인 문제**: 팀원 critic이 내 return을 얼마나 잘 맞히는지, IPPO 실제 상태에서 MSE를 쟀습니다.
+- 2M: 내 critic .18, 팀원 critic .74
+- 4.75M: 내 critic .83, 팀원 critic 1.79
+
+팀원 critic은 내 critic보다 2–4배 못 맞힙니다. 실제 상태에서 같은 팀 critic 차이(.67)가 다른 팀(.44)보다 작지도 않습니다. V는 보상 함수만이 아니라 그 agent의 정책, 즉 숙련도·위치·운반 습관에 좌우되기 때문입니다. **같은 팀이라는 것은 보상 함수가 같다는 뜻이지 V가 같다는 뜻이 아닙니다.** 그래서 Oracle 증류는 정답 팀원에게서도 내 V를 덜 정확한 쪽으로 당깁니다.
+
+**초반이 느렸던 이유(가설)**: 1M에 probe 위 |V| 평균이 IPPO .140, Oracle .064였습니다. 처음 보상을 발견한 agent의 V가 오르면, 아직 V가 0 근처인 팀원 쪽으로 평균되어 눌린 것과 맞아떨어집니다. 다만 Oracle agent들이 배송을 덜 해서 V가 낮았을 수도 있어(결과일 수도 있음) 원인으로 확정하지는 못합니다.
+
+seed 하나라는 점도 짚어야 합니다. PGCT v1은 2.82M까지 IPPO와 비트 단위로 같았고, 이후 전이 22 update만으로 갈라졌습니다. 그런데 15→20 배송 도달 시간이 IPPO 0.87M, PGCT 0.56M로 벌어졌습니다. 이 정도가 seed 하나에서 생기는 혼돈 수준의 차이입니다.
+
+### 1-1. "무조건 전이"가 제일 큰 문제인가, JS로 가중하면 어떤가
+
+반만 맞습니다. 무조건 전이는 초반에 해로웠을 가능성이 있습니다. 하지만 위 결과대로 둘 다 배운 뒤에도 팀원 V는 나쁜 목표입니다. 학습 여부만 가려서는 해결되지 않습니다.
+
+JS 유사도 가중은 이 문제와 방향이 맞지 않습니다. probe 위 정책 JS(IPPO)입니다.
+
+| 시점 | 같은 팀 | 다른 팀 |
+|---|---|---|
+| 0.25M | .038 | .056 |
+| 1M | .185 | .189 |
+| 4.75M | .217 | .248 |
+
+- 아무도 못 배운 초반에는 모두 거의 uniform이라 JS가 작습니다. 이때 가중치가 가장 큽니다. 전이가 해로운 시점에 가장 많이 전이하는 셈입니다.
+- 배울수록 JS가 커져 가중치가 줄어듭니다. 한쪽만 배운 쌍, 즉 전이가 도움이 될 쌍이 가장 멀어서 가장 적게 받습니다.
+- JS는 대칭이라 방향 정보가 없습니다.
+- 보상 JS도 같습니다. 보상을 발견하기 전에는 모두 r̂ ≈ 0이라 서로 비슷합니다. v2는 이 때문에 가중이 아니라 "미성숙이면 보류"로 처리합니다.
+- trainer에는 이미 비슷한 장치가 있습니다. JS를 연속 가중으로 바꾸는 soft gate(`distance_temperature`, `gate_power`)와 정책 정보량 하한 KL(π‖U)입니다. 그런데 KL(π‖U)도 1M에 배송한 agent(.79·1.34·.60)와 못 한 agent(.50·.48·.56)를 잘 가르지 못합니다.
+
+상수로 처리(stop-gradient)하는 것은 기술적으로 문제가 없습니다. 하지만 무엇으로 가중하느냐가 틀리면 소용이 없습니다. 실제로 필요한 기준은 "팀원 critic이 내 return을 내 critic보다 잘 맞히는가"입니다. 이 데이터에서는 거의 항상 "아니오"입니다.
+
+### 1-2. 어느 정도 배운 뒤 Oracle이 더 빠른가
+
+데이터상 아닙니다. 각 수준에 처음 도달한 뒤 +5 배송까지 걸린 step입니다.
+
+| 수준 | IPPO | Oracle | PGCT v1 |
+|---|---|---|---|
+| 5 → 10 | 1.13M | 1.43M | 1.13M |
+| 10 → 15 | 0.92M | 0.92M | 1.18M |
+| 15 → 20 | 0.87M | 0.46M | 0.56M |
+
+- Oracle은 15→20에서만 빠릅니다. 하지만 전이가 거의 없던 PGCT v1도 0.56M이라, 혼돈 범위 안입니다. 최종값도 21.5로 IPPO 21.7과 같습니다.
+- All은 아직 1.6M 진행 중입니다. 1.5M에 6.5로 셋 중 가장 높지만, 초반이라 판단하기 이릅니다.
+- 구조상으로도 지금 방식에서는 후반 가속을 기대하기 어렵습니다. 후반에는 실제 상태에서 팀원 critic이 정렬되지 않고(1.22 대 1.19), 정렬되더라도 팀원 V는 내 V보다 부정확합니다.
+
+## 2. PGCT s1의 cross team gate
+
+V2 때문이 아닙니다. 그 그래프는 분류 결과가 아닙니다.
+
+- `probe/cross_team_gate`는 A+C controller가 덮어쓰기 전의 trainer gate입니다. A+C PGCT는 trainer gate를 `unrestricted`로 둡니다([train_from_scratch.py:171](latent_team/train_from_scratch.py:171)). 그래서 이 값은 통신 범위 안 다른 팀 쌍의 비율입니다.
+  - 평균 .277 = 다른 팀 물리 이웃 4.98 / 18쌍. 정확히 같습니다.
+  - `same_team_gate` .338 = 4.05 / 12쌍. 역시 같습니다.
+  - 그래프가 요동치는 것은 agent들이 돌아다니기 때문입니다.
+- 실제 v1 allocation(`transfer.jsonl`)은 4,883 update 동안 같은 팀 48 arc, 다른 팀 0 arc입니다. 잘못 분류한 것이 아니라 거의 분류하지 않았습니다(보류). v2가 고친 것은 이 보류이고, 오프라인 재생에서 첫 같은 팀 승인은 0.26–0.32M, 다른 팀 승인은 0이었습니다.
+- **v2 run에서도 이 그래프는 똑같이 물리 이웃 비율로 나옵니다.** 실제 분류는 `update/same_team_arcs`, `update/cross_team_arcs`, `update/ac_v2_audit_same_accepted`·`cross_accepted`로 보셔야 합니다.
+
+## 정리하면
+
+- Q1(식별)은 v2로 길이 보입니다.
+- 지금 위험한 것은 Q2(전이)입니다. 정답 팀원의 V를 정확히 맞춰도 학습이 빨라지지 않았고, 그 이유는 증류 세기가 아니라 **무엇을 증류하느냐(V^{π_j})**에 있어 보입니다.
+- 그래서 gate를 더 다듬거나 seed를 더 돌리기 전에, 팀원에게서 받을 정보를 다시 정하는 것이 순서라고 봅니다. 예를 들어 정책에 덜 묶인 보상 구조 정보, 즉 이미 학습한 r̂을 critic 학습에 쓰는 방식이 있습니다. 이 부분은 아직 제안 수준입니다.
+
+분석 스크립트와 수치는 [output/oracle_why_20261029/README.md](output/oracle_why_20261029/README.md)에 있고, E61·D90·RESEARCH_STATE·대화 기록(T147)에 남겼습니다. 학습과 코드는 건드리지 않았습니다.
+
+## 원문 기록 T148 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문
+
+재설계 검토
+
+### 수행 기록 — 원문 대화와 별도
+
+- 사용자가 T147 다음 단계 버튼(재설계 검토)을 눌렀다. 버튼 문구는 "팀원 V 대신 무엇을 전이할지(예: 학습된 r̂ 활용) 설계 검토해줘. 구현과 학습은 하지 마."였다.
+- 읽기 전용: 관측 구성(`rware/utils/semantic_observation.py`; ego에 goal 방향 없음, ch12는 팀 기준), trainer의 `compute_gae`·`update_ippo` 호출 구조.
+- 오프라인 전제 점검 `output/oracle_why_20261029/transfer_premise.py`(E62): IPPO s1 checkpoint 1M·2M·3M, 각 3 episode, 정책·critic 추론만. 학습·코드 수정 없음.
+- 기록: `EXPERIMENTS.md` E62, `DECISIONS.md` D91, `RESEARCH_STATE.md`, 이 T148, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Leaning toward a "max over teammate critics" design (GPI/MAMBA-style) as the main candidate. Before recommending it, I'm checking two premises offline with existing checkpoints (inference only, no training): whether teammate critics carry team-specific information, and whether a max over them gives laggards a real upward signal.
+
+### Assistant — 최종 답변
+
+팀원 critic을 **평균하지(증류) 말고, advantage를 계산할 때 최댓값으로 쓰는 방식**을 권합니다. critic 전이라는 PGCT의 틀과 식별(Q1)은 그대로 둡니다. 그리고 T147에서 예로 든 "학습된 r̂ 전이"는 철회합니다. 병목이 아닌 곳을 겨냥하기 때문입니다. 핵심 전제는 기존 checkpoint로 점검했고(학습 없음) 대체로 맞았지만, 과대추정 위험과 팀 특이성이 약하다는 문제가 함께 나왔습니다.
+
+## 1. 새 전이가 갖춰야 할 조건 (E61·T145 근거)
+
+1. 팀원의 정책이 달라도 쓸 수 있어야 합니다. 같은 팀은 보상 함수가 같을 뿐 V는 다릅니다.
+2. 미성숙 donor는 저절로 무시되어야 하고, 앞선 agent를 끌어내리면 안 됩니다.
+3. 고정 probe가 아니라 실제 방문 상태에 작용해야 합니다. probe 정렬은 후반에 실제 상태로 이어지지 않았습니다.
+4. 발견이 아니라 정착 병목을 도와야 합니다. 발견은 0.06M 안에 끝나고, 정착은 0.6–2.4M이 걸립니다.
+5. 팀 식별이 실제로 필요해야 합니다. 그래야 Q1과 Q2가 연결됩니다.
+6. 개인 보상, 국소 통신, critic 전이라는 기획을 유지해야 합니다.
+
+## 2. 후보 비교
+
+| 후보 | 1 정책 차이 | 2 미성숙 donor | 3 실제 상태 | 4 정착 | 5 식별 필요 |
+|---|---|---|---|---|---|
+| A. 지금의 대칭 V 증류 | ✗ | ✗ | 후반 ✗ | △ | △ |
+| B. 팀원 r̂ 전이 | ○ | ○ | ○ | **✗** | ○ |
+| C. 단방향 probe 증류 relu(V_j − V_i)² | △ | ○ | ✗ | △ | ○ |
+| **D. max 결합 advantage** | ○ | ○ | ○ | ○ | ○ |
+
+- **B를 철회하는 이유**: 모든 agent가 0.06M 안에 스스로 보상을 발견하고, 자기 transition에서는 실제 보상을 이미 받습니다. 팀원 r̂가 더해 주는 것은 아직 겪지 않은 사건뿐이라, 정착을 돕지 못합니다. r̂는 전이할 내용보다 gate(식별·성숙 판정)에 쓰는 것이 맞습니다.
+- **C는 가장 싸지만 한계가 있습니다.** 여전히 probe 위에서만 작동하고, 자기 TD 손실과 서로 당기기 때문입니다. 비교용 ablation으로만 둡니다.
+- 정책 KL은 말씀대로 제외했습니다.
+
+## 3. 권고안 D: 팀원 critic의 max를 advantage에 쓰기
+
+- **식**: f_i(s) = max(V_i(s), max_{j ∈ gate(i)} V_j(s))
+  - δ_t = r_t + γ f_i(s_{t+1}) − f_i(s_t), 그리고 GAE λ.
+  - critic V_i는 지금처럼 **자기 return으로만** 학습합니다. peer 증류 손실은 뺍니다.
+- **근거**: 같은 팀이면 보상 함수가 같으므로, 팀원들의 V는 "같은 과제에 대한 서로 다른 정책의 평가"입니다.
+  - 같은 과제의 여러 가치 함수를 max로 묶으면 그 어느 정책보다 나빠지지 않는다는 결과가 있습니다(GPI, Barreto et al. 2017).
+  - 여러 oracle 가치의 max를 policy gradient의 GAE에 쓰는 방법도 있습니다(MAMBA, Cheng et al. 2020; 후속 MAPS·RPI). 논문에 쓰기 전에 서지를 확인해야 합니다.
+  - 평균(증류)에는 이런 보장이 없고, E61처럼 앞선 agent를 끌어내릴 수 있습니다.
+- **Q1과 Q2가 이어집니다.** GPI가 성립하려면 "보상 함수가 같다"는 전제가 필요한데, A+C가 판정하는 것이 바로 보상 예측기의 일치, 즉 같은 보상 함수입니다. gate는 장식이 아니라 전이가 성립하기 위한 전제 조건이 됩니다.
+- **방향이 저절로 정해집니다.**
+  - 모두 미성숙이면 max는 자기 V이므로 IPPO와 같습니다.
+  - 앞선 agent는 팀원 V가 낮아 자기 V가 선택되므로 느려지지 않습니다.
+  - 보상을 발견했지만 아직 정착하지 못한 agent만 위로 당겨집니다.
+  - v2 gate는 양쪽 모두 보상 성숙을 요구하므로, 아예 발견하지 못한 agent를 구제하는 구조가 되지 않습니다.
+
+## 4. 오프라인 전제 점검 (IPPO s1, 시점마다 3 episode, 추론만)
+
+받는 agent의 실제 방문 상태에서 모든 critic을 돌렸습니다. 여기서 "뒤처진 agent"는 그 rollout에서 배송이 0인 agent입니다.
+
+**max가 주는 상향폭** (mean relu(max_j V_j − V_i))
+
+| 시점 | 뒤처진 agent: 같은 팀 | 뒤처진 agent: 다른 팀 | 앞선 agent: 같은 팀 | 앞선 agent: 다른 팀 |
+|---|---|---|---|---|
+| 1M | .35 | .34 | .03 | .15 |
+| 2M | 1.19 | .72 | .13 | .56 |
+| 3M | 1.07 | 1.12 | .18 | .25 |
+
+- **방향은 기대대로 나옵니다.** 뒤처진 agent는 크게 올라가고, 앞선 agent는 거의 그대로입니다.
+- **다른 팀 critic은 앞선 agent에게도 2–5배 큰 가짜 상향을 줍니다.** 따라서 gate가 필요합니다.
+
+**팀 특이성** (운반 중이고 자기 goal이 시야 밖인 상태에서, 각 critic과 내 return의 상관)
+
+| 시점 | 같은 팀 | 다른 팀 |
+|---|---|---|
+| 1M | .65 | .56 |
+| 2M | .66 | .53 |
+| 3M | .48 | .50 |
+
+- 팀원 critic이 조금 더 맞지만 차이가 작고, 3M에는 사라집니다.
+- 관측의 요청 선반(ch4)과 goal(ch12)이 팀 기준이라, 다른 팀 critic도 상당 부분 내 과제에 들어맞기 때문입니다.
+- 그래서 뒤처진 agent가 받는 상향만 보면 Oracle-max와 All-max의 차이가 작을 수 있습니다. "Oracle > All"(Q2)을 주장할 때의 위험 요인입니다.
+
+**과대추정**: 내 return 대비 편향
+
+| 시점 | 자기 V | max(자기, 같은 팀) |
+|---|---|---|
+| 1M | +.03 | +.25 |
+| 2M | +.27 | +.76 |
+| 3M | +.13 | +.45 |
+
+일부는 의도된 것(더 나은 정책의 가치)이지만, critic의 잡음도 섞여 있으므로 보호 장치가 필요합니다.
+
+## 5. 위험과 대응
+
+1. **과대추정**: 성숙한 donor만 쓰고(v2 성숙 판정), 상향폭에 상한을 둡니다. 둘 다 ablation으로 확인합니다.
+2. **통신 가정이 커집니다.** donor critic이 받는 agent의 상태를 평가해야 하기 때문입니다.
+   - 방법 (a): 받는 agent가 gate round마다 최근 상태 K개를 질의로 보내고, 응답으로 작은 상향 head를 맞춥니다. A+C의 질의·응답과 같은 형태입니다.
+   - 방법 (b): critic 가중치를 공유합니다.
+   - 어느 쪽이든 지금의 "probe 48개 값 교환"보다 강한 가정이므로 논문에 밝혀야 합니다.
+3. **recurrent critic**: h=0 단일 질의로 쓰면 정확도가 떨어집니다. 얼마나 떨어지는지 오프라인으로 확인해야 합니다.
+4. **이득의 상한**: 처음 배우는 agent는 빨라지지 않습니다. 이득은 agent 사이의 학습 속도 차이(지금은 정착까지 0.6–2.4M)에서만 나옵니다.
+5. **새로움**: MAMBA 계열은 단일 agent가 알려진 oracle을 쓰는 설정입니다. 여기서는 누가 같은 보상을 가졌는지 모르는 분산 peer라서 식별이 필요하다는 점이 차별점입니다. 문헌 확인이 필요합니다.
+6. **구현 가능성**: trainer의 `update_ippo`가 모듈 전역 `compute_gae`를 부르므로, trainer를 고치지 않고 `latent_team/`의 새 옵션에서 advantage(f 사용)와 return(자기 V 사용)을 따로 계산하도록 감쌀 수 있습니다.
+
+## 6. 검증 순서 제안
+
+1. **오프라인(학습 없음)**
+   - h=0 질의와 recurrent 질의의 정확도 차이.
+   - 뒤처진 agent의 rollout에서 f로 계산한 advantage가 앞선 팀원의 정책이 고르는 행동을 더 높게 평가하는지.
+2. **학습(승인 필요)**: Oracle-max와 All-max를 seed 1–3, 각 5M으로 돌립니다. IPPO와 Oracle-증류 s1은 이미 있습니다.
+   - Oracle-max가 3 seed에서 IPPO를 넘어야 합니다.
+   - All-max가 Oracle-max보다 못해야 gate의 필요성이 섭니다.
+3. 그다음에 PGCT-max(v2 gate)를 돌립니다.
+
+수치와 스크립트는 [output/oracle_why_20261029/](output/oracle_why_20261029/README.md)에 있고, E62·D91·대화 기록(T148)에 남겼습니다. 구현과 학습은 하지 않았습니다.
+
+## 원문 기록 T149 — 2026-10-29 KST, Claude Code
+
+### 사용자 — 원문 (1)
+
+점검 진행
+
+### 사용자 — 원문 (2, 작업 중 붙여넣은 검토 의견. 링크·이미지 표기는 받은 그대로)
+
+이번 E62·D91 제안을 검토하면, D(max 결합 advantage)는 기존 Oracle의 대칭 critic 증류를 대체할 유력한 후보라고 생각해. 특히 critic을 직접 일치시키지 않고, 다른 팀원이 학습한 가치 추정을 내 정책 개선에 활용한다는 방향이 좋아.
+
+다만 지금 결과를 보고 바로 Oracle-max와 All-max를 학습시키는 것은 조금 이르다고 봐.
+
+가장 중요한 이유는 현재 확인한 'max에 의한 가치 상승'이 실제로 더 좋은 행동을 학습시키는 신호인지 아직 검증되지 않았기 때문이야.
+
+## 1. MAMBA를 근거로 삼는 것은 타당한가?
+
+관련 논문을 직접 확인했어.
+
+Policy Improvement via Imitation of Multiple Oracles
+
+Cheng, Kolobov & Agarwal · NeurIPS 2020
+
+여러 oracle의 state-value 최대값을 기준으로 정책을 개선하는 MAMBA(Max-aggregation of Multiple Baselines)를 제안한 논문이야.
+
+[논문 원문](https://proceedings.neurips.cc/paper/2020/hash/3c56fe2f24038c4d22b9eb0aca78f590-Abstract.html?utm_source=chatgpt.com)
+
+MAMBA는 실제로
+
+\\[ f^{\max}(s)=\max_k V^{\pi_k}(s) \\]
+
+를 정의하고, 이를 이용한 advantage를 학습에 사용해.
+
+\\[ A^f(s,a) = r(s,a)+\gamma\mathbb E[f(s')]-f(s) \\]
+
+GAE와 유사한 다단계 추정량도 제안하고 있어. 따라서 네가 제안한 \\(\delta_t=r_t+\gamma f(s\_{t+1})-f(s_t)\\)는 MAMBA의 핵심 발상과 일치해.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://papers.nips.cc\&sz=32)
+
+NIPS Papers+1
+
+
+
+하지만 보장은 다음과 같은 조건에서 성립해.
+
+- 여러 oracle 정책이 동일한 MDP에서 평가된다.
+- 모든 가치함수는 동일한 보상 기준을 사용한다.
+- 각 \\(V^{\pi_k}(s)\\)는 같은 상태 \\(s\\)에서 해당 정책을 실행했을 때의 기대 return이다.
+- 가치함수가 정확하거나 근사오차를 통제할 수 있다.
+
+반면 GPI(Barreto et al., 2017)는 여러 정책의 \\(Q^{\pi_k}(s,a)\\)를 최대화해 행동을 선택하는 방법이야.
+
+\\[ \pi\_{\mathrm{GPI}}(s) \in \arg\max_a\max_k Q^{\pi_k}(s,a) \\]
+
+따라서 D는 GPI 자체보다는 MAMBA를 직접적인 선행연구로 삼는 편이 정확해.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://papers.nips.cc\&sz=32)
+
+NIPS Papers+1
+
+
+
+## 2. 현재 D의 가장 큰 문제: 팀원의 V가 정말 같은 기준의 가치인가?
+
+이것이 가장 중요한 검증 대상이라고 생각해.
+
+네 설명에서는 같은 팀원끼리 보상 함수가 같기 때문에 서로 다른 정책의 V를 max로 결합할 수 있다고 했어.
+
+그런데 현재 RWARE는 개인 보상 환경이야.
+
+같은 팀의 agent라도 개인이 배송하는 선반, 운반 상황, 위치, 관측 이력에 따라 서로 다른 보상을 받지. 같은 팀이라는 사실은 목적이나 보상 규칙이 유사하다는 뜻이지, 곧바로
+
+\\[ r_i(s,a,s')=r_j(s,a,s') \\]
+
+가 모든 상태와 행동에서 성립한다는 뜻은 아니야.
+
+MAMBA에서 필요한 것은 정확히 다음이야.
+
+\\[ V_i^{\pi_j}(h_i) = \mathbb E\left[ G_i\mid h_i,\text{agent }i\text{가 }\pi_j\text{를 실행} \right] \\]
+
+그런데 현재 팀원의 critic \\(V_j\\)가 학습한 것은 기본적으로
+
+\\[ V_j^{\pi_j}(h_j) = \mathbb E[G_j\mid h_j,\pi_j] \\]
+
+야.
+
+두 값은 일반적으로 같지 않아.
+
+팀원 critic에 내 관측을 그대로 넣는 것도 이 차이를 자동으로 해결하지 못해.
+
+특히 GRU hidden state까지 고려하면, 팀원 critic이 자기 학습 경험에서 평가한 가치와 내 상황에서 팀원 정책을 실행했을 때 얻을 가치를 구분해야 해.
+
+즉, D가 성립하려면 팀원의 critic이 단순히 높은 값을 출력하는 것이 아니라, 내가 처한 상황에서 실제로 더 좋은 정책이 존재한다는 정보를 제공해야 해.
+
+이건 현재 제안에서 가장 먼저 확인해야 할 부분이야.
+
+## 3. 오프라인 결과에서 아직 증명되지 않은 부분
+
+제시한 수치는 흥미로워. 특히 뒤처진 agent에서 같은 팀 critic의 상향폭이 2M에 1.19, 앞선 agent에서는 0.13이라는 차이는 분명히 살펴볼 가치가 있어.
+
+하지만 계산한 지표가
+
+\\[ \mathbb E\left[ \max(0,\max_j V_j-V_i) \right] \\]
+
+라는 점이 중요해.
+
+이 값은 구조적으로 항상 0 이상이고, 다른 critic의 출력이 높기만 하면 커져. 그 값이 실제로 더 나은 행동을 의미하는지는 알 수 없어.
+
+### 3-1. Max가 앞선 agent를 자동으로 보호하지는 않아
+
+보고서에는 앞선 agent의 \\(V_i\\)가 가장 높으면 자기 값이 선택되므로 학습이 느려지지 않는다고 했어.
+
+하지만 GAE에서는 현재 상태뿐 아니라 다음 상태의 값도 사용해.
+
+\\[ \delta_t^f=r_t+\gamma f(s\_{t+1})-f(s_t) \\]
+
+예를 들어
+
+|           | 현재 상태 | 다음 상태 |
+| --------- | ----- | ----- |
+| 내 critic  | 1.0   | 1.0   |
+| 팀원 critic | 0.9   | 4.0   |
+| max       | 1.0   | 4.0   |
+
+\\(r_t=0,\ \gamma=0.99\\)라면,
+
+\\[ \delta_t^{self}=-0.01 \\]
+
+\\[ \delta_t^{max}=2.96 \\]
+
+현재 상태에서는 내 critic이 선택됐지만 다음 상태에서는 팀원 critic이 선택되므로 advantage가 크게 달라져.
+
+그 4.0이 실제로 좋은 미래를 나타내면 유익할 수 있어. 반대로 팀원의 과대추정이라면 잘못된 행동을 강화할 수 있지.
+
+따라서 D의 전이 방향은 평균 증류보다 합리적일 수 있지만, 자동으로 안전한 단방향 전이가 되는 것은 아니야.
+
+### 3-2. PPO의 GAE에서 max가 실제로 하는 일
+
+여기가 수학적으로 중요해.
+
+\\[ b_t=f(s_t)-V_i(s_t)\ge0 \\]
+
+라고 두면,
+
+\\[ \delta_t^f = \delta_t^{self}+\gamma b\_{t+1}-b_t \\]
+
+가 돼.
+
+이를 GAE에 적용하면, 종료 및 truncation 효과를 제외한 무한 horizon 형태에서는
+
+\\[ \boxed{ A_t^f-A_t^{self} = -b_t+ \gamma(1-\lambda) \sum\_{k=1}^{\infty} (\gamma\lambda)^{k-1}b\_{t+k} } \\]
+
+라는 관계가 나와.
+
+이 결과는 두 가지를 보여줘.
+
+첫째, 현재 상태에서 \\(b_t\\)가 커졌다는 사실 자체가 actor에 유익한 상향 신호를 준다는 뜻은 아니야. 미래 상태에서 더 높은 가치가 나타나는지를 봐야 해.
+
+둘째, \\(\lambda=1\\)이면 미래항이 사라지고 \\(-b_t\\)라는 상태 의존 baseline만 남아. 정확한 Monte Carlo policy gradient에서는 이런 baseline이 기대 gradient를 변화시키지 않아.
+
+즉, D가 기존 PPO와 다르게 학습시키는 것은 특히 \\(\lambda<1\\)일 때 미래의 max value를 통해 발생하는 bootstrapping 효과야.
+
+현재 \\(\lambda=0.95\\)에서는 이 효과가 분명 존재하지만, 값이 얼마나 커지고 실제로 올바른 행동에 작용하는지는 별도 측정이 필요해.
+
+MAMBA에서도 \\(\lambda\\)가 oracle 기반 정책 개선과 일반 RL 사이의 절충을 결정하는 중요한 변수로 다뤄져.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://papers.nips.cc\&sz=32)
+
+NIPS Papers+1
+
+
+
+## 4. 오프라인 결과에서 가장 걱정되는 두 가지
+
+### 첫째, 실제 V2 gate가 열리는 laggard와 분석한 laggard가 같은 집단인가?
+
+현재 분석은 각 rollout에서 배송 0인 agent를 뒤처진 agent로 정의했지.
+
+그런데 V2는 보상 성숙을 요구하고, 실제 donor 후보는 통신 범위에도 들어와야 해.
+
+따라서 전체 같은 팀 critic을 max로 결합해서 계산한 1.19의 상향폭이 실제 PGCT-max에서도 나타나는지 알 수 없어.
+
+실제 적용할 gate와 통신 조건으로 후보를 제한했을 때,
+
+\\[ \Pr\left( \exists j\in\operatorname{gate}(i): V_j>V_i \mid i\text{가 뒤처진 상태} \right) \\]
+
+를 계산할 필요가 있어.
+
+이 비율이 낮다면 D가 이론적으로 좋아도 실제 PGCT에서는 적용할 기회가 거의 없을 수 있어.
+
+### 둘째, 팀 특이성이 생각보다 약해
+
+제공한 상관계수는 다음과 같아.
+
+팀원 Critic과 개인 Return의 상관관계
+
+같은 팀다른 팀
+
+00.20.40.60.81M2M3M
+
+1M과 2M에는 같은 팀 critic이 조금 더 관련되어 있지만, 3M에는 사실상 구별되지 않아.
+
+이것은 Q1의 필요성을 주장할 때 중요한 위험이야.
+
+보상 유사도에 따른 올바른 팀 발견이 곧 가치함수 전이의 유익성을 보장하지 않기 때문이야.
+
+오히려 여기서 새로운 연구 질문이 생겨.
+
+같은 목적을 가진 agent를 정확하게 찾은 이후, 이들의 critic 정보를 어떻게 활용해야 유익한 정책 개선으로 이어지는가?
+
+이 질문은 충분히 연구 가치가 있다고 생각해.
+
+## 5. 내가 권하는 다음 검증
+
+기존 checkpoint를 사용하고 학습은 하지 않는다는 조건에서, 지금의 오프라인 실험을 다음 순서로 보완하겠어.
+
+| 우선순위 | 검증                                         | 핵심 질문                                         |
+| ---- | ------------------------------------------ | --------------------------------------------- |
+| 1    | 동일 상태에서 donor 정책의 counterfactual return 평가 | 팀원 critic의 높은 값이 실제 더 나은 정책을 의미하는가?           |
+| 2    | Max-GAE와 Self-GAE의 행동별 선호 비교               | Max가 높은 실제 return을 얻는 행동에 더 큰 advantage를 주는가? |
+| 3    | V2 + 물리 통신 제한 후 재평가                        | 실제 PGCT에서도 laggard가 의미 있는 전이를 받는가?            |
+| 4    | Recurrent hidden state 비교                  | \\(h=0\\) 질의가 잘못된 max 선택을 얼마나 증가시키는가?         |
+
+특히 1번과 2번이 중요해.
+
+### 가장 결정적인 실험
+
+가능하면 저장된 환경 상태에서 agent \\(i\\)의 역할과 보상 기준을 그대로 유지하면서, agent \\(j\\)의 정책을 \\(i\\)의 위치에 적용해 후속 return을 비교하는 거야. 다른 agent의 정책과 환경 조건은 고정하고.
+
+이렇게 하면
+
+\\[ V_i^{\pi_j}(h_i) \\]
+
+가 실제로 내 정책의 value보다 높은 상황이 존재하는지 살펴볼 수 있어.
+
+그다음 현재 방식으로 계산한 \\(V_j(h_i)\\)가 그러한 상황을 정확하게 찾아내는지 측정하면 돼.
+
+가능하면 수신 agent의 각 유효 행동에 대해 다음 상태를 평가하고,
+
+\\[ r_i(s,a,s')+\gamma f(s')-f(s) \\]
+
+가 실제 좋은 행동을 더 높게 평가하는지도 확인해야 해.
+
+이것이 단순한 max 상향폭보다 훨씬 직접적인 증거가 될 거야.
+
+물론 현재 환경 상태를 정확하게 복원할 수 없다면 이 counterfactual 실험에는 제약이 있어. 이 경우 기존 trajectory에서 advantage와 후속 return의 관계를 분석하는 것으로 시작하되, 행동별 인과적 개선을 입증했다고 해석하면 안 돼.
+
+## 6. 실제 학습을 시작한다면
+
+위 검증이 통과했다는 조건에서 D를 채택하되, 나는 두 형태를 비교하고 싶어.
+
+D1. 순수 Max-GAE
+
+\\[ A_i^{actor}=A_i^{max} \\]
+
+MAMBA의 개념에 더 가까운 구조야.
+
+D2. 보수적인 Max-GAE
+
+\\[ A_i^{actor} = (1-\eta)A_i^{self} + \eta A_i^{max} \\]
+
+여기서 \\(0<\eta<1\\)는 전이 강도야.
+
+D2는 MAMBA의 원래 이론적 보장을 그대로 갖지는 않지만, 초기의 부정확한 팀원 critic이 PPO advantage를 크게 왜곡하는 것을 줄이기 위한 실험적 대안이 될 수 있어.
+
+두 방식 모두 value loss는 개인 return 기준으로 유지하고, actor에 사용하는 advantage만 변경하는 편이 좋아.
+
+또 반드시 주의할 점이 있어. 현재 \\(f_i\\)의 donor 집합이 통신 여부에 따라 변하면, agent가 이동하면서 이웃이 새로 나타나거나 사라지는 것만으로 \\(f_i\\)가 불연속적으로 변할 수 있어. 이 변화도 advantage에 들어가므로, 실제 성능 향상과 통신 그래프 변화에 따른 가짜 신호를 구분해야 해.
+
+구현할 때는 모듈 전역 `compute_gae`를 임시로 감싸는 방식보다는 별도 Max-GAE 계산 경로를 두고, done mask, rollout truncation, actor advantage, critic return을 명확히 분리하는 편이 안전해.
+
+### 실험 결과가 나왔을 때의 판단 기준
+
+- Oracle-max가 IPPO보다 빠르다면: 정확한 팀 내부에서 max 기반 가치 정보가 학습을 도왔다는 근거가 됨.
+- Oracle-max가 All-max보다 좋다면: 팀 구분의 실용적 필요성을 뒷받침함.
+- Oracle-max와 All-max가 비슷하다면: 팀 특이성이나 gate의 역할을 다시 검토해야 함.
+- 둘 다 IPPO보다 느리다면: max value의 calibration, advantage 왜곡, 전이 대상의 정의가 원인일 수 있음.
+
+여기서 단일 seed의 5M 실험은 탐색 실험으로 적절하지만, 최종 주장을 위해서는 반복 실행이 필요해.
+
+## 최종 판단
+
+검토 우선 후보
+
+D. Max 결합 advantage
+
+나는 D를 현재 후보 중 우선 검토하는 데 동의해. 기존 대칭 증류에서 발생했던 개인 가치함수 간 충돌을 피하면서, 팀원이 학습한 가치 정보를 actor 업데이트에 직접 활용한다는 장점이 있어.
+
+다만 다음 문장은 수정해야 한다고 생각해.
+
+> 뒤처진 agent는 max에 의해 높은 V를 받으므로 더 빠르게 학습하고, 앞선 agent는 영향받지 않는다.
+
+이건 아직 증명되지 않았어. 정확히는 max로 계산한 advantage가 실제로 더 유익한 행동을 강화한다면, 뒤처진 agent의 학습을 가속할 가능성이 있다고 표현해야 해.
+
+그리고 MAMBA 외에 Blending Imitation and Reinforcement Learning for Robust Policy Improvement도 참고할 가치가 있어. 이 연구는 oracle의 도움과 자기 정책 학습 사이를 상황에 맞춰 선택하는 RPI를 제안했어. D2 같은 보수적인 전이 방식과 연결되는 선행연구야.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://proceedings.iclr.cc\&sz=32)
+
+Proceedings+1
+
+
+
+내가 지금 가장 중요하게 보는 질문은 하나야.
+
+팀원 critic의 값이 더 높을 때, 그것이 단순히 다른 agent의 value scale이나 추정 오차 때문인가, 아니면 내 agent가 실제로 도달할 수 있는 더 나은 미래를 나타내는가?
+
+이것만 확인되면 D의 타당성을 훨씬 강하게 평가할 수 있어. 그 전에는 팀 발견 Q1은 유지하되, critic 전이 Q2의 방법을 확정하지 않는 편이 좋겠어.
+
+### 수행 기록 — 원문 대화와 별도
+
+- "점검 진행"은 T148 다음 단계 버튼이다. 버튼 문구: "D91 오프라인 추가 점검(h=0 질의 정확도, f 기반 advantage가 앞선 팀원 행동을 선호하는지)을 진행해줘. 학습은 하지 마." 붙여넣은 검토 의견의 5절 검증 1–4를 같은 조건(기존 checkpoint, 학습 없음)으로 수행했다.
+- `output/oracle_why_20261029/`: `max_advantage_check.py`(상관 지표·h=0), `counterfactual_check.py`(env deepcopy 반사실, 4개 데이터 병렬 약 30분), `summarize_cf.py`. 정책·critic 추론만 했고, 학습·코드 수정·실행 중 학습 조작은 없다(E63).
+- 일부 진행 안내를 영어로 보냈다(아래 원문 그대로). 한국어 답변 규칙 위반이며, 최종 답변은 한국어로 보냈다.
+- 기록: `EXPERIMENTS.md` E63, `DECISIONS.md` D92, `RESEARCH_STATE.md`, 이 T149, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Your review is in. The check already running covers part of items 2 and 4. I'm adding item 1 (counterfactual policy-swap returns from a cloned environment state), item 2 (per-action evaluation), and item 3 (the V2 maturity and communication-range limits). First I'm checking whether the environment can be cloned.
+
+Background check finished. A short 8-step history window almost fully recovers the recurrent values (h=0 is poor). Max-advantage leans more toward the leading teammate's actions, but it leans just as much toward the other team's leader. Now writing the decisive counterfactual check: clone the environment state, run the teammate's policy in my agent's seat, and measure my actual return.
+
+The counterfactual check is running in the background on 4 datasets. Meanwhile I'm writing the script that will summarize its results.
+
+The counterfactual check (4 datasets in parallel) is running in the background. It should take about 30–40 minutes. When it finishes I'll summarize the results and reply to your review point by point. Here is what I have so far.
+
+**Already confirmed (inference only, no training)**
+- **Item 4, h=0 queries:** A donor critic queried with h=0 tracks its full-recurrent value poorly, at correlation .55–.86. A short 8-step history window recovers it almost exactly, at .99–1.00 (.88 only at A+C 2M).
+- **Item 2, provisional:** The max-advantage puts more weight on the actions the leading teammate prefers. On the normalized advantage gap, this goes from .03–.13 to .13–.19. But it puts nearly as much weight on the actions the other team's leader prefers, so this is not team-specific. And as you said, this is correlation; it does not show the action is actually better.
+
+**What the running check measures**
+- **Item 1, state-level:** It clones the environment state and puts teammate j's policy in agent i's seat, keeping i's reward. It then measures the actual return difference (dMC) and checks whether the critic signal V_j(h_i) − V_i(h_i) predicts it.
+- **Item 2, action-level:** For each valid action, it compares one-step A_self and A_max against Monte Carlo Q. Common random numbers are used across arms.
+- **Item 3, gate limits:** It applies V2 maturity (from the E60 replay) and Chebyshev communication range 3. It measures how often a laggard actually has an eligible donor, and how much uplift that donor gives.
+
+### Assistant — 최종 답변
+
+검토 의견의 검증 1–4를 기존 checkpoint로 모두 돌렸습니다(학습 없음). 가장 중요한 질문에 대한 답은 **"같은 팀이면 대체로 실제로 더 나은 미래, 다른 팀이면 대체로 추정 오차"**입니다. 다만 "max advantage가 더 좋은 행동을 강화한다"는 아직 입증되지 않았습니다.
+
+## 검토 의견에 대한 제 입장
+
+- **MAMBA를 직접 근거로 삼자**: 동의합니다. GPI는 Q 기반 행동 선택이라 배경으로만 쓰고, D2는 RPI와 연결하겠습니다.
+- **앞선 agent 보호, 뒤처진 agent 가속**: 과장이었습니다. 동의하고 고칩니다.
+- **항등식**: 유도를 확인했고 맞습니다. λ=.95, γ=.99이면 미래 항의 총가중이 γ(1−λ)/(1−γλ) ≈ .83입니다. 그래서 A^f − A^self ≈ .83 × (앞으로의 b 가중평균) − b_t입니다. 즉 max-GAE가 actor에 주는 신호는 "팀원과의 격차 b가 커지는 상태로 가는 행동"입니다.
+- **r_i ≠ r_j는 부분 반박합니다.** 이 환경의 개인 보상 규칙은 agent 기준으로 팀원끼리 같습니다. 자기 팀 요청 선반을 자기 팀 goal에 배송하면 +1을 받는 식이고, A+C가 판정하는 것도 이것입니다. 진짜 문제는 말씀하신 두 번째 점, 즉 V_j(h_i) ≠ V_i^{π_j}(h_i)입니다. 그래서 이것을 직접 쟀습니다.
+
+## 1. 결정적 실험: 팀원 정책을 내 자리에서 실행
+
+env를 deepcopy해 상태를 그대로 복원했습니다(재현 확인).
+- 받는 agent i의 자리와 보상은 그대로 두고, i를 자기 정책 또는 팀원 j의 정책으로 움직였습니다. j의 actor는 i의 관측 이력으로 데웠습니다.
+- 다른 agent는 자기 정책을 그대로 씁니다.
+- 실제 return 차이 dMC = G(π_j) − G(π_i)를 critic 신호 dV = V_j(h_i) − V_i(h_i)와 비교했습니다.
+- 공통 난수, 8회 반복, 100 step입니다.
+- 데이터는 훈련 seed 3개입니다: A+C s1의 1M·2M, 옛 모서리 1M의 s1·s2.
+
+**뒤처진 agent(V2 성숙, 그 episode 배송 0)에서 dV > .2인 경우**
+
+| 데이터 | 같은 팀: n | 평균 dMC | dMC>0 | 유의 이득 | 유의 손실 | 다른 팀: 평균 dMC | dMC>0 |
+|---|---|---|---|---|---|---|---|
+| A+C 1M | 20 | +.28 | 1.00 | .40 | .00 | +.08 | 1.00 |
+| A+C 2M | 9 | +.48 | 1.00 | .89 | .00 | +.08 | 1.00 |
+| 옛 s1 | 9 | +.58 | 1.00 | .78 | .00 | (전체 −.01, 유의 손실 .67) | – |
+| 옛 s2 | 18 | +.28 | .67 | .50 | .28 | +.14 | .89 |
+
+- **같은 팀 critic이 높으면 대부분 실제로 더 나은 정책이 있습니다.** 다만 옛 s2에서는 28%가 유의한 손실이었습니다.
+- **다른 팀 critic도 dV는 양수지만, 실제 이득은 같은 팀의 1/2–1/6입니다.** 다시 말해 높은 값의 상당 부분이 추정 오차입니다.
+- **앞선 agent**:
+  - 같은 팀 dV는 대체로 음수(−.15 ~ −.52)이고 실제 dMC도 음수입니다. critic이 "팀원 정책이 더 나쁘다"를 맞게 알려 줍니다(corr +.07 ~ +.85).
+  - 같은 팀 dV > .2인 드문 경우(A+C 2M, n=14)는 dMC +.08, 유의 손실 14%입니다.
+  - 반면 다른 팀 critic은 앞선 agent에게 dV > .2를 자주 주는데(n=11·27), 실제 dMC는 +.00 / −.06이고 유의 손실이 9–22%입니다. **gate가 막아야 하는 것이 바로 이것입니다.**
+- **크기**: dV는 무한 horizon, dMC는 100 step이라 직접 비교는 어렵습니다(대략 0.63배가 기대값). A+C 2M에서는 dV 1.21 대 dMC .48로 1.6배 정도 과대추정됐습니다.
+
+→ E62에서 "critic 상관 기준 팀 특이성은 작다"고 했지만, **실제 정책 가치 기준으로는 팀 특이성이 큽니다.** Q1이 Q2에 필요하다는 근거가 오히려 강해졌습니다.
+
+## 2. 행동별 비교: 아직 입증되지 않음
+
+뒤처진 상태에서 유효 행동마다 one-step A_self와 A_max를 MC Q(60 step)와 Spearman으로 비교했습니다.
+
+| 데이터 | n | 자기 정책 이어 간 Q: A_self | A_max | 팀원 정책 이어 간 Q: A_self | A_max | 두 Q 일치도 |
+|---|---|---|---|---|---|---|
+| A+C 1M | 21 | +.33 | +.20 | +.15 | +.18 | +.20 |
+| A+C 2M | 9 | +.39 | **−.27** | −.01 | +.20 | +.24 |
+| 옛 s1 | 9 | +.43 | +.38 | +.28 | +.30 | +.49 |
+| 옛 s2 | 39 | +.19 | +.20 | +.15 | +.23 | +.33 |
+
+- 내가 내 정책으로 이어 갈 때의 Q 기준으로는 A_max가 A_self보다 나은 경우가 없습니다.
+- 팀원 정책으로 이어 갈 때의 Q 기준으로는 A_max가 조금 낫습니다. MAMBA 이론과는 맞지만, PPO에서 실제 행동을 이어 가는 것은 내 정책이라 이것이 개선으로 이어질지는 학습으로만 확인할 수 있습니다.
+- 두 Q의 일치도가 .20–.49에 그쳐 MC 잡음이 큽니다. 여기서는 결론을 내리지 않습니다.
+
+## 3. V2 성숙 + 통신 범위 제한 (뒤처진 agent)
+
+| 데이터 | 범위 안에 성숙 팀원이 있는 step | uplift>.05: gate / 팀 전체 | 평균 uplift: gate / 팀 전체 |
+|---|---|---|---|
+| A+C 1M | .46 | .42 / .96 | .14 / .36 |
+| A+C 2M | .20 | .20 / 1.00 | .28 / 1.28 |
+| 옛 s1 | .28 | .28 / 1.00 | .18 / .63 |
+| 옛 s2 | .31 | .10 / .46 | .06 / .30 |
+
+실제로 쓸 수 있는 상향은 팀 전체 기준의 21–40%입니다. E62의 1.19 같은 숫자는 실제 PGCT에서 얻을 기회를 과대평가했습니다. 지금의 Oracle 모드도 "같은 팀 ∩ 범위 안"이라 같은 제한을 받습니다. 아직 모사하지 않은 v2 승인 절차(EMA·round)까지 더하면 기회는 더 줄어듭니다.
+
+## 4. h=0 질의
+
+- donor 값 상관: h=0은 .55–.86, 최근 8 step window(L8)는 .88–1.00
+- 자기 대 donor 선택이 뒤집히는 비율: 뒤처진 agent .00–.02(격차가 커서), 앞선 agent는 최대 .18
+- → 질의는 L8 window로 합니다.
+
+## 판단과 다음 단계
+
+- **답할 수 있게 된 것**: 같은 팀 critic의 높은 값은 뒤처진 agent에게 대체로 실제로 도달 가능한 더 나은 미래를 가리킵니다(dV > .2에서 67–100%). 다른 팀은 대체로 그렇지 않습니다.
+- **아직 모르는 것**: max advantage가 PPO에서 실제로 더 좋은 행동을 강화하는지. 오프라인 MC로는 잡음 때문에 판정할 수 없고, 학습으로 확인해야 합니다.
+- **설계 반영(제안)**:
+  - D1(순수 max-GAE)과 D2(η 혼합)를 비교하고, λ도 조절 변수로 둡니다.
+  - value loss는 자기 return 그대로 둡니다.
+  - donor 집합은 update 단위로 고정하고 지속 승인을 요구합니다. f의 불연속(jump)은 로그로 남깁니다.
+  - trainer는 고치지 않습니다. 대신 `latent_team/`에 actor advantage와 critic return을 분리한 별도 PPO update 경로를 둡니다. f = V_i일 때 기존 `update_ippo`와 같은 결과인지 동등성 테스트를 먼저 합니다.
+- **제 의견**: 탐색 실험(seed 1, 5M: Oracle-max D1·D2, All-max, 기존 IPPO와 비교)을 할 근거는 생겼다고 봅니다. 기회가 21–40%로 줄어든 만큼 효과가 작을 수 있습니다. 최종 주장에는 3 seed 이상이 필요합니다.
+
+수치와 스크립트는 [output/oracle_why_20261029/README.md](output/oracle_why_20261029/README.md)에 있고, E63·D92·대화 기록(T149)에 남겼습니다. 학습과 코드 수정은 하지 않았습니다. 진행 안내 일부가 영어로 나갔는데, 이후로는 한국어로 쓰겠습니다.
+
+## 원문 기록 T150 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+이제 네가 처음부터 이야기했던 방향이 정확히 이해됐어. 내가 앞에서 행동 유사도를 전이 강도에 사용하는 문제에 집중하면서, 더 중요한 질문을 놓쳤던 것 같아.
+
+네 구상은 다음과 같은 거지.
+
+1. 에이전트들이 각자 학습하면서 자신의 보상 구조를 알아간다.
+2. 동일한 상황에서 예상하는 보상이 비슷한 에이전트들을 같은 잠재 팀으로 판단한다.
+3. 정책이나 행동이 달라도 보상 목적이 같다면 같은 팀으로 유지한다.
+4. **그렇게 발견한 팀원들이 서로 무엇을 학습하고 공유해야 실제 MARL의 이점을 얻을 수 있는가?**
+
+나는 이 문제를 두 부분으로 나눠야 한다고 생각해.
+
+**첫째, 팀을 발견하는 기준은 가치함수 \(V\)보다 보상함수 \(R\)에 가까워야 해.**
+
+**둘째, 발견된 팀이 해야 할 일은 단순히 Critic 값을 비슷하게 만드는 것이 아니라, 공동 목적에 대한 가치정보를 분산적으로 학습하는 것이어야 해.**
+
+두 번째가 지금 PGCT에서 제대로 정의되지 않은 부분이라고 봐.
+
+## 1. 먼저 예측 보상과 V는 구분해야 해
+
+네가 이야기한 예측 보상은 정확히는 다음과 같은 형태에 가까워.
+
+\[
+\hat r_i(o,a,o')
+\]
+
+동일한 상태전이 또는 공통 사건에 대해 에이전트 \(i\)가 예상하는 즉각적인 보상이야.
+
+반면 Critic의 가치함수는
+
+\[
+V_i^{\pi_i}(h)
+=
+\mathbb E_{\pi_i}
+\left[
+\sum_{k=0}^{\infty}\gamma^k r_{t+k}
+\mid h_t=h
+\right]
+\]
+
+처럼 현재 정책을 따랐을 때 예상되는 누적 보상이야.
+
+이 차이는 팀 발견에서 결정적이야.
+
+예를 들어 같은 팀에 속한 두 에이전트가 있다고 해보자.
+
+- A는 선반을 배송하는 정책을 이미 학습했어.
+- B는 선반을 집지도 못하는 상태야.
+
+두 에이전트가 같은 상황을 평가하더라도
+
+\[
+V_A^{\pi_A}(h)\neq V_B^{\pi_B}(h)
+\]
+
+일 수 있어.
+
+정책 수준이 다르기 때문이지.
+
+하지만 동일한 배송 사건에 대해 두 에이전트가 예상하는 보상은 같을 수 있어.
+
+\[
+\hat r_A(e)\approx\hat r_B(e)
+\]
+
+따라서 **팀 발견에는 정책에 종속된 \(V\)보다, 공통 사건에 대한 개인 보상 예측을 비교하는 편이 더 적절해.**
+
+물론 공통 사건 \(e\)를 부분관측 환경에서 어떻게 정의하고, 경험하지 않은 사건의 보상을 얼마나 신뢰할 수 있는지는 여전히 해결해야 할 문제야. 또한 동일한 목적을 가진 팀원이 서로 다른 역할별 보상을 받을 수도 있으므로 보상 예측이 다르다고 반드시 다른 팀은 아니야.
+
+그래도 네가 이전에 제안했던 Reward Probe의 출발점은 논리적으로 타당해.
+
+---
+
+## 2. 진짜 문제: 팀원들의 Critic이 무엇에 합의해야 하는가?
+
+여기서 FDMARL을 생각해 보자.
+
+FDMARL에서는 각 에이전트의 보상이 달라도 공동 목적함수를 명확하게 정의해.
+
+\[
+\bar r(s,\mathbf a)
+=
+\frac1N\sum_{i=1}^N r_i(s,\mathbf a)
+\]
+
+모든 에이전트는 이 평균 보상을 최대화하려는 하나의 공동 문제를 풀어.
+
+이때 각 에이전트의 Critic은 동일한 공동 가치함수에 대한 분산 추정기야.
+
+그러므로 consensus가 의미를 갖는 거지. FDMARL의 원 논문에서도 Critic consensus는 바로 이 공동 목적을 추정하기 위한 수단이야. [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v80/zhang18n.html?utm_source=chatgpt.com)
+
+그런데 현재 PGCT는 달라.
+
+각 에이전트의 Critic은 자신의 보상과 정책으로 학습되고 있어.
+
+\[
+V_i^{\pi_i}(h_i)
+\]
+
+여기서 팀원 \(i,j\)를 발견했다고 해서
+
+\[
+V_i^{\pi_i}=V_j^{\pi_j}
+\]
+
+로 만드는 것이 반드시 옳지는 않아.
+
+이건 단순히 학습이 부족해서 생기는 문제가 아니라 **두 Critic의 학습 대상 자체가 서로 다를 수 있기 때문**이야.
+
+따라서 나는 지금까지 PGCT의 근본적인 약점이 전이 계수나 donor 선택보다 여기에 있었다고 생각해.
+
+**공유할 팀은 정의했지만, 그 팀이 함께 근사해야 할 가치함수는 정의하지 않았던 거야.**
+
+---
+
+## 3. 그러면 발견된 팀이 무엇을 해야 할까?
+
+가능한 방향은 크게 세 가지야.
+
+| 방향 | 팀원끼리 하는 일 | 내 평가 |
+|---|---|---|
+| 정책 파라미터 공유 | 비슷한 정책을 학습 | SePS·HetDPS와 유사해지고 역할 차이가 문제 |
+| Critic 증류 | 상대의 가치 예측을 모방 | 간단하지만 공동 가치학습의 근거가 약함 |
+| **팀 공동 가치함수 학습** | 개인 보상 정보를 결합해 팀의 가치를 추정 | **PGCT의 목적에 가장 부합** |
+
+나는 세 번째를 선택하겠어.
+
+다만 기존 PGCT의 개인 Critic을 그대로 평균하는 방식이 아니라, **팀 공동 가치함수라는 학습 대상을 먼저 정의해야 해.**
+
+### ① 팀의 공동 보상을 정의
+
+Reward Probe로 발견된 팀을 \(T\)라고 하자.
+
+팀의 공동 목적함수를 다음과 같이 정의할 수 있어.
+
+\[
+\boxed{
+J_T(\boldsymbol{\pi})
+=
+\mathbb E_{\boldsymbol{\pi}}
+\left[
+\sum_{t=0}^{\infty}
+\gamma^t
+\frac{1}{|T|}
+\sum_{i\in T}r_{i,t}
+\right]
+}
+\]
+
+각 에이전트는 여전히 자신의 보상만 직접 관측해.
+
+하지만 궁극적으로 학습해야 하는 것은 팀 평균 보상을 최대화하는 정책이야.
+
+여기서 중요한 변화가 있어.
+
+지금까지는
+
+\[
+\max_{\pi_i}J_i(\pi_i)
+\]
+
+를 개별적으로 수행했다면, 이제는 팀원들이
+
+\[
+\max_{\boldsymbol{\pi}_T}J_T(\boldsymbol{\pi})
+\]
+
+라는 공동 목적을 최적화하도록 만드는 거야.
+
+이건 단순한 Critic 전이보다 훨씬 명확한 협력 학습의 의미를 가져.
+
+**하지만 현재 RWARE의 개인 보상 최적화와 팀 평균 보상 최적화가 반드시 같은 문제는 아니라는 점을 명시해야 해.** 개인별 shaping reward 때문에 둘이 달라질 수 있거든.
+
+### ② Actor는 독립적으로 유지
+
+이 부분은 네 기존 연구 철학을 유지해.
+
+\[
+\pi_i(a_i|h_i;\theta_i)
+\]
+
+각 에이전트의 정책은 서로 다른 상태로 남겨두는 거야.
+
+팀이 같다고 해서 동일한 행동을 할 필요는 없어.
+
+오히려 서로 다른 행동을 선택하면서 공동 목적을 달성하는 것이 협력 MARL의 중요한 특징이지.
+
+### ③ Critic은 공동 가치함수를 분산적으로 학습
+
+공동의 상태 \(s\)를 관측할 수 있는 환경부터 생각해 보자.
+
+팀의 가치함수는
+
+\[
+V_T^{\boldsymbol{\pi}}(s)
+=
+\mathbb E_{\boldsymbol{\pi}}
+\left[
+\sum_{k=0}^{\infty}
+\gamma^k\bar r_{T,t+k}
+\mid s_t=s
+\right]
+\]
+
+이고,
+
+\[
+\bar r_{T,t}
+=
+\frac{1}{|T|}\sum_{i\in T}r_{i,t}
+\]
+
+야.
+
+각 에이전트는 자신의 Critic 파라미터 \(\omega_i\)를 유지하지만, 이 파라미터들은 같은 \(V_T\)를 근사하는 것이 목적이야.
+
+이제 각자 자신의 보상으로 TD 업데이트한 뒤 팀원과 합의를 수행할 수 있어.
+
+\[
+\widetilde{\omega}_{i,t}
+=
+\omega_{i,t}
++
+\alpha_t\delta_{i,t}
+\nabla_\omega V(s_t;\omega_{i,t})
+\]
+
+\[
+\boxed{
+\omega_{i,t+1}
+=
+\sum_{j\in T}
+W_{ij,t}\widetilde{\omega}_{j,t}
+}
+\]
+
+실제로는 통신 가능한 팀원에 대해서만 가중치를 부여하면 돼.
+
+이 구조에서는 상대가 나보다 잘 학습했는지를 검사할 필요가 없어.
+
+**모두가 서로 다른 경험과 개인 보상으로 공동 가치함수를 학습하기 위해 정보를 교환하기 때문이야.**
+
+FDMARL과 직접적으로 연결되는 부분도 여기야.
+
+다만 이러한 합의가 올바른 팀 가치함수의 학습으로 이어지려면 공통 상태, 함수근사, 통신 그래프 등에 관한 조건이 필요해.
+
+---
+
+## 4. 그런데 현재 RWARE에서는 그대로 적용할 수 없어
+
+나는 이것이 PGCT의 가장 중요한 연구적 난점이라고 생각해.
+
+현재 RWARE에서는
+
+\[
+o_i\neq o_j
+\]
+
+이고 GRU에 저장되는 관측 이력도 달라.
+
+따라서
+
+\[
+V_i(h_i),\qquad V_j(h_j)
+\]
+
+는 서로 다른 정보를 조건으로 하는 가치함수야.
+
+이 상태에서 Critic 파라미터를 평균한다고 올바른 공동 가치함수가 만들어지는 것은 아니야.
+
+그렇다면 선택지가 두 개 있어.
+
+### 방향 A. 공통의 팀 가치표현을 만들어 합의
+
+각 에이전트가 제한된 정보를 교환해 공동 가치평가에 사용할 표현 \(z\)를 구성하는 거야.
+
+그리고
+
+\[
+V_T(z;\omega_i)
+\]
+
+를 각자 학습하면서 Critic Consensus를 수행해.
+
+이렇게 하면 Actor는 개인 관측으로 행동하고, Critic은 팀의 공동 가치정보를 학습하는 구조를 만들 수 있어.
+
+다만 이것은 **어떻게 공통의 \(z\)를 구성할 것인가**라는 새로운 문제를 발생시켜.
+
+제한된 통신만으로 구성한 \(z\)에 팀 가치평가에 필요한 정보가 충분한지도 증명하거나 검증해야 해.
+
+### 방향 B. 공동 보상을 학습하되 개인 가치추정은 유지
+
+이 방법은 조금 달라.
+
+팀원들이 통신을 통해 팀 평균 보상 신호를 추정하고, 각자 자신의 이력으로 그 보상의 미래 누적값을 학습하는 거야.
+
+\[
+\boxed{
+V_i^T(h_i)
+=
+\mathbb E
+\left[
+\sum_{k=0}^{\infty}
+\gamma^k\bar r_{T,t+k}
+\mid h_{i,t}
+\right]
+}
+\]
+
+이렇게 하면 모두 같은 팀 목적을 학습하지만, 서로 다른 정보를 갖기 때문에 가치추정은 달라도 돼.
+
+\[
+V_i^T(h_i)\neq V_j^T(h_j)
+\]
+
+이 방식은 부분관측 환경에 더 자연스러울 수 있어.
+
+대신 엄밀한 의미의 Critic 파라미터 consensus는 아니야. 공동 보상 신호와 학습 목적을 공유하는 구조에 가까워.
+
+또한 팀 보상 신호를 분산적으로 추정하기 위해서는 개인 보상이나 그 요약정보를 통신해야 하고, 연결이 끊겼을 때 발생하는 지연과 오차를 처리해야 해.
+
+### 두 방향의 차이
+
+나는 이 둘을 명확히 구별해야 한다고 생각해.
+
+- **A는 Critic Consensus 자체가 연구의 중심**이야.
+- **B는 팀 공동 목적에 대한 분산적 가치학습이 중심**이야.
+
+둘 다 협력 MARL이지만 같은 알고리즘은 아니야.
+
+특히 네가 FDMARL의 Consensus를 계승하고 싶다면 A가 더 직접적인 방향이지.
+
+---
+
+## 5. 내가 지금 가장 추천하는 진행 방향
+
+나는 당장 A와 B를 모두 구현하는 것은 반대해.
+
+대신 다음 순서로 핵심 가정을 확인하는 게 좋겠어.
+
+**첫 번째: 팀 판별은 기존 Reward Probe를 유지한다.**
+
+이 부분은 행동 유사도로 다시 돌아갈 이유가 없어.
+
+**두 번째: Oracle 팀을 사용한 FDMARL식 공동 Critic 학습을 검증한다.**
+
+우선 공통 상태가 주어지는 단순한 RWARE 변형에서 팀 평균 보상을 공동 목적함수로 설정하고 Critic Consensus를 수행해.
+
+이 실험에서는 잠재 팀 발견도, 부분관측도 일단 제외해.
+
+이렇게 하면 공동 가치학습 자체가 효과적인지 확인할 수 있어. 다만 이 공통 상태는 진단용이고, 최종 DTDE 방법에 사용해서는 안 돼.
+
+**세 번째: 부분관측으로 확장한다.**
+
+공통 상태가 사라졌을 때도 공동 가치학습을 유지할 수 있는지를 확인해.
+
+여기서 A처럼 공통 가치표현을 만들 것인지, B처럼 조건부 팀 가치함수를 각자 학습할 것인지 결정해야 해.
+
+**네 번째: Reward Probe로 Oracle 팀 정보를 대체한다.**
+
+이제 실제 PGCT를 완성하는 거야.
+
+---
+
+## 6. 여기서 하나 더 중요한 점
+
+나는 네가 생각하는 팀 발견과 Critic Consensus 사이에 **한 가지 검증이 더 필요하다**고 봐.
+
+바로 다음 명제야.
+
+\[
+\boxed{
+\text{보상 유사성}
+\Rightarrow
+\text{공동 학습의 적합성}
+}
+\]
+
+이 명제는 일반적으로 참이 아니야.
+
+서로 독립적인 두 에이전트가 우연히 동일한 보상함수를 가질 수 있어.
+
+반대로 서로 다른 보상함수를 가진 에이전트들이 하나의 팀으로 협력해야 할 수도 있지.
+
+FDMARL도 각 에이전트의 보상함수가 서로 다를 수 있다는 점을 명시하고 있어. [Proceedings of Machine Learning Research](https://proceedings.mlr.press/v80/zhang18n.html?utm_source=chatgpt.com)
+
+따라서 Reward Probe는 정확히 말하면 **목적 또는 보상 반응의 유사성을 발견하는 도구**야.
+
+그것이 곧 공동 가치학습을 수행해야 하는 팀이라는 사실은 추가적인 환경 가정이나 증거가 있어야 정당화돼.
+
+현재 RWARE처럼 팀의 목적이 보상 구조에 반영되도록 설계된 환경에서는 이 가정이 유효할 수 있어.
+
+하지만 일반적인 multi-team MARL까지 확장하려면 반드시 논의해야 해.
+
+---
+
+## 7. 최종적으로 내 생각
+
+이제 나는 PGCT의 핵심을 다음과 같이 잡는 게 가장 자연스럽다고 생각해.
+
+\[
+\boxed{
+\begin{aligned}
+&\text{Reward-based Team Discovery}\\
+&\qquad\downarrow\\
+&\text{Team-specific Objective Formation}\\
+&\qquad\downarrow\\
+&\text{Decentralized Team Value Learning}
+\end{aligned}
+}
+\]
+
+여기서 첫 번째는 네가 이미 상당 부분 연구했던 내용이야.
+
+문제는 두 번째와 세 번째였어.
+
+**팀을 발견한 다음 그 팀이 무엇을 공동으로 최적화해야 하고, 어떤 가치함수를 어떻게 분산적으로 학습해야 하는지 정의되지 않았던 거지.**
+
+이걸 해결하지 않고 Critic 평균이나 증류 방법만 바꾸는 것은 근본적인 해결이 아니라고 생각해.
+
+그리고 나는 지금 두 방향 중에서 **A를 먼저 연구하되, B를 중요한 대안으로 남겨두는 것**을 추천해.
+
+네가 처음부터 관심을 가졌던 FDMARL의 Critic Consensus와 가장 직접적으로 연결되는 것이 A이기 때문이야.
+
+하지만 **A에서 부분관측 문제를 해결할 수 없다면, Critic 출력이나 파라미터가 반드시 같아야 한다는 목표를 고집할 이유는 없어.** 공동 가치학습이라는 본래 목적을 달성하는 B가 더 타당할 수 있으니까.
+
+결국 지금 PGCT에서 가장 먼저 답해야 할 질문은 이것이라고 생각해.
+
+> **개인 보상으로 잠재 팀을 발견한 뒤, 개인 관측만 가능한 에이전트들이 어떻게 공동 가치함수를 학습할 수 있는가?**
+
+이 질문에 대한 답이 정해지면, 발견된 팀원들끼리 무엇을 해야 하는지도 자연스럽게 정해질 거야.
+
+이건 학습시간동안 내가 고민해본 내용인데
+아마 B로 갈꺼 같아
+
+이 방향에 대해 어떻게 생각해? 냉정하게 현재꺼랑 비교해서
+
+### 수행 기록 — 원문 대화와 별도
+
+- 의견 요청이다. 실험·구현·학습은 하지 않았다. 근거로 `EXPERIMENTS.md` E52·E53, `DECISIONS.md` D78·D81·D82를 다시 읽었다.
+- 기록: `DECISIONS.md` D93, 이 T150, 통합 사본 재생성.
+
+### Assistant — 최종 답변
+
+진단은 대부분 동의합니다. 다만 B가 지금 후보(D, max 결합 advantage)보다 낫다는 데는 동의하기 어렵습니다. **개념은 B가 더 깔끔하지만, 이 환경과 지금의 병목에서 학습 속도로 IPPO를 이길 가능성은 B가 D보다 낮다고 봅니다.** 그리고 B는 사용자께서 정한 절대 원칙(D82, 개인 보상만)을 뒤집습니다. 이 점은 따로 결정해 주셔야 합니다.
+
+## 1. 동의하는 부분
+
+- **팀 발견은 V가 아니라 R 기준**이어야 합니다. A+C가 이미 그렇고, E61·E63도 같은 결론입니다. 같은 팀이어도 V는 정책 수준에 따라 다르고, 보상 규칙은 같습니다.
+- **"팀은 정의했지만 그 팀이 함께 근사할 가치함수는 정의하지 않았다"**는 지적이 정확합니다. E61에서 본 것이 바로 이것입니다. 증류가 맞춘 대상은 서로 다른 학습 목표(V^{π_i} 대 V^{π_j})였습니다.
+- **부분관측에서는 A보다 B가 현실적**입니다. A는 공통 표현 z를 만드는 문제가 새로 생기고, 그 문제가 연구 하나 분량입니다.
+- **"보상 유사성 ⇒ 공동 학습 적합성"은 환경 가정**이라는 점도 맞습니다. RWARE 다팀 설정은 그렇게 설계되어 있으니 논문에 가정으로 밝히면 됩니다.
+
+## 2. 냉정한 비교
+
+| | 기존 증류 | D. max 결합 advantage | B. 팀 평균 보상 |
+|---|---|---|---|
+| 각 agent가 최적화하는 것 | 개인 return | 개인 return | **팀 평균 return** |
+| D82(개인 보상만) | 지킴 | 지킴 | **뒤집음** |
+| 팀원에게서 받는 것 | probe 위 V | 내 상태에서의 팀원 V | 팀원 보상(스칼라) |
+| 통신 | 작음 | **큼**(상태 질의, L8 window) | **가장 작음**, 지연 허용 |
+| 겨냥하는 병목 | 불명확 | 발견 뒤 **정착이 느린 agent** | 팀 내 **협력·경쟁** |
+| 우리 데이터 | 효과 없음(E61) | 뒤처진 agent에게 같은 팀 V 상향은 대체로 실제 이득(E63). 행동 수준은 미입증 | 아래 3절, 불리한 쪽 |
+| 이론 | 근거 약함 | MAMBA(근사) | FDMARL·네트워크 MARL의 평균 보상 |
+| 새로움 | – | 분산 peer + 같은 보상 집합 발견 + MAMBA | 발견만 새로움. 전이 쪽은 "팀 보상을 준다"로 귀결 |
+| 가장 큰 실패 위험 | – | 과대추정, 기회 21–40% | **credit assignment(lazy agent)** |
+
+## 3. B의 가장 큰 문제: 병목과 반대 방향
+
+- **우리 데이터가 가리키는 병목은 "발견했지만 정착하지 못한 agent"입니다.** 모두 0.06M 안에 배송을 겪고, 정착은 0.6–2.4M이 걸리며, 한 명은 끝까지 못 배웁니다(T145).
+- **B에서 뒤처진 agent의 학습 신호는 오히려 나빠집니다.** 팀 평균 return 중 자기 행동이 만든 부분은 많아야 1/|T| = 1/3이고, 뒤처진 agent는 거의 0입니다. 팀원이 배송할 때마다 자기 행동과 무관하게 보상이 들어오니 advantage에 잡음이 늘어납니다. 공유 보상의 알려진 lazy agent 문제입니다(VDN 논문이 지적).
+- **B가 주는 이득(팀 내 경쟁 제거, 길 막지 않기)은 이 환경에서 작다는 증거가 있습니다.** E53에서 독주 agent를 NOOP으로 두거나 치워도 나머지는 0–0.3/ep로 그대로였습니다. 경쟁·차단 때문이 아니라 배우지 못한 것이었습니다.
+- **팀 보상 IPPO(B의 Oracle 상한에 가까움)도 빠르지 않았습니다(E52, 1M).**
+  - 평가 마지막 5회: 팀 보상 .81/.38, 개인 보상 .99/.83
+  - 최다 agent 비율: 팀 보상 .91/.82, 개인 보상 .99/.97 → 독주는 조금 덜함
+  - 팀 보상에서 독주하지 않는 agent는 pickup은 해도 배송에 실패했습니다.
+  - 다만 1M, 좌표 포함, 합산 팀 보상 조건이라 약한 증거입니다(D78).
+- **부분관측도 B에 불리합니다.** 멀리 있는 팀원의 배송은 내 관측 이력으로 거의 예측할 수 없습니다. 그래서 V_i^T(h_i)에는 줄일 수 없는 분산이 커지고 critic이 나빠집니다.
+
+정리하면, B는 "협력"이라는 MARL의 이점을 겨냥하지만 우리 환경의 실제 병목(개별 agent의 정착)에는 오히려 불리할 가능성이 큽니다. D는 병목을 직접 겨냥하지만 비싸고 아직 입증되지 않았습니다.
+
+## 4. 그래도 B로 간다면 반드시 지킬 것
+
+1. **D82 변경을 명시적으로 결정·기록합니다.** 연구 질문이 "개인 보상으로 학습하며 critic 정보를 전이"에서 "발견한 팀과 보상을 공유"로 바뀝니다. 이름도 critic transfer가 아니게 됩니다.
+2. **식별용 r̂는 끝까지 개인 보상으로만 학습합니다.** 팀 평균 보상으로 r̂를 학습하면, 한 번 묶인 쌍(잘못 묶인 쌍 포함)의 보상 반응이 서로 닮아 가서 판정이 스스로를 굳힙니다.
+3. **기준선에 IPPO-팀보상(정답 결합)을 넣습니다.** 없으면 "그냥 팀 보상을 주면 되지 않느냐"에 답할 수 없습니다. B의 목표는 이 상한에 근접하는 것이 됩니다.
+4. **개인→팀 혼합 비율을 둡니다.** r_i' = (1−τ)r_i + τ r̄_T입니다. OpenAI Five의 "team spirit"처럼 τ를 0에서 올리거나, 식별 확신도에 묶습니다. 초기의 lazy agent 문제를 줄이는 표준 방법이고, 식별 전에는 개인 보상이라는 원래 정신도 지킵니다.
+5. **통신이 끊기는 경우를 처리합니다.** 범위 안에 팀원이 있는 시간은 20–46%입니다(E63). 보상 로그를 저장해 만났을 때 주고받는 방식이 필요하고, update 시점까지 못 받은 보상을 어떻게 처리할지 정해야 합니다.
+6. **shaping 처리를 정합니다.** 팀원의 진척 shaping까지 평균하면 잡음이 됩니다. 배송·반납 같은 과제 보상만 공유하는 선택지도 둡니다.
+
+## 5. 제 권고: 말로 정하지 말고 Oracle 수준에서 한 번 맞붙이기
+
+식별을 빼고 정답 팀으로, 같은 조건(모서리·개인, A+C 관측, seed 1, 5M, 탐색용)에서 비교합니다.
+
+| arm | 구현 비용 |
+|---|---|
+| IPPO-개인 | 기존 s1 재사용 |
+| Oracle-B (τ=1, 범위 제한 없음) | 작음(보상 혼합 wrapper) |
+| Oracle-B-τ (team spirit) | 작음 |
+| Oracle-max (D2) | 중간(별도 PPO 경로) |
+
+- B가 IPPO를 넘고 D가 못 넘으면 B로 가면 됩니다. 이때 D82 변경을 확정합니다.
+- 둘 다 못 넘으면 전이 방식이 아니라 이 환경의 전이 여지 자체를 다시 봐야 합니다.
+- 사용자 계획의 "공통 상태 FDMARL" 단계는 A를 위한 것이라 B에는 필요 없습니다. Oracle-B가 그 역할을 합니다.
+
+이번에는 의견만 드렸고 실험·구현은 하지 않았습니다. `DECISIONS.md` D93과 대화 기록 T150에 남겼습니다.
+
+## 원문 기록 T151 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+그러면 D에 대해서 다시 설명해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 설명 요청이다. 실험·구현·학습은 하지 않았다. D91·D92·E62·E63 내용을 정리했다.
+- 새로 덧붙인 제안: 통신 방식으로 critic 가중치 공유를 권한다(FDMARL과 같은 수준의 가정, L8 질의보다 통신량이 작고 h=0 문제가 없다). donor 집합은 update 단위로 고정한다.
+
+### Assistant — 최종 답변
+
+D를 처음부터 다시 정리하겠습니다. 그사이 검토와 점검(E62·E63, D91·D92)으로 고친 부분을 모두 반영했습니다.
+
+## 한 문장으로
+
+**팀원의 critic을 내 critic에 맞추지 않습니다. 대신 내 actor가 advantage를 계산할 때 "나와 팀원 가운데 지금 상황을 가장 높게 평가하는 값"을 기준으로 씁니다.** critic은 지금처럼 내 개인 보상으로만 학습합니다.
+
+## 1. 왜 이렇게 바꾸나
+
+- 기존 증류는 V_i를 V_j에 맞췄습니다. 그런데 V는 정책에 따라 달라서, 같은 팀이어도 V^{π_i} ≠ V^{π_j}입니다(E61). 그래서 앞선 agent는 끌려 내려가고, 효과도 probe 위에서만 났습니다.
+- 같은 팀이면 보상 규칙은 같습니다. 그래서 팀원의 V는 맞춰야 할 목표가 아니라 **"같은 과제를 다른(더 나은) 정책으로 풀면 이 정도 가치가 있다"는 정보**로 봐야 합니다. 이런 정보는 평균하는 것보다 더 높은 쪽을 쓰는 것이 이론적으로 맞습니다.
+
+## 2. 식
+
+- 팀원 critic에 **내 관측 이력**을 넣어 V_j(h_i)를 구합니다.
+- f_i(s) = max( V_i(h_i), max_{j∈G_i} V_j(h_i) ). G_i는 v2 gate가 승인했고, 성숙했고, 통신 범위 안에 있는 팀원입니다.
+- δ_t = r_t + γ f_i(s_{t+1}) − f_i(s_t)이고, 이를 GAE(λ)로 모은 것이 A^max입니다.
+- **actor**: PPO에 A^max를 씁니다(D1). 보수적으로는 (1−η)A^self + ηA^max를 씁니다(D2).
+- **critic**: 지금처럼 내 return으로 학습합니다. peer 증류 손실은 뺍니다.
+
+## 3. 직관: 뒤처진 agent의 예
+
+선반을 집은 뒤 goal로 가야 하는데, goal이 시야 밖이라 아직 길이 정착하지 않은 agent i입니다(r = 0, γ ≈ 1로 단순화).
+
+| 상태 | 선반 집음 | goal 쪽으로 이동 중 | goal 근처 |
+|---|---|---|---|
+| 내 critic V_i | .2 | .2 | .3 |
+| 배송을 잘하는 팀원 critic V_j(h_i) | .3 | .8 | 1.5 |
+| f = max | .3 | .8 | 1.5 |
+
+- 내 critic만 쓰면 δ가 0, +.1이라 어느 행동이 좋은지 신호가 거의 없습니다.
+- f를 쓰면 δ가 +.5, +.7입니다. **팀원이 높게 보는 상태 쪽으로 가는 행동**이 양의 advantage를 받습니다.
+- 앞선 agent는 대개 자기 V가 가장 높아 f ≈ V_i가 되고, 거의 영향을 받지 않습니다. 다만 다음 상태에서 팀원 값이 선택될 수 있어 **자동으로 보장되지는 않습니다**(검토 의견 3-1).
+
+정확한 관계는 b = f − V_i ≥ 0이라 두면 다음과 같습니다.
+
+A^max − A^self = −b_t + γ(1−λ) Σ_{k≥1} (γλ)^{k−1} b_{t+k}
+
+- γ = .99, λ = .95에서는 대략 **".83 × 앞으로의 b 가중평균 − 지금의 b"**입니다.
+- 즉 actor가 받는 신호는 "팀원이 나보다 더 높게 보는 정도(b)가 커지는 곳으로 가라"입니다.
+- λ = 1이면 이 항이 baseline만 남아 기대 gradient가 변하지 않습니다. λ가 전이 강도를 조절하는 손잡이가 됩니다.
+
+반대로 위 표의 1.5가 팀원 critic의 과대추정이라면, **잘못된 행동을 강화합니다.** 그래서 gate, 성숙 조건, 상한, η가 필요합니다.
+
+## 4. 이론적 근거와 그 한계
+
+- **직접 선행연구는 MAMBA**(Cheng, Kolobov & Agarwal, NeurIPS 2020)입니다. 여러 oracle의 상태가치 최댓값을 GAE식 advantage에 쓰고, 조건이 맞으면 oracle들보다 나빠지지 않는 정책 개선을 보입니다. D2는 RPI(ICLR 2024)와 연결됩니다.
+- 우리 설정에서는 **"oracle = 보상 probe로 찾은 팀원"**입니다. MAMBA가 요구하는 "같은 보상 기준"을 A+C가 판정하므로 Q1(식별)과 Q2(전이)가 하나로 이어집니다.
+- 조건이 정확히 맞지는 않습니다. MAMBA가 필요로 하는 것은 V_i^{π_j}(h_i)("내 자리에서 팀원 정책을 실행했을 때 내 return")입니다. 하지만 실제로 쓸 수 있는 것은 V_j(h_i)("팀원 critic에 내 이력을 넣은 값")입니다. 이 둘은 다를 수 있어서 직접 쟀습니다.
+
+## 5. 확인된 것과 안 된 것 (E62·E63, 학습 없음)
+
+**확인된 것**
+- **뒤처진 agent**: 같은 팀 critic이 .2 이상 높게 볼 때, 실제로 내 자리에서 팀원 정책을 돌리면 return이 오르는 경우가 67–100%였습니다(유의 40–89%). 높은 값이 대체로 진짜 더 나은 미래를 가리킵니다.
+- **다른 팀 critic**: 값은 높게 나와도 실제 이득이 작습니다. 앞선 agent에게는 가짜 상향을 주고 손실도 냅니다. 그래서 **gate(팀 식별)가 실제로 필요합니다.**
+- **앞선 agent**: 같은 팀 critic은 대체로 "팀원 정책이 더 나쁘다"를 맞게 알려 줍니다.
+- **질의 방식**: 8 step 이력 window 질의는 full recurrent와 거의 같습니다(.88–1.00). h=0 질의는 부정확합니다.
+
+**안 된 것·위험**
+- **행동 수준**: A^max가 내 정책 기준의 실제 Q를 A^self보다 잘 맞힌다는 증거는 없습니다. 팀원 정책 기준으로는 조금 낫습니다. 학습으로 확인해야 합니다.
+- **과대추정**: A+C 2M에서 dV가 실제의 약 1.6배였습니다.
+- **기회가 제한적**: 통신 범위와 성숙 조건 때문에 쓸 수 있는 상향은 팀 전체 기준의 21–40%입니다.
+- **이득의 원천이 정해져 있음**: 처음 배우는 agent는 빨라지지 않습니다. 이득은 agent 사이의 학습 속도 차이에서만 나옵니다.
+
+## 6. 구현 설계 (제안)
+
+- **통신 방식은 critic 가중치 공유를 권합니다.** 팀원이 update마다 critic 가중치를 보내면, 받는 agent가 자기 rollout 전체에서 그 critic을 recurrent로 돌립니다.
+  - rollout 1,024 step마다 L8 window 질의를 보내는 방식보다 통신량이 작습니다.
+  - h=0 문제도 사라집니다.
+  - 이웃끼리 critic 파라미터를 주고받는 것은 FDMARL도 하는 일이라 가정 수준이 비슷합니다.
+- **donor 집합**: update 시점에 gate가 승인했고 범위 안에 있는 성숙 팀원으로 정하고, 그 update 동안 고정합니다. 이렇게 하면 step마다 이웃이 바뀌어 f가 튀는 문제를 막습니다.
+- **안전장치**: 성숙 조건, b의 상한 c, D2의 η, max-GAE 전용 λ.
+- **코드**: trainer는 그대로 두고 `latent_team/`에 actor advantage와 critic return을 분리한 별도 PPO update 경로를 둡니다. f = V_i일 때 기존 `update_ippo`와 같은 결과가 나오는지 먼저 테스트합니다.
+- **로그**: f가 팀원 값을 고른 step 비율, 평균 b, donor 교체 시 f의 변화, A^max − A^self 분포.
+
+## 7. 확인 실험 (승인 필요)
+
+seed 1, 5M, 탐색용으로 IPPO(기존), Oracle-max D1, Oracle-max D2(η=.5), All-max를 비교합니다.
+
+- Oracle-max가 IPPO보다 빠르면, 팀원의 가치 정보가 학습을 도왔다는 근거가 됩니다.
+- Oracle-max가 All-max보다 좋으면, 팀 구분이 필요하다는 근거가 됩니다(E63은 그렇게 예상합니다).
+- 둘 다 IPPO보다 느리면, 과대추정이나 advantage 왜곡을 의심합니다.
+
+이것이 통과하면 PGCT-max(v2 gate)로 넘어가고, 최종 주장은 3 seed 이상으로 합니다.
+
+## B와 한 줄 비교
+
+**D는 목표(개인 return)를 그대로 두고, "더 잘하는 팀원의 평가"를 빌려 뒤처진 agent가 길을 빨리 잡게 하는 방법**입니다. B는 목표 자체를 팀 return으로 바꾸는 방법입니다.
+
+## 원문 기록 T152 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (1)
+
+구현해줘
+
+### 사용자 — 원문 (2, 작업 중 질문)
+
+이거 답해줘, 내가 아는 MAMBA는 전제 조건으로 모든 Oracle이 동일 환경, 동일 보상 기준에서 평가되는 걸로 아는데 PGCT는 그게 아니지 않나?
+
+### 수행 기록 — 원문 대화와 별도
+
+- (1)은 T151 다음 단계 버튼이다(Oracle-max D1·D2·All-max 구현과 smoke test). 읽기 전용으로 `latent_team/train_from_scratch.py`, trainer의 `Rollout`·`collect_rollout`·`compute_gae`·`update_ippo` 구조를 확인했다. 파일 생성·수정은 없다.
+- (2)가 오자 구현을 멈추고 답했다. 진행 안내 메시지는 보내지 않았다.
+- 기록: `DECISIONS.md` D94, 이 T152, 통합 사본 재생성.
+
+### Assistant — 최종 답변
+
+맞습니다. 엄밀히 보면 D는 MAMBA의 전제를 만족하지 않습니다. 그래서 MAMBA의 보장을 그대로 가져올 수 없습니다. 지난 답변(T151)에서 "MAMBA가 요구하는 같은 보상 기준을 A+C가 판정하므로 Q1과 Q2가 하나로 이어진다"고 한 것은 과장이었습니다. MAMBA의 전제는 셋인데, D는 그중 하나만, 그것도 팀 안에서 근사적으로만 만족합니다.
+
+## MAMBA 전제와 D의 차이
+
+| MAMBA 전제 | D에서 | 판정 |
+|---|---|---|
+| 모든 oracle이 같은 MDP(같은 동역학) | 각 agent에게 환경에는 다른 agent의 정책이 포함됩니다. 그 정책들이 학습 중이라 환경이 비정상이고, i와 j가 겪는 "나머지 agent"도 서로 다릅니다. 게다가 부분관측(h_i ≠ h_j)입니다 | ✗ 근사일 뿐 |
+| 같은 보상 기준 | 같은 팀이면 개인 보상 규칙은 agent 기준으로 같습니다(자기 팀 요청 선반을 자기 팀 goal에 배송하면 +1, pickup·shaping 규칙도 같음). 다른 팀이면 다릅니다. A+C가 판정하는 것이 이것입니다 | △ 팀 안에서만, 판정 오류 가능 |
+| learner가 방문한 상태에서 oracle 가치를 정확히 알 것 | MAMBA는 제가 알기로 learner가 방문한 상태에서 oracle 정책을 실제로 굴려(rollout) V^{π_k}를 learner의 상태 분포 위에서 추정합니다(원문 확인 필요). D는 팀원 critic V_j에 내 이력 h_i를 그냥 넣습니다. j가 자기 분포에서 배운 함수를 i의 분포로 외삽하는 것입니다 | ✗ 가장 큰 차이 |
+
+핵심을 정리하면 이렇습니다. MAMBA에 필요한 값은 **V_i^{π_j}(h_i) = "내 자리에서 팀원 정책을 실행했을 때 내 보상의 return"**입니다. D가 쓰는 V_j(h_i)가 이 값에 가까우려면 두 가지가 필요합니다.
+
+- 보상 규칙이 같아야 합니다. 이는 팀 식별로 다룹니다.
+- 팀원 critic이 내 이력으로 일반화되어야 합니다. 이 조건은 보장이 없습니다.
+
+## 그래서 무엇을 주장할 수 있나
+
+- **MAMBA는 "max 결합 advantage라는 계산 방식의 출처"로만 인용합니다.** 보장이 그대로 적용되지 않는다는 점을 논문에 명시해야 합니다.
+- **보장 대신 오차항이 붙은 명제는 가능합니다.**
+  - 실제 f^max = max_j V_i^{π_j}와 우리가 쓰는 f̂의 차이를 ε라 둡니다.
+  - 그러면 "MAMBA식 개선에서 O(ε/(1−γ))만큼 깎인 개선"이라는 형태가 됩니다. 정확한 형태는 MAMBA 원문의 근사오차 분석을 확인한 뒤 정하겠습니다.
+- **ε는 측정 가능하고, 이미 일부 쟀습니다.** E63의 반사실 실험(팀원 정책을 내 자리에서 실행)이 바로 V_i^{π_j}(h_i)를 몬테카를로로 추정한 것입니다.
+  - 같은 팀의 뒤처진 agent: 방향은 대체로 맞았습니다(dV > .2일 때 실제 이득 67–100%). 크기는 최대 약 1.6배 과대였습니다.
+  - 다른 팀: 틀렸습니다.
+- 그래서 주장을 이렇게 바꿀 수 있습니다. **"gate의 역할은 MAMBA 전제가 근사적으로 성립하는 상대(같은 보상 규칙, 성숙한 donor)를 고르는 것이고, 그 근사 오차를 측정했다."**
+- 첫 번째 전제의 차이(비정상성)는 IPPO 계열 방법 모두에 있는 문제라 D만의 약점은 아닙니다. 다만 그 때문에 "보장"이라는 말은 쓸 수 없습니다.
+
+## 전제를 더 가깝게 맞추는 선택지
+
+1. **현재 D**: 팀원 critic을 외삽하고, gate·성숙·상한·η로 보호합니다. 가장 싸지만 보장은 없고, 경험적으로 검증합니다.
+2. **MAMBA에 더 가까운 D**: 팀원의 actor도 공유받아, 내 자리에서 가끔 팀원 정책을 실행합니다. 그 데이터와 내 보상으로 V_i^{π_j}를 직접 학습합니다.
+   - 장점: 두 번째·세 번째 전제를 정면으로 만족시킵니다.
+   - 단점: 탐색의 일부를 팀원 정책에 써야 하고, 정책 공유가 필요하며, off-policy 데이터를 처리해야 합니다. 비용이 크고, 그 자체로 별도 연구 분량입니다.
+
+## 구현에 미치는 영향
+
+계산은 같으므로 알고리즘과 코드는 그대로 둡니다. 바뀌는 것은 주장의 수준입니다. "MAMBA의 보장이 적용된다"가 아니라 **"MAMBA식 결합을 쓰고, 그 전제가 근사적으로 성립하는 상대를 gate로 고르며, 근사 오차를 측정한다"**가 됩니다.
+
+구현은 trainer 구조를 확인한 단계에서 멈췄고, 아직 파일을 만들거나 고치지 않았습니다. 이 대화는 T152와 `DECISIONS.md` D94에 기록했습니다.
+
+## 원문 기록 T153 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (붙여넣은 GPT 답변 + 사용자 문장. 링크·이미지 표기는 받은 그대로)
+
+## 1. 이번 수정안에 대한 평가
+
+D를 유지하되 MAMBA의 이론적 보장을 직접 주장하지 않겠다는 수정은 옳아. 이전보다 연구 주장이 훨씬 정확해졌어.
+
+다만 여전히 수정해야 할 부분이 있어.
+
+| 항목                                   | 내 판단               |
+| ------------------------------------ | ------------------ |
+| MAMBA의 전제가 완전히 충족되지 않는다는 인정          | 맞음                 |
+| MAMBA를 Max-Advantage의 선행연구로 활용       | 적절                 |
+| 팀원의 Critic을 자신의 이력에 넣는 방식            | 실험 가능하지만 일반화 문제 존재 |
+| E63으로 Critic의 가치정보가 유용함을 주장          | 제한적으로 가능           |
+| \\(O(\epsilon/(1-\gamma))\\) 성능보장 제안 | 현재로서는 근거 부족        |
+| 알고리즘을 수정하지 않고 주장만 낮추기                | 조건부 동의             |
+
+특히 중요한 사실 하나를 원문에서 확인했어.
+
+### MAMBA는 실제로 Oracle 정책을 실행해 가치함수를 추정한다
+
+Policy Improvement via Imitation of Multiple Oracles의 Algorithm 1을 보면 다음 과정이 명시되어 있어.
+
+1. 학습자의 정책으로 일정 시점까지 rollout한다.
+2. 그 시점부터 Oracle 정책으로 전환해 나머지 궤적을 수집한다.
+3. 이 데이터로 Oracle의 가치함수 추정기 \\(\hat V^k\\)를 학습한다.
+4. 여러 Oracle 가치함수의 최댓값으로 학습자의 정책을 업데이트한다.
+
+따라서 수정안에서 '원문 확인 필요'라고 했던 부분은 확인된 사실이야.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://proceedings.neurips.cc\&sz=32)
+
+NeurIPS Proceedings
+
+
+
+현재 D는 이 과정 중 Oracle 정책을 실행하여 학습자의 상태분포에서 가치함수를 추정하는 부분을 생략하고, 기존에 학습된 팀원 Critic을 바로 사용해.
+
+이것은 계산량을 줄이는 중요한 설계 차이지만, 동시에 MAMBA의 보장을 적용하기 어렵게 만드는 핵심적인 차이야.
+
+## 2. 가장 큰 문제는 \\(\epsilon\\)의 정의야
+
+수정안에서는 다음과 같이 주장했지.
+
+> 진짜 \\(f^{\max}\\)와 실제 \\(\hat f\\)의 차이를 \\(\epsilon\\)으로 두면 MAMBA의 개선 보장에서 \\(O(\epsilon/(1-\gamma))\\)만큼 손실이 발생한다.
+
+이 방향으로 이론을 발전시키는 것은 가능해. 하지만 현재 상태에서 이 식을 PGCT의 성능보장으로 주장하면 안 돼.
+
+MAMBA 원문의 Theorem 1은 단순한 가치함수 오차 \\(\epsilon\\)에 대한 식이 아니야.
+
+원문은 근사 가치함수로 인해 발생하는 정책경사 추정의 편향 \\(\beta\\)와 분산 \\(\nu\\)를 사용해 다음 형태의 성능 손실을 다뤄.
+
+\\[ O\left(\beta+\sqrt{\frac{\nu}{N}}\right) \\]
+
+여기에는 온라인 학습 알고리즘의 regret과 정책 클래스의 표현 능력에 관한 조건도 포함돼.&#x20;
+
+[image](https://www.google.com/s2/favicons?domain=https://proceedings.neurips.cc\&sz=32)
+
+NeurIPS Proceedings
+
+
+
+따라서 MAMBA의 정리를 가져오려면 다음을 구별해야 해.
+
+- 가치함수의 추정 오차
+- 그 오차로 인한 advantage 추정 오차
+- advantage 오차로 인한 정책경사 편향
+- 정책경사 편향이 최종 정책 성능에 미치는 영향
+
+이들을 하나의 \\(\epsilon\\)으로 묶어서 바로 성능보장을 제시할 수는 없어.
+
+### 그렇지만 D에 대해 증명할 수 있는 부분은 있어
+
+이상적인 Max-Critic 값을 \\(f^\*\\), 실제 사용하는 값을 \\(\hat f\\)라고 하자.
+
+그리고 모든 관련 이력에서 다음이 성립한다고 가정해.
+
+\\[ \\|\hat f-f^\*\\|\_\infty\leq\epsilon \\]
+
+이때 GAE의 차이는 다음과 같아.
+
+\\[ \hat A_t^\lambda-A_t^{\*,\lambda} = -d_t+ \gamma(1-\lambda) \sum\_{k=1}^{\infty} (\gamma\lambda)^{k-1}d\_{t+k} \\]
+
+여기서
+
+\\[ d_t=\hat f(h_t)-f^\*(h_t) \\]
+
+야.
+
+따라서 적절한 종료조건 또는 무한시계 설정에서
+
+\\[ \boxed{ |\hat A_t^\lambda-A_t^{\*,\lambda}| \leq \left( 1+\frac{\gamma(1-\lambda)} {1-\gamma\lambda} \right)\epsilon } \\]
+
+라는 오차 상한을 얻을 수 있어.
+
+이것은 D의 Max-GAE 계산에 직접적으로 연결되는 결과야.
+
+하지만 두 가지 한계가 있어.
+
+첫째, 이것은 advantage 추정 오차의 상한이지 정책 성능 개선의 보장이 아니야.
+
+둘째, 실제 PGCT에서 \\(\epsilon\\)이 모든 관련 이력에 대해 작다는 사실은 아직 확인되지 않았어.
+
+특히 E63의 성공 비율이나 1.6배 과대추정은 이 균일 오차 상한을 제공하지 않아.
+
+따라서 내 추천은 명확해.
+
+당장은 성능보장 정리를 주장하지 말고, Max-GAE의 오차를 정량화하는 분석부터 진행하는 것이 좋겠어.
+
+## 3. E63은 중요한 근거지만, 검증 대상을 정확히 구분해야 해
+
+E63의 결과를 보면 다음 사실은 상당히 긍정적이야.
+
+같은 팀에서 뒤처진 에이전트의 Critic보다 팀원 Critic의 값이 높은 경우, 실제로 팀원 정책을 실행했을 때 return이 개선되는 사례가 많았다는 거지.
+
+이것은 다음 가설을 뒷받침해.
+
+\\[ V_j(h_i)>V_i(h_i) \\]
+
+라는 관계가 팀원 \\(j\\)의 정책이 더 유익할 가능성을 나타낼 수 있다는 것.
+
+하지만 D가 실제 사용하는 것은 팀원 정책 자체가 아니야.
+
+\\[ \hat A_i^{\max} \\]
+
+로 자기 Actor를 업데이트하는 것이지.
+
+따라서 E63은 좋은 donor를 구별할 수 있다는 가능성은 보여줬지만, donor Critic을 사용한 advantage가 좋은 행동을 구별한다는 사실까지 보여주지는 못했어.
+
+또한 E63의 반사실 실험에서 추정한 return의 의미도 확인해야 해.
+
+올바른 비교라면 동일한 전역 상태와 다른 에이전트들의 고정된 정책을 기준으로, \\(i\\)의 정책만 \\(j\\)로 대체했을 때 \\(i\\)가 받는 개인 return을 측정해야 해.
+
+이렇게 했을 때의 값이 우리가 원하는
+
+\\[ V_i^{\pi_j}(h_i) \\]
+
+에 가장 가까운 반사실적 추정치가 돼.
+
+다만 하나의 구체적 전역 상태에서 계산한 return과 부분관측 이력 \\(h_i\\)에 조건부인 기대 return도 엄밀히는 다르다는 점을 기억해야 해.
+
+여기까지 확인된다면 E63의 해석은 훨씬 강해질 거야.
+
+## 4. 비정상성 문제는 조금 다르게 볼 필요가 있어
+
+수정안에서 다음과 같이 설명했어.
+
+> IPPO 계열 방법 모두 비정상성 문제가 있으므로 D만의 약점은 아니다.
+
+이건 절반만 맞아.
+
+MARL에서 다른 에이전트의 정책이 바뀌면 자신의 환경이 비정상적으로 보일 수 있다는 것은 맞아.
+
+하지만 D에는 추가적인 문제가 하나 더 있어.
+
+팀원 \\(j\\)의 Critic이 학습한 환경과, 에이전트 \\(i\\)가 그 Critic을 사용하는 환경이 다를 수 있다는 점이야.
+
+예를 들어 A의 Critic은 B가 특정한 행동을 수행하는 상황에서 학습했을 수 있어.
+
+그런데 B가 A의 Critic을 가져와 자신의 관측 이력을 평가할 때는, A가 다른 행동을 수행하고 있을 수 있지.
+
+따라서 보상 규칙이 같아도 두 Critic이 평가하는 미래 환경은 다를 수 있어.
+
+한편 이 차이가 항상 치명적인 것은 아니야.
+
+다른 에이전트들의 정책을 일시적으로 고정하고, 에이전트 \\(i\\)의 역할에서 여러 후보 정책을 비교하는 하나의 환경을 정의할 수는 있어.
+
+문제는 그렇게 정의된 환경에서의 Oracle 가치함수를 \\(V_j(h_i)\\)가 제대로 근사하느냐야.
+
+그러므로 비정상성 자체보다는 다른 에이전트의 Critic을 자기 위치로 옮겨 사용했을 때의 가치추정 오차가 D에서 더 직접적인 문제라고 생각해.
+
+## 5. 아직 남아 있는 중요한 문제: 보상은 같지만 실제 최적화 방향은 바뀐다
+
+수정안에서는 다음과 같이 설명했어.
+
+> D는 목표인 개인 return을 그대로 유지한다.
+
+이 말은 환경에서 받는 보상과 Critic의 학습 목표를 유지한다는 의미에서는 맞아.
+
+하지만 정책 업데이트까지 완전히 동일한 목적을 최적화한다고 볼 수는 없어.
+
+\\[ A^{\max} \neq A^{\pi_i} \\]
+
+이기 때문이야.
+
+특히 \\(\lambda<1\\)에서는 팀원 Critic이 만든 추가적인 가치 신호가 정책경사의 방향을 바꿀 수 있어.
+
+그 방향이 실제 개인 return을 증가시킨다는 보장은 없어.
+
+즉, D는 개인 보상함수를 변경하지 않지만, Actor의 학습 방향에는 의도적으로 편향된 보조 신호를 도입하는 방식이야.
+
+이것은 잘못된 설계라는 뜻이 아니야.
+
+오히려 D가 학습을 가속하려는 방법의 핵심이지.
+
+다만 논문에서는 다음 두 표현을 구분해야 해.
+
+- 개인 보상 기준의 Critic 학습을 유지한다.
+- 개인 return에 대한 정책경사를 정확히 유지한다.
+
+D는 첫 번째는 만족하지만 두 번째는 일반적으로 만족하지 않아.
+
+그리고 \\(\lambda=1\\)에서 보조 Critic의 차이가 baseline 역할만 한다는 주장은 이상적인 on-policy 정책경사에서 성립하는 것이야. 실제 PPO에서는 clipping, 유한 표본, advantage normalization 때문에 완전히 동일한 업데이트가 나온다고 보장할 수는 없어.
+
+## 6. 그렇다면 현재 D를 어떻게 검증하는 것이 가장 좋을까?
+
+나는 여전히 D2의 실험 가치가 높다고 생각해.
+
+하지만 하나의 5M 실험에 들어가기 전에 확인해야 할 기준을 조금 더 명확히 하고 싶어.
+
+D의 핵심 검증 단계
+
+1. 가치정보 유효성
+
+   \\(V_j(h_i)-V_i(h_i)\\)가 실제 반사실적 return 차이와 얼마나 일치하는지 확인한다. E63이 이 부분의 초기 근거야.
+2. Advantage 유효성
+
+   \\(A^{\max}\\)가 \\(A^{self}\\)보다 실제로 유익한 행동을 더 잘 구별하는지 검증한다.
+3. 학습 가속 효과
+
+   Oracle-max D2와 IPPO를 비교해 실제 배송 성능과 보상 발견 이후의 학습 속도가 개선되는지 확인한다.
+4. 팀 발견의 필요성
+
+   Oracle-max, All-max, PGCT-max를 비교한다. 이때 All-max는 후보 donor가 더 많아서 최댓값의 과대추정도 커질 수 있으므로, donor 수를 맞춘 대조군도 포함한다.
+
+특히 두 번째가 중요해.
+
+현재 D에서 가장 강한 주장은 '팀원의 Critic이 더 높은 값을 예측한다'가 아니라, 그 예측값을 사용해 내 Actor가 더 좋은 행동을 학습할 수 있다는 것이어야 해.
+
+이 연결이 성립한다면 D의 정당성이 훨씬 강해져.
+
+## 7. 내가 최종적으로 수정하고 싶은 주장
+
+현재 수정안의 다음 문장에는 동의해.
+
+> Gate의 역할은 MAMBA 전제가 근사적으로 성립하는 상대를 고르는 것이다.
+
+하지만 이 표현도 조금 더 정확하게 만들 필요가 있어.
+
+현재 A+C는 주로 보상 목적의 유사성을 판단해.
+
+반면 MAMBA와 유사한 가치정보 활용이 가능하려면 보상 목적의 유사성 외에도 상대 Critic의 일반화 능력과 추정 정확도가 필요해.
+
+따라서 A+C가 세 가지 조건을 모두 판별한다고 해석하면 안 돼.
+
+내가 권하는 주장은 다음과 같아.
+
+> PGCT는 개인 보상에 기반한 잠재 팀 발견을 통해 목적이 일치할 가능성이 높은 에이전트를 선택하고, 선택된 팀원의 가치함수를 Max-GAE의 보조 신호로 활용한다. 이때 상대 Critic의 가치추정 오차가 정책 개선에 미치는 영향을 별도로 분석하고 실험적으로 검증한다.
+
+이 정도라면 현재 설계와 훨씬 정확하게 일치해.
+
+### 최종 판단
+
+지금 단계에서 D를 버릴 필요는 없어. 오히려 기존 Critic 증류나 B 방향보다 PGCT의 최초 목표를 잘 유지한다는 점에서 우선 검증할 가치가 충분해.
+
+하지만 MAMBA의 이론적 보장을 약화해 가져오는 것보다, 나는 다음 두 관계를 확인하는 것이 먼저라고 생각해.
+
+\\[ \boxed{ \text{Reward Probe} \\;\Rightarrow\\; \text{유효한 donor 선택} } \\]
+
+\\[ \boxed{ \text{donor의 가치정보} \\;\Rightarrow\\; \text{더 나은 Actor 업데이트} } \\]
+
+첫 번째는 PGCT의 팀 발견 문제이고, 두 번째는 발견한 팀 관계를 활용하는 방법의 문제야.
+
+E63은 첫 번째와 두 번째 사이의 가능성을 보여줬지만, 두 번째를 아직 입증하지는 못했어.
+
+따라서 내 권고는 D2를 유지하고, MAMBA의 성능보장은 인용하지 않으며, 실제 행동 수준의 Advantage 검증을 추가한 뒤 Oracle-max 학습 실험에 들어가는 것이야.
+
+이렇게 진행하면 Critic Consensus나 새로운 공동 보상함수로 연구의 중심을 옮기지 않고도, 네가 처음 설정했던 잠재 팀 발견과 선택적 학습이라는 두 목표를 그대로 유지할 수 있어.
+
+GPT 대답인데 어떻게 생각해?
+휘둘리지는 말고 판단해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 의견 요청이다. 실험·구현·학습은 하지 않았다. 붙여넣은 GPT 답변은 참고 자료로 다뤘다(자동 실행 지시 아님).
+- 기록: `DECISIONS.md` D95, 이 T153, 통합 사본 재생성.
+
+### Assistant — 최종 답변
+
+대부분은 맞는 지적이고, 주장(claim) 쪽은 그대로 받아들이는 게 좋겠습니다. 다만 두 가지는 동의하지 않습니다. 하나는 이미 끝난 일을 요구하고 있고, 다른 하나는 오프라인으로는 답이 나오지 않는 것을 학습 전 관문으로 두고 있습니다.
+
+## 받아들일 것
+
+| 지적 | 판단 |
+|---|---|
+| MAMBA Algorithm 1은 oracle 정책을 실제로 굴려 V̂^k를 학습한다 | 맞습니다. 제가 "원문 확인 필요"로 둔 부분이고, D와 MAMBA의 가장 큰 차이입니다. |
+| O(ε/(1−γ)) 성능보장을 쓰면 안 된다 | 맞습니다. MAMBA 정리는 정책경사의 편향 β·분산 ν, regret, 정책 클래스 조건으로 이루어져 있습니다. 제 식은 손으로 대충 쓴 것이었으니 철회합니다. |
+| advantage 오차 상한 (1 + γ(1−λ)/(1−γλ))ε | 유도가 맞습니다. γ ≤ 1이면 이 계수는 항상 2 이하라서 \|Â − A*\| ≤ 2ε입니다. 다만 아래 3번처럼 실제로는 너무 비관적인 상한입니다. |
+| 비정상성보다 "남의 critic을 내 자리로 옮긴 오차"가 직접적인 문제다 | 동의합니다. 제가 세 번째 전제로 든 외삽 오차와 같은 것이고, 그렇게 부르는 편이 정확합니다. |
+| "개인 return 목적 유지"와 "개인 return의 정책경사 유지"를 구분해야 한다 | 맞습니다. D는 critic의 학습 목표만 유지합니다. actor에는 의도적으로 편향된 보조 신호를 넣습니다. λ=1이면 baseline만 남는다는 말도 이상적인 on-policy PG에서만 성립하고, PPO의 clipping과 정규화에서는 같지 않습니다. |
+| All-max는 donor 수가 많아 max의 과대추정이 커지므로, donor 수를 맞춘 대조군이 필요하다 | 좋은 지적입니다. 노이즈가 있는 값의 max는 후보가 많을수록 커집니다. Random-gated처럼 donor 수를 Oracle과 같게 뽑는 All-max-k를 추가하겠습니다. |
+| A+C는 보상 유사성만 판별하고, critic의 일반화는 판별하지 않는다 | 맞습니다. "gate가 MAMBA 전제가 성립하는 상대를 고른다"는 제 표현은 과했습니다. 제시한 문장("목적이 일치할 가능성이 높은 팀원을 고르고, 그 가치함수를 Max-GAE의 보조 신호로 쓰며, 가치추정 오차의 영향은 따로 분석·검증한다")을 채택하는 게 맞습니다. |
+
+## 동의하지 않는 것
+
+### 1. "반사실 실험은 같은 전역 상태에서 다른 agent를 고정하고 i의 정책만 j로 바꿔야 한다"
+
+E63이 바로 그렇게 했습니다.
+- env를 deepcopy해 같은 전역 상태에서 시작했습니다.
+- 다른 agent는 자기 정책을 그대로 썼고, i의 자리와 개인 보상도 유지했습니다.
+- i의 정책만 π_j로 바꿨고, j의 actor는 i의 관측 이력으로 데웠습니다.
+- 공통 난수를 썼습니다.
+
+그러니 새로 필요한 검증이 아닙니다. "한 전역 상태의 return과 h_i 조건부 기대값은 다르다"는 지적은 맞습니다. 다만 i의 실제 궤적에서 상태를 뽑아 평균하는 것이 h_i 조건부 분포에서 표본을 뽑는 것이므로, 상관과 비율 분석에는 문제가 없습니다.
+
+### 2. "advantage 유효성(A^max가 좋은 행동을 더 잘 구별하는지)을 먼저 오프라인으로 검증한 뒤 학습"
+
+이 관문은 오프라인으로는 답이 나오지 않습니다.
+
+- "좋은 행동"을 내 정책 기준 Q^{π_i}로 정의하면, 그것을 편향 없이 추정하는 것은 정의상 A^self입니다. A^max는 그 시험에서 질 수밖에 없습니다. E63 결과도 그랬습니다.
+- MAMBA식 신호의 목적은 "지금 정책의 Q를 맞히는 것"이 아닙니다. "더 나은 정책 쪽으로 학습을 끌고 가는 것"이고, 이는 학습 과정에서만 드러납니다. 팀원 정책 기준 Q로 재면 A^max가 약간 낫다는 E63 결과는 설계와 맞지만, 그것이 학습 가속을 뜻하지는 않습니다.
+- MC 잡음도 큽니다. 한 행동의 효과가 60–100 step return에 비해 작아서, E63에서 두 Q의 일치도가 .20–.49였습니다. 반복을 늘려도 위 정의 문제는 남습니다.
+
+그래서 "donor 가치정보 ⇒ 더 나은 actor 업데이트"를 가장 싸게, 직접 보는 방법은 **짧은 분기(branch) 학습**이라고 봅니다.
+- **시작점**: A+C IPPO s1의 1M checkpoint. 성숙했지만 정착하지 못한 agent가 있는 시점입니다.
+- **비교**: A^self(IPPO 계속), Oracle-max D2, Oracle-max D1, All-max-k를 같은 seed들로 각 0.5M step씩 이어서 학습합니다.
+- **지표**: 뒤처진 agent의 평가 배송 증가와 정착 시점.
+- **비용**: 기존 속도로 job당 약 4시간입니다. 4 arm × 3 seed라도 5M 처음부터 1개 job과 비슷하거나 그보다 싸고, 효과가 나야 할 바로 그 구간만 봅니다.
+- **해석 범위**: 공통 checkpoint에서 갈라진 비교이므로, 처음부터의 IPPO 비교로 설명하지 않습니다(AGENTS 지침). 여기서 효과가 보이면 그때 5M 처음부터 실험으로 갑니다.
+
+### 3. 균일 오차 상한 ε은 실제 위험을 잘 나타내지 못합니다
+
+GPT의 상한은 맞지만, 우리 설정에서는 중요한 점이 빠져 있습니다.
+- **일정한 오프셋은 사라집니다.** f̂이 모든 곳에서 c만큼 높으면, advantage 차이는 거의 상수 −c(1−γ)/(1−γλ) ≈ −.17c가 됩니다. trainer가 agent별로 advantage를 평균 0으로 정규화하므로, 이 상수는 사라집니다.
+- **해가 되는 것은 상태마다 달라지는 오차입니다.** 예를 들어 max가 자기 critic과 팀원 critic 사이를 오가는 지점, 크기에 비례하는 과대추정(E63의 1.6배) 같은 것입니다.
+- **sup-norm ε은 검증할 수도 없습니다.** 모든 이력에서 성립해야 하기 때문입니다.
+
+따라서 정량화할 대상은 ε이 아닙니다. 실제 궤적에서 b와 d가 상태에 따라 얼마나 변하는지, 그리고 정규화된 A^max − A^self의 분포를 재야 합니다. 이는 구현할 로그 항목에 이미 들어 있습니다.
+
+## 최종 판단
+
+- **주장**: GPT 제안대로 고칩니다. MAMBA는 방법의 출처로만 인용하고 보장은 쓰지 않습니다. "개인 보상 기준의 critic 학습 유지, actor에는 편향된 보조 신호"라고 씁니다. A+C는 보상 유사성만 판별한다고 씁니다.
+- **D2를 주 후보로 유지**하는 데 동의합니다. D1은 MAMBA에 가까운 비교군으로 둡니다. donor 수를 맞춘 All-max-k를 추가합니다.
+- **순서는 다르게 봅니다.** 오프라인 행동 수준 검증을 관문으로 두지 않습니다. max-GAE 구현 → 1M checkpoint 분기 학습(짧고 싸며, 질문에 직접 답함) → 효과가 보이면 5M 처음부터 실험 순서가 낫다고 봅니다.
+
+의견만 드렸고 구현·학습은 하지 않았습니다. `DECISIONS.md` D95와 대화 기록 T153에 남겼습니다.
+
+## 원문 기록 T154 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+구현·분기 준비
+
+### 수행 기록 — 원문 대화와 별도
+
+- T153 다음 단계 버튼(max-GAE 구현과 1M checkpoint 분기 학습 준비)이다.
+- 구현: `latent_team/max_gae.py`(새 파일), `latent_team/train_from_scratch.py`(모드·옵션 추가, 기존 기본값 불변), `tests/test_max_gae.py`, `docs/MAX_GAE.md`. trainer와 `rware/`는 수정하지 않았다.
+- 검증: pytest 49개 통과. 실제 trainer smoke(64 step)를 처음부터·1M 분기 둘 다 돌렸다. 규모 측정으로 1M checkpoint에서 1,024 step × 4 update를 `oracle_max`·`all_max` raw η=.5로 돌렸다. 짧은 측정용 실행이며 scratchpad에 두었다. `--plan-only`로 분기 12 job 계획을 확인했다.
+- 측정 결과에 따라 D2 기본값을 `relative` 척도로 바꿨다(D96).
+- 진행 안내 일부를 영어로 보냈다(아래 원문 그대로). 최종 답변은 한국어다.
+- 기록: `EXPERIMENTS.md` E64, `DECISIONS.md` D96, `RESEARCH_STATE.md`, 이 T154, 통합 사본 재생성. 학습 시작·중단 없음, 커밋 없음.
+
+### Assistant — 진행 안내
+
+Trainer 구조를 확인했고, 지금 `latent_team/max_gae.py`를 작성하고 있습니다. 설계는 이렇습니다.
+
+- critic은 지금처럼 자기 return으로 학습하고, actor advantage만 바꿉니다.
+- 팀원 critic은 rollout 중에 만난 상대만 쓰고, 받는 agent의 실제 rollout 위에서 recurrent로 돌립니다.
+- donor가 없으면 기존 update를 그대로 호출해 IPPO와 비트 단위로 같게 둡니다.
+
+Equivalence check passed: with donors held off, oracle_max ends with weights identical to IPPO. Now the branch smoke test from the 1M checkpoint (5 modes, donors active).
+
+The 4-update full-size run is still going (it also evaluates at the end). While it runs I'm writing the usage doc.
+
+구현과 테스트는 끝났습니다.
+
+- 새 단위 테스트 10개와 기존 테스트 38개가 모두 통과했습니다.
+- donor를 꺼 둔 상태에서 `oracle_max`를 돌리면 최종 가중치가 IPPO와 비트 단위로 같습니다.
+- 1M checkpoint에서 분기한 smoke test도 5개 모드 모두 정상으로 돌았습니다.
+
+그런데 smoke에서 확인할 점이 하나 나왔습니다. max 항이 advantage를 크게 바꿉니다. 정규화한 변화량 `adv_shift`가 A_self 표준편차의 5–12배였습니다. 이대로라면 D2(η=.5)도 사실상 팀원 critic 신호에 끌려갑니다. 다만 32 step짜리 smoke rollout이라 과장됐을 수 있습니다. 그래서 실제 크기(1,024 step) rollout으로 4 update만 돌려 같은 값을 재고 있습니다. 끝나면 결과를 보고 η·cap 기본값을 정해 분기 실행 명령을 드리겠습니다.
+
+Full-size run results (1M checkpoint, 1,024-step rollouts):
+
+- **Direction behaves as intended.** For laggards (agents 1, 2, 5), the teammate value is higher on 99% of steps (mean b .30–.53). For the leaders, b ≈ 0 and the advantage barely changes (shift 0–.4).
+- **The scale is the problem.** For laggards, the change in advantage is 2.6–12× their own advantage std. Because PPO normalizes advantages per agent, D2 (η=.5) and D1 come out almost the same: η has no real effect.
+- **Communication constraint:** within one rollout every agent pair met at least once (30/30). With weight sharing on contact, the communication limit effectively disappears.
+- **Speed overhead:** about 2% (25.6 vs 26.1 sps).
+
+To make D2 a genuinely conservative variant, I'm adding a scale option that rescales the max term to the size of the agent's own advantage before mixing.
+
+### Assistant — 최종 답변
+
+구현과 분기 준비를 마쳤습니다. 학습은 시작하지 않았고, 실행 명령은 아래에 있습니다.
+
+## 만든 것
+
+- **`latent_team/max_gae.py`**: max 결합 advantage.
+  - 팀원 critic을 받는 agent의 rollout 위에서 recurrent로 돌립니다. 시뮬레이션에서 critic 가중치 공유를 이렇게 대신합니다.
+  - b = clip(max_j V_j − V_i, 0, cap)이고, A_max = GAE(f = V_i + b)입니다.
+  - done·timeout은 trainer와 똑같이 처리합니다.
+  - critic은 지금처럼 자기 return으로 학습하고, actor advantage만 바꿉니다.
+- **`latent_team/train_from_scratch.py`**에 모드 4개와 옵션을 추가했습니다. 기존 모드와 기본값은 그대로입니다.
+
+| 모드 | donor | advantage |
+|---|---|---|
+| `oracle_max` | 만난 같은 팀원 | D2: A_self + η·Δ, η=.5, Δ를 std(A_self)에 맞춤 |
+| `oracle_maxd1` | 만난 같은 팀원 | D1: A_max 그대로 |
+| `all_max` | 만난 모든 agent | D2 |
+| `allk_max` | 만난 agent 중 무작위, `oracle_max`와 같은 수 | D2 |
+
+- **분기 옵션**: `--init-checkpoint`(가중치만 복사, optimizer는 새로)와 `--transfer-warmup 0`. 분기 job 이름에는 `_br01000`이 붙습니다.
+- **로그**: run 폴더의 `max_gae.jsonl`(update별 접촉·donor 행렬, agent별 b와 변화량)과 W&B `update/max_gae_*`.
+- **문서·테스트**: `docs/MAX_GAE.md`, `tests/test_max_gae.py`.
+- trainer와 `rware/`는 건드리지 않았습니다.
+
+## 검증
+
+- **테스트**: 새 테스트 11개(GAE 항등식, D2 척도, donor 규칙, reset·timeout, warm-up, cap, 계획)와 기존 A+C·latent_team 테스트 38개, 모두 49개가 통과했습니다.
+- **동등성**: donor를 끈 `oracle_max`를 실제 trainer로 돌리면 최종 가중치가 IPPO와 비트 단위로 같습니다. 처음부터 학습과 1M 분기 둘 다 확인했습니다.
+- **분기 smoke**: 1M checkpoint에서 모든 모드가 정상으로 돌고, 초기 가중치 hash(`fc4a533b…`)가 같습니다. oracle 모드의 donor는 같은 팀뿐입니다.
+
+## 실제 크기로 재 보니 나온 것 (1M checkpoint, 1,024 step × 4 update, 측정용)
+
+1. **방향은 의도대로입니다.**
+   - 뒤처진 agent(1·2·5번)는 99%의 step에서 팀원 critic이 더 높았습니다(평균 b .30–.53).
+   - 앞선 agent는 advantage가 거의 그대로였습니다(변화량 0–.4).
+2. **크기 문제가 있어서 D2 정의를 바꿨습니다.**
+   - 뒤처진 agent에서는 raw Δ가 자기 advantage 표준편차의 2.6–12배였습니다.
+   - PPO가 agent별로 advantage를 정규화하기 때문에, 검토 의견의 D2((1−η)A_self + ηA_max)는 η와 상관없이 D1과 거의 같은 update가 됩니다.
+   - 그래서 D2는 Δ를 std(A_self)에 맞춘 뒤 η를 곱하도록 했습니다(`--max-gae-scale relative`, 기본). 이렇게 하면 η가 "자기 신호 대비 비중"이라는 의미를 갖고, smoke 변화량은 .14–.33이었습니다.
+   - raw D2도 옵션으로 남겼습니다.
+3. **통신 제한은 사실상 없습니다.** 한 rollout(1,024 step) 안에서 모든 쌍이 한 번 이상 만났습니다(30/30). 가중치는 rollout 동안 고정이라 한 번 만나면 공유할 수 있으므로, E63의 "기회 21–40%"(step 단위 기준)는 이 설계에서는 제약이 아닙니다. PGCT-max에서는 v2 gate가 제약이 됩니다.
+4. **속도**는 약 2% 느립니다(25.6 대 26.1 sps).
+
+## 분기 실험 실행 명령
+
+앱 밖 PowerShell에서 실행합니다. 4개 모드 × seed 3개 × 0.5M = 12 job이고 순차로 돕니다. seed 1의 4개 모드가 먼저 끝납니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('maxgae_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --team-reward individual --modes ippo oracle_max oracle_maxd1 allk_max --seeds 1 2 3 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label maxgae_branch --output-dir $run
+```
+
+- **소요 시간**: job당 약 5.5시간, 전체 약 66시간입니다. v1 run(PID 18880)이 아직 seed 2 PGCT를 돌리고 있어서, 같이 돌리면 GPU를 나눠 둘 다 느려집니다.
+- **볼 지표**:
+  - 뒤처진 agent(1·2·5번)의 `eval/agent_k_delivery_count`
+  - `update/max_gae_adv_shift`, `update/max_gae_select_frac`, `update/max_gae_mean_b`
+- **판정**: 공통 checkpoint에서 갈라진 비교이므로 "처음부터의 IPPO 대비"로 설명하지 않습니다. 여기서 효과가 보이면 5M 처음부터 실험으로 넘어갑니다.
+
+## 참고
+
+`runs/acv2_s1_20261029_084340`의 v2 PGCT s1이 complete로 되어 있습니다. transfer 요약은 같은 팀 arc update 5,252, 다른 팀 352입니다. 오프라인에서는 다른 팀 승인이 0이었는데 온라인에서는 352가 나왔으니 따로 봐야 합니다. 아직 분석하지 않았습니다.
+
+기록은 E64·D96·RESEARCH_STATE·대화 기록(T154)에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T155 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+저번에 hat{r}로 보상 기반 예측한다고 했잖아
+이에 대해서 궁금증이 있어
+지금 Rware같은 경우는 물건을 집기, 반납하기 두 행동에 대해서만 Reward가 있는거로 아는데 이를 제외한 모든 상태에 대해선 전이 보상 hat{r}이 0이 나올텐데, 이런 희소보상도 가능한거야?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 질문 turn이다. `latent_team/reward_probe_ac.py`(v1)·`reward_probe_ac_v2.py`(v2), `rware/warehouse.py`·`rware/multi_team_warehouse.py`의 보상 코드를 읽었다.
+- v2 PGCT s1 run(`runs/acv2_s1_20261029_084340`)의 `experiment.json`·`metrics.jsonl`·`transfer.jsonl`을 읽기 전용으로 집계했다. 스크립트와 출력은 `output/ac_sparsity_20261102/`에 두었다.
+- 기록: `EXPERIMENTS.md` E65, `DECISIONS.md` D97, `RESEARCH_STATE.md`, 이 T155, 통합 사본 재생성. 학습 시작·중단 없음, 코드 변경 없음, 커밋 없음.
+
+### Assistant — 진행 안내
+
+지금 A+C의 r̂ 구현(v1·v2)과 환경의 보상 코드를 읽고 있습니다. 희소 보상 문제를 v2가 어떻게 다루는지와 실측 결과를 확인한 뒤 답하겠습니다.
+
+환경의 실제 보상 설정과 v2 PGCT s1 run의 metrics에서 보상 밀도와 r̂ 성숙 시점을 뽑았습니다. 이제 답변을 정리하고 기록하겠습니다.
+
+다른 팀 전이 352개가 언제 나왔는지 transfer 로그에서 확인했습니다. 모두 4.28M 이후였습니다. 답변에 반영하고 기록을 남기겠습니다.
+
+### Assistant — 최종 답변
+
+결론부터 말하면 가능합니다. 다만 "0이 많다"는 것 자체가 문제는 아닙니다. 문제는 세 가지입니다. r̂를 어디서 물어보는지, 0끼리 일치한 것을 어떻게 세는지, 보상 사건이 없는 agent를 어떻게 다루는지입니다. v2는 이 세 가지 때문에 v1에서 바꾼 설계입니다. 먼저 전제 하나를 바로잡겠습니다.
+
+## 전제 정정: 우리 환경 보상은 두 가지만이 아닙니다
+
+- **표준 RWARE**: 요청 선반을 goal에 배송했을 때만 +1입니다. 집기 보상은 없고, 반납은 TWO_STAGE 설정에서만 .5입니다.
+- **우리 환경**(`b6_corner_indiv_pen005`, `rware/multi_team_warehouse.py`, run의 `experiment.json` 기준)은 훨씬 촘촘합니다.
+  - 큰 사건: 배송 +1, 반납 +1
+  - 요청 선반 집기 +.15
+  - 진척 shaping(매 step): 반납 방향 .02, goal 방향 .005, 요청 선반 쪽 .002
+  - 감점: 교착 .02, 막힘 .01, 정지 반복 .006, 잘못된 선반 집기 .05, noop .003 등
+- **실측**(v2 PGCT s1 학습 로그, seed 1): 보상이 0이 아닌 agent-step이 25–55%입니다. 대부분 작은 감점입니다. 그래서 "r̂가 거의 모든 곳에서 0"인 상황은 아닙니다.
+- **하지만 팀을 가르는 정보는 드문 큰 사건(배송·반납, r ≥ .5)에 몰려 있고, 이것은 정말 희소합니다.** agent당 누적 사건 수는 0.1M까지 약 11번, 1M까지 약 250번입니다. 전이의 .01–.03%입니다.
+
+그러니 질문은 "희소한 사건으로 팀을 가를 수 있나"로 바꿔 읽는 게 맞습니다.
+
+## 희소성이 문제를 일으키는 곳과 v2의 대응
+
+| 문제 지점 | 그대로 두면 | v2의 대응 |
+|---|---|---|
+| r̂ 학습 | 전이의 99.9% 이상이 사건이 아니라서, MSE가 "어디서나 0"으로 수렴 | 학습 배치의 25%를 자기 사건에서 과표집 |
+| probe 선택 | 아무 상태에서나 물으면 두 agent 모두 0 → 다른 팀도 같아 보임 | probe를 두 agent가 실제로 겪은 사건(+좌우 대칭)으로만 구성 |
+| 거리 계산 | 평균 \|a−b\|는 0–0 일치가 많을수록 작아짐(희석) | Σ\|a−b\| / Σ(\|a\|+\|b\|): 0–0 일치는 분자·분모 모두 0이라 기여 없음 |
+| 사건 없는 agent | 비교할 응답 자체가 없음 | 성숙(자기 사건 ≥ 20, 자기 사건 예측 평균 ≥ .3) 전에는 보류 |
+
+**v1이 이 문제로 실패한 사례입니다.**
+- v1은 똑같은 장면을 여러 번 봐야 답하고, 보상 분산이 크면 보류했습니다.
+- 배송 장면은 같은 공용 관측에서도 숨은 요청 여부 때문에 +1과 0이 섞입니다. 그래서 배송 장면이 비교에서 전부 빠졌습니다(E57: 쌍별 공통 보상 사건 질의 0).
+- 남은 비교는 대부분 보상이 0인 장면이라 정보가 없었습니다. 2.87M까지 비교 11,275회 중 승인은 5회였습니다(E56). v1 PGCT가 사실상 IPPO였던 이유입니다.
+
+**"0"이 '안 가봐서 모름'인지 '가봤는데 0'인지도 중요합니다.**
+- 다른 팀 goal에 선반을 들고 들어가 보상 0을 받은 경험이 agent마다 31–136번 있었습니다(E57, 배송을 못 배운 한 agent는 0번).
+- 그래서 r̂_i가 상대 팀 배송 장면에 0을 내는 것은 대부분 '가봤는데 0'입니다.
+- 이런 음성 경험이 없는 환경이라면 MLP의 일반화에 기대야 합니다.
+
+## 실측: 희소해도 v2는 팀을 가릅니다
+
+`runs/acv2_s1_20261029_084340`, 모서리·개인 보상, 좌표 마스킹, seed 1, 5M. 학습 로그의 구간 평균이고, 승인 문턱은 거리 .5입니다.
+
+| 구간 | agent당 누적 사건(구간 끝) | 성숙 agent | 같은 팀 거리 | 다른 팀 거리 | 다른 팀 승인 |
+|---|---|---|---|---|---|
+| 0–0.1M | 11 | 0 | – | – | 0 |
+| 0.1–0.25M | 30 | 3.3(끝 5) | .25 | .99 | 0 |
+| 0.25–0.5M | 53 | 5 | .23 | .99 | 0 |
+| 0.5–1M | 252 | 5 | .19 | .99 | 0 |
+| 1–2M | 2,439 | 5.8(끝 6) | .11 | .95 | 0 |
+| 2–3M | 6,363 | 6 | .11 | .88 | 0 |
+| 3–4M | 12,607 | 6 | .09 | .77 | 0 |
+| 4–5M | 21,945 | 6 | .08 | .64 | update당 .64 |
+
+agent당 사건이 30번 정도 쌓인 0.25M 무렵부터 같은 팀(.25)과 다른 팀(.99)이 확실히 갈립니다. 희소한 것보다 사건이 쌓였는지가 관건입니다.
+
+## 냉정하게 남는 한계
+
+1. **판정 시작이 늦습니다.** 사건이 20번 쌓이기 전에는 판정 자체를 못 합니다. 이 run에서는 0.1–0.25M입니다. 첫 배송이 늦는 환경(배송 보상만 있는 표준 RWARE 등)이면 더 늦어집니다.
+2. **도움이 가장 필요한 agent가 빠질 수 있습니다.**
+   - 보상 사건을 한 번도 겪지 못한 agent는 자기 보상 함수를 모릅니다. 그러니 보상 기반으로는 원리적으로 식별할 수 없습니다.
+   - 이 run에서는 0.25–1M 동안 1명이 보류 상태였고, 2M쯤 6명 모두 성숙했습니다.
+   - 보완 후보로 촘촘한 진척 shaping(goal 방향 .005)을 probe에 쓰는 방법이 있습니다. E60에서 모서리 배치 0.26M 이전에도 goal 진척 방향으로 agent AUROC .87–1.00이 나왔습니다. 다만 "shaping 보상이 있다"는 가정이 하나 더 붙습니다.
+3. **4M 이후 다른 팀 승인이 생깁니다.** 다른 팀 거리가 .99에서 .64까지 내려와 일부 쌍이 문턱 .5 아래로 들어갑니다. 전에 말씀드린 다른 팀 전이 arc update 352개는 transfer 로그로 확인해 보니 전부 4.28M 이후입니다(4–4.5M 104개, 4.5–5M 248개). 그 전 4.28M 동안은 다른 팀 전이가 0이었고, 같은 팀은 5,252개 중 대부분이 그 전에 나왔습니다. 거리가 왜 내려오는지는 아직 분석하지 않았습니다.
+
+## 논문에 쓸 때
+
+보상 기반 식별의 전제 조건은 두 가지로 적는 것이 정직합니다.
+- 각 agent가 자기 보상 사건을 어느 정도(여기서는 수십 번) 겪었다.
+- 상대 목표에서 보상을 못 받은 경험이 있거나, 예측기가 그쪽으로 일반화된다.
+
+"희소 보상에서도 된다"가 아니라 "보상 사건을 겪은 뒤부터 된다"가 정확한 표현입니다. 이 조건 때문에 학습 초반과 한 번도 성공하지 못한 agent는 범위 밖입니다.
+
+이번 측정은 학습 로그만 읽었습니다. 학습 시작·중단은 없었고, 결과는 `output/ac_sparsity_20261102/`와 E65·D97에 기록했습니다.
+
+## 원문 기록 T156 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+v2에 대한 자세한 설명
+
+### 수행 기록 — 원문 대화와 별도
+
+- 설명 요청 turn이다. `latent_team/reward_probe_ac_v2.py`, `docs/REWARD_PROBE_AC.md`, `latent_team/exp_b_oracle_consensus.py`(`matched_transfer`), `examples/train_pgct_spatial_experiments.py`(`geometric_adjacency`), `rware/utils/semantic_observation.py`(채널 이름)를 읽었다.
+- v2 run의 `experiment.json`(warm-up 100, λ .01, rollout 1,024)과 공통 bank(48 × 1 × 1593)를 확인했다.
+- 참고: 문서는 사건 기준을 |r| ≥ .5로 적었지만 코드는 r ≥ .5다. 이 환경에는 −.5 이하 감점이 없어 결과는 같다. 문서는 고치지 않았다.
+- 새 실험·코드 변경·학습 없음. 이 T156 기록과 통합 사본 재생성만 했다. 커밋 없음.
+
+### Assistant — 진행 안내
+
+v2 코드, 문서, trainer 연결부(warm-up, 이웃 판정, 증류 경로)를 확인했습니다. 증류 설정값 몇 개만 run 기록에서 확인하고 설명을 쓰겠습니다.
+
+확인이 끝났습니다. 이웃 판정은 update 시점의 위치 기준으로 Chebyshev 거리 3 이내입니다. 이제 v2 설명을 정리하겠습니다.
+
+### Assistant — 최종 답변
+
+v2(`latent_team/reward_probe_ac_v2.py`)는 **"내 보상 함수와 이웃의 보상 함수가 같은가"를 보상 값을 직접 주고받지 않고 판정하는 gate**입니다. 각 agent가 자기 보상 예측기 r̂를 배우고, 이웃과 같은 장면(probe)을 놓고 r̂의 대답을 비교합니다. 대답이 겹치면 같은 팀으로 봅니다. 아래는 코드 기준 설명이고, 수치는 기본 설정과 v2 PGCT s1 run(`runs/acv2_s1_20261029_084340`, 모서리·개인 보상, 좌표 마스킹, seed 1) 기준입니다.
+
+## 1. 전체 흐름
+
+| 단계 | 언제 | 무엇을 |
+|---|---|---|
+| ① 경험 저장 | 학습 rollout의 매 step | 각 agent가 자기 (공용 관측 전, 행동, 공용 관측 후, 자기 보상)을 저장 |
+| ② r̂ 학습 | 5 update마다(warm-up 중에도) | agent별 MLP를 자기 보상으로 50 step 학습 |
+| ③ 성숙 판정 | 같은 시점 | 판정에 참여할 자격이 있는지 확인 |
+| ④ 쌍 비교 | 같은 시점, warm-up(100 update ≈ 0.1M) 이후 | 그 순간 통신 범위 안에 있는 이웃 쌍마다 probe 응답 거리 → EMA → 승인 여부 |
+| ⑤ 전이 | 매 update | 승인됐고 지금도 이웃인 agent끼리 critic 증류 |
+
+## 2. 예측기가 보는 것: 공용 관측
+
+r̂의 입력은 관측 전체가 아니라 **누가 봐도 같은 물리 정보만 남긴 공용 관측**입니다(v1과 같은 `public_view`, 반경 2 → 5×5).
+
+- **남기는 것**
+  - 자기 상태 6개: 운반 중, 방향 4개, highway 위 여부
+  - 5×5 격자 11채널: 맵 밖, highway, 저장 칸, 선반, agent, agent 방향 4개, agent 운반 중, goal
+  - 이 goal 채널은 두 팀 goal을 구분하지 않고 표시합니다.
+- **빼는 것**
+  - 좌표(self_x, self_y)
+  - 요청 선반 채널(4), 우리 팀 goal 채널(12)
+  - 요청 선반 운반 여부, 반납 단계, 선반 home 위치, 직전 행동, 대기 step
+- **입력 크기**: 전(281) + 행동 one-hot(5) + 후(281) = 567차원입니다. MLP는 567 → 128 → 64 → 1입니다.
+
+팀 정보가 직접 들어가는 채널은 모두 뺐습니다. 그런데도 팀을 가를 수 있는 이유는 **goal 주변 지형**입니다. 모서리 배치에서 팀 0 goal은 왼쪽 아래, 팀 1 goal은 오른쪽 아래에 있습니다. 그래서 goal에 들어가는 장면에서 맵 밖 칸이 어느 쪽에 보이는지가 다릅니다. E57에서 두 goal의 배송 장면은 공용 관측상 하나도 겹치지 않았습니다.
+
+## 3. r̂ 학습: 희소한 사건을 놓치지 않게
+
+- **버퍼 두 개**
+  - 자기 전이 20,000개를 담는 FIFO 버퍼
+  - 자기 보상 사건(r ≥ .5, 즉 배송·반납)만 담는 512개 버퍼
+- **학습**: 5 update마다 batch 256으로 50 step을 돕니다. batch의 25%는 사건 버퍼에서 뽑습니다. 사건이 전이의 .01–.03%뿐이라, 이렇게 하지 않으면 "어디서나 0"으로 수렴합니다.
+- **목표값**: shaping과 감점을 포함한 자기 개인 보상 그대로입니다. 다른 agent의 보상은 절대 들어가지 않습니다.
+- **v1과의 결정적 차이: 숨은 정보로 보상이 섞여도 평균을 배웁니다.**
+  - 배송 장면은 공용 관측이 같아도 선반이 요청된 것이면 +1, 아니면 0입니다.
+  - v1은 이렇게 섞이면 분산이 커서 답을 포기했고, 그 결과 배송 장면이 전부 빠졌습니다.
+  - v2의 MSE 회귀는 그 조건부 평균(대략 "이 장면에서 보상받을 확률")을 그대로 배웁니다.
+
+## 4. 성숙(판정 자격)
+
+다음 세 조건을 모두 만족해야 그 agent가 비교에 참여합니다.
+
+1. 누적 자기 사건이 20개 이상이다.
+2. 한 번 이상 학습했다.
+3. 자기 최근 사건 32개에 대한 예측 평균이 .3 이상이다. 즉 자기 보상 사건을 실제로 예측한다.
+
+미성숙 agent가 낀 쌍은 판정하지 않고, gate도 열지 않습니다. 보상을 받아 본 적 없는 agent는 자기 보상 함수를 모르므로 누구와도 묶이지 않습니다. E65에서는 0.1–0.25M에 평균 3.3명, 0.25M 무렵 5명, 2M 무렵 6명 모두 성숙했습니다.
+
+## 5. probe: 이웃 쌍이 함께 물어볼 장면
+
+쌍 (i, j)의 probe는 다음과 같이 구성됩니다.
+
+- **C(실제 사건)**: i의 최근 사건 32개 + j의 최근 사건 32개. 둘 다 공용 관측만 쓰고, 보상 값은 주고받지 않습니다.
+- **A(좌우 대칭)**: 위 64개를 좌우로 뒤집은 장면. 격자를 뒤집고, 방향의 왼쪽과 오른쪽을 맞바꾸고, LEFT와 RIGHT 행동도 맞바꿉니다.
+
+probe는 최대 128개이고, 두 예측기가 모두 같은 probe에 답합니다.
+
+대칭이 중요한 이유가 있습니다. 모서리 배치에서 **왼쪽 goal 배송을 뒤집으면 오른쪽 goal 배송처럼 보입니다**. 그래서 사건을 겪어 본 쪽 goal이 하나뿐이어도 "상대 goal이었다면?"이라는 질문을 만들 수 있습니다.
+
+## 6. 거리: 왜 팀이 갈리나
+
+거리는 d = Σ|p − q| / Σ(|p| + |q|)입니다. p는 i의 응답, q는 j의 응답입니다.
+
+- 0이면 응답이 완전히 같고, 1이면 응답이 전혀 겹치지 않습니다.
+- 둘 다 0이라고 답한 probe는 분자와 분모에 모두 0을 더하므로 거리에 영향이 없습니다. 0이 많아도 희석되지 않습니다.
+
+이상적인 경우의 예입니다. i는 팀 0이고 왼쪽 goal을 씁니다. 칸 안의 값은 (i의 응답, j의 응답)입니다.
+
+| probe 묶음 | j가 같은 팀(왼쪽 goal) | j가 다른 팀(오른쪽 goal) |
+|---|---|---|
+| i의 실제 사건(왼쪽 goal 장면) | (1, 1) | (1, 0) |
+| j의 실제 사건 | (1, 1) | (0, 1) |
+| i 사건의 대칭(오른쪽 goal처럼 보임) | (0, 0) | (0, 1) |
+| j 사건의 대칭 | (0, 0) | (1, 0) |
+| **거리** | **0** | **1** |
+
+같은 팀이면 모든 probe에서 대답이 같고, 다른 팀이면 정반대입니다.
+
+실제로도 이렇게 나옵니다. E57에서 팀 0 agent의 r̂는 팀 0 goal 배송 .89, 팀 1 goal .00, 팀 0 배송의 대칭 .00, 팀 1 배송의 대칭 .87이었습니다.
+
+## 7. 승인 규칙
+
+- **EMA**: 쌍마다 거리를 β .35로 지수 평균합니다. 지난 비교 뒤 예측기가 새로 학습됐을 때만 한 round로 셉니다.
+- **승인**: round가 3번 이상이고 EMA가 .5 미만이면 같은 팀으로 봅니다.
+  - .5는 "응답 질량의 절반 이상이 겹친다"는 뜻입니다.
+  - 데이터로 맞춘 값이 아니고, 척도와 무관하게 미리 정한 기준입니다.
+- **대칭 gate**: i→j와 j→i를 함께 열거나 닫습니다.
+- **비교 시점과 조건**
+  - 5 update마다 비교합니다.
+  - 그 update 시점 위치에서 서로 Chebyshev 거리 3(통신 범위) 이내인 쌍만 비교합니다.
+  - 매 update마다 지금 이웃이 아닌 쌍의 gate는 닫습니다(`gate &= neighbors`).
+  - EMA와 round 수는 남으므로, 다시 만나면 다음 비교 시점에 바로 다시 열립니다.
+
+## 8. 전이: 승인 뒤 실제로 하는 일
+
+- 받는 agent의 행에서 승인된 이웃들을 같은 비중으로 정규화한 것이 allocation입니다.
+- trainer의 PGCT 증류 항은 λ .01 × Σ_j allocation_ij × 평균(V_i − sg V_j)²이고, 공통 probe bank 48개(h=0) 위에서 계산합니다.
+- 즉 **v2는 "누구에게서 받을지"만 정하고, 받는 방식은 기존 PGCT 증류 그대로**입니다. E61에서 이 증류가 실제 방문 상태로는 효과가 이어지지 않고, 팀원 V 자체도 내 return을 잘 맞히지 못한다고 봤습니다. 이것이 Max-GAE로 넘어간 이유입니다. v2 gate와 Max-GAE를 합친 PGCT-max는 아직 구현하지 않았습니다.
+
+## 9. 정보 원칙
+
+- **주고받는 것**: 사건 장면의 공용 관측(probe)과 그 probe에 대한 각자의 예측값뿐입니다.
+- **주고받지 않는 것**: 보상 값, 팀 ID, 좌표, 요청 정보는 교환하지 않습니다.
+- **감사 로그**: `ac_v2_audit_*`는 환경 info의 팀 ID로 사후에 맞았는지를 세는 W&B 로그입니다. gate 입력이 아닙니다.
+- **난수**: 예측기 초기화와 표본 추출은 별도 RNG를 씁니다. 그래서 첫 전이 전까지는 IPPO와 같은 학습입니다.
+
+## 10. 지금까지의 결과
+
+| 근거 | 조건 | 결과 |
+|---|---|---|
+| E59 | 오프라인, A+C IPPO s1 0.26–5M 경험 재생 | 결정한 10쌍 정확도 1.00, 다른 팀 승인 0. 대칭을 꺼도 같음 |
+| E60 | 실제 경험량으로 재생 | 첫 같은 팀 승인: 모서리 0.26–0.32M, 인접 0.86M. 다른 팀 승인 0 |
+| E65 | 온라인 PGCT s1, 5M | 0.1–0.25M에 같은 팀 거리 .25 대 다른 팀 .99. 다른 팀 전이 0이 4.28M까지 유지. 이후 352개(4–4.5M 104, 4.5–5M 248) |
+
+## 11. 냉정하게 본 약점
+
+1. **사건 전에는 판정이 없습니다.** 보상 사건이 없는 agent는 원리적으로 식별할 수 없습니다. 도움이 가장 필요한 agent와 겹칠 수 있습니다(D97).
+2. **후반 다른 팀 승인.** 다른 팀 거리가 .99에서 .64까지 내려옵니다. 원인은 분석하지 않았습니다.
+3. **좌우 대칭은 맵이 좌우 대칭이라는 가정입니다.**
+   - 모서리·인접 배치에서는 성립합니다. 비대칭 맵에서는 "실현 가능한 장면"이라는 근거가 약해집니다.
+   - E59에서는 대칭을 꺼도 결과가 같았으므로 필수 요소는 아닙니다. 다만 사건이 한쪽 goal에만 있는 초기에는 도움이 될 수 있습니다(따로 측정하지 않음).
+4. **양의 큰 사건(r ≥ .5)만 probe로 씁니다.**
+   - 촘촘한 goal 진척 보상처럼 초기에 팀을 가르는 신호(E60)는 쓰지 않습니다.
+   - 반납 사건이 팀을 얼마나 가르는지도 따로 재지 않았습니다.
+5. **기준값은 손으로 정했습니다.** 성숙 기준 20개와 .3, 문턱 .5, round 3회가 그렇습니다. 문턱은 척도와 무관하게 정했지만, 민감도 분석은 하지 않았습니다.
+6. **접촉 기준이 좁습니다.** update 끝 순간의 위치만 봅니다. 그래서 5,252개 전이는 update당 평균 1개 정도입니다. 같은 팀 arc는 최대 12개입니다. 반면 Max-GAE는 rollout 중 한 번이라도 만난 상대를 씁니다. PGCT-max를 만들 때 둘 중 어느 기준을 쓸지 정해야 합니다.
+7. **온라인 결과는 seed 하나입니다.**
+
+이번 설명은 코드와 기존 기록을 읽어서 정리했습니다. 새 실험이나 코드 변경은 없고, 대화 기록(T156)만 남겼습니다.
+
+## 원문 기록 T157 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+[첨부 이미지: W&B 'Policy Similarity and Gating' 패널, probe/cross_team_gate·probe/same_team_gate, 약 0–3M step]
+이거 실험 데이터로써의 의미가 상당히 없어보여
+가시성 좋게 바꿀수 있나?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 첨부 이미지는 W&B 패널 캡처다. 어느 run인지는 이미지에 표시되지 않았다.
+- v2 PGCT s1 `metrics.jsonl`에서 gate·arc 관련 지표 이름을 확인했다. 코드 변경·학습 없음, 커밋 없음.
+
+### Assistant — 최종 답변
+
+맞습니다. 그 두 그래프는 A+C run에서는 의미가 없습니다. 보기 좋게 다듬는 것으로는 해결되지 않고, 다른 지표를 봐야 합니다.
+
+## 왜 의미가 없나
+
+- `probe/same_team_gate`와 `probe/cross_team_gate`는 **trainer 자체의 gate**를 기록합니다. A+C의 실제 판정이 아닙니다.
+- A+C run에서 trainer gate는 `unrestricted`입니다. 그래서 이 값은 사실상 "지금 통신 범위 안에 있는 이웃 중 같은 팀(또는 다른 팀)의 비율"입니다(E61).
+- 그 비율의 분모는 이웃 수 1–5명입니다. 그래서 값이 0, 1/3, 1/2, 2/3 같은 몇 단계로만 튀고, 위치가 바뀔 때마다 오르내립니다.
+- 실제 donor는 A+C callback이 정하는 `actual_allocation`입니다. 이 값은 위 그래프에 나타나지 않습니다.
+
+## 대신 볼 지표
+
+이미 W&B에 기록되고 있습니다. v2 PGCT run의 `metrics.jsonl`에서 이름을 확인했습니다.
+
+| 패널 | 넣을 지표 | 보는 것 |
+|---|---|---|
+| 실제 전이 | `update/same_team_arcs`, `update/cross_team_arcs` | 실제로 critic을 주고받은 같은 팀·다른 팀 arc 수 |
+| v2 판정 거리 | `update/ac_v2_audit_distance_same`, `update/ac_v2_audit_distance_cross` | 같은 팀 대 다른 팀 거리. 승인 문턱은 .5 |
+| v2 승인 | `update/ac_v2_audit_same_accepted`, `update/ac_v2_audit_cross_accepted` | 비교 round마다 승인된 같은 팀·다른 팀 쌍 수 |
+| 판정 자격 | `update/ac_v2_mature_agents` | 성숙한 agent 수(0–6) |
+
+- `ac_v2_*` 지표는 v2 run에만 있습니다. v1 run(`runs/ac_20261023_185556`)에서는 `update/same_team_arcs`와 `update/cross_team_arcs`만 쓸 수 있습니다.
+- `probe/*` gate 패널은 숨기는 것을 권합니다.
+
+## W&B에서 바꾸는 방법
+
+1. 패널 편집에서 위 지표 두 개를 한 그래프에 넣습니다. 같은 팀과 다른 팀을 나란히 놓으면 바로 비교됩니다.
+2. Smoothing은 Running average(창 50–100)로 둡니다. 비교가 5 update마다 일어나고 접촉에 따라 0이 많이 섞이기 때문입니다.
+3. 거리 패널은 y축을 0–1로 고정하면 문턱 .5와 비교하기 쉽습니다.
+
+## 그래도 W&B로는 아쉬운 점
+
+- W&B 화면에서는 누적 전이 수, 문턱선, 구간 평균을 그리기 어렵습니다.
+- 그래서 저장된 `metrics.jsonl`과 `transfer.jsonl`에서 논문용 그림을 따로 만드는 게 낫습니다. 예를 들면 누적 같은 팀·다른 팀 전이, 거리와 문턱선, 성숙 agent 수를 한 장에 넣는 그림입니다.
+- 이 그림은 학습 로그만 읽으므로, 실행 중인 학습에 영향이 없습니다.
+
+## 원문 기록 T158 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+그림 만들어줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- T157 다음 단계 버튼이다. `output/ac_gate_figs_20261102/plot_gate.py`(새 파일, 학습 로그 읽기 전용)로 v2 PGCT s1과 v1 PGCT s1의 실제 gate 그림을 만들었다. 렌더링을 확인하며 라벨 겹침과 마지막 짧은 구간을 고쳤다.
+- 학습·코드 변경·커밋 없음. 이 T158 기록과 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Gate 그림 두 장(v2 PGCT s1, v1 PGCT s1)을 그렸습니다. 지금 렌더링 결과를 눈으로 확인하고 있습니다.
+
+### Assistant — 최종 답변
+
+그림 두 장을 만들었습니다. 저장된 학습 로그만 읽어서 그렸습니다.
+
+## v2 PGCT s1 (`runs/acv2_s1_20261029_084340`, 모서리·개인 보상, seed 1, 5M)
+
+| 패널 | 내용 | 읽을 점 |
+|---|---|---|
+| A. 누적 실제 전이 | 같은 팀과 다른 팀 arc 누적 | 같은 팀은 꾸준히 늘어 5,252. 다른 팀은 4.28M까지 0이었다가 352 |
+| B. v2 거리(EMA) | 같은 팀 대 다른 팀, 문턱 .5 점선 | 같은 팀 .25 → .08. 다른 팀 .99 → .6으로 내려오는 추세 |
+| C. update당 승인 쌍 | 5만 step 평균 | 같은 팀은 1–2.5쌍. 다른 팀은 4.2M 이후 약 1쌍 |
+| D. 성숙 agent | 판정 자격이 있는 agent 수 | 0.25M에 5명, 1.25M에 6명 |
+
+B의 다른 팀 선은 비교한 다른 팀 쌍들의 평균입니다. 그래서 평균이 .6이어도 일부 쌍은 문턱 .5 아래로 내려가 승인됩니다. C의 4M 이후 주황색 선이 그 쌍들입니다.
+
+## v1 PGCT s1 (`runs/ac_20261023_185556`)
+
+v1에는 판정 지표(`ac_v2_*`)가 없어서 A 패널(누적 실제 전이)만 그렸습니다. 5M 동안 같은 팀 48, 다른 팀 0입니다. 첫 전이는 2.8M에야 나왔습니다. v1 gate는 거의 닫혀 있었고, 그래서 v1 PGCT가 사실상 IPPO였습니다.
+
+## 파일
+
+- 스크립트: `output/ac_gate_figs_20261102/plot_gate.py`
+- 사용법은 `output/ac_gate_figs_20261102/README.md`에 있습니다.
+- job 폴더를 인자로 주면 다른 run에도 그대로 쓸 수 있습니다. v2 run이면 4패널, v1 run이면 A 패널만 그립니다. 진행 중인 run도 그 시점까지의 로그로 그릴 수 있습니다.
+
+```bash
+python output/ac_gate_figs_20261102/plot_gate.py runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1
+```
+
+학습과 코드는 건드리지 않았습니다. 대화는 T158로 기록했습니다.
+
+## 원문 기록 T159 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (붙여넣은 글. 받은 그대로)
+
+<pasted_content id="c90a">
+이 설명을 보니 현재 v2가 내가 앞서 이해했던 Reward Probe보다 훨씬 구체적인 알고리즘이라는 것이 명확해졌어. 특히 이전 설명에서 내가 잘못 이해한 부분이 있어.
+
+우선 중요한 사실 세 가지를 바로잡을게.
+
+1. v2는 단일 행동의 보상만 비교하는 알고리즘이 아니야. 희소 보상 사건을 별도로 수집하고, 여러 실제 사건과 좌우 대칭 사건에 대한 예측 보상 반응 전체를 비교해.
+2. A+C는 내가 앞에서 설명했던 '보상 예측 + 정책 JS 유사도'가 아니야. 현재 코드 설명에서 C는 실제 사건(Cases), A는 좌우 대칭 증강(Augmentation)이야. 정책 유사도는 v2의 팀 판별에 사용되지 않아.
+3. v2는 보상값을 직접 공유하지 않아. 각자 자신의 개인 보상으로 학습한 예측기가 공통 probe에 답하고, 그 응답의 차이를 통해 관계를 판단하는 구조야.
+
+이 차이는 PGCT의 연구 기여를 설명할 때도 중요해.
+
+## 1. 그럼 이전에 네가 제기한 희소 보상 문제는 해결됐을까?
+
+일부 해결됐지만, 완전히 해결된 것은 아니야.
+
+현재 v2는 희소 보상에 대해 두 가지 장치를 갖추고 있어.
+
+희소 사건 버퍼
+
+배송 같은 큰 보상 사건을 별도로 저장하고, MLP 학습 배치의 25%를 이 사건들로 채워. 따라서 대부분의 보상이 0인 데이터에 예측기가 압도되는 문제를 줄여.
+
+사건 중심 Probe
+
+임의의 이동 장면 128개를 비교하는 것이 아니라, 최근 보상 사건과 그 좌우 대칭 장면을 비교해. 따라서 0인 이동 사건들이 판별 거리를 희석시키는 문제를 줄여.
+
+즉, 이전에 내가 설명했던 단순한
+
+\\[ \hat r_i(o_t,a_t,o\_{t+1}) \\]
+
+의 무작위 비교보다 훨씬 합리적이야.
+
+하지만 중요한 한계는 남아.
+
+보상 사건을 한 번도 경험하지 못한 에이전트는 자신의 보상 목적에 대한 충분한 정보를 얻지 못하기 때문에, 팀 판별에 참여하지 못해.
+
+이건 네가 처음 \\(V\\)를 사용하자고 했던 이유와 직접 연결돼.
+
+다만 \\(V\\)도 최초 보상 발견 전에 정보를 저절로 생성하는 것은 아니야. 차이는 보상 발견 이후의 정보 전파에 있어.
+
+- \\(\hat r\\): 보상을 발생시킨 사건의 반응을 학습
+- \\(V\\): 보상 사건까지 이어지는 이전 상태들의 미래 누적 보상도 학습
+
+그래서 현재 v2는 희소 보상에 대응하는 방법은 갖추었지만, 시간적으로 확장된 목적 정보까지 이용하는 방법은 아니다라고 평가하는 게 정확해.
+
+좋아. 보상 사건을 경험하기 전에는 팀 판별을 보류한다는 것은 PGCT의 의도된 설계 조건으로 두겠어. 각 에이전트가 먼저 자신의 보상 구조를 발견해야 한다는 연구 원칙과도 일치하니까.
+
+이제 네가 제공한 실제 v2 코드 점검 결과를 기준으로, v2 Reward Probe와 D2 Max-GAE를 결합한 최신 PGCT 알고리즘을 처음부터 다시 설명할게.
+
+중요한 것은 현재 구현된 부분과 앞으로 구현할 부분을 구분하는 거야.
+
+- 구현 및 실험됨: Recurrent IPPO, v2 보상 예측기, v2 팀 판별 Gate, 기존 Critic 증류.
+- 진단 검증됨: E62·E63의 팀원 Critic 가치정보 분석.
+- 설계 완료, 학습 검증 전: v2 Gate + D2 Max-GAE를 결합하는 PGCT-max.
+
+# 1. 전체 알고리즘의 구조
+
+Independent Recurrent IPPO
+
+개인 관측 · 행동 · 보상으로 독립 학습
+
+개인 Reward Predictor 학습 (v2)
+
+\\(\hat r_i(o_t^{pub},a_t,o\_{t+1}^{pub})\\)
+
+개인 보상만으로 MLP 학습
+
+Reward Probe (v2)
+
+실제 보상 사건 + 좌우 대칭 사건
+
+\\(D\_{ij}^{R}\rightarrow \operatorname{EMA}\_{ij}\\)
+
+Latent Team Gate — 핵심 연구 대상
+
+같은 팀 승인 / 다른 팀 / 보류
+
+Selective Peer Critic Access
+
+승인된 팀원 · 통신 가능 · Critic 성숙
+
+D2 Max-GAE — 활용 메커니즘
+
+\\(f_i=V_i+\eta\min(b_i,c)\\)
+
+Actor
+
+D2 Advantage
+
+\\(A_i^{D2}\\)
+
+Critic
+
+개인 Return
+
+\\(\hat R_i^{self}\\)
+
+최종 목표 구조. 현재 v2의 실제 증류 경로는 D2 Max-GAE로 아직 교체되지 않았다.
+
+연구 질문은 여전히 두 개야.
+
+Q1. 팀 라벨 없이 개인 경험으로 잠재 팀을 찾을 수 있는가?
+
+Q2. 발견한 팀원의 가치정보를 이용하면 자신의 정책학습을 개선할 수 있는가?
+
+Q1이 메인이고 Q2는 그 발견이 유용하다는 것을 증명하는 부분이야.
+
+# 2. 첫 번째 알고리즘: Independent Recurrent IPPO
+
+## 2.1. 왜 각자 학습하는가?
+
+현재 PGCT에서는 각 에이전트가 자기 Actor와 Critic을 가지고 있어.
+
+\\[ \pi_i(a_i\mid h_i;\theta_i) \\]
+
+\\[ V_i(h_i;\omega_i) \\]
+
+여기서 \\(h_i\\)는 에이전트의 관측 이력을 GRU로 요약한 정보에 대응해.
+
+에이전트는 자기 관측으로 행동하고 개인 보상을 받아.
+
+\\[ a\_{i,t}\sim\pi_i(\cdot\mid h\_{i,t}) \\]
+
+\\[ r\_{i,t}=R_i(s_t,\mathbf a_t,s\_{t+1}) \\]
+
+RWARE에서는 다른 에이전트의 행동도 환경에 영향을 미치지만, 자기 보상만으로 학습하는 거야.
+
+Critic의 목표는
+
+\\[ V_i(h\_{i,t}) \approx \mathbb E\_{\boldsymbol\pi} \left[ \sum\_{k=0}^{\infty}\gamma^kr\_{i,t+k} \mid h\_{i,t} \right] \\]
+
+이지.
+
+이 과정에서는 팀 관계를 알 필요가 없어.
+
+### 최초 탐색의 의미
+
+예를 들어 에이전트 A가 어떤 선반을 집으면 보상이 발생한다는 사실을 발견했다고 하자.
+
+그것은 자신의 행동과 개인 보상으로 알아낸 거야.
+
+다른 에이전트가 그 사실을 알려준 것이 아니지.
+
+이후 Reward Predictor가 이 경험을 학습하고, 팀원 발견의 근거가 되는 거야.
+
+이 부분은 PGCT의 기존 철학과 동일해.
+
+# 3. 두 번째 알고리즘: v2 Reward Predictor
+
+여기부터가 실제 v2 코드의 핵심이야.
+
+## 3.1. 무엇을 예측하는가?
+
+각 에이전트는 다음 함수를 학습해.
+
+\\[ \boxed{ \hat r_i(x_t) = \hat r_i(o_t^{pub},a_t,o\_{t+1}^{pub}) } \\]
+
+이 함수는 특정 전이에 대해 자신의 개인 보상이 얼마였을지를 예측해.
+
+Critic의 누적 보상 \\(V_i\\)와는 다른 모델이야.
+
+### 입력
+
+실제 v2의 `public_view`는 관측 전체가 아니야.
+
+팀을 직접 나타내는 정보를 제거한 공용 관측 표현이야.
+
+| 입력        | 구성          |
+| --------- | ----------- |
+| 자기 상태     | 6차원         |
+| 5×5 공용 격자 | 11채널, 275차원 |
+| 관측 전      | 281차원       |
+| 행동        | One-hot 5차원 |
+| 관측 후      | 281차원       |
+| 전체 입력     | 567차원       |
+
+따라서
+
+\\[ x_t\in\mathbb R^{567} \\]
+
+이야.
+
+여기서 좌표, 요청 선반 채널, 우리 팀 전용 goal 표시 등은 제외돼.
+
+반면 지형, 선반, 에이전트, 방향, 운반 상태와 팀을 구별하지 않는 goal 채널은 남겨.
+
+이렇게 한 이유는 보상 목적을 추론하되, 팀 ID를 직접 읽어내지는 못하게 하기 위해서야.
+
+## 3.2. 예측기 구조
+
+현재 v2는 다음 MLP를 사용해.
+
+\\[ \boxed{ 567\rightarrow128\rightarrow64\rightarrow1 } \\]
+
+마지막 출력은 예상 개인 보상 하나야.
+
+\\[ \hat r_i(x)\in\mathbb R \\]
+
+이 모델은 Critic이 아니야.
+
+입력으로 미래 전체 궤적을 받는 것도 아니고, 장기 보상 합을 추정하지도 않아.
+
+하나의 상태전이에 대한 조건부 평균 보상을 예측하는 모델이야.
+
+## 3.3. 희소 보상을 어떻게 학습하는가?
+
+이 부분이 이전에 내가 단순하게 설명했던 Reward Probe와 가장 크게 다른 부분이야.
+
+현재 v2에는 버퍼가 두 개 있어.
+
+| 버퍼       | 용량     | 저장 내용                   |
+| -------- | ------ | ----------------------- |
+| 일반 전이 버퍼 | 20,000 | 자기 경험의 상태전이와 보상         |
+| 사건 버퍼    | 512    | 개인 보상 \\(r\geq0.5\\) 사건 |
+
+학습 시 batch 크기는 256이고, 그중 25%를 사건 버퍼에서 가져와.
+
+\\[ 256\times0.25=64 \\]
+
+즉, 학습 배치에서 약 64개는 높은 보상 사건으로 구성해.
+
+이유는 명확해.
+
+전체 상태전이에서 배송 같은 보상 사건이 0.01\~0.03% 수준이면, 일반적인 무작위 sampling으로는 대부분 0에 가까운 보상만 학습하게 되거든.
+
+그 결과
+
+\\[ \hat r_i(x)\approx0 \\]
+
+인 모델이 만들어질 수 있어.
+
+사건 버퍼는 이것을 완화하기 위한 장치야.
+
+### 실제 업데이트
+
+5번의 PPO update마다 Reward Predictor를 학습해.
+
+그때 MLP에 대해 50번의 학습 step을 수행하고, 개인 보상에 대한 MSE를 최소화해.
+
+\\[ \boxed{ \mathcal L_i^{reward} = \mathbb E\_{(x,r_i)\sim\mathcal B_i} \left[ \left(\hat r_i(x)-r_i\right)^2 \right] } \\]
+
+여기서 다른 에이전트의 보상은 사용하지 않아.
+
+이것이 중요한 완전분산 학습 조건이야.
+
+## 3.4. 왜 v2는 조건부 평균을 사용하는가?
+
+이 부분은 v1과 달라진 핵심적인 지점이야.
+
+팀 정보가 제거된 공용 관측에서는 실제 보상이 결정되는 데 필요한 숨겨진 정보가 빠질 수 있어.
+
+예를 들어 같은 배송 장면처럼 보이더라도,
+
+- 실제로 요청된 선반이면 +1
+- 요청되지 않은 선반이면 0
+
+이 될 수 있어.
+
+공용 관측만으로 둘을 구별할 수 없다면 보상 예측기는 하나의 장면에 대해 두 값을 정확하게 구분할 수 없어.
+
+이때 MSE 회귀 모델은
+
+\\[ \boxed{ \hat r_i(x)\approx\mathbb E[r_i\mid x] } \\]
+
+를 학습해.
+
+예를 들어 같은 공용 장면에서 보상이 발생하는 확률이 0.7이라면, 보상이 0 또는 1인 단순한 상황에서는 예측값이 약 0.7이 될 수 있어.
+
+따라서 v2의 응답은 엄밀히 말해 공용 관측 조건에서의 평균적인 보상 반응이야.
+
+v1은 이런 불확실성이 큰 사건의 비교를 보류하는 경향이 있었지만, v2는 조건부 평균을 팀 판별에 활용하는 거지.
+
+이 방식은 희소한 배송 사건을 팀 발견 신호로 사용할 수 있게 한다는 장점이 있어.
+
+# 4. 세 번째 알고리즘: v2 성숙 판정
+
+Reward Predictor가 존재한다고 곧바로 팀 비교에 사용할 수는 없어.
+
+실제로 보상 사건을 충분히 경험하고, 그 보상을 예측할 능력이 있어야 해.
+
+현재 v2의 성숙 조건은 다음 세 가지야.
+
+| 조건      | 기준                       |
+| ------- | ------------------------ |
+| 보상 경험 수 | 누적 개인 사건 20개 이상          |
+| 예측기 학습  | 1회 이상 완료                 |
+| 예측 수준   | 최근 사건 32개의 평균 예측값 0.3 이상 |
+
+이를
+
+\\[ M_i^R(t)\in\\{0,1\\} \\]
+
+로 표현하자.
+
+\\[ M_i^R(t)=1 \\]
+
+이면 해당 에이전트가 팀 비교에 참여할 자격이 있다는 뜻이야.
+
+두 에이전트의 비교는 양쪽 모두 성숙해야 수행해.
+
+\\[ M_i^R(t)M_j^R(t)=1 \\]
+
+### 이 조건의 의미
+
+에이전트가 보상 사건을 한 번도 경험하지 않았다면 아직 자신의 보상 목적을 충분히 발견하지 못한 상태로 보는 거야.
+
+따라서 다른 에이전트와 팀을 형성하지 않아.
+
+이것은 실패가 아니라 네가 의도한 보수적 팀 발견 원칙이야.
+
+또한 여기서의 성숙은 Reward Predictor에 관한 것이야.
+
+나중에 D2에서 사용하는 donor Critic의 성숙 여부와는 구별해야 해. 두 모델이 정확히 같은 학습 수준을 갖는 것은 아니니까.
+
+# 5. 네 번째 알고리즘: v2 Reward Probe
+
+여기가 PGCT의 팀 발견을 실제로 수행하는 단계야.
+
+Reward Predictor가 충분히 성숙했다면, 이웃 에이전트와 동일한 probe를 평가해.
+
+## 5.1. Probe는 어떻게 만들어지는가?
+
+현재 v2에서는 두 종류의 장면을 사용해.
+
+C: 실제 보상 사건
+
+에이전트 \\(i\\)가 최근에 경험한 보상 사건 32개와 \\(j\\)가 경험한 사건 32개를 모아.
+
+\\[ \mathcal P\_{ij}^{C} = \mathcal E_i^{32}\cup\mathcal E_j^{32} \\]
+
+여기서 사건에 포함되는 것은 보상값이 아니라
+
+\\[ (o_t^{pub},a_t,o\_{t+1}^{pub}) \\]
+
+야.
+
+따라서 실제로 받은 개인 보상값은 상대에게 전달하지 않아.
+
+A: 좌우 대칭 사건
+
+C의 공용 상태전이를 좌우로 반전한 장면도 추가해.
+
+\\[ \mathcal P\_{ij}^{A} = \operatorname{Mirror}(\mathcal P\_{ij}^{C}) \\]
+
+거울 변환에서는 단순히 격자만 뒤집지 않아.
+
+왼쪽·오른쪽 방향도 함께 변환하고, LEFT와 RIGHT 행동도 교환해.
+
+이렇게 해야 상태와 행동의 관계가 보존돼.
+
+최종 Probe 집합은
+
+\\[ \boxed{ \mathcal P\_{ij} = \mathcal P\_{ij}^{C}\cup\mathcal P\_{ij}^{A} } \\]
+
+이고, 최대 128개 장면을 사용해.
+
+### 왜 좌우 대칭이 중요한가?
+
+현재 RWARE의 모서리 배치를 생각해 보자.
+
+팀 0 배송
+
+왼쪽 아래 goal 장면
+
+팀 1 배송
+
+오른쪽 아래 goal 장면
+
+실제 RWARE 맵의 정확한 렌더링이 아닌, goal 배치와 반사 관계를 나타낸 개념도.
+
+두 팀의 goal은 공용 관측에서 동일한 goal 채널로 표시돼.
+
+하지만 모서리 배치에서는 goal 주변에 보이는 맵 경계가 달라.
+
+왼쪽 아래 goal 근처와 오른쪽 아래 goal 근처는 맵 밖 칸의 위치가 반대이기 때문이야.
+
+따라서 Reward Predictor는 명시적인 팀 ID 없이도 어떤 배송 장면이 자신의 보상과 관련되는지 학습할 수 있어.
+
+대칭 Probe를 사용하면 왼쪽 goal 배송 사건을 오른쪽 goal에 대응하는 장면으로 변환해 질의할 수 있고.
+
+이것은 팀 정보를 직접 입력한 것은 아니지만, 맵의 기하학적 특성에 의존한 팀 판별 신호라는 점은 명확히 해야 해.
+
+## 5.2. 두 예측기의 응답을 비교한다
+
+공통 Probe를 구성한 뒤 각 에이전트가 자신의 Reward Predictor로 답해.
+
+\\[ p_k=\hat r_i(x_k) \\]
+
+\\[ q_k=\hat r_j(x_k) \\]
+
+여기서 \\(x_k\\)는 동일한 공용 상태전이야.
+
+핵심은 동일한 장면에 대해 서로 다른 개인 보상 예측기가 어떻게 반응하는지를 비교한다는 거야.
+
+예를 들어 다음과 같을 수 있어.
+
+| 공통 Probe    | 팀 0 예측기 | 팀 1 예측기 |
+| ----------- | ------- | ------- |
+| 왼쪽 goal 배송  | 0.89    | 0.00    |
+| 오른쪽 goal 배송 | 0.00    | 0.87    |
+| 일반 이동       | 0.00    | 0.00    |
+
+이때 두 예측기의 응답이 명확히 다르므로 다른 목적을 가진 것으로 판단할 근거가 생겨.
+
+반대로 같은 팀이라면 각 배송 장면에 대한 응답 패턴이 비슷할 것으로 기대할 수 있어.
+
+## 5.3. Reward Response Distance
+
+v2에서 사용하는 거리는 다음과 같아.
+
+\\[ \boxed{ d\_{ij} = \frac{ \sum\_{k=1}^{K}|p_k-q_k| }{ \sum\_{k=1}^{K}(|p_k|+|q_k|) } } \\]
+
+이 거리는 단순한 평균 절대오차와 달라.
+
+가령 대부분의 이동 장면에서 두 예측기 모두 0을 출력한다면, 그 장면들은 분모와 분자에 거의 영향을 주지 않아.
+
+따라서 보상이 없는 장면이 많이 포함되었다는 이유만으로 판별 거리가 인위적으로 작아지는 문제를 줄여.
+
+이것은 희소 보상 환경에 적합한 설계야.
+
+다만 분모가 0에 가깝다면 거리를 안정적으로 판단하기 어려우므로 해당 비교를 보류하거나 별도 처리해야 해. 또한 MLP에 음수 예측이 가능하므로 '응답 질량의 겹침'이라는 해석은 주로 비음수 예측값에서 정확해.
+
+### 예시
+
+팀 0과 팀 1의 예상 보상 벡터가
+
+\\[ \mathbf p=[0.89,0] \\]
+
+\\[ \mathbf q=[0,0.87] \\]
+
+라면
+
+\\[ d\_{ij} = \frac{0.89+0.87}{0.89+0.87} =1 \\]
+
+이야.
+
+반면 둘이 동일한 응답을 한다면
+
+\\[ d\_{ij}=0 \\]
+
+이 되지.
+
+즉, 값이 작을수록 같은 보상 반응을 가진다는 증거가 되는 거야.
+
+# 6. 다섯 번째 알고리즘: EMA와 Gate 승인
+
+한 번의 Probe 거리만으로 팀을 결정하면 불안정할 수 있어.
+
+Reward Predictor가 계속 학습되고 있기 때문에 예측값이 달라질 수 있거든.
+
+따라서 v2는 쌍별 거리를 EMA로 관리해.
+
+## 6.1. EMA
+
+\\[ \boxed{ \bar d\_{ij}^{(n)} = 0.35d\_{ij}^{(n)} + 0.65\bar d\_{ij}^{(n-1)} } \\]
+
+여기서 \\(n\\)은 비교 round를 의미해.
+
+새로운 예측기 학습 이후의 유효한 비교만 round로 세는 방식이야.
+
+이렇게 하면 우연히 한 번 비슷한 응답이 나왔다고 바로 팀으로 승인하지 않아.
+
+## 6.2. 승인 조건
+
+현재 v2에서 같은 팀 승인을 위한 조건은
+
+\\[ \boxed{ n\_{ij}\geq3 \quad\text{and}\quad \bar d\_{ij}<0.5 } \\]
+
+야.
+
+즉, 유효한 비교를 적어도 세 번 수행하고, EMA 거리가 0.5 미만이어야 해.
+
+앞에서 정의한 거리의 응답값이 비음수라면 이 0.5 기준은 정규화된 응답의 중첩이 절반보다 크다는 의미로 해석할 수 있어.
+
+이 기준은 현재 데이터에 맞춰 최적화한 값이 아니라 v2에서 사전에 정한 기준이야.
+
+따라서 논문에서는 임계값의 민감도 분석이 필요할 수 있어.
+
+## 6.3. 통신 제약
+
+팀 비교는 아무 때나 수행하지 않아.
+
+현재 v2에서는 PPO update 시점의 에이전트 위치를 기준으로 판단해.
+
+두 에이전트의 위치가
+
+\\[ p_i=(x_i,y_i),\quad p_j=(x_j,y_j) \\]
+
+라면 Chebyshev 거리는
+
+\\[ d\_\infty(i,j) = \max(|x_i-x_j|,|y_i-y_j|) \\]
+
+야.
+
+그리고
+
+\\[ \boxed{ d\_\infty(i,j)\leq3 } \\]
+
+인 경우에만 이웃으로 취급해.
+
+또한 warm-up은 100 update야.
+
+그 전에도 Reward Predictor는 자기 보상을 학습하지만, 팀 비교와 전이는 시작하지 않아.
+
+따라서 순서는 다음과 같아.
+
+\\[ \text{독립 학습} \rightarrow \text{예측기 성숙} \rightarrow \text{이웃과 비교} \rightarrow \text{팀 승인} \\]
+
+## 6.4. 연결이 끊기면 어떻게 되는가?
+
+승인된 같은 팀 관계가 있어도 실제 통신 범위를 벗어나면 gate는 닫혀.
+
+\\[ G\_{ij,t}^{active} = G\_{ij,t}^{approved} \cdot \mathbf1[d\_\infty(i,j)\leq3] \\]
+
+다만 v2에서는 과거 EMA와 비교 round 기록을 유지해.
+
+따라서 이후 다시 만나면 이전에 쌓인 비교 증거를 재활용할 수 있어.
+
+즉, 팀 관계에 대한 추정 기록과 현재 통신 가능한 연결은 서로 다른 개념이야.
+
+이 구분은 완전분산 환경에서 중요해.
+
+# 7. 지금까지가 팀 발견 알고리즘이다
+
+여기까지의 v2만으로 Q1의 작동 구조를 정의할 수 있어.
+
+\\[ \boxed{ \begin{gathered} \text{개인 보상 경험}\\\ \downarrow\\\ \text{Reward Predictor}\\\ \downarrow\\\ \text{공통 사건 Probe}\\\ \downarrow\\\ \text{응답 거리 + EMA}\\\ \downarrow\\\ \text{잠재 팀 관계 발견} \end{gathered} } \\]
+
+여기에는 Actor의 행동 유사도나 Critic의 \\(V\\) 유사도를 직접 사용하지 않아.
+
+그리고 보상이 한 번 발생하는 사건이라는 사실은 현재 v2에서 이미 사건 버퍼와 응답 패턴 비교로 어느 정도 처리하고 있어.
+
+따라서 앞서 내가 제안한 별도의 \\(V\\)-기반 팀 판별기를 당장 추가할 필요는 없어 보여.
+
+먼저 현재 v2가 어떤 조건에서 잘 되고 어떤 조건에서 실패하는지를 분석하는 것이 더 적절해.
+
+# 8. 여섯 번째 알고리즘: 발견한 팀원의 Critic 선택
+
+이제 Q2로 넘어가.
+
+여기서부터는 현재 v2 증류 구현이 아니라, 앞으로 결합할 D2 Max-GAE의 설계야.
+
+## 8.1. 기존 v2에서는 어떻게 활용했을까?
+
+v2가 같은 팀으로 승인한 이웃이 있으면, 상대 Critic을 증류했어.
+
+\\[ \mathcal L_i^{peer} = 0.01 \sum\_{j\in\mathcal D_i} \alpha\_{ij} \mathbb E\_{x\in\mathcal P} \left[ (V_i(x)-\operatorname{sg}V_j(x))^2 \right] \\]
+
+여기서
+
+\\[ \sum_j\alpha\_{ij}=1 \\]
+
+이고, 승인된 이웃에게 같은 비중을 주는 방식이야.
+
+증류에서는 길이 48개의 공통 Probe Bank와 초기 hidden state \\(h=0\\)을 사용했어.
+
+그런데 E61에서 기존 증류가 실제 방문 상태의 가치추정 개선으로 충분히 이어지지 않는 문제가 확인됐지.
+
+그래서 D에서는 상대 Critic을 따라 배우는 과정을 제거했어.
+
+## 8.2. D에서는 무엇을 하는가?
+
+v2가 승인한 관계를 이용해 상대 Critic을 확보하는 것은 같아.
+
+하지만 상대 Critic의 파라미터에 자신의 Critic을 맞추지 않아.
+
+대신 자기 Actor의 Advantage 계산에 이용해.
+
+이를 위해 donor 집합을
+
+\\[ \boxed{ \mathcal D_i(t) = \left\\{ j: G\_{ij,t}=1,\\; j\in\mathcal N_i(t),\\; M_j^V(t)=1 \right\\} } \\]
+
+로 정의할 수 있어.
+
+여기서 \\(M_j^V\\)는 D에서 별도로 둘 Critic 성숙 조건이야.
+
+주의할 것은 v2의 Reward Predictor 성숙 조건과 D의 Critic 성숙 조건을 동일하게 취급하면 안 된다는 점이야.
+
+보상 사건을 20개 경험했다는 사실이 Critic의 정확성을 보장하지는 않으니까.
+
+# 9. 일곱 번째 알고리즘: D2 Max-GAE
+
+이 단계가 실제로 발견된 팀 관계를 학습에 활용하는 부분이야.
+
+## 9.1. 상대 Critic에 내 이력을 입력한다
+
+에이전트 \\(i\\)는 자신의 GRU 관측 이력 \\(h_i\\)를 가지고 있어.
+
+기존 Critic은
+
+\\[ V_i(h_i) \\]
+
+를 출력하지.
+
+이제 승인된 팀원의 Critic에도 같은 이력을 입력해.
+
+\\[ V_j(h_i) \\]
+
+이때 중요한 것은 \\(V_j(h_j)\\)를 사용하는 것이 아니라는 점이야.
+
+팀원이 내 상황을 어떻게 평가하는지를 확인하는 것이지.
+
+물론 상대 Critic이 내 이력에 대해서도 올바른 가치를 예측한다는 보장은 없어. E62·E63이 이 가능성을 진단했던 이유야.
+
+기존 E63에서는 8-step 이력을 사용한 질의가 전체 recurrent 이력을 사용한 결과와 상당히 유사하다는 결과가 있었어.
+
+하지만 최종 D2 구현에서는 Critic snapshot을 받은 뒤 로컬 이력을 재생해 값을 계산하는 방식을 제안한 상태야.
+
+## 9.2. 최댓값을 계산한다
+
+자기 Critic과 donor Critic의 값 중 최댓값을 선택해.
+
+\\[ f_i^{max}(h_i) = \max \left\\{ V_i(h_i),\\; \max\_{j\in\mathcal D_i}V_j(h_i) \right\\} \\]
+
+만약 donor가 없다면
+
+\\[ f_i^{max}(h_i)=V_i(h_i) \\]
+
+이므로 기존 IPPO와 동일한 가치함수 입력을 사용하게 돼.
+
+여기서 최댓값은 팀원의 행동을 직접 모방하는 것이 아니야.
+
+팀원 Critic이 특정 미래 상황을 상대적으로 높게 평가한다면, 그 정보를 학습 신호에 반영하려는 거야.
+
+## 9.3. D2의 보수적 혼합
+
+추가 가치정보를
+
+\\[ b_i(h_i) = \left[ \max\_{j\in\mathcal D_i}V_j(h_i) - V_i(h_i) \right]\_+ \\]
+
+로 정의해.
+
+그리고
+
+\\[ \boxed{ f_i^{D2}(h_i) = V_i(h_i)+\eta\min(b_i(h_i),c) } \\]
+
+로 계산해.
+
+- \\(\eta\\): 상대 가치정보의 반영 비율
+- \\(c\\): 과도한 가치 차이를 제한하는 상한
+- \\(b_i\\): 상대 Critic이 더 높게 평가하는 정도
+
+초기 분기 실험에서 제안한 값은 \\(\eta=0.5\\)야. \\(c\\)와 별도 GAE 계수는 최종 설정이 필요해.
+
+### 예시
+
+자기 Critic과 팀원 Critic의 가치 추정
+
+알고리즘 이해를 위한 가상의 예측값
+
+자기 Critic팀원 CriticD2 혼합값
+
+00.450.91.351.8선반 집기목표 방향 이동목표 근처
+
+설명용 예시. \\(\eta=0.5\\), 상한 미적용. 실제 학습 결과가 아니다.
+
+이처럼 팀원 Critic이 목표에 가까워지는 상황의 가치를 더 높게 예측한다면, D2는 그 차이의 일부를 반영할 수 있어.
+
+다만 실제로 좋은 행동인지와 Critic이 높게 평가하는 행동인지는 다르므로, 성능 개선은 학습 실험으로 확인해야 해.
+
+## 9.4. D2 Advantage 계산
+
+이제 기존 자기 Critic 대신 \\(f_i^{D2}\\)를 사용해 TD 오차를 계산해.
+
+\\[ \boxed{ \delta\_{i,t}^{D2} = r\_{i,t} + \gamma f_i^{D2}(h\_{i,t+1}) - f_i^{D2}(h\_{i,t}) } \\]
+
+이것을 GAE로 누적해.
+
+\\[ \boxed{ A\_{i,t}^{D2} = \sum\_{l=0}^{L-1} (\gamma\lambda_D)^l \delta\_{i,t+l}^{D2} } \\]
+
+이 값이 최종 Actor 업데이트에 들어가.
+
+수식적으로 추가 보조 신호는
+
+\\[ u\_{i,t} = f_i^{D2}(h\_{i,t})-V_i(h\_{i,t}) \\]
+
+라고 하면
+
+\\[ \delta\_{i,t}^{D2} - \delta\_{i,t}^{self} = \gamma u\_{i,t+1}-u\_{i,t} \\]
+
+가 돼.
+
+즉, 단순히 팀원 Critic이 높다는 이유만으로 긍정적인 Advantage가 발생하는 것은 아니야.
+
+현재 상황과 다음 상황에서 팀원 Critic이 제공하는 추가 가치정보가 어떻게 달라지는지가 중요해.
+
+이것이 D2의 핵심적인 학습 원리야.
+
+# 10. 여덟 번째 알고리즘: Actor와 Critic의 분리 업데이트
+
+마지막으로 PPO를 업데이트해.
+
+## Actor
+
+Actor에는 D2 Advantage를 사용해.
+
+\\[ \mathcal L_i^{actor} = -\mathbb E \left[ \min \left( \rho\_{i,t}A\_{i,t}^{D2}, \operatorname{clip}(\rho\_{i,t},1-\epsilon,1+\epsilon) A\_{i,t}^{D2} \right) \right] \\]
+
+팀원의 가치정보가 자기 Actor 학습 방향에 영향을 줄 수 있는 부분이야.
+
+## Critic
+
+Critic은 기존 자기 보상과 자기 return으로 학습해.
+
+\\[ \boxed{ \mathcal L_i^{critic} = \mathbb E \left[ (V_i(h_i)-\hat R_i^{self})^2 \right] } \\]
+
+여기에는 팀원 Critic과의 증류 손실이 없어.
+
+또한 D2 Advantage를 그대로 Critic target에 사용하지 않아.
+
+정리하면 다음과 같아.
+
+| 구성               | 기존 v2 PGCT     | 최종 PGCT-D2       |
+| ---------------- | -------------- | ---------------- |
+| Reward Predictor | 개인 보상 학습       | 동일               |
+| Reward Probe     | C+A 사건         | 동일               |
+| 팀 판별             | 거리, EMA, Gate  | 동일               |
+| 상대 Critic        | 증류 대상으로 사용     | Advantage 계산에 사용 |
+| Actor            | 자기 GAE         | D2 Max-GAE       |
+| Critic           | 자기 return + 증류 | 자기 return만       |
+| Critic 합의        | 없음             | 없음               |
+
+Actor와 Critic이 GRU 표현을 공유한다면 실제 gradient 경로의 분리는 추가 확인이 필요해. 그러나 알고리즘이 의도한 손실 목표는 위와 같아.
+
+# 11. 실제 구현에서는 두 단계의 연결이 필요해
+
+여기서 현재 v2와 D2 사이에 아직 결정되지 않은 부분이 있어.
+
+바로 어느 시점에 만난 팀원의 Critic을 사용할 것인가야.
+
+현재 v2는 PPO update가 끝나는 순간의 위치로 이웃을 판정해.
+
+반면 D2 제안에서는 rollout 중 한 번이라도 만난 승인된 팀원의 Critic을 사용할 수도 있다고 했지.
+
+이 두 방식은 다르기 때문에, 첫 구현에서는 하나로 통일해야 해.
+
+| 방식              | 장점                    | 단점                              |
+| --------------- | --------------------- | ------------------------------- |
+| Update 시점 이웃    | 기존 v2와 일치, 구현 및 통제 용이 | 짧은 만남을 놓침                       |
+| Rollout 중 만난 이웃 | 활용 가능한 접촉 증가          | 만남 시각, snapshot 보관, 통신 기록 관리 필요 |
+
+나는 첫 번째 D2 분기 실험에서는 update 시점 기준을 추천해.
+
+기존 v2와 가능한 한 조건을 맞추고, Max-GAE의 효과만 확인할 수 있기 때문이야.
+
+다만 이미 진단에서 제한적인 통신 기회가 확인되었으므로, 실제 이용률이 너무 낮으면 rollout 접촉 기반 방식도 비교할 필요가 있어.
+
+그리고 D2에서는 가능하면 donor Critic을 해당 PPO update 동안 고정된 snapshot으로 사용해야 해.
+
+# 12. 현재 알고리즘의 검증 상황
+
+이제 전체를 놓고 보면 어디까지 확인되었는지도 명확해져.
+
+| 구성                  | 지금까지 확인한 결과                     | 상태      |
+| ------------------- | ------------------------------- | ------- |
+| 개인 Reward Predictor | 희소 사건 버퍼를 활용한 학습 작동             | 구현됨     |
+| v2 팀 판별             | E59에서 판정한 10쌍 정확도 1.00          | 오프라인 근거 |
+| 온라인 최초 승인           | E60에서 모서리 0.26\~0.32M, 인접 0.86M | 확인됨     |
+| 온라인 Gate 안정성        | E65에서 학습 후반 다른 팀 전이 352개 발생     | 미해결 문제  |
+| 기존 Critic 증류        | E61에서 실제 방문 상태로 일반화 문제          | 대체 예정   |
+| D의 가치정보 유용성         | E62·E63에서 유망한 반사실 결과            | 진단 완료   |
+| D2 Actor 학습         | 아직 구현·학습 전                      | 미검증     |
+| 실제 PGCT-D2          | v2와 D2 통합 전                     | 미완성     |
+
+여기서 특별히 주의해야 할 것은 E65야.
+
+온라인 학습 후반에 다른 팀 연결이 발생했다는 사실은 v2의 팀 판별이 완전히 안정적이지 않다는 뜻이야.
+
+D2에서는 잘못 승인된 Critic의 높은 예측값이 Actor 학습에 영향을 줄 수 있으므로 이 문제가 중요해질 수 있어.
+
+하지만 현재의 분기 실험에서는 Oracle 팀을 먼저 사용하므로, v2의 이 오류와 D2의 학습 효과를 구분해서 검증할 수 있어.
+
+# 13. 최종적으로 PGCT의 연구적 의미
+
+이제 현재 알고리즘은 다음과 같이 정리할 수 있어.
+
+Q1. 잠재 팀 발견
+
+연구 핵심
+
+각 에이전트가 개인 보상으로 MLP를 학습하고, 공통 사건에 대한 예상 보상 반응을 비교해 목적이 유사한 이웃을 발견한다.
+
+\\(\hat r_i,\hat r_j\longrightarrow G\_{ij}\\)
+
+Q2. 발견된 관계의 활용
+
+승인된 팀원의 Critic에서 추가 가치정보를 얻어 자신의 Actor Advantage에 반영한다. 개인 Critic은 자기 보상으로 계속 학습한다.
+
+\\(G\_{ij},V_j\longrightarrow A_i^{D2}\\)
+
+이 구조는 SePS처럼 그룹별 정책 파라미터를 공유하는 방법과도 다르고, FDMARL처럼 Critic Consensus 자체를 목표로 하는 방법과도 달라.
+
+MAMBA의 Max-Value 아이디어를 사용하지만, 어떤 donor를 사용할지 온라인에서 발견해야 한다는 점이 다르지. 다만 MAMBA의 이론적 성능보장을 그대로 적용할 수는 없어.
+
+### 이전 PGCT에서 최종적으로 바뀐 점
+
+팀 발견에서는 정책 JS divergence가 중심이었던 구조를 개인 보상 예측 기반 v2 Gate로 교체했어.
+
+정보 활용에서는 Critic 증류를 제거하고 D2 Max-GAE를 도입하려고 해.
+
+유지하는 부분은 독립 탐색, 개인 보상, 독립 Actor, 개인 Critic, 제한 통신, 잠재 팀 발견이라는 연구 목표야.
+
+## 내 최종 판단
+
+현재 알고리즘은 이전보다 훨씬 구체적이고, Q1과 Q2의 역할도 명확해졌어.
+
+특히 v2가 희소 보상 사건을 수집하고, 조건부 평균으로 보상 반응을 추정하고, 공통 사건의 응답 패턴으로 팀을 구분한다는 점은 논문에서 자세히 설명해야 할 핵심이야.
+
+단순히 "예측 보상이 비슷하면 팀으로 판단한다"라고 쓰면 실제 v2 알고리즘의 중요한 설계가 대부분 빠져버려.
+
+다만 아직 최종 PGCT-D2가 검증되었다고 볼 수는 없어.
+
+우선순위는 명확해.
+
+현재 v2 Reward Probe를 유지한 채, Oracle 팀을 사용한 D2 Max-GAE 분기 학습으로 가치정보 활용의 효과를 먼저 확인하는 것.
+
+그 결과가 긍정적이면 실제 v2 Gate를 결합하면 돼.
+
+그다음에는 v2의 온라인 판별 정확도와 학습 후반 오승인 문제를 분석해, 발견된 팀 관계가 실제 학습에 얼마나 도움이 되는지 검증하는 거야.
+
+결국 최종 PGCT의 주장은 '같은 팀의 Critic을 합의시키는 방법'이 아니라, '개인 보상으로 발견한 잠재 팀 관계를 이용해 독립적인 정책학습을 개선하는 방법'이 되는 거지.
+</pasted_content id="c90a">
+
+### 수행 기록 — 원문 대화와 별도
+
+- 코드와 대조하던 중(trainer의 actor·critic 분리 구조, 온라인 첫 같은 팀 전이 0.17M 등 확인) 사용자가 다음 메시지(T160)를 보내 이 turn에는 답변을 보내지 않았다.
+
+## 원문 기록 T160 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+저 알고리즘이랑 현재 알고리즘이랑 비교해서 뭐가 더 좋을지 생각해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- Oracle s1 run의 update 시점 같은 팀 접근량과 max_gae smoke 로그를 읽었다. 응답이 자동 안전 필터로 중간에 끊겨 비교 답변은 전달되지 않았다.
+
+### Assistant — 진행 안내
+
+붙여넣은 안과 현재 구현을 항목별로 비교하고 있습니다. 비교하다가 현재 D2 기본값(relative 척도)에서 결함을 하나 찾았습니다. 근거 수치를 확인했고, 답변을 정리하겠습니다.
+
+### Assistant — 최종 답변
+
+붙여넣은 PGCT-D2 설명과 현재 구현을 비교하던 중에 제 응답이 중간에 끊겼습니다. 그래서 비교 결론을 전달하지 못했습니다.
+
+이번 turn에서 바뀐 것은 없습니다.
+- 코드와 실행 중인 학습은 건드리지 않았습니다.
+- `runs/`에 `maxgae_br1M_*` 폴더가 없으니, 분기 실험은 아직 시작되지 않은 것으로 보입니다.
+- 이번 대화(T159·T160)는 아직 `CONVERSATION_LOG.md`에 기록하지 않았고, 결정 기록도 추가하지 않았습니다.
+
+비교를 계속하려면 질문을 한 번 더 보내 주세요. 항목을 좁혀 주시면 더 빨리 답할 수 있습니다. 예를 들면 D2 크기 조절 방식, 팀원 critic을 언제 쓸 수 있게 할지, donor critic 성숙 조건 같은 항목입니다.
+
+## 원문 기록 T161 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+내 말은 위의 알고리즘 설명이 지금 알고리즘과 일치하는지?
+다르다면 두 알고리즘 중에 뭘 선택해야할지야
+
+### 수행 기록 — 원문 대화와 별도
+
+- 비교 답변을 다시 작성했으나 응답이 다시 자동 안전 필터로 끊겨 전달되지 않았다.
+
+### Assistant — 최종 답변
+
+죄송합니다. 붙여넣은 알고리즘이 현재 구현과 일치하는지, 다르다면 어느 쪽을 골라야 하는지에 대한 답변이 두 번 연속으로 중간에 끊겼습니다. 끊긴 내용은 같은 형태로 다시 보낼 수 없습니다.
+
+현재 상태는 이렇습니다.
+- 코드와 실행 중인 학습은 건드리지 않았습니다.
+- `runs/`에 `maxgae_br1M_*` 폴더가 없어서, 분기 실험은 아직 시작되지 않은 것으로 보입니다.
+- T159 이후의 대화 기록과 결정 기록은 아직 남기지 않았습니다.
+
+질문을 작게 나눠 주시면 하나씩 답하겠습니다. 예를 들면 다음 중 하나를 골라 주시면 됩니다.
+1. D2 advantage의 크기 조절 방식(붙여넣은 식과 현재 구현의 차이)
+2. 팀원 critic을 언제 쓸 수 있게 할지(update 시점 기준과 rollout 중 접촉 기준)
+3. 붙여넣은 설명 중 현재 코드와 사실관계가 다른 부분
+
+## 원문 기록 T162 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (T159와 같은 글을 다시 붙여넣음. 받은 그대로)
+
+네제공한 실제 v2 코드 점검 결과를 기준으로, v2 Reward Probe와 D2 Max-GAE를 결합한 최신 PGCT 알고리즘을 처음부터 다시 설명할게.
+
+중요한 것은 현재 구현된 부분과 앞으로 구현할 부분을 구분하는 거야.
+
+- 구현 및 실험됨: Recurrent IPPO, v2 보상 예측기, v2 팀 판별 Gate, 기존 Critic 증류.
+- 진단 검증됨: E62·E63의 팀원 Critic 가치정보 분석.
+- 설계 완료, 학습 검증 전: v2 Gate + D2 Max-GAE를 결합하는 PGCT-max.
+
+# 1. 전체 알고리즘의 구조
+
+Independent Recurrent IPPO
+
+개인 관측 · 행동 · 보상으로 독립 학습
+
+개인 Reward Predictor 학습 (v2)
+
+\\(\hat r_i(o_t^{pub},a_t,o\_{t+1}^{pub})\\)
+
+개인 보상만으로 MLP 학습
+
+Reward Probe (v2)
+
+실제 보상 사건 + 좌우 대칭 사건
+
+\\(D\_{ij}^{R}\rightarrow \operatorname{EMA}\_{ij}\\)
+
+Latent Team Gate — 핵심 연구 대상
+
+같은 팀 승인 / 다른 팀 / 보류
+
+Selective Peer Critic Access
+
+승인된 팀원 · 통신 가능 · Critic 성숙
+
+D2 Max-GAE — 활용 메커니즘
+
+\\(f_i=V_i+\eta\min(b_i,c)\\)
+
+Actor
+
+D2 Advantage
+
+\\(A_i^{D2}\\)
+
+Critic
+
+개인 Return
+
+\\(\hat R_i^{self}\\)
+
+최종 목표 구조. 현재 v2의 실제 증류 경로는 D2 Max-GAE로 아직 교체되지 않았다.
+
+연구 질문은 여전히 두 개야.
+
+Q1. 팀 라벨 없이 개인 경험으로 잠재 팀을 찾을 수 있는가?
+
+Q2. 발견한 팀원의 가치정보를 이용하면 자신의 정책학습을 개선할 수 있는가?
+
+Q1이 메인이고 Q2는 그 발견이 유용하다는 것을 증명하는 부분이야.
+
+# 2. 첫 번째 알고리즘: Independent Recurrent IPPO
+
+## 2.1. 왜 각자 학습하는가?
+
+현재 PGCT에서는 각 에이전트가 자기 Actor와 Critic을 가지고 있어.
+
+\\[ \pi_i(a_i\mid h_i;\theta_i) \\]
+
+\\[ V_i(h_i;\omega_i) \\]
+
+여기서 \\(h_i\\)는 에이전트의 관측 이력을 GRU로 요약한 정보에 대응해.
+
+에이전트는 자기 관측으로 행동하고 개인 보상을 받아.
+
+\\[ a\_{i,t}\sim\pi_i(\cdot\mid h\_{i,t}) \\]
+
+\\[ r\_{i,t}=R_i(s_t,\mathbf a_t,s\_{t+1}) \\]
+
+RWARE에서는 다른 에이전트의 행동도 환경에 영향을 미치지만, 자기 보상만으로 학습하는 거야.
+
+Critic의 목표는
+
+\\[ V_i(h\_{i,t}) \approx \mathbb E\_{\boldsymbol\pi} \left[ \sum\_{k=0}^{\infty}\gamma^kr\_{i,t+k} \mid h\_{i,t} \right] \\]
+
+이지.
+
+이 과정에서는 팀 관계를 알 필요가 없어.
+
+### 최초 탐색의 의미
+
+예를 들어 에이전트 A가 어떤 선반을 집으면 보상이 발생한다는 사실을 발견했다고 하자.
+
+그것은 자신의 행동과 개인 보상으로 알아낸 거야.
+
+다른 에이전트가 그 사실을 알려준 것이 아니지.
+
+이후 Reward Predictor가 이 경험을 학습하고, 팀원 발견의 근거가 되는 거야.
+
+이 부분은 PGCT의 기존 철학과 동일해.
+
+# 3. 두 번째 알고리즘: v2 Reward Predictor
+
+여기부터가 실제 v2 코드의 핵심이야.
+
+## 3.1. 무엇을 예측하는가?
+
+각 에이전트는 다음 함수를 학습해.
+
+\\[ \boxed{ \hat r_i(x_t) = \hat r_i(o_t^{pub},a_t,o\_{t+1}^{pub}) } \\]
+
+이 함수는 특정 전이에 대해 자신의 개인 보상이 얼마였을지를 예측해.
+
+Critic의 누적 보상 \\(V_i\\)와는 다른 모델이야.
+
+### 입력
+
+실제 v2의 `public_view`는 관측 전체가 아니야.
+
+팀을 직접 나타내는 정보를 제거한 공용 관측 표현이야.
+
+| 입력        | 구성          |
+| --------- | ----------- |
+| 자기 상태     | 6차원         |
+| 5×5 공용 격자 | 11채널, 275차원 |
+| 관측 전      | 281차원       |
+| 행동        | One-hot 5차원 |
+| 관측 후      | 281차원       |
+| 전체 입력     | 567차원       |
+
+따라서
+
+\\[ x_t\in\mathbb R^{567} \\]
+
+이야.
+
+여기서 좌표, 요청 선반 채널, 우리 팀 전용 goal 표시 등은 제외돼.
+
+반면 지형, 선반, 에이전트, 방향, 운반 상태와 팀을 구별하지 않는 goal 채널은 남겨.
+
+이렇게 한 이유는 보상 목적을 추론하되, 팀 ID를 직접 읽어내지는 못하게 하기 위해서야.
+
+## 3.2. 예측기 구조
+
+현재 v2는 다음 MLP를 사용해.
+
+\\[ \boxed{ 567\rightarrow128\rightarrow64\rightarrow1 } \\]
+
+마지막 출력은 예상 개인 보상 하나야.
+
+\\[ \hat r_i(x)\in\mathbb R \\]
+
+이 모델은 Critic이 아니야.
+
+입력으로 미래 전체 궤적을 받는 것도 아니고, 장기 보상 합을 추정하지도 않아.
+
+하나의 상태전이에 대한 조건부 평균 보상을 예측하는 모델이야.
+
+## 3.3. 희소 보상을 어떻게 학습하는가?
+
+이 부분이 이전에 내가 단순하게 설명했던 Reward Probe와 가장 크게 다른 부분이야.
+
+현재 v2에는 버퍼가 두 개 있어.
+
+| 버퍼       | 용량     | 저장 내용                   |
+| -------- | ------ | ----------------------- |
+| 일반 전이 버퍼 | 20,000 | 자기 경험의 상태전이와 보상         |
+| 사건 버퍼    | 512    | 개인 보상 \\(r\geq0.5\\) 사건 |
+
+학습 시 batch 크기는 256이고, 그중 25%를 사건 버퍼에서 가져와.
+
+\\[ 256\times0.25=64 \\]
+
+즉, 학습 배치에서 약 64개는 높은 보상 사건으로 구성해.
+
+이유는 명확해.
+
+전체 상태전이에서 배송 같은 보상 사건이 0.01\~0.03% 수준이면, 일반적인 무작위 sampling으로는 대부분 0에 가까운 보상만 학습하게 되거든.
+
+그 결과
+
+\\[ \hat r_i(x)\approx0 \\]
+
+인 모델이 만들어질 수 있어.
+
+사건 버퍼는 이것을 완화하기 위한 장치야.
+
+### 실제 업데이트
+
+5번의 PPO update마다 Reward Predictor를 학습해.
+
+그때 MLP에 대해 50번의 학습 step을 수행하고, 개인 보상에 대한 MSE를 최소화해.
+
+\\[ \boxed{ \mathcal L_i^{reward} = \mathbb E\_{(x,r_i)\sim\mathcal B_i} \left[ \left(\hat r_i(x)-r_i\right)^2 \right] } \\]
+
+여기서 다른 에이전트의 보상은 사용하지 않아.
+
+이것이 중요한 완전분산 학습 조건이야.
+
+## 3.4. 왜 v2는 조건부 평균을 사용하는가?
+
+이 부분은 v1과 달라진 핵심적인 지점이야.
+
+팀 정보가 제거된 공용 관측에서는 실제 보상이 결정되는 데 필요한 숨겨진 정보가 빠질 수 있어.
+
+예를 들어 같은 배송 장면처럼 보이더라도,
+
+- 실제로 요청된 선반이면 +1
+- 요청되지 않은 선반이면 0
+
+이 될 수 있어.
+
+공용 관측만으로 둘을 구별할 수 없다면 보상 예측기는 하나의 장면에 대해 두 값을 정확하게 구분할 수 없어.
+
+이때 MSE 회귀 모델은
+
+\\[ \boxed{ \hat r_i(x)\approx\mathbb E[r_i\mid x] } \\]
+
+를 학습해.
+
+예를 들어 같은 공용 장면에서 보상이 발생하는 확률이 0.7이라면, 보상이 0 또는 1인 단순한 상황에서는 예측값이 약 0.7이 될 수 있어.
+
+따라서 v2의 응답은 엄밀히 말해 공용 관측 조건에서의 평균적인 보상 반응이야.
+
+v1은 이런 불확실성이 큰 사건의 비교를 보류하는 경향이 있었지만, v2는 조건부 평균을 팀 판별에 활용하는 거지.
+
+이 방식은 희소한 배송 사건을 팀 발견 신호로 사용할 수 있게 한다는 장점이 있어.
+
+# 4. 세 번째 알고리즘: v2 성숙 판정
+
+Reward Predictor가 존재한다고 곧바로 팀 비교에 사용할 수는 없어.
+
+실제로 보상 사건을 충분히 경험하고, 그 보상을 예측할 능력이 있어야 해.
+
+현재 v2의 성숙 조건은 다음 세 가지야.
+
+| 조건      | 기준                       |
+| ------- | ------------------------ |
+| 보상 경험 수 | 누적 개인 사건 20개 이상          |
+| 예측기 학습  | 1회 이상 완료                 |
+| 예측 수준   | 최근 사건 32개의 평균 예측값 0.3 이상 |
+
+이를
+
+\\[ M_i^R(t)\in\\{0,1\\} \\]
+
+로 표현하자.
+
+\\[ M_i^R(t)=1 \\]
+
+이면 해당 에이전트가 팀 비교에 참여할 자격이 있다는 뜻이야.
+
+두 에이전트의 비교는 양쪽 모두 성숙해야 수행해.
+
+\\[ M_i^R(t)M_j^R(t)=1 \\]
+
+### 이 조건의 의미
+
+에이전트가 보상 사건을 한 번도 경험하지 않았다면 아직 자신의 보상 목적을 충분히 발견하지 못한 상태로 보는 거야.
+
+따라서 다른 에이전트와 팀을 형성하지 않아.
+
+이것은 실패가 아니라 네가 의도한 보수적 팀 발견 원칙이야.
+
+또한 여기서의 성숙은 Reward Predictor에 관한 것이야.
+
+나중에 D2에서 사용하는 donor Critic의 성숙 여부와는 구별해야 해. 두 모델이 정확히 같은 학습 수준을 갖는 것은 아니니까.
+
+# 5. 네 번째 알고리즘: v2 Reward Probe
+
+여기가 PGCT의 팀 발견을 실제로 수행하는 단계야.
+
+Reward Predictor가 충분히 성숙했다면, 이웃 에이전트와 동일한 probe를 평가해.
+
+## 5.1. Probe는 어떻게 만들어지는가?
+
+현재 v2에서는 두 종류의 장면을 사용해.
+
+C: 실제 보상 사건
+
+에이전트 \\(i\\)가 최근에 경험한 보상 사건 32개와 \\(j\\)가 경험한 사건 32개를 모아.
+
+\\[ \mathcal P\_{ij}^{C} = \mathcal E_i^{32}\cup\mathcal E_j^{32} \\]
+
+여기서 사건에 포함되는 것은 보상값이 아니라
+
+\\[ (o_t^{pub},a_t,o\_{t+1}^{pub}) \\]
+
+야.
+
+따라서 실제로 받은 개인 보상값은 상대에게 전달하지 않아.
+
+A: 좌우 대칭 사건
+
+C의 공용 상태전이를 좌우로 반전한 장면도 추가해.
+
+\\[ \mathcal P\_{ij}^{A} = \operatorname{Mirror}(\mathcal P\_{ij}^{C}) \\]
+
+거울 변환에서는 단순히 격자만 뒤집지 않아.
+
+왼쪽·오른쪽 방향도 함께 변환하고, LEFT와 RIGHT 행동도 교환해.
+
+이렇게 해야 상태와 행동의 관계가 보존돼.
+
+최종 Probe 집합은
+
+\\[ \boxed{ \mathcal P\_{ij} = \mathcal P\_{ij}^{C}\cup\mathcal P\_{ij}^{A} } \\]
+
+이고, 최대 128개 장면을 사용해.
+
+### 왜 좌우 대칭이 중요한가?
+
+현재 RWARE의 모서리 배치를 생각해 보자.
+
+팀 0 배송
+
+왼쪽 아래 goal 장면
+
+팀 1 배송
+
+오른쪽 아래 goal 장면
+
+실제 RWARE 맵의 정확한 렌더링이 아닌, goal 배치와 반사 관계를 나타낸 개념도.
+
+두 팀의 goal은 공용 관측에서 동일한 goal 채널로 표시돼.
+
+하지만 모서리 배치에서는 goal 주변에 보이는 맵 경계가 달라.
+
+왼쪽 아래 goal 근처와 오른쪽 아래 goal 근처는 맵 밖 칸의 위치가 반대이기 때문이야.
+
+따라서 Reward Predictor는 명시적인 팀 ID 없이도 어떤 배송 장면이 자신의 보상과 관련되는지 학습할 수 있어.
+
+대칭 Probe를 사용하면 왼쪽 goal 배송 사건을 오른쪽 goal에 대응하는 장면으로 변환해 질의할 수 있고.
+
+이것은 팀 정보를 직접 입력한 것은 아니지만, 맵의 기하학적 특성에 의존한 팀 판별 신호라는 점은 명확히 해야 해.
+
+## 5.2. 두 예측기의 응답을 비교한다
+
+공통 Probe를 구성한 뒤 각 에이전트가 자신의 Reward Predictor로 답해.
+
+\\[ p_k=\hat r_i(x_k) \\]
+
+\\[ q_k=\hat r_j(x_k) \\]
+
+여기서 \\(x_k\\)는 동일한 공용 상태전이야.
+
+핵심은 동일한 장면에 대해 서로 다른 개인 보상 예측기가 어떻게 반응하는지를 비교한다는 거야.
+
+예를 들어 다음과 같을 수 있어.
+
+| 공통 Probe    | 팀 0 예측기 | 팀 1 예측기 |
+| ----------- | ------- | ------- |
+| 왼쪽 goal 배송  | 0.89    | 0.00    |
+| 오른쪽 goal 배송 | 0.00    | 0.87    |
+| 일반 이동       | 0.00    | 0.00    |
+
+이때 두 예측기의 응답이 명확히 다르므로 다른 목적을 가진 것으로 판단할 근거가 생겨.
+
+반대로 같은 팀이라면 각 배송 장면에 대한 응답 패턴이 비슷할 것으로 기대할 수 있어.
+
+## 5.3. Reward Response Distance
+
+v2에서 사용하는 거리는 다음과 같아.
+
+\\[ \boxed{ d\_{ij} = \frac{ \sum\_{k=1}^{K}|p_k-q_k| }{ \sum\_{k=1}^{K}(|p_k|+|q_k|) } } \\]
+
+이 거리는 단순한 평균 절대오차와 달라.
+
+가령 대부분의 이동 장면에서 두 예측기 모두 0을 출력한다면, 그 장면들은 분모와 분자에 거의 영향을 주지 않아.
+
+따라서 보상이 없는 장면이 많이 포함되었다는 이유만으로 판별 거리가 인위적으로 작아지는 문제를 줄여.
+
+이것은 희소 보상 환경에 적합한 설계야.
+
+다만 분모가 0에 가깝다면 거리를 안정적으로 판단하기 어려우므로 해당 비교를 보류하거나 별도 처리해야 해. 또한 MLP에 음수 예측이 가능하므로 '응답 질량의 겹침'이라는 해석은 주로 비음수 예측값에서 정확해.
+
+### 예시
+
+팀 0과 팀 1의 예상 보상 벡터가
+
+\\[ \mathbf p=[0.89,0] \\]
+
+\\[ \mathbf q=[0,0.87] \\]
+
+라면
+
+\\[ d\_{ij} = \frac{0.89+0.87}{0.89+0.87} =1 \\]
+
+이야.
+
+반면 둘이 동일한 응답을 한다면
+
+\\[ d\_{ij}=0 \\]
+
+이 되지.
+
+즉, 값이 작을수록 같은 보상 반응을 가진다는 증거가 되는 거야.
+
+# 6. 다섯 번째 알고리즘: EMA와 Gate 승인
+
+한 번의 Probe 거리만으로 팀을 결정하면 불안정할 수 있어.
+
+Reward Predictor가 계속 학습되고 있기 때문에 예측값이 달라질 수 있거든.
+
+따라서 v2는 쌍별 거리를 EMA로 관리해.
+
+## 6.1. EMA
+
+\\[ \boxed{ \bar d\_{ij}^{(n)} = 0.35d\_{ij}^{(n)} + 0.65\bar d\_{ij}^{(n-1)} } \\]
+
+여기서 \\(n\\)은 비교 round를 의미해.
+
+새로운 예측기 학습 이후의 유효한 비교만 round로 세는 방식이야.
+
+이렇게 하면 우연히 한 번 비슷한 응답이 나왔다고 바로 팀으로 승인하지 않아.
+
+## 6.2. 승인 조건
+
+현재 v2에서 같은 팀 승인을 위한 조건은
+
+\\[ \boxed{ n\_{ij}\geq3 \quad\text{and}\quad \bar d\_{ij}<0.5 } \\]
+
+야.
+
+즉, 유효한 비교를 적어도 세 번 수행하고, EMA 거리가 0.5 미만이어야 해.
+
+앞에서 정의한 거리의 응답값이 비음수라면 이 0.5 기준은 정규화된 응답의 중첩이 절반보다 크다는 의미로 해석할 수 있어.
+
+이 기준은 현재 데이터에 맞춰 최적화한 값이 아니라 v2에서 사전에 정한 기준이야.
+
+따라서 논문에서는 임계값의 민감도 분석이 필요할 수 있어.
+
+## 6.3. 통신 제약
+
+팀 비교는 아무 때나 수행하지 않아.
+
+현재 v2에서는 PPO update 시점의 에이전트 위치를 기준으로 판단해.
+
+두 에이전트의 위치가
+
+\\[ p_i=(x_i,y_i),\quad p_j=(x_j,y_j) \\]
+
+라면 Chebyshev 거리는
+
+\\[ d\_\infty(i,j) = \max(|x_i-x_j|,|y_i-y_j|) \\]
+
+야.
+
+그리고
+
+\\[ \boxed{ d\_\infty(i,j)\leq3 } \\]
+
+인 경우에만 이웃으로 취급해.
+
+또한 warm-up은 100 update야.
+
+그 전에도 Reward Predictor는 자기 보상을 학습하지만, 팀 비교와 전이는 시작하지 않아.
+
+따라서 순서는 다음과 같아.
+
+\\[ \text{독립 학습} \rightarrow \text{예측기 성숙} \rightarrow \text{이웃과 비교} \rightarrow \text{팀 승인} \\]
+
+## 6.4. 연결이 끊기면 어떻게 되는가?
+
+승인된 같은 팀 관계가 있어도 실제 통신 범위를 벗어나면 gate는 닫혀.
+
+\\[ G\_{ij,t}^{active} = G\_{ij,t}^{approved} \cdot \mathbf1[d\_\infty(i,j)\leq3] \\]
+
+다만 v2에서는 과거 EMA와 비교 round 기록을 유지해.
+
+따라서 이후 다시 만나면 이전에 쌓인 비교 증거를 재활용할 수 있어.
+
+즉, 팀 관계에 대한 추정 기록과 현재 통신 가능한 연결은 서로 다른 개념이야.
+
+이 구분은 완전분산 환경에서 중요해.
+
+# 7. 지금까지가 팀 발견 알고리즘이다
+
+여기까지의 v2만으로 Q1의 작동 구조를 정의할 수 있어.
+
+\\[ \boxed{ \begin{gathered} \text{개인 보상 경험}\\\ \downarrow\\\ \text{Reward Predictor}\\\ \downarrow\\\ \text{공통 사건 Probe}\\\ \downarrow\\\ \text{응답 거리 + EMA}\\\ \downarrow\\\ \text{잠재 팀 관계 발견} \end{gathered} } \\]
+
+여기에는 Actor의 행동 유사도나 Critic의 \\(V\\) 유사도를 직접 사용하지 않아.
+
+그리고 보상이 한 번 발생하는 사건이라는 사실은 현재 v2에서 이미 사건 버퍼와 응답 패턴 비교로 어느 정도 처리하고 있어.
+
+따라서 앞서 내가 제안한 별도의 \\(V\\)-기반 팀 판별기를 당장 추가할 필요는 없어 보여.
+
+먼저 현재 v2가 어떤 조건에서 잘 되고 어떤 조건에서 실패하는지를 분석하는 것이 더 적절해.
+
+# 8. 여섯 번째 알고리즘: 발견한 팀원의 Critic 선택
+
+이제 Q2로 넘어가.
+
+여기서부터는 현재 v2 증류 구현이 아니라, 앞으로 결합할 D2 Max-GAE의 설계야.
+
+## 8.1. 기존 v2에서는 어떻게 활용했을까?
+
+v2가 같은 팀으로 승인한 이웃이 있으면, 상대 Critic을 증류했어.
+
+\\[ \mathcal L_i^{peer} = 0.01 \sum\_{j\in\mathcal D_i} \alpha\_{ij} \mathbb E\_{x\in\mathcal P} \left[ (V_i(x)-\operatorname{sg}V_j(x))^2 \right] \\]
+
+여기서
+
+\\[ \sum_j\alpha\_{ij}=1 \\]
+
+이고, 승인된 이웃에게 같은 비중을 주는 방식이야.
+
+증류에서는 길이 48개의 공통 Probe Bank와 초기 hidden state \\(h=0\\)을 사용했어.
+
+그런데 E61에서 기존 증류가 실제 방문 상태의 가치추정 개선으로 충분히 이어지지 않는 문제가 확인됐지.
+
+그래서 D에서는 상대 Critic을 따라 배우는 과정을 제거했어.
+
+## 8.2. D에서는 무엇을 하는가?
+
+v2가 승인한 관계를 이용해 상대 Critic을 확보하는 것은 같아.
+
+하지만 상대 Critic의 파라미터에 자신의 Critic을 맞추지 않아.
+
+대신 자기 Actor의 Advantage 계산에 이용해.
+
+이를 위해 donor 집합을
+
+\\[ \boxed{ \mathcal D_i(t) = \left\\{ j: G\_{ij,t}=1,\\; j\in\mathcal N_i(t),\\; M_j^V(t)=1 \right\\} } \\]
+
+로 정의할 수 있어.
+
+여기서 \\(M_j^V\\)는 D에서 별도로 둘 Critic 성숙 조건이야.
+
+주의할 것은 v2의 Reward Predictor 성숙 조건과 D의 Critic 성숙 조건을 동일하게 취급하면 안 된다는 점이야.
+
+보상 사건을 20개 경험했다는 사실이 Critic의 정확성을 보장하지는 않으니까.
+
+# 9. 일곱 번째 알고리즘: D2 Max-GAE
+
+이 단계가 실제로 발견된 팀 관계를 학습에 활용하는 부분이야.
+
+## 9.1. 상대 Critic에 내 이력을 입력한다
+
+에이전트 \\(i\\)는 자신의 GRU 관측 이력 \\(h_i\\)를 가지고 있어.
+
+기존 Critic은
+
+\\[ V_i(h_i) \\]
+
+를 출력하지.
+
+이제 승인된 팀원의 Critic에도 같은 이력을 입력해.
+
+\\[ V_j(h_i) \\]
+
+이때 중요한 것은 \\(V_j(h_j)\\)를 사용하는 것이 아니라는 점이야.
+
+팀원이 내 상황을 어떻게 평가하는지를 확인하는 것이지.
+
+물론 상대 Critic이 내 이력에 대해서도 올바른 가치를 예측한다는 보장은 없어. E62·E63이 이 가능성을 진단했던 이유야.
+
+기존 E63에서는 8-step 이력을 사용한 질의가 전체 recurrent 이력을 사용한 결과와 상당히 유사하다는 결과가 있었어.
+
+하지만 최종 D2 구현에서는 Critic snapshot을 받은 뒤 로컬 이력을 재생해 값을 계산하는 방식을 제안한 상태야.
+
+## 9.2. 최댓값을 계산한다
+
+자기 Critic과 donor Critic의 값 중 최댓값을 선택해.
+
+\\[ f_i^{max}(h_i) = \max \left\\{ V_i(h_i),\\; \max\_{j\in\mathcal D_i}V_j(h_i) \right\\} \\]
+
+만약 donor가 없다면
+
+\\[ f_i^{max}(h_i)=V_i(h_i) \\]
+
+이므로 기존 IPPO와 동일한 가치함수 입력을 사용하게 돼.
+
+여기서 최댓값은 팀원의 행동을 직접 모방하는 것이 아니야.
+
+팀원 Critic이 특정 미래 상황을 상대적으로 높게 평가한다면, 그 정보를 학습 신호에 반영하려는 거야.
+
+## 9.3. D2의 보수적 혼합
+
+추가 가치정보를
+
+\\[ b_i(h_i) = \left[ \max\_{j\in\mathcal D_i}V_j(h_i) - V_i(h_i) \right]\_+ \\]
+
+로 정의해.
+
+그리고
+
+\\[ \boxed{ f_i^{D2}(h_i) = V_i(h_i)+\eta\min(b_i(h_i),c) } \\]
+
+로 계산해.
+
+- \\(\eta\\): 상대 가치정보의 반영 비율
+- \\(c\\): 과도한 가치 차이를 제한하는 상한
+- \\(b_i\\): 상대 Critic이 더 높게 평가하는 정도
+
+초기 분기 실험에서 제안한 값은 \\(\eta=0.5\\)야. \\(c\\)와 별도 GAE 계수는 최종 설정이 필요해.
+
+### 예시
+
+자기 Critic과 팀원 Critic의 가치 추정
+
+알고리즘 이해를 위한 가상의 예측값
+
+자기 Critic팀원 CriticD2 혼합값
+
+00.450.91.351.8선반 집기목표 방향 이동목표 근처
+
+설명용 예시. \\(\eta=0.5\\), 상한 미적용. 실제 학습 결과가 아니다.
+
+이처럼 팀원 Critic이 목표에 가까워지는 상황의 가치를 더 높게 예측한다면, D2는 그 차이의 일부를 반영할 수 있어.
+
+다만 실제로 좋은 행동인지와 Critic이 높게 평가하는 행동인지는 다르므로, 성능 개선은 학습 실험으로 확인해야 해.
+
+## 9.4. D2 Advantage 계산
+
+이제 기존 자기 Critic 대신 \\(f_i^{D2}\\)를 사용해 TD 오차를 계산해.
+
+\\[ \boxed{ \delta\_{i,t}^{D2} = r\_{i,t} + \gamma f_i^{D2}(h\_{i,t+1}) - f_i^{D2}(h\_{i,t}) } \\]
+
+이것을 GAE로 누적해.
+
+\\[ \boxed{ A\_{i,t}^{D2} = \sum\_{l=0}^{L-1} (\gamma\lambda_D)^l \delta\_{i,t+l}^{D2} } \\]
+
+이 값이 최종 Actor 업데이트에 들어가.
+
+수식적으로 추가 보조 신호는
+
+\\[ u\_{i,t} = f_i^{D2}(h\_{i,t})-V_i(h\_{i,t}) \\]
+
+라고 하면
+
+\\[ \delta\_{i,t}^{D2} - \delta\_{i,t}^{self} = \gamma u\_{i,t+1}-u\_{i,t} \\]
+
+가 돼.
+
+즉, 단순히 팀원 Critic이 높다는 이유만으로 긍정적인 Advantage가 발생하는 것은 아니야.
+
+현재 상황과 다음 상황에서 팀원 Critic이 제공하는 추가 가치정보가 어떻게 달라지는지가 중요해.
+
+이것이 D2의 핵심적인 학습 원리야.
+
+# 10. 여덟 번째 알고리즘: Actor와 Critic의 분리 업데이트
+
+마지막으로 PPO를 업데이트해.
+
+## Actor
+
+Actor에는 D2 Advantage를 사용해.
+
+\\[ \mathcal L_i^{actor} = -\mathbb E \left[ \min \left( \rho\_{i,t}A\_{i,t}^{D2}, \operatorname{clip}(\rho\_{i,t},1-\epsilon,1+\epsilon) A\_{i,t}^{D2} \right) \right] \\]
+
+팀원의 가치정보가 자기 Actor 학습 방향에 영향을 줄 수 있는 부분이야.
+
+## Critic
+
+Critic은 기존 자기 보상과 자기 return으로 학습해.
+
+\\[ \boxed{ \mathcal L_i^{critic} = \mathbb E \left[ (V_i(h_i)-\hat R_i^{self})^2 \right] } \\]
+
+여기에는 팀원 Critic과의 증류 손실이 없어.
+
+또한 D2 Advantage를 그대로 Critic target에 사용하지 않아.
+
+정리하면 다음과 같아.
+
+| 구성               | 기존 v2 PGCT     | 최종 PGCT-D2       |
+| ---------------- | -------------- | ---------------- |
+| Reward Predictor | 개인 보상 학습       | 동일               |
+| Reward Probe     | C+A 사건         | 동일               |
+| 팀 판별             | 거리, EMA, Gate  | 동일               |
+| 상대 Critic        | 증류 대상으로 사용     | Advantage 계산에 사용 |
+| Actor            | 자기 GAE         | D2 Max-GAE       |
+| Critic           | 자기 return + 증류 | 자기 return만       |
+| Critic 합의        | 없음             | 없음               |
+
+Actor와 Critic이 GRU 표현을 공유한다면 실제 gradient 경로의 분리는 추가 확인이 필요해. 그러나 알고리즘이 의도한 손실 목표는 위와 같아.
+
+# 11. 실제 구현에서는 두 단계의 연결이 필요해
+
+여기서 현재 v2와 D2 사이에 아직 결정되지 않은 부분이 있어.
+
+바로 어느 시점에 만난 팀원의 Critic을 사용할 것인가야.
+
+현재 v2는 PPO update가 끝나는 순간의 위치로 이웃을 판정해.
+
+반면 D2 제안에서는 rollout 중 한 번이라도 만난 승인된 팀원의 Critic을 사용할 수도 있다고 했지.
+
+이 두 방식은 다르기 때문에, 첫 구현에서는 하나로 통일해야 해.
+
+| 방식              | 장점                    | 단점                              |
+| --------------- | --------------------- | ------------------------------- |
+| Update 시점 이웃    | 기존 v2와 일치, 구현 및 통제 용이 | 짧은 만남을 놓침                       |
+| Rollout 중 만난 이웃 | 활용 가능한 접촉 증가          | 만남 시각, snapshot 보관, 통신 기록 관리 필요 |
+
+나는 첫 번째 D2 분기 실험에서는 update 시점 기준을 추천해.
+
+기존 v2와 가능한 한 조건을 맞추고, Max-GAE의 효과만 확인할 수 있기 때문이야.
+
+다만 이미 진단에서 제한적인 통신 기회가 확인되었으므로, 실제 이용률이 너무 낮으면 rollout 접촉 기반 방식도 비교할 필요가 있어.
+
+그리고 D2에서는 가능하면 donor Critic을 해당 PPO update 동안 고정된 snapshot으로 사용해야 해.
+
+# 12. 현재 알고리즘의 검증 상황
+
+이제 전체를 놓고 보면 어디까지 확인되었는지도 명확해져.
+
+| 구성                  | 지금까지 확인한 결과                     | 상태      |
+| ------------------- | ------------------------------- | ------- |
+| 개인 Reward Predictor | 희소 사건 버퍼를 활용한 학습 작동             | 구현됨     |
+| v2 팀 판별             | E59에서 판정한 10쌍 정확도 1.00          | 오프라인 근거 |
+| 온라인 최초 승인           | E60에서 모서리 0.26\~0.32M, 인접 0.86M | 확인됨     |
+| 온라인 Gate 안정성        | E65에서 학습 후반 다른 팀 전이 352개 발생     | 미해결 문제  |
+| 기존 Critic 증류        | E61에서 실제 방문 상태로 일반화 문제          | 대체 예정   |
+| D의 가치정보 유용성         | E62·E63에서 유망한 반사실 결과            | 진단 완료   |
+| D2 Actor 학습         | 아직 구현·학습 전                      | 미검증     |
+| 실제 PGCT-D2          | v2와 D2 통합 전                     | 미완성     |
+
+여기서 특별히 주의해야 할 것은 E65야.
+
+온라인 학습 후반에 다른 팀 연결이 발생했다는 사실은 v2의 팀 판별이 완전히 안정적이지 않다는 뜻이야.
+
+D2에서는 잘못 승인된 Critic의 높은 예측값이 Actor 학습에 영향을 줄 수 있으므로 이 문제가 중요해질 수 있어.
+
+하지만 현재의 분기 실험에서는 Oracle 팀을 먼저 사용하므로, v2의 이 오류와 D2의 학습 효과를 구분해서 검증할 수 있어.
+
+# 13. 최종적으로 PGCT의 연구적 의미
+
+이제 현재 알고리즘은 다음과 같이 정리할 수 있어.
+
+Q1. 잠재 팀 발견
+
+연구 핵심
+
+각 에이전트가 개인 보상으로 MLP를 학습하고, 공통 사건에 대한 예상 보상 반응을 비교해 목적이 유사한 이웃을 발견한다.
+
+\\(\hat r_i,\hat r_j\longrightarrow G\_{ij}\\)
+
+Q2. 발견된 관계의 활용
+
+승인된 팀원의 Critic에서 추가 가치정보를 얻어 자신의 Actor Advantage에 반영한다. 개인 Critic은 자기 보상으로 계속 학습한다.
+
+\\(G\_{ij},V_j\longrightarrow A_i^{D2}\\)
+
+이 구조는 SePS처럼 그룹별 정책 파라미터를 공유하는 방법과도 다르고, FDMARL처럼 Critic Consensus 자체를 목표로 하는 방법과도 달라.
+
+MAMBA의 Max-Value 아이디어를 사용하지만, 어떤 donor를 사용할지 온라인에서 발견해야 한다는 점이 다르지. 다만 MAMBA의 이론적 성능보장을 그대로 적용할 수는 없어.
+
+### 이전 PGCT에서 최종적으로 바뀐 점
+
+팀 발견에서는 정책 JS divergence가 중심이었던 구조를 개인 보상 예측 기반 v2 Gate로 교체했어.
+
+정보 활용에서는 Critic 증류를 제거하고 D2 Max-GAE를 도입하려고 해.
+
+유지하는 부분은 독립 탐색, 개인 보상, 독립 Actor, 개인 Critic, 제한 통신, 잠재 팀 발견이라는 연구 목표야.
+
+## 내 최종 판단
+
+현재 알고리즘은 이전보다 훨씬 구체적이고, Q1과 Q2의 역할도 명확해졌어.
+
+특히 v2가 희소 보상 사건을 수집하고, 조건부 평균으로 보상 반응을 추정하고, 공통 사건의 응답 패턴으로 팀을 구분한다는 점은 논문에서 자세히 설명해야 할 핵심이야.
+
+단순히 "예측 보상이 비슷하면 팀으로 판단한다"라고 쓰면 실제 v2 알고리즘의 중요한 설계가 대부분 빠져버려.
+
+다만 아직 최종 PGCT-D2가 검증되었다고 볼 수는 없어.
+
+우선순위는 명확해.
+
+현재 v2 Reward Probe를 유지한 채, Oracle 팀을 사용한 D2 Max-GAE 분기 학습으로 가치정보 활용의 효과를 먼저 확인하는 것.
+
+그 결과가 긍정적이면 실제 v2 Gate를 결합하면 돼.
+
+그다음에는 v2의 온라인 판별 정확도와 학습 후반 오승인 문제를 분석해, 발견된 팀 관계가 실제 학습에 얼마나 도움이 되는지 검증하는 거야.
+
+결국 최종 PGCT의 주장은 '같은 팀의 Critic을 합의시키는 방법'이 아니라, '개인 보상으로 발견한 잠재 팀 관계를 이용해 독립적인 정책학습을 개선하는 방법'이 되는 거지.
+
+### 수행 기록 — 원문 대화와 별도
+
+- 같은 비교 답변을 다시 생성하지 않았다. 이 세션에서 비교 답변은 전달되지 않았고 결정 기록(DECISIONS)도 추가하지 않았다. 코드·학습 변경 없음, 커밋 없음.
+
+### Assistant — 최종 답변
+
+같은 글을 다시 보내 주셨는데, 이 글과 현재 구현을 비교한 답변은 이 세션에서 자동 안전 필터에 두 번 막혔습니다. 그래서 같은 비교를 여기서 다시 쓸 수 없습니다. 연구 내용 자체에 문제가 있다는 뜻은 아닌 것으로 보지만, 필터가 막은 답변을 표현만 바꿔 다시 보내지 않으라는 지시를 받았습니다.
+
+대신 할 수 있는 방법은 이렇습니다.
+- **새 세션에서 같은 질문을 하기**: 새 세션은 이 차단 이력이 없습니다. `CLAUDE.md`와 `docs/SESSION_HANDOFF.md`, 그리고 기록(E64·E65·D96·D97)을 읽고 시작하므로 맥락을 이어받을 수 있습니다.
+- **다른 질문을 하기**: 예를 들어 분기 실험 실행, v2 후반 다른 팀 승인 원인 분석, 그림 추가처럼 이 비교와 다른 작업은 여기서 계속할 수 있습니다.
+
+지금까지의 대화(T159–T162)는 `CONVERSATION_LOG.md`에 원문으로 기록했습니다. 비교 결론과 결정 기록은 남기지 않았습니다. 코드와 학습은 건드리지 않았습니다.
+
+## 원문 기록 T163 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (붙여넣은 글. 받은 그대로)
+
+먼저 `CLAUDE.md`, `docs/SESSION_HANDOFF.md`, `CONVERSATION_LOG.md`, `DECISIONS.md`를 읽고 이전 연구 맥락을 복원해 주세요. 특히 E61~E65, D91~D97 및 T151~T162의 논의와 실험 결과를 확인해 주세요.
+현재 연구의 핵심은 완전분산 Multi-Team MARL에서 개인 보상 경험을 통한 온라인 잠재 팀 발견입니다. Critic Consensus나 Max-GAE 자체가 연구의 주목적은 아닙니다. 팀 발견 이후의 Critic 활용은 발견한 팀 관계가 실제 학습에 유용하다는 것을 검증하기 위한 보조 메커니즘입니다.
+다음 내용을 실제 코드와 비교해 검토해 주세요.
+1. 현재 v2 Reward Probe 구현 확인
+`latent_team/reward_probe_ac_v2.py`와 trainer 연결부를 확인해 주세요.
+
+* 개인 보상 예측 MLP, 입력 public_view, 희소 사건 버퍼
+* C+A Probe의 생성 및 좌우 대칭 처리
+* Reward Response Distance, EMA, 성숙 조건, Gate 승인
+* Warm-up, Chebyshev 거리 3 이웃 판정
+* 실제 Critic 증류 경로와 Actor/Critic 업데이트
+
+설명과 구현이 다르면 실제 코드를 기준으로 정확히 지적해 주세요.
+2. PGCT-D2 설계와 비교
+현재 계획은 v2 팀 발견 알고리즘을 유지하고, 기존 Critic 증류를 D2 Max-GAE로 교체하는 것입니다.
+
+* Critic은 개인 보상 기반 return으로만 학습
+* 팀원 Critic을 자신의 관측 이력에 적용
+* 승인되고 통신 가능하며 성숙한 팀원만 donor로 사용
+* 자기 Critic과 팀원 Critic의 가치 차이를 계산
+* D2 Advantage로 Actor PPO 업데이트
+* Critic 증류 손실 제거
+
+핵심 식은 다음과 같습니다.
+`b_i(h) = max(0, max_j V_j(h) - V_i(h))`
+`f_i(h) = V_i(h) + η min(b_i(h), c)`
+`δ_i,t = r_i,t + γ f_i(h_i,t+1) - f_i(h_i,t)`
+단, Critic의 return target은 기존 개인 보상 기반으로 유지합니다.
+3. 검토할 핵심 문제
+
+* v2와 D2의 실제 통합 가능성
+* Reward Predictor 성숙도와 Critic donor 성숙도의 구분
+* Actor/Critic 공유 GRU의 gradient 경로
+* Recurrent donor Critic의 이력 재생 및 hidden state 처리
+* Update 시점 이웃과 rollout 중 이웃 판정의 차이
+* D2 Advantage와 개인 Critic target의 분리
+* 기존 PPO를 재현하는 퇴화 조건과 테스트 방법
+* E65의 학습 후반 cross-team 오승인이 D2에 미칠 영향
+
+4. 결과 보고 형식
+다음 순서로 정리해 주세요.
+
+1. 현재 코드에서 실제로 작동하는 전체 알고리즘
+2. 우리가 설계한 PGCT-D2와의 차이
+3. 이미 구현된 것과 아직 구현되지 않은 것
+4. 수학적 또는 구현상 오류와 위험요소
+5. 반드시 수정해야 할 항목과 선택적으로 개선할 항목
+6. 최소 변경으로 D2를 도입하는 구현 계획
+7. 1M checkpoint에서 0.5M씩 분기 학습하는 검증 계획
+
+이전 검토에서 이미 확인된 사실은 불필요하게 반복 검증하지 말고, E61~E65와 기존 기록을 활용해 주세요.
+MAMBA의 성능보장이 현재 D2에 그대로 적용된다고 주장하지 마세요. D2는 팀원의 Critic을 이용한 보조 Advantage 방식이며, 실제 성능 향상은 아직 검증되지 않았습니다.
+이번 요청에서는 코드 수정이나 학습을 실행하지 마세요. 먼저 실제 코드와 설계를 비교하고, 근거 파일과 함수 위치를 제시해 엄격하게 평가해 주세요. 내 의견에도 무조건 동의하지 말고 문제가 있으면 명확하게 지적해 주세요.
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 세션. `docs/SESSION_HANDOFF.md`, `DECISIONS.md` D91–D97, `EXPERIMENTS.md` E61–E65, 이 기록의 T151–T162를 읽었다.
+- 코드 대조(읽기 전용): `latent_team/reward_probe_ac_v2.py`, `latent_team/reward_probe_ac.py`(public_view·wrapper), `latent_team/max_gae.py`, `latent_team/train_from_scratch.py`, `latent_team/exp_b_oracle_consensus.py`(`matched_transfer`), `latent_team/env_candidates.py`, `examples/train_recurrent_ippo_consensus.py`(`RecurrentActorCritic`, `collect_rollout`, `compute_gae`, `update_ippo`, `transfer_checkpoint_to_agents`), `examples/train_pgct_spatial_experiments.py`(`geometric_adjacency`), `rware/multi_team_warehouse.py`(communication_range), `tests/test_max_gae.py`, `docs/MAX_GAE.md`, v2 PGCT s1 `experiment.json`의 PPO 설정.
+- 수치 점검: scratchpad 스크립트(`d2_review_check.py`, 보존 안 됨)로 `max_gae.blended_advantages`·`max_targets`를 합성 텐서에 적용했다. 환경·학습 없음. 결과는 E66.
+- 로그 읽기: A+C IPPO s1 `metrics.jsonl`의 agent별 학습·평가 배송·반납 수(0.95–1.06M, 1.4–1.5M). 결과는 E66.
+- 기록: `DECISIONS.md` D98, `EXPERIMENTS.md` E66, `RESEARCH_STATE.md` 최신 확인, 이 T163, 통합 사본 재생성. 코드 변경·학습 시작/중단·커밋 없음.
+- Edit 도구로 `DECISIONS.md`·`EXPERIMENTS.md`에 덧붙일 때, 커밋되지 않은 기존 기록에 섞여 있던 CRLF 줄 끝(DECISIONS 2줄, EXPERIMENTS 1줄)이 LF로 바뀌었다. 글자 내용은 그대로이고, 두 파일은 원래 LF 노트다.
+
+### Assistant — 진행 안내
+
+기록 복원 중입니다. D91–D97, E61–E65, T151–T158까지 읽었고, 이제 T159–T162를 본 뒤 v2 코드와 Max-GAE 코드를 대조하겠습니다.
+
+v2와 Max-GAE 코드는 읽었습니다. 이제 v2 gate가 trainer에 어떻게 연결되는지(`matched_transfer`)와 trainer의 actor·critic 구조를 확인하고 있습니다.
+
+Trainer 구조를 확인했습니다. actor와 critic은 encoder·GRU가 완전히 분리되어 있고, 결합은 grad-norm clipping 한 곳뿐입니다. 이제 테스트·문서, 이웃 판정 함수, 실제 run 설정값을 확인합니다.
+
+Max-GAE 문서·테스트와 이웃 판정 함수를 확인했습니다. 분기 실험 명령이 seed 2·3을 seed 1 checkpoint에서 시작하므로, 환경 후보가 seed에 따라 goal 배치를 바꾸는지 확인하겠습니다.
+
+seed가 짝수면 goal 좌우가 바뀌는 것을 확인했습니다(분기 계획에 영향). 분기 시작 시 critic까지 복사되는지 `transfer_components`를 확인하겠습니다.
+
+코드 대조는 거의 끝났습니다. 두 가지 의심점(relative 척도가 작은 b를 키우는 문제, rollout 시작 7 step 마스크가 만드는 편향)을 기존 함수로 합성 데이터에서만 짧게 확인하겠습니다. 학습·코드 변경은 없습니다.
+
+합성 데이터 확인 결과 두 의심점이 모두 재현됐습니다. 마지막으로, PGCT-D2에서 뒤처진 agent가 r̂ 성숙 조건(자기 사건 20개)을 채울 수 있는지 IPPO s1 학습 로그(1M 근처)에서 agent별 배송·반납 빈도만 읽어 보겠습니다.
+
+뒤처진 agent 중 a0·a4는 1M–1.5M 학습 로그에서 배송·반납이 0이었습니다. v2 성숙 조건과 직접 충돌하는 결과입니다. v1·v2 관측 wrapper가 controller 없이 같은 동작인지만 확인하고 답변을 정리하겠습니다.
+
+관측 wrapper는 controller가 없으면 v1·v2가 같은 관측을 냅니다. 이제 기록 파일 형식(줄 끝, RESEARCH_STATE 상단)을 확인하고 대화·결정 기록을 남기겠습니다.
+
+기록 형식을 확인했습니다(대화 기록·상태 파일은 CRLF, 결정·실험 노트는 LF). 최종 답변을 먼저 확정해 기록에 남긴 뒤 같은 내용으로 보고하겠습니다.
+
+기록을 남겼습니다. 다만 Edit 도구가 `DECISIONS.md`(2줄)와 `EXPERIMENTS.md`(1줄)에 섞여 있던 CRLF 줄 끝을 LF로 바꿨는지 확인하겠습니다.
+
+Patch는 적용됐고 T163 블록은 전부 CRLF입니다(마지막 출력 오류는 콘솔 인코딩 문제일 뿐입니다). 변경 파일 목록만 확인하겠습니다.
+
+### Assistant — 최종 답변
+
+요청하신 순서대로 정리했습니다. 코드 수정과 학습은 하지 않았고, 확인 작업은 두 가지만 했습니다.
+
+- `max_gae.py` 함수를 합성 텐서에 돌린 수치 점검(scratchpad, 환경·학습 없음)
+- A+C IPPO s1 학습 로그에서 1M 무렵 agent별 배송·반납 수 읽기
+
+먼저 핵심 네 가지입니다.
+
+1. **PGCT-D2는 아직 없습니다.** v2 승인을 Max-GAE donor로 잇는 코드가 없습니다. Max-GAE 모드에서는 v2가 아예 돌지 않습니다.
+2. **현재 D2 기본값(`relative`)은 설계식과 다르고 결함이 있습니다.** b가 0에 가까워도 advantage 변화량이 줄지 않습니다. 그래서 IPPO로 연속적으로 돌아가지 않습니다.
+3. **T154의 1M 분기 명령은 그대로 돌리면 안 됩니다.** seed 2는 goal 좌우가 바뀌어, seed 1 checkpoint와 다른 과제가 됩니다.
+4. **v2 성숙 조건 때문에 PGCT-D2는 가장 뒤처진 두 agent(a0, a4)를 도울 수 없습니다.** 두 agent는 1M–1.5M 학습 로그에서 배송·반납이 0입니다. Oracle-max에서 효과가 나더라도 이 몫은 PGCT-D2가 재현할 수 없습니다.
+
+## 1. 현재 코드에서 실제로 작동하는 알고리즘
+
+### (가) v2 PGCT (`--reward-probe-ac --ac-gate v2 --modes pgct`)
+
+| 단계 | 실제 동작 | 근거 |
+|---|---|---|
+| 관측 | self_x·self_y를 0으로 바꾼 관측을 actor·critic에 넣음 | [reward_probe_ac.py:57](latent_team/reward_probe_ac.py:57) |
+| r̂ 입력 | public_view(반경 2): ego 6 + 11채널×5×5 = 281. 요청 선반(ch4)·자기 팀 goal(ch12) 제외. (전, 행동 one-hot, 후) = 567 | [reward_probe_ac.py:25](latent_team/reward_probe_ac.py:25), [:71](latent_team/reward_probe_ac.py:71), [v2:97](latent_team/reward_probe_ac_v2.py:97) |
+| r̂ 모델 | MLP 567→128→64→1, Adam 1e-3, MSE. 목표는 자기 개인 보상(shaping·감점 포함) | [v2:139](latent_team/reward_probe_ac_v2.py:139), [v2:154](latent_team/reward_probe_ac_v2.py:154) |
+| 버퍼 | 전이 FIFO 20,000, 사건 FIFO 512. 사건 기준은 **r ≥ .5**(docstring은 \|r\| ≥ .5, 이 환경에서는 결과 같음) | [v2:146](latent_team/reward_probe_ac_v2.py:146) |
+| 학습 | 5 update마다 batch 256 × 50 step, 사건 25% 과표집. warm-up 중에도 학습 | [v2:242](latent_team/reward_probe_ac_v2.py:242), [v2:157](latent_team/reward_probe_ac_v2.py:157) |
+| 성숙 | 누적 사건 ≥ 20, 학습 1회 이상, 최근 사건 32개 예측 평균 ≥ .3 | [v2:182](latent_team/reward_probe_ac_v2.py:182) |
+| 이웃 | **update 직전**(rollout 마지막 step 뒤) 위치의 Chebyshev ≤ 3 | [exp_b_oracle_consensus.py:158](latent_team/exp_b_oracle_consensus.py:158), [train_pgct_spatial_experiments.py:39](examples/train_pgct_spatial_experiments.py:39) |
+| 비교 | warm-up 100 update 뒤, 5 update마다, 서로 이웃이고 둘 다 성숙한 쌍만 | [v2:247](latent_team/reward_probe_ac_v2.py:247), [v2:276](latent_team/reward_probe_ac_v2.py:276), [exp_b:160](latent_team/exp_b_oracle_consensus.py:160) |
+| probe | i의 최근 사건 32 + j의 최근 사건 32 + 그 좌우 대칭 64 = 최대 128. 8개 미만이면 보류 | [v2:227](latent_team/reward_probe_ac_v2.py:227), [v2:79](latent_team/reward_probe_ac_v2.py:79), [v2:281](latent_team/reward_probe_ac_v2.py:281) |
+| 거리 | Σ\|p−q\| / Σ(\|p\|+\|q\|) | [v2:194](latent_team/reward_probe_ac_v2.py:194) |
+| EMA·승인 | 두 예측기가 새로 학습됐을 때만 round +1, β .35. round ≥ 3 ∧ EMA < .5면 승인, 대칭 | [v2:288](latent_team/reward_probe_ac_v2.py:288) |
+| 접촉 끊김 | 매 update `gate &= neighbors`. EMA·round는 남음 | [v2:241](latent_team/reward_probe_ac_v2.py:241) |
+| 전이 | allocation = gate ∧ 현재 이웃(행 정규화) → peer loss .01 × Σ α(V_i − sg V_j)², 공통 bank 48개(h=0) | [v2:264](latent_team/reward_probe_ac_v2.py:264), [trainer:2932](examples/train_recurrent_ippo_consensus.py:2932), [trainer:3074](examples/train_recurrent_ippo_consensus.py:3074) |
+| actor | 자기 GAE를 agent별로 정규화한 PPO clip | [trainer:2958](examples/train_recurrent_ippo_consensus.py:2958) |
+| critic | 자기 return의 clipped value loss + peer loss | [trainer:3061](examples/train_recurrent_ippo_consensus.py:3061) |
+
+CLAUDE.md의 "τ=.12, n_min 8"은 예전 JS gate 값입니다. v2는 문턱 .5, round 3, `min_probes` 8입니다. 이름이 비슷해 헷갈리므로 논문과 노트에서 구분해야 합니다.
+
+### (나) Max-GAE 모드 (`oracle_max`, `oracle_maxd1`, `all_max`, `allk_max`)
+
+- trainer는 IPPO 경로입니다. 통신을 끄고 peer loss를 0으로 둡니다([train_from_scratch.py:106](latent_team/train_from_scratch.py:106), [:324](latent_team/train_from_scratch.py:324)).
+- **v2는 돌지 않습니다.** A+C 옵션을 줘도 `learn=job["mode"] == "pgct"`라 controller가 None입니다([train_from_scratch.py:332](latent_team/train_from_scratch.py:332)).
+- donor 후보는 rollout 중 **한 step이라도** Chebyshev 3 안에서 만난 agent입니다. `oracle`은 같은 팀(정답 라벨), `all`은 전부, `allk`는 oracle과 같은 수를 무작위로 고릅니다. 성숙 조건은 없습니다([max_gae.py:72](latent_team/max_gae.py:72), [:84](latent_team/max_gae.py:84)).
+- donor critic(업데이트 전 가중치)을 받는 agent의 rollout 관측 위에서 h=0부터 recurrent로 돌립니다. 처음 7 step은 b = 0으로 가립니다([max_gae.py:102](latent_team/max_gae.py:102), [:122](latent_team/max_gae.py:122), [:183](latent_team/max_gae.py:183)).
+- b = clip(max_j V_j − V_i, 0, cap), f = V_i + b, A_max = GAE(f)입니다. actor advantage는 A_self + η·Δ(Δ = A_max − A_self)입니다. `relative`이면 Δ에 std(A_self)/std(Δ)를 곱한 뒤 η를 곱합니다([max_gae.py:139](latent_team/max_gae.py:139)).
+- value target은 자기 return 그대로입니다. `compute_gae` 호출 한 곳에 주입합니다([max_gae.py:255](latent_team/max_gae.py:255)).
+- donor가 없으면 원래 `update_ippo`를 그대로 부릅니다([max_gae.py:246](latent_team/max_gae.py:246)).
+
+### (다) 질문하신 구조 사실
+
+- **actor와 critic은 GRU를 공유하지 않습니다.** encoder·GRU·head가 모두 따로입니다([trainer:134](examples/train_recurrent_ippo_consensus.py:134), [:157](examples/train_recurrent_ippo_consensus.py:157)). actor loss의 gradient는 critic 파라미터에 닿지 않습니다.
+- 결합은 한 곳뿐입니다. 두 loss를 더한 뒤 `clip_grad_norm_(net.parameters(), .5)`를 한 번에 겁니다([trainer:3108](examples/train_recurrent_ippo_consensus.py:3108)). clipping이 걸리면 actor advantage가 바뀔 때 critic의 실제 step 크기도 달라집니다. 목표값과 gradient 방향은 그대로입니다.
+- "V_j(h_i)"는 엄밀히 **V_j(o_{i,1:t})**입니다. 받는 agent의 hidden 벡터를 넘기지 않고, 관측 열을 donor의 GRU로 다시 돌립니다. 서로 다른 네트워크의 hidden 공간은 호환되지 않으니 논문에도 이렇게 써야 합니다.
+
+## 2. 설계한 PGCT-D2와의 차이
+
+| 설계 항목 | 현재 코드 | 판정 |
+|---|---|---|
+| critic은 개인 return만 | 자기 GAE return 주입, peer loss 0 | 일치 |
+| 팀원 critic을 내 관측 이력에 적용 | rollout 관측 위에서 recurrent, h=0 시작, 7 step 가림 | 일치(시작부 처리에 결함, 4절 E3) |
+| donor = 승인 ∧ 통신 가능 ∧ 성숙 | 정답 라벨 ∧ rollout 접촉. v2 승인·성숙 없음 | **미구현** |
+| b = max(0, max_j V_j − V_i) | 같음. cap 기본값 없음 | 일치 |
+| f = V_i + η·min(b, c) | `raw`이고 λ_f = λ이면 **정확히 같음**. GAE가 값함수에 선형이라 A_self + ηΔ = GAE(V + η·min(b, c))입니다. 기본값 `relative`는 다름 | **기본값 불일치** |
+| δ = r + γf′ − f를 GAE로 | 같음. done·timeout 처리도 trainer와 같음 | 일치 |
+| actor는 D2 advantage, 증류 제거 | 같음 | 일치 |
+| update 동안 donor는 고정 snapshot | donor 값은 `update_ippo` 호출 전에 업데이트 전 가중치로 한 번 계산 | 일치 |
+
+`relative`를 같은 f 형식으로 쓰면 f = V_i + η·s·b이고, s = std(A_self)/std(Δ_b)입니다. s에 상한이 없어 η·s > 1이면 f가 max(V_i, V_j)보다 커집니다. 그러면 더 이상 max 결합이 아닙니다.
+
+## 3. 구현된 것과 안 된 것
+
+**구현됨**
+- v2 팀 발견 전체(1절 (가)). 온라인 결과는 E65(seed 1)뿐입니다.
+- Max-GAE 계산, oracle/all/allk donor, D1·D2(raw·relative), cap, λ_f, 분기(`--init-checkpoint`, `--transfer-warmup`).
+- E64 검증: 단위 테스트 11개, donor를 끈 smoke에서 IPPO와 최종 가중치가 비트 단위로 같음.
+
+**구현 안 됨**
+- v2 승인을 Max-GAE donor로 쓰는 경로(PGCT-D2 모드).
+- 접촉과 무관하게 유지되는 "지속 승인" 행렬. 지금 `gate`는 update 직전 이웃이 아니면 지워지므로 그대로 쓸 수 없습니다.
+- donor critic 성숙 조건.
+- PGCT 승인 수에 맞춘 무작위 대조군.
+- 분기 seed와 checkpoint의 goal 배치가 같은지 검사하는 장치.
+
+## 4. 수학적·구현상 오류와 위험
+
+### 오류(확인됨)
+
+**E1. `relative` 척도의 증폭과 퇴화 실패** ([max_gae.py:149](latent_team/max_gae.py:149), 기본값 [train_from_scratch.py:156](latent_team/train_from_scratch.py:156))
+
+Δ를 항상 std(A_self) 크기로 맞추므로 b의 크기 정보가 사라집니다. 합성 텐서 점검 결과입니다(1,024 step, η .5, 지표는 mean|A_actor − A_self| / std(A_self), 괄호는 최대).
+
+| b | raw | relative |
+|---|---|---|
+| U(0, 1e-6) | .0000 | .43 (1.38) |
+| U(0, 1e-2) | .004 | .44 |
+| U(0, .3) | .11 | .44 |
+| U(0, 1) | .38 (1.20) | .44 (1.41) |
+| 1% step에만 1e-3 | .00003 (.0014) | .089 (**5.0**) |
+
+- 앞선 agent처럼 b가 거의 0인 receiver도 뒤처진 agent와 같은 비중으로 advantage가 흔들립니다. E62·E64에서 본 D의 장점, 즉 "뒤처진 agent만 움직이고 앞선 agent는 그대로"가 이 척도에서는 사라집니다.
+- 기존 테스트([test_max_gae.py:53](tests/test_max_gae.py:53))는 큰 b에서만 확인해서 이 문제를 잡지 못했습니다.
+- T160 진행 안내에서 "relative 결함"을 언급했지만 내용은 기록되지 않았습니다. 이번에 확인한 결함은 이것입니다.
+
+**E2. 분기 seed 2의 goal 좌우 반전** ([env_candidates.py:104](latent_team/env_candidates.py:104))
+
+- `team_goal_positions`는 홀수 seed면 [왼쪽, 오른쪽], 짝수 seed면 반대입니다.
+- T154 명령은 seed 1 checkpoint에서 seed 1·2·3을 분기합니다. seed 2에서는 두 팀의 goal이 바뀝니다. 이어 학습이 아니라 다른 과제로 옮기는 실험이 됩니다.
+- E64의 smoke와 plan-only는 가중치 hash만 비교해서 이것을 잡지 못했습니다.
+
+**E3. 시작 7 step 가림이 만드는 양의 편향** ([max_gae.py:122](latent_team/max_gae.py:122), [:183](latent_team/max_gae.py:183))
+
+- t < 7에서 b = 0, t ≥ 7에서 실제 b를 씁니다. 그러면 GAE의 미래 항 때문에 앞쪽 step에 계단이 생깁니다.
+- 합성 점검(V_i .2, donor 1.0, 실제 b .8 일정, D1): Δ[0..6] = +.46 → +.67, 그 뒤 약 −.13입니다.
+- 매 rollout 첫 7 step(0.7%)에 팀원 정보와 무관한 큰 양의 advantage가 붙습니다.
+- 수정은 간단합니다. 가린 step에서 Δ = 0(actor = A_self)으로 두거나, 직전 rollout의 마지막 8개 관측으로 donor를 미리 데웁니다(burn-in).
+
+### 위험(설계 수준)
+
+**R1. 성숙 조건 때문에 PGCT-D2는 도와야 할 agent를 못 돕습니다** (Q1과 Q2의 충돌, D97의 구체적 사례)
+
+- v2에서는 받는 쪽도 r̂이 성숙해야 비교합니다([v2:276](latent_team/reward_probe_ac_v2.py:276)).
+- A+C IPPO s1 학습 로그(`train/agent_k_delivery_count`·`return_count` 기록 평균)입니다.
+  - 0.95–1.06M(기록 108개): a0 0/0, a1 .06/0, a2 2.96/.94, a3 2.27/.50, a4 0/0, a5 1.63/.40
+  - 1.4–1.5M에도 a0·a4는 0/0입니다.
+- E64의 뒤처진 agent 0·1·4 가운데 a0·a4는 v2 사건(r ≥ .5)이 사실상 없습니다. 0.5M 분기 동안 성숙하지 못할 가능성이 큽니다. a1도 사건 20개를 모으는 데 수백 update가 걸릴 수 있습니다(빈도로 추정했고, 측정은 아닙니다).
+- 따라서 Oracle-max가 이 분기에서 효과를 내더라도, 그 상당 부분은 PGCT-D2가 원리적으로 재현할 수 없습니다. 해석 기준을 미리 정해야 합니다(7절의 `oracle_mature_max` 대조군).
+- 이것은 코드 버그가 아니라 연구 질문의 경계입니다. 풀려면 촘촘한 진척 shaping을 probe에 넣는 식(E60)으로 v2를 바꿔야 합니다. 이는 사용자가 정할 일입니다.
+
+**R2. 이웃 판정 기준이 두 가지입니다**
+
+| 용도 | 기준 | 규모(기존 측정) |
+|---|---|---|
+| v2 비교·승인 | update 직전 위치, Chebyshev 3 | 같은 팀 전이 arc 5,252 / 4,883 update ≈ 1.1 (E65) |
+| v2 증류 allocation | 승인 ∧ update 직전 이웃 | 같음 |
+| Max-GAE donor | rollout 중 한 번이라도 접촉 | 30/30 쌍이 접촉 (E64) |
+
+- PGCT-D2와 Oracle-max가 다른 기준을 쓰면, 차이가 식별 정확도 때문인지 접촉 규칙 때문인지 가를 수 없습니다. **두 arm은 반드시 같은 접촉 규칙을 써야 합니다.**
+- T159에 붙여넣은 글은 첫 분기에 update 시점 기준을 권했습니다. 저는 반대합니다.
+  - update 직전 위치는 통신 모델이 아니라 v2 구현의 부산물입니다. 1,024 step 가운데 마지막 순간 하나만 보는 셈입니다.
+  - D2의 세기가 update당 1 arc 수준으로 희석되면, 효과가 없을 때 원인을 해석할 수 없습니다.
+  - Oracle-max는 이미 rollout 접촉 기준으로 구현하고 측정했습니다.
+- 권고:
+  - 승인 학습은 v2 그대로(update 직전 비교) 둡니다.
+  - D2 donor는 "지속 승인 ∧ rollout 접촉 ∧ 성숙"으로 정합니다.
+  - 논문에는 "1,024 step rollout에서는 거의 모든 쌍이 만나므로 D2에서는 통신 제약이 사실상 걸리지 않고, 통신 제약은 승인 누적 속도에만 작용한다"고 정직하게 씁니다.
+
+**R3. E65의 후반 다른 팀 오승인은 D2에서 더 위험합니다**
+
+- 증류는 λ .01로 평균했지만, max에서는 잘못 승인된 donor 하나가 그대로 이깁니다.
+- E62·E63에서 다른 팀 critic은 앞선 agent에게 큰 가짜 상향(.15–.56)을 줬습니다. dV > .2인 경우 실제 이득은 0 또는 음수였습니다(유의 손실 9–22%).
+- rollout 접촉 기준에서는 승인된 다른 팀 쌍이 거의 매 update donor가 됩니다. 노출이 E65의 352 arc보다 훨씬 커집니다.
+- 1M 분기(1.0–1.5M) 구간에서는 E65 시점(4.28M 이후)으로 보아 오승인이 드물 것으로 예상합니다. 다만 seed 하나의 결과이고, 분기에서는 v2가 다른 정책 위에서 새로 시작합니다. 감사 로그로 확인해야 합니다.
+- 원인 가설(미검증):
+  - 반납 사건(+1)은 두 팀 모두 같은 저장 구역에서 받습니다. public view에는 반납 단계 정보가 없습니다.
+  - 그래서 r̂는 "저장 칸에 선반 내려놓기" 장면에 P(반납)을 예측합니다. 정책이 좋아져 이 값이 두 팀 모두 커지면, 공유되는 응답 질량이 늘어 거리가 내려갑니다.
+  - 예: 배송 probe만 있으면 거리 1입니다. 같은 수의 반납 probe에 두 팀이 .6씩 답하면 1/(1 + 1.2) ≈ .45로 문턱 아래가 됩니다.
+  - 확인 방법: checkpoint에 저장된 v2 상태(사건 버퍼·예측기)로 probe 종류별 기여를 나누면 학습 없이 확인할 수 있습니다.
+
+**R4. donor critic 성숙 조건이 없습니다**
+
+- 1M 분기에서는 모든 critic이 이미 학습된 상태라 작은 문제입니다.
+- 처음부터 학습할 때는 초기 critic이 0 근처 값을 내고, 감점 때문에 V_i < 0입니다. 그러면 노이즈만으로 b > 0이 생깁니다.
+- r̂ 성숙(사건 20개)은 critic 정확도를 보장하지 않습니다. 두 성숙은 따로 정의해야 합니다.
+
+**R5. 기타(작음)**
+
+- 공동 grad clipping 때문에 critic의 step 크기가 IPPO와 달라질 수 있습니다(방향은 같음).
+- `skip_zero_reward_actor_update=True`이지만, 이 환경은 보상이 0이 아닌 step이 25–55%라 실제로 걸리지 않습니다.
+- 다른 팀 critic도 관측의 팀 기준 채널(ch4·ch12) 덕분에 꽤 잘 맞습니다(E62). 그래서 Oracle-max와 allk-max의 차이가 작을 수 있습니다. 버그가 아니라 "식별이 필요하다"는 주장의 위험입니다.
+- 분기 seed 3개는 한 학습 궤적에서 갈라진 continuation seed입니다. 독립 training seed로 세면 안 됩니다.
+
+## 5. 반드시 수정할 항목과 선택 개선
+
+**분기 실험 전에 반드시**
+
+1. 분기 seed를 홀수(1·3·5)로 바꾸거나, checkpoint의 `team_goal_positions`가 job 설정과 다르면 계획 단계에서 거부합니다(E2).
+2. `relative`를 줄이기만 하는 척도(`shrink`)로 바꿉니다(E1).
+   - s = min(1, std(A_self)/std(Δ))입니다.
+   - 이는 설계식 f = V_i + η_eff·min(b, c)에서 η_eff = η·s ≤ η인 경우와 같습니다.
+   - b → 0이면 IPPO로 연속적으로 돌아갑니다. 뒤처진 agent에서는 지금의 relative와 같습니다.
+   - 기존 `relative`는 기록용으로만 남깁니다.
+3. 가린 step에서는 Δ = 0으로 둡니다(E3).
+4. agent별 critic explained variance를 자기 rollout에서 계산해 로그로 남깁니다(R4). donor 자격 조건으로 쓸지는 이 로그를 보고 정합니다.
+
+**PGCT-D2 단계에 반드시**
+
+5. v2에 `approved()`를 추가합니다. round ≥ 3 ∧ EMA < .5 ∧ 두 agent 성숙으로 판정하고, 대칭이며 접촉과 무관하게 유지되는 행렬입니다. 기존 동작은 바꾸지 않습니다.
+6. Max-GAE에 donor 규칙 `gate`(rollout 접촉 ∧ approved ∧ critic 성숙)를 추가합니다.
+7. `pgct_max` 모드를 만듭니다.
+   - trainer는 IPPO 경로로 두고, v2는 learn=True로 돌립니다.
+   - controller는 warm-up 뒤 `active=True`로 직접 부르고, trainer에는 0 allocation을 넘깁니다.
+   - 지금 구조에서는 IPPO 경로의 `peer_allocation`이 None이라 `active`가 항상 False이고, 비교 자체가 일어나지 않습니다([exp_b:160](latent_team/exp_b_oracle_consensus.py:160)).
+8. 감사 로그를 추가합니다. D2 donor의 같은 팀·다른 팀 arc, receiver별 성숙 여부, 승인 범위(같은 팀 12 arc 중 승인된 수)를 남깁니다.
+
+**선택**
+
+- 7 step 가림 대신 직전 rollout 관측으로 burn-in합니다.
+- 받는 쪽 검사: V_j(o_i)와 자기 return의 순위 상관을 donor 자격으로 씁니다. E62에서 같은 팀과 다른 팀의 상관 차이가 작아 효과는 제한적일 수 있습니다.
+- `clip_grad_norm_`을 감싸 clipping 전 norm을 기록합니다.
+- D2용 승인 hysteresis(.3 이하에서 승인, .5 초과에서 해제)를 두고, E65 원인을 진단합니다.
+- v2 docstring의 |r| ≥ .5를 코드(r ≥ .5)에 맞춥니다.
+- PGCT 승인 수에 맞춘 무작위 대조군을 둡니다. 같은 run에서 v2를 돌리고, donor만 같은 수로 무작위로 뽑습니다.
+
+## 6. 최소 변경으로 D2를 도입하는 구현 계획
+
+trainer·`rware/`·`examples/`는 건드리지 않습니다. 기존 모드의 동작도 바꾸지 않습니다.
+
+1. `latent_team/max_gae.py`
+   - `blended_advantages`에 `scale="shrink"`를 추가하고, `valid`를 받아 가린 step의 Δ를 0으로 둡니다.
+   - `select_donors`에 `gate`(접촉 ∧ 외부 approved 행렬)와 `oracle_mature`(접촉 ∧ 같은 팀 ∧ 두 agent r̂ 성숙)를 추가합니다.
+   - `install(..., approval=None)`: update를 시작할 때 `approval()`을 읽습니다. 직전 update까지의 승인이므로 인과적으로 맞습니다. agent별 EV 로그도 추가합니다.
+2. `latent_team/reward_probe_ac_v2.py`: `approved()`와 마지막 성숙 목록을 읽는 함수만 추가합니다.
+3. `latent_team/train_from_scratch.py`
+   - 모드 `pgct_max`(gate)와 `oracle_mature_max`를 추가합니다. 둘 다 `--ac-gate v2`가 필요합니다.
+   - `run_job`: 두 모드는 v2를 learn=True로 설치하고, matched_transfer에는 controller를 감싼 adapter(비교는 수행, allocation은 0)를 넘깁니다.
+   - `--init-checkpoint`를 쓸 때 goal 배치를 검사합니다.
+   - `--max-gae-scale`에 `shrink`를 추가합니다. 기본값을 바꿀지는 사용자가 정합니다. 아직 relative로 실행한 run은 없습니다(`runs/`에 `maxgae_br1M_*` 없음).
+4. 테스트
+   - shrink: b → 0에서 변화량도 0으로 가고, raw보다 커지지 않습니다. 위 표의 상황을 테스트로 고정합니다.
+   - 가림: t < window에서 actor = A_self입니다.
+   - approved: `gate &= neighbors` 뒤에도 유지되고 대칭입니다.
+   - 실제 trainer smoke(64 step):
+     - (a) `pgct_max`에서 승인이 하나도 나지 않게 설정 → IPPO와 최종 가중치가 비트 단위로 같아야 합니다. v2와 Max-GAE wrapper가 trainer 난수를 건드리지 않는지 확인합니다.
+     - (b) approval을 정답 팀 행렬로 바꾼 `pgct_max` → `oracle_max`와 비트 단위로 같아야 합니다(연결 확인).
+     - (c) 자기 복제 donor(받는 agent critic의 사본) → |A_actor − A_self|가 작아야 합니다. shrink·raw는 통과하고 relative는 실패할 것으로 예상합니다.
+     - (d) 짝수 seed와 홀수 seed checkpoint의 조합은 계획 단계에서 거부되어야 합니다.
+5. `docs/MAX_GAE.md`와 연구 기록을 갱신합니다.
+
+## 7. 1M checkpoint에서 0.5M씩 분기하는 검증 계획
+
+**공통 조건**
+
+- 시작점: `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt`(A+C, 모서리·개인 보상, 좌표 마스킹, seed 1).
+- seed 1·3·5로 goal 배치를 유지합니다. 같은 학습 궤적에서 갈라진 continuation seed 3개입니다.
+- 0.5M = 488 update, `--transfer-warmup 0`.
+- 모든 arm에 `--ac-gate v2`를 씁니다. controller가 없으면 v1·v2 wrapper의 관측은 같지만, 2단계와 같은 계획에서 비교하려면 맞춰 두는 편이 안전합니다.
+- 사전 고정: 뒤처진 agent = a0·a1·a4(E64), 앞선 agent = a2·a3·a5.
+- 규모: job당 약 5.5시간(T154 추정). 1단계 12 job을 순차로 돌리면 약 66시간입니다.
+
+**1단계: 팀원 가치 정보가 actor를 돕는가 (정답 팀, Q2)**
+
+- arm: `ippo`(계속), `oracle_max`(D2 shrink, η .5), `oracle_maxd1`(D1), `allk_max`(D2 shrink). 3 seed × 4 arm = 12 job.
+- 1차 지표: 뒤처진 agent의 평가 배송. 분기 구간 AUC와 마지막 평가 5회 평균을 agent별로 따로 봅니다.
+- 안전 지표: 앞선 agent의 평가 배송이 IPPO보다 떨어지지 않는지 봅니다.
+- 진단: `max_gae_select_frac`, `mean_b`, receiver별 `adv_shift`, approx_kl, clip fraction, value loss, donor EV.
+- 판정 규칙(미리 고정): 3 seed가 모두 같은 방향이고, 평균 차이가 IPPO 3 seed 사이 편차의 2배를 넘으면 "효과 있음"으로 봅니다. 아니면 "판정 불가"입니다. seed 3개로 통계적 유의성을 주장하지 않습니다.
+
+**2단계: 발견한 팀으로 같은 효과를 내는가 (통합)**
+
+- arm: `oracle_mature_max`, `pgct_max`. 둘 다 같은 접촉 규칙과 같은 D2 설정을 씁니다. 필요하면 승인 수에 맞춘 무작위 대조군을 추가합니다.
+- 해석:
+  - `oracle_max` − `oracle_mature_max` = 성숙 조건 때문에 잃는 몫(R1의 a0·a4)
+  - `oracle_mature_max` − `pgct_max` = 승인 지연과 오류 때문에 잃는 몫
+- 추가 로그: 분기 뒤 agent별 첫 성숙·첫 승인 시점, 승인 범위, 다른 팀 donor arc(0이어야 함).
+- 1단계에서 효과가 없으면 2단계는 하지 않습니다.
+
+**3단계**
+
+1·2단계가 긍정이면 5M을 처음부터 학습합니다(IPPO, Oracle-max, PGCT-max, 독립 training seed 3개 이상). 이때는 donor critic 성숙 조건과 E65 오승인 대책이 필요합니다.
+
+**해석 제한**
+
+- 공통 checkpoint에서 갈라진 비교이므로 "처음부터 IPPO 대비"로 설명하지 않습니다.
+- MAMBA의 성능 보장은 인용하지 않습니다.
+- 이 분기 실험이 보여 줄 수 있는 것은 "이 checkpoint와 이 seed들에서 D2 신호가 뒤처진 agent의 학습을 바꿨는가"까지입니다.
+
+## 사용자 계획에 대한 의견
+
+- **v2를 유지하고 증류를 D2로 교체**: 방향에 동의합니다. 구현 범위도 작습니다(6절).
+- **동의하지 않는 점**
+  1. update 시점 이웃 기준(T159 안)은 권하지 않습니다(R2).
+  2. "승인되고 통신 가능하며 성숙한 팀원만 donor"는 맞습니다. 다만 지금 정의대로면 가장 도움이 필요한 a0·a4가 receiver에서 빠집니다. 이것은 D2가 아니라 Q1의 문제입니다. 연구 질문을 "보상 경험을 조금 가진 agent의 정착 가속"으로 좁힐지, probe에 촘촘한 shaping을 넣어 v2를 바꿀지 결정이 필요합니다.
+  3. D2 식은 사용자 식 f = V + η·min(b, c)가 맞고, 현재 기본값이 틀렸습니다. 다만 사용자 식 그대로(raw)는 E64처럼 뒤처진 agent에서 η가 의미를 잃습니다. 그래서 상한이 있는 적응형 η(shrink)를 함께 둬야 합니다.
+
+기록은 `DECISIONS.md` D98, `EXPERIMENTS.md` E66, `RESEARCH_STATE.md`, 대화 기록 T163에 남기고 통합 사본을 다시 만들었습니다. 코드 수정·학습·커밋은 하지 않았습니다.
+
+## 원문 기록 T164 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+필수 수정 1–4 구현
+
+### 수행 기록 — 원문 대화와 별도
+
+- T163 다음 단계 버튼이다(D98의 분기 전 필수 수정 1–4).
+- 코드 변경: `latent_team/max_gae.py`(`shrink` 척도, 가린 step Δ = 0, `explained_variance`, EV·η_eff 로그), `latent_team/train_from_scratch.py`(`checkpoint_goal_layout`·`check_branch_layout`, `--max-gae-scale` 기본값 relative → shrink), `tests/test_max_gae.py`(새 테스트 8개, plan 테스트의 가짜 checkpoint를 goal 배치가 든 dict로 교체), `docs/MAX_GAE.md`. trainer·`rware/`·`examples/`는 수정하지 않았다.
+- 검증: pytest 57개 통과. 실제 trainer smoke(64 step, scratchpad `smoke_eq`·`smoke_br`·`smoke_v2_135`): donor를 끈 동등성(비트 단위), 1M 분기 동작, 권고 명령 형태 12 job, seed 2 거부. 학습 시작·중단 없음(smoke만), 커밋 없음.
+- 진행 안내 일부를 영어로 보냈다(아래 원문 그대로).
+- 기록: `DECISIONS.md` D99, `EXPERIMENTS.md` E67, `RESEARCH_STATE.md`, 이 T164, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Checkpoint에 `team_goal_positions`가 저장되어 있어(1M: `[[0,10]], [[9,10]]`, seed 1) 계획 단계에서 비교할 수 있습니다. 이제 `max_gae.py`를 고칩니다.
+
+Now the advantage blend, the explained-variance helper, and the update wiring.
+
+Now `train_from_scratch.py`: the `shrink` option and the goal-layout check for branches.
+
+Now the tests: update the fake checkpoint in the plan helper and add tests for the four fixes.
+
+19개 모두 통과했습니다. 기존 A+C·latent_team 테스트도 함께 돌립니다.
+
+기존 38개와 새 19개, 모두 57개가 통과했습니다. 이제 실제 trainer smoke(64 step)로 donor를 끈 동등성과 1M 분기 동작을 확인합니다.
+
+Three checks ran. Now comparing weights and reading the branch log rows.
+
+donor를 끈 `oracle_max`는 IPPO와 최종 가중치가 비트 단위로 같고, 짝수 seed 분기는 계획 단계에서 거부됩니다. 분기 smoke에서는 앞선 agent(2·3)의 변화량이 0이었습니다. 권고할 명령(`--ac-gate v2`, seed 1·3·5)도 64 step smoke로 돌려 보겠습니다.
+
+12개 smoke job이 모두 끝났고 초기 가중치도 같습니다. 이제 문서와 연구 기록을 갱신합니다.
+
+### Assistant — 최종 답변
+
+필수 수정 1–4를 구현했습니다. trainer·`rware/`·`examples/`는 건드리지 않았습니다. 학습은 64 step smoke만 돌렸습니다.
+
+## 바꾼 것
+
+| # | 내용 | 위치 |
+|---|---|---|
+| 1 | 분기 goal 배치 검사. `--init-checkpoint`의 `team_goal_positions`와 job 설정이 다르면 계획 단계에서 거부합니다. 폴더도 만들지 않습니다 | [train_from_scratch.py](latent_team/train_from_scratch.py) `checkpoint_goal_layout`, `check_branch_layout` |
+| 2 | `shrink` 척도: Δ에 s = min(1, std(A_self)/std(Δ))를 곱합니다. 설계식 f = V + η·s·min(b, c)에서 η·s ≤ η인 경우입니다. `relative`는 기록용으로만 남겼습니다 | [max_gae.py](latent_team/max_gae.py) `blended_advantages` |
+| 3 | rollout 첫 7 step(첫 reset 전)에서는 Δ = 0, 즉 actor advantage = A_self | `blended_advantages(valid=...)`, `install.update` |
+| 4 | 모든 agent의 critic explained variance를 매 update 자기 rollout에서 계산해 로그로 남깁니다(`update/max_gae_critic_ev_agent_k`, `max_gae.jsonl`의 `critic_ev`). 실제 반영 비중 `max_gae_eta_eff`도 추가했습니다. donor 자격 조건으로는 아직 쓰지 않습니다 | `explained_variance`, `install.update` |
+
+**기본값 변경**: `--max-gae-scale`의 기본값을 `relative`에서 `shrink`로 바꿨습니다. relative로 실행한 run은 없어서 기존 결과에는 영향이 없습니다. ippo·pgct 등 기존 모드의 동작은 그대로입니다.
+
+## 검증
+
+- **pytest**: `tests/test_max_gae.py` 19개(새 8개)와 기존 A+C·latent_team 테스트 38개, 모두 57개가 통과했습니다. 새 테스트는 다음을 확인합니다.
+  - shrink는 raw보다 커지지 않고, 뒤처진 agent에서는 η·std(A_self)로 줄입니다.
+  - b → 0이면 shrink는 IPPO로 돌아가고, relative는 그렇지 않습니다.
+  - 가린 step은 A_self 그대로이고, 나머지 step은 바뀌지 않습니다.
+  - explained variance 계산이 맞습니다.
+  - seed 1 checkpoint에 seed 2를 주면 계획이 거부됩니다.
+- **실제 trainer smoke(64 step, scratchpad)**:
+  - donor를 끈 `oracle_max`는 IPPO와 최종 가중치가 비트 단위로 같습니다(EV 계산을 넣은 뒤에도 같음).
+  - 1M checkpoint 분기, 32 step rollout × 2 update:
+    - 뒤처진 a0·a1: `oracle_max`(shrink)는 η_eff .04–.08, 변화량 .41–.59였습니다. D1은 변화량 5.3–14.7이었습니다.
+    - 앞선 a2·a3: 변화량 0입니다.
+    - a5는 update 2에서 Δ가 작아 줄이지 않았고(η_eff .5), 변화량은 .35였습니다.
+  - 아래 분기 명령과 같은 형태(`--ac-gate v2`, 4 모드 × seed 1·3·5)의 12 job이 모두 끝났고, 초기 가중치가 같았습니다.
+  - CLI에서 seed 2를 주면 오류로 멈춥니다: `goal layout [[[9, 10]], [[0, 10]]] differs from the checkpoint's [[[0, 10]], [[9, 10]]]`
+- smoke의 EV는 32 step rollout이라 음수가 많습니다(−26.6–.27). 실제 판단은 1,024 step run의 값으로 합니다.
+
+## 분기 실험 실행 명령 (T154 명령 대체, 앱 밖 PowerShell에서 사용자 실행)
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('maxgae_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes ippo oracle_max oracle_maxd1 allk_max --seeds 1 3 5 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label maxgae_branch --output-dir $run
+```
+
+- T154와 달라진 점: seed 1·2·3 → 1·3·5, `--ac-gate v2` 추가, D2 척도는 기본값 shrink입니다.
+- 12 job이 순차로 돌고, seed 1의 4개 모드가 먼저 끝납니다. job당 약 5.5시간, 전체 약 66시간으로 추정합니다(T154 추정).
+- 판정 규칙은 D98대로 미리 고정합니다. 뒤처진 agent a0·a1·a4의 평가 배송을 보고, 앞선 agent a2·a3·a5의 배송이 떨어지지 않는지를 안전 지표로 봅니다.
+- `max_gae_critic_ev_agent_*`를 보면 donor critic 성숙 조건을 어디에 둘지 정할 수 있습니다.
+
+## 아직 안 한 것
+
+- PGCT-D2 단계(필수 5–8): v2 `approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max` 모드, 감사 로그.
+- donor critic 성숙 조건(EV 로그를 본 뒤 결정).
+- a0·a4처럼 보상 사건이 없는 agent를 어떻게 다룰지(연구 범위 결정).
+
+기록은 `DECISIONS.md` D99, `EXPERIMENTS.md` E67, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, 대화 기록 T164에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T165 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+토큰을 다 써서 PGCT-D2 구현은 Codex로 할꺼야 알고있어
+
+### 수행 기록 — 원문 대화와 별도
+
+- 확인 turn이다. 코드·학습 변경 없음. PGCT-D2(D98 필수 5–8)는 Codex가 구현하기로 했다(사용자 결정).
+
+### Assistant — 최종 답변
+
+알겠습니다. PGCT-D2는 Codex에서 진행하시는 것으로 기록했습니다(T165).
+
+Codex가 참고할 곳은 다음과 같습니다.
+- 구현 명세: `DECISIONS.md` D98의 필수 5–8(`approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max`, 감사 로그)과 6절 계획
+- 현재 상태: D99, E67, `docs/MAX_GAE.md`
+- 주의할 점: v2 `gate`는 update 직전 이웃이 아니면 지워지므로 donor로 그대로 쓰면 안 됩니다. IPPO 경로에서는 controller가 `active=False`로 불려 비교가 일어나지 않습니다(`exp_b_oracle_consensus.py:160`).
+
+## 원문 기록 T166 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음)
+
+### 사용자 — 원문
+
+현재 저장소에서 다음 자료를 확인하세요.
+
+- `CLAUDE.md`
+- `docs/SESSION_HANDOFF.md`
+- `DECISIONS.md`
+- `EXPERIMENTS.md`
+- `RESEARCH_STATE.md`
+- `CONVERSATION_LOG.md`
+- `latent_team/reward_probe_ac_v2.py`
+- `latent_team/max_gae.py`
+- `latent_team/train_from_scratch.py`
+- `latent_team/exp_b_oracle_consensus.py`
+- `examples/train_recurrent_ippo_consensus.py`
+- `docs/MAX_GAE.md`
+- 관련 실험 로그와 기존 논문 초안
+
+특히 D91\~D98, E57\~E66, T151\~T163을 확인하세요.
+
+
+
+
+
+Checkpoint에 `team_goal_positions`가 저장되어 있어(1M: `[[0,10]], [[9,10]]`, seed 1) 계획 단계에서 비교할 수 있습니다. 이제 `max_gae.py`를 고칩니다.
+
+Now the advantage blend, the explained-variance helper, and the update wiring.
+
+Now `train_from_scratch.py`: the `shrink` option and the goal-layout check for branches.
+
+Now the tests: update the fake checkpoint in the plan helper and add tests for the four fixes.
+
+19개 모두 통과했습니다. 기존 A+C·latent_team 테스트도 함께 돌립니다.
+
+기존 38개와 새 19개, 모두 57개가 통과했습니다. 이제 실제 trainer smoke(64 step)로 donor를 끈 동등성과 1M 분기 동작을 확인합니다.
+
+Three checks ran. Now comparing weights and reading the branch log rows.
+
+donor를 끈 `oracle_max` 실행은 IPPO와 최종 가중치가 비트 단위로 같았고, 짝수 seed 분기는 계획 단계에서 거부됐습니다. 이제 권고 명령(`--ac-gate v2`, seed 1·3·5)도 64 step smoke로 돌려 보겠습니다.
+
+12개 smoke job이 모두 끝났고 초기 가중치도 같습니다. 이제 문서와 연구 기록을 갱신합니다.
+
+필수 수정 1–4를 구현했습니다. trainer·`rware/`·`examples/`는 건드리지 않았습니다. 학습은 64 step smoke만 돌렸습니다.
+
+## 바꾼 것
+
+| # | 내용                                                                                                                                                                                                       | 위치                                                                                                                                   |
+| - | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | 분기 goal 배치 검사. `--init-checkpoint`의 `team_goal_positions`와 job 설정이 다르면 계획 단계에서 거부합니다. 폴더도 만들지 않습니다                                                                                                       | [train_from_scratch.py](https://claude.ai/epitaxy/latent_team/train_from_scratch.py) `checkpoint_goal_layout`, `check_branch_layout` |
+| 2 | `shrink` 척도: Δ에 s = min(1, std(A_self)/std(Δ))를 곱합니다. 설계식 f = V + η·s·min(b, c)에서 η·s ≤ η인 경우입니다. `relative`는 기록용으로만 남겼습니다                                                                               | [max_gae.py](https://claude.ai/epitaxy/latent_team/max_gae.py) `blended_advantages`                                                  |
+| 3 | rollout 첫 7 step(첫 reset 전)에서는 Δ = 0, 즉 actor advantage = A_self                                                                                                                                         | `blended_advantages(valid=...)`, `install.update`                                                                                    |
+| 4 | 모든 agent의 critic explained variance를 매 update 자기 rollout에서 계산해 로그로 남깁니다(`update/max_gae_critic_ev_agent_k`, `max_gae.jsonl`의 `critic_ev`). 실제 반영 비중 `max_gae_eta_eff`도 추가했습니다. donor 자격 조건으로는 아직 쓰지 않습니다 | `explained_variance`, `install.update`                                                                                               |
+
+**기본값 변경**: `--max-gae-scale`의 기본값을 `relative`에서 `shrink`로 바꿨습니다. relative로 실행한 run은 없어서 기존 결과에는 영향이 없습니다. ippo·pgct 등 기존 모드의 동작은 그대로입니다.
+
+## 검증
+
+- **pytest**: `tests/test_max_gae.py` 19개(새 8개)와 기존 A+C·latent_team 테스트 38개, 모두 57개가 통과했습니다. 새 테스트는 다음을 확인합니다.&#x20;
+  - shrink는 raw보다 커지지 않고, 뒤처진 agent에서는 η·std(A_self)로 줄입니다.
+  - b → 0이면 shrink는 IPPO로 돌아가고, relative는 그렇지 않습니다.
+  - 가린 step은 A_self 그대로이고, 나머지 step은 바뀌지 않습니다.
+  - explained variance 계산이 맞습니다.
+  - seed 1 checkpoint에 seed 2를 주면 계획이 거부됩니다.
+- **실제 trainer smoke(64 step, scratchpad)**:&#x20;
+  - donor를 끈 `oracle_max`는 IPPO와 최종 가중치가 비트 단위로 같습니다(EV 계산을 넣은 뒤에도 같음).
+  - 1M checkpoint 분기, 32 step rollout × 2 update:&#x20;
+    - 뒤처진 a0·a1: `oracle_max`(shrink)는 η_eff .04–.08, 변화량 .41–.59였습니다. D1은 변화량 5.3–14.7이었습니다.
+    - 앞선 a2·a3: 변화량 0입니다.
+    - a5는 update 2에서 Δ가 작아 줄이지 않았고(η_eff .5), 변화량은 .35였습니다.
+  - 아래 분기 명령과 같은 형태(`--ac-gate v2`, 4 모드 × seed 1·3·5)의 12 job이 모두 끝났고, 초기 가중치가 같았습니다.
+  - CLI에서 seed 2를 주면 오류로 멈춥니다: `goal layout [[[9, 10]], [[0, 10]]] differs from the checkpoint's [[[0, 10]], [[9, 10]]]`
+- smoke의 EV는 32 step rollout이라 음수가 많습니다(−26.6–.27). 실제 판단은 1,024 step run의 값으로 합니다.
+
+## 분기 실험 실행 명령 (T154 명령 대체, 앱 밖 PowerShell에서 사용자 실행)
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('maxgae_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes ippo oracle_max oracle_maxd1 allk_max --seeds 1 3 5 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label maxgae_branch --output-dir $run
+
+```
+
+- T154와 달라진 점: seed 1·2·3 → 1·3·5, `--ac-gate v2` 추가, D2 척도는 기본값 shrink입니다.
+- 12 job이 순차로 돌고, seed 1의 4개 모드가 먼저 끝납니다. job당 약 5.5시간, 전체 약 66시간으로 추정합니다(T154 추정).
+- 판정 규칙은 D98대로 미리 고정합니다. 뒤처진 agent a0·a1·a4의 평가 배송을 보고, 앞선 agent a2·a3·a5의 배송이 떨어지지 않는지를 안전 지표로 봅니다.
+- `max_gae_critic_ev_agent_*`를 보면 donor critic 성숙 조건을 어디에 둘지 정할 수 있습니다.
+
+## 아직 안 한 것
+
+- PGCT-D2 단계(필수 5–8): v2 `approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max` 모드, 감사 로그.
+- donor critic 성숙 조건(EV 로그를 본 뒤 결정).
+- a0·a4처럼 보상 사건이 없는 agent를 어떻게 다룰지(연구 범위 결정).
+
+기록은 `DECISIONS.md` D99, `EXPERIMENTS.md` E67, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, 대화 기록 T164에 남겼습니다. 커밋은 하지 않았습니다.
+
+
+
+클로드를 통해 여기까지 진행됐어
+
+필수 수정 1–4를 구현했습니다: 분기 goal 배치 검사, D2 shrink 척도(기본값), 첫 7 step Δ=0, critic EV 로그. pytest 57개가 통과했고, smoke에서 IPPO와의 비트 동등성과 seed 2 거부를 확인했습니다. 분기 실험은 아직 시작하지 않았고 커밋도 하지 않았습니다.\
+\
+분기 실험이 도는 동안 PGCT-D2(필수 5–8)를 구현해줘
+
+### Assistant — 진행 안내 (1)
+
+먼저 인수인계와 D91–D99·E57–E67·최근 대화, 현재 코드를 확인해 PGCT-D2의 필수 5–8 범위를 정리하겠습니다. 실행 중인 실험은 건드리지 않고, 구현과 테스트·smoke 검증을 진행하겠습니다.
+
+### Assistant — 진행 안내 (2)
+
+필수 5–8은 v2 승인 API, 승인에 따른 donor 선택, `pgct_max`·`oracle_mature_max` 모드, 실제 donor 감사 로그입니다. 현재 Max-GAE는 IPPO 경로로 실행되어 v2 학습이 꺼져 있습니다. 새 모드에서만 이를 연결하고, 기존 분기 모드의 설정과 동작은 유지하겠습니다.
+
+### Assistant — 진행 안내 (3)
+
+분기 폴더 `runs/maxgae_br1M_20261102_165216`의 로그에서 IPPO seed 1의 6,144 step 진행을 확인했습니다. 프로세스 조회는 권한 제한으로 실패했으며, 실행에는 손대지 않았습니다.
+
+새 모드의 v2 비교도 Oracle과 같은 rollout 접촉 기준으로 연결하겠습니다. critic EV 임계값은 아직 연구 판단이 남아 있어 기본으로 강제하지 않고, 선택 옵션과 로그를 추가하겠습니다.
+
+### 사용자 — 원문 (작업 중 추가 전달)
+
+토큰을 다 써서 PGCT-D2 구현은 Codex로 할꺼야 알고있어
+
+실행됨 명령 1개
+
+알겠습니다. PGCT-D2는 Codex에서 진행하시는 것으로 기록했습니다(T165).
+
+Codex가 참고할 곳은 다음과 같습니다.
+
+- 구현 명세: `DECISIONS.md` D98의 필수 5–8(`approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max`, 감사 로그)과 6절 계획
+- 현재 상태: D99, E67, docs/MAX_GAE.md
+- 주의할 점: v2 `gate`는 update 직전 이웃이 아니면 지워지므로 donor로 그대로 쓰면 안 됩니다. IPPO 경로에서는 controller가 `active=False`로 불려 비교가 일어나지 않습니다(`exp_b_oracle_consensus.py:160`).
+
+### Assistant — 진행 안내 (4)
+
+확인했습니다. 말씀하신 D98·D99·E67을 기준으로 여기서 계속 구현하고 있습니다. 접촉이 끊겨도 보존되는 `approved()`와 Max-GAE의 v2 직접 호출을 추가했으며, 이제 실행 모드와 검증을 연결하겠습니다.
+
+### Assistant — 진행 안내 (5)
+
+새 모드와 감사 로그 연결을 마쳤습니다. 지금은 접촉·성숙 조건 테스트와 실제 trainer의 64 step 동등성 검증을 돌리고 있습니다. 첫 실행은 테스트 임시 폴더의 상위 경로가 없어 일부 설정 단계에서 실패했으며, 별도 검증 폴더를 만든 뒤 다시 실행 중입니다.
+
+### Assistant — 진행 안내 (6)
+
+승인이 닫힌 `pgct_max`와 `oracle_mature_max`는 1M checkpoint에서 각각 64 step 실행한 뒤 IPPO와 최종 가중치가 비트 단위로 같았습니다. v2 예측기가 실제로 학습된 것도 확인했습니다.
+
+현재는 정답 팀 승인을 넣은 진단 실행이 `oracle_max`와 같아지는지, EV 필터와 warm-up이 donor를 막는지도 추가로 검증하고 있습니다.
+
+### Assistant — 진행 안내 (7)
+
+기존 57개와 새 15개, 총 72개 테스트가 모두 통과했습니다. 1M 공통 checkpoint·seed 1에서 실행한 64 step smoke에서도 정답 승인을 넣은 두 새 모드는 `oracle_max`와 비트 단위로 같았고, EV 필터로 donor를 막으면 IPPO와 같았습니다.
+
+문서와 연구 기록을 정리하고 있습니다. PGCT-D2 본 학습은 시작하지 않았으며, 검증 로그와 checkpoint는 별도 폴더에 보존했습니다.
+
+### 수행 기록 — 원문 대화와 별도
+
+- 사용자 요청 파일과 D91–D99/E57–E67/T151–T165 관련 내용, trainer의 관측·update·checkpoint 연결부 확인. 기존 논문은 `output/pgct_progress_paper_20261023/main.tex`의 방법·문제 설정 부분, `output/ijcai_method_paper_20261018/README.md`의 현행 원고·결과 한계 안내를 읽었다. 논문 원고 전체를 읽거나 수정·컴파일한 것은 아니다. 별도 웹 대화를 조회한 것이 아니라 사용자 붙여넣기와 로컬 대화 기록을 읽었다.
+- 구현 D100, 검증 E68. PGCT-D2 새 15개 포함 72 tests 통과. 실제 trainer seed 1, 1M 공통 checkpoint 분기, 64 step/job 9 job smoke. 본 학습 결과로 세지 않는다.
+- 코드 변경은 `latent_team/` 세 파일과 새 테스트, 문서·기록. trainer·환경·examples 수정·기존 실행 중단·새 본 학습·커밋 없음. 프로세스 조회 실패는 CIM 권한 제한이며 자동 승인 심사 거부가 아니다.
+- 연구 기록·문서를 쓰기 직전 재확인했으며 Claude가 추가한 T165를 보존했다. `RESEARCH_STATE.md`, `DECISIONS.md` D100, `EXPERIMENTS.md` E68, `docs/MAX_GAE.md`, 이 T166 및 통합 사본 갱신.
+
+### Assistant — 최종 답변
+
+PGCT-D2 필수 5–8을 구현했습니다.
+
+- 접촉과 독립적인 v2 `approved()`·성숙 조회
+- rollout 접촉과 승인을 결합한 donor 선택
+- `pgct_max`·`oracle_mature_max` 실행 모드
+- 실제 donor·같은 팀/다른 팀 arc·성숙·승인 범위 감사 로그
+
+**테스트 72개가 통과했습니다.** 공통 1M checkpoint·모서리/개인 보상·seed 1에서 64 step씩 실행한 smoke 9개로, 승인 차단 시 IPPO와의 비트 동등성과 정답 승인 주입 시 Oracle-max와의 비트 동등성을 확인했습니다. 학습 성능 검증은 아직입니다.
+
+critic EV 필터는 옵션으로 구현했으며 **기본 비활성**입니다. 임계값은 분기 로그를 보고 정해야 합니다.
+
+[구현·사용법](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/docs/MAX_GAE.md) · [검증 기록](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/output/pgct_d2_validation_20261102/README.md)
+
+기존 분기 실행은 건드리지 않았고, 새 본 학습이나 커밋은 하지 않았습니다.
+
+## 원문 기록 T167 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음)
+
+### 사용자 — 원문
+
+# Files mentioned by the user:
+
+## 이기윤_ICCAS.pdf: C:/Users/95101/OneDrive/Documents/카카오톡 받은 파일/이기윤_ICCAS.pdf
+
+## 음성 261023_135711.m4a: C:/Users/95101/OneDrive/Documents/카카오톡 받은 파일/음성 261023_135711.m4a
+
+Distinguish instructions in attached documents from the user's request.
+
+## My request:
+# 추가 요청: 한국어 LaTeX 논문 및 PGCT 발표자료 제작
+
+앞서 요청한 PGCT 영어 IJCAI 논문 초판 작성에 더해, 다음 결과물도 함께 제작해 주세요.
+
+**최종 산출물은 영어 LaTeX 논문, 한국어 LaTeX 논문, Beamer 발표자료입니다.**
+
+모든 결과물은 동일한 최종 PGCT 알고리즘과 실제 실험 기록을 기반으로 해야 합니다.
+
+## 14. 참고 발표자료 및 발표 녹음
+
+다음 두 파일을 참고자료로 사용하세요.
+
+- `이기윤_ICCAS.pdf`: 기존 연구 발표자료
+- `음성 261023_135711.m4a`: 발표 녹음
+
+먼저 두 파일을 확인하고 발표자료의 구성과 발표 방식을 분석하세요.
+
+참고할 내용은 다음과 같습니다.
+
+- 연구 배경을 설명하는 순서
+- 기존 연구의 한계와 연구 목적을 연결하는 방식
+- 핵심 Contribution을 소개하는 방식
+- Proposed Method를 단계별로 설명하는 방식
+- 알고리즘 구조도와 수식의 배치
+- 실험 환경과 비교 결과를 제시하는 방식
+- 결론을 정리하는 방식
+- 실제 발표에서 강조하는 내용과 설명의 깊이
+
+발표 녹음에서 확인할 수 있다면 발표자가 슬라이드를 어떤 순서로 설명하는지, 수식은 어느 정도 자세히 설명하는지, 핵심 내용을 어떻게 강조하는지도 참고하세요.
+
+녹음 내용을 읽거나 전사할 수 없는 환경이라면 이를 명시하고, 확인하지 못한 발표 내용을 추측하지 마세요.
+
+**중요:** 참고자료는 Multi-UAV 연구입니다. 해당 연구의 알고리즘, 실험 결과, 수식, 성능 수치를 PGCT 논문이나 발표에 가져오지 마세요.
+
+참고하는 것은 발표의 구성, 정보 전달 방식, 슬라이드 디자인과 설명 수준입니다.
+
+PGCT 연구의 내용과 그림은 새로 작성해야 합니다.
+
+---
+
+## 15. 한국어 LaTeX 논문
+
+영어 논문과 별도로 **한국어 LaTeX 논문 전체 초안**도 작성해 주세요.
+
+단순한 요약본이 아니라 영어 논문과 동일한 기술 내용을 포함하는 완전한 논문이어야 합니다.
+
+다음 원칙을 적용하세요.
+
+1. 영어 논문과 한국어 논문의 섹션 구성은 최대한 일치시킵니다.
+2. 모든 핵심 수식과 알고리즘 정의를 동일하게 유지합니다.
+3. 실험 설정, 결과, 수치, 인용문헌도 동일하게 유지합니다.
+4. 영어 논문을 기계적으로 직역하지 말고 자연스러운 한국어 학술 문체를 사용합니다.
+5. 불필요하게 긴 문장과 어려운 한자어를 피합니다.
+6. Actor, Critic, Reward Probe, GAE, PPO 등 중요한 기술 용어는 일관되게 사용합니다.
+7. 영어와 한국어 사이에 주장이나 결과가 달라지지 않도록 검토합니다.
+
+한국어 논문은 다음 목적을 가집니다.
+
+- 연구 내용을 정확히 이해하기 위한 개인 검토용
+- 지도교수님과 논의하기 위한 자료
+- 수식과 알고리즘의 논리적 흐름을 점검하기 위한 자료
+- 영어 논문을 수정할 때 참고할 원본
+
+따라서 영어 논문보다 과도하게 축약하지 마세요.
+
+한국어 LaTeX는 `kotex` 등 적절한 패키지를 사용하고, 가능하면 XeLaTeX 또는 LuaLaTeX로 컴파일 가능하도록 구성하세요.
+
+영어와 한국어 논문은 공통된 BibTeX 참고문헌을 사용해도 됩니다.
+
+---
+
+## 16. Beamer 발표자료
+
+첨부된 `이기윤_ICCAS.pdf`의 발표 구성과 시각적 스타일을 참고하여 **PGCT 연구 발표용 Beamer 슬라이드**를 작성해 주세요.
+
+발표자료는 논문 내용을 단순히 슬라이드에 복사한 형태가 아니어야 합니다.
+
+연구 배경부터 알고리즘, 실험, 결론까지 자연스럽게 이어지는 발표로 구성하세요.
+
+### 발표자료 구성
+
+다음 구성을 기본으로 합니다.
+
+1. Title
+2. Outline
+3. Introduction — Research Background
+4. Introduction — Problem Definition
+5. Introduction — Related Work
+6. Introduction — Research Goal and Contributions
+7. Proposed Method — Overall PGCT Architecture
+8. Proposed Method — Individual Reward Prediction
+9. Proposed Method — Reward Probe Construction
+10. Proposed Method — Reward Response Distance and Team Discovery
+11. Proposed Method — Selective Peer Critic Access
+12. Proposed Method — Max-GAE Advantage Estimation
+13. Proposed Method — Actor and Critic Updates
+14. Simulation Results — Experimental Setup
+15. Simulation Results — Team Discovery Performance
+16. Simulation Results — Learning Performance
+17. Conclusion
+
+이 순서는 기본안이며, 실제 내용과 발표 흐름에 맞춰 일부 조정해도 됩니다.
+
+약 15~18장 내외로 구성하되 슬라이드 수를 맞추기 위해 불필요한 내용을 추가하지 마세요.
+
+### 발표자료 디자인
+
+- 16:9 비율을 사용합니다.
+- 첨부 ICCAS 발표자료처럼 밝고 깔끔한 학술 발표 스타일을 사용합니다.
+- 슬라이드 제목은 명확하게 작성합니다.
+- 문장보다 핵심 문구, 수식, 그림을 중심으로 구성합니다.
+- 한 슬라이드에 너무 많은 내용을 넣지 않습니다.
+- 수식은 실제 발표에서 설명할 핵심 수식만 포함합니다.
+- 전체 알고리즘을 보여주는 구조도를 제작합니다.
+- Reward Probe를 통한 팀 판별 과정을 시각화합니다.
+- Critic 선택 및 Max-GAE 계산 과정을 그림으로 설명합니다.
+- 실험 비교는 실제 로그에 근거한 표와 그래프를 사용합니다.
+- 표와 그래프의 축, 범례, 글자 크기를 읽기 쉽게 만듭니다.
+
+다음 그림은 특히 신경 써서 제작하세요.
+
+**Figure 1. Overall PGCT Architecture**
+
+Independent Learning → Individual Reward Prediction → Reward Probe → Latent Team Discovery → Peer Critic Selection → Advantage Estimation → PPO Update
+
+**Figure 2. Reward-Based Team Discovery**
+
+서로 다른 에이전트가 공통 probe에 대해 예상 보상을 계산하고, 응답 차이를 바탕으로 같은 팀인지 판단하는 과정입니다.
+
+**Figure 3. Selective Peer Critic Learning**
+
+승인된 팀원의 Critic으로 자신의 관측 이력을 평가하고, 개인 Critic과의 가치 차이를 Actor Advantage에 반영하는 과정을 설명합니다.
+
+그림에는 실제 코드에서 사용하지 않는 정보 교환이나 중앙집중식 학습 과정을 넣지 마세요.
+
+### 슬라이드 언어
+
+발표 슬라이드는 첨부한 ICCAS 자료처럼 **간단한 영어**로 작성해 주세요.
+
+- 짧은 문장
+- 핵심 용어 중심
+- 복잡한 영어 문법 최소화
+- 지나치게 어려운 단어 지양
+- 자연스러운 학술 발표 표현 사용
+
+수식과 알고리즘은 정확하게 유지하세요.
+
+별도의 **한국어 발표 대본**도 작성해 주세요.
+
+발표 대본은 슬라이드별로 구분하고, 단순한 번역이 아니라 실제 발표자가 말하는 자연스러운 한국어로 작성합니다.
+
+특히 수식이 등장하는 슬라이드에서는 수식의 모든 기호를 읽기보다 해당 수식이 무엇을 의미하는지 설명하도록 작성하세요.
+
+---
+
+## 17. PPTX 파일도 별도로 생성
+
+Beamer `.tex`만 만들지 말고 실제 PowerPoint에서 열 수 있는 `.pptx` 파일도 생성해 주세요.
+
+Beamer와 PowerPoint는 별도의 형식이라는 점을 고려하세요.
+
+다음 결과물을 모두 생성합니다.
+
+- Beamer `.tex` 원본
+- 컴파일된 Beamer `.pdf`
+- PowerPoint `.pptx`
+
+PowerPoint 파일은 Beamer 슬라이드와 내용, 순서, 디자인이 최대한 일치해야 합니다.
+
+가능하면 `python-pptx` 또는 `PptxGenJS`를 사용하여 텍스트, 도형, 표 등을 수정할 수 있는 PPTX로 작성하세요.
+
+PDF 페이지를 이미지로만 삽입한 PPTX는 편집성이 떨어지므로 가능하면 피하세요.
+
+수식이나 복잡한 도식 등 일부 요소를 이미지로 처리해야 한다면 해당 부분을 구분해 주세요.
+
+PPTX 생성 도구가 없다면 임의의 확장자 변경으로 PPTX를 만든 것처럼 처리하지 말고, Beamer PDF를 우선 완성하고 PPTX 생성 제한을 보고하세요.
+
+---
+
+## 18. 논문과 발표자료의 일관성
+
+네 가지 결과물은 동일한 연구를 설명해야 합니다.
+
+- 영어 논문
+- 한국어 논문
+- Beamer 발표자료
+- PPTX 발표자료
+
+다음 사항을 반드시 일치시키세요.
+
+1. 최종 알고리즘 구성
+2. Reward Predictor 정의
+3. Reward Probe의 거리와 승인 규칙
+4. Donor 선택 조건
+5. Max-GAE의 수식과 설정
+6. 실험 환경 및 baseline
+7. 실제 실험 결과
+8. 연구 기여와 한계
+
+논문에서 사용하지 않은 새로운 알고리즘이나 가정을 발표자료에 추가하지 마세요.
+
+또한 이전 PGCT 버전의 개발 과정을 발표자료에 포함하지 마세요.
+
+v1, v2, D1, D2 같은 내부 버전 명칭 대신 최종 알고리즘 PGCT의 구성요소로 설명하세요.
+
+아직 완료되지 않은 실험의 결과를 만들어서는 안 됩니다.
+
+진행 중인 실험은 결과 슬라이드에 명확한 placeholder를 두고, 실제 결과가 확보되면 교체할 수 있도록 구성하세요.
+
+---
+
+## 19. 폴더 구성 및 최종 산출물
+
+다음과 같이 정리해 주세요.
+
+```text
+paper/
+├── english/
+│   └── main.tex
+├── korean/
+│   └── main.tex
+├── references.bib
+├── figures/
+│
+presentation/
+├── pgct_beamer.tex
+├── pgct_beamer.pdf
+├── pgct_presentation.pptx
+├── pgct_script_ko.md
+└── figures/
+```
+
+논문과 발표자료에서 공통으로 사용할 수 있는 그림은 재사용해도 됩니다.
+
+컴파일된 영어 논문 PDF와 한국어 논문 PDF도 생성할 수 있으면 함께 제공하세요.
+
+최종적으로 다음 항목을 검토하세요.
+
+- 영어 논문과 한국어 논문의 내용이 같은가?
+- LaTeX 컴파일 오류가 없는가?
+- 그림과 표가 잘리지 않는가?
+- Beamer와 PPTX의 슬라이드 순서가 같은가?
+- PPTX에서 글자나 수식이 겹치지 않는가?
+- 발표 대본이 슬라이드의 실제 내용과 일치하는가?
+- 실험 결과를 임의로 만들어 넣지 않았는가?
+- 논문과 발표 모두 잠재 팀 발견을 핵심 기여로 유지하는가?
+
+이번 작업에서는 연구 코드와 학습 설정을 변경하지 마세요.
+
+기존 실험도 중단하거나 새로 실행하지 마세요.
+
+**목표는 PGCT의 영어·한국어 논문 초판과, 이를 바탕으로 한 실제 연구 발표자료를 함께 완성하는 것입니다.**
+
+### Assistant — 진행 안내 (1)
+
+첨부 PDF와 녹음을 먼저 확인해 발표 구성과 설명 방식을 살펴보겠습니다. 이어서 최종 PGCT 코드와 실제 실험 기록을 대조해 영어·한국어 논문, Beamer, 편집 가능한 PPTX, 한국어 발표 대본을 같은 내용으로 제작하겠습니다. 연구 코드와 학습 설정·실행은 변경하지 않겠습니다.
+
+### Assistant — 진행 안내 (2)
+
+PDF와 발표자료 제작 스킬을 적용하겠습니다. 현재 최종 PGCT는 구현 검증까지 마쳤고 통합 알고리즘의 장기 학습 결과는 아직 없으므로, 자료에서도 확인된 팀 발견 결과와 미완료 성능 실험을 분명히 구분하겠습니다.
+
+### Assistant — 진행 안내 (3)
+
+참고 PDF는 16장으로, 배경·관련 연구·기여를 짧게 제시한 뒤 전체 구조도에서 구성요소별 설명으로 들어가고, 실험과 결론으로 마무리합니다. 흰 배경, 파란 제목, 핵심 수식과 도식 중심의 구성을 참고하겠습니다.
+
+녹음 파일은 약 13분 33초이며 파일 메타데이터까지 확인했습니다. 현재 환경에는 음성 전사 도구가 없어 실제 발화·강조 방식은 확인할 수 없습니다. 이 부분은 추측하지 않고, 한국어 대본은 PGCT 내용에 맞춰 새로 작성하겠습니다.
+
+### Assistant — 진행 안내 (4)
+
+기존 로그에서 보상 기반 팀 발견 구성요소의 실제 수치를 다시 집계했습니다. 약 5M step·seed 1 기록의 같은 팀/다른 팀 전이 arc 누적은 5,252/352이며, 이는 최종 PGCT의 학습 성능 결과로 사용하지 않겠습니다. 최종 알고리즘의 성능 비교에는 결과 대기 영역을 두고, 확인된 IPPO 기준 곡선만 표시하겠습니다.
+
+한국어를 포함한 LaTeX 컴파일 시험도 성공했습니다. 영어·한국어 논문은 공통 수식과 참고문헌을 사용해 내용 차이를 줄이고 있습니다.
+
+### Assistant — 진행 안내 (5)
+
+영어·한국어 논문 전체 초안과 17장 발표자료, 슬라이드별 한국어 대본을 작성했습니다. 두 논문은 PDF 컴파일에 성공했으며, 현재 표·그림·긴 경로의 배치와 인용 표시를 점검하고 있습니다. PPTX의 본문·도식·표·그래프는 편집 가능하게 만들었고, 복잡한 수식만 이미지 조각으로 처리했습니다.
+
+### Assistant — 진행 안내 (6)
+
+세 PDF의 컴파일을 완료했고, PPTX도 렌더링해 확인하고 있습니다. PPTX 구조·배치 검사에서는 17장, 편집 가능한 그래프 2개와 표 3개가 확인됐고 잘림·제목 넘침 항목은 없었습니다. 두 논문은 각각 7쪽입니다.
+
+마지막으로 수식·승인 규칙·실험 조건의 한영 일치, Beamer와 PPTX의 순서, 발표 대본의 대응을 확인한 뒤 전체 묶음과 함께 전달하겠습니다.
+
+### Assistant — 진행 안내 (7)
+
+내용 일치와 배치 점검을 마쳤습니다. 현재 자료는 공식 투고본이 아닌 검토용 초안이며, 최종 PGCT 성능 결과는 대기 상태로 표시했습니다. LaTeX 원본·공통 문헌·그림·PPTX·한국어 대본을 한 ZIP으로 묶고, 작업 기록을 갱신하고 있습니다.
+
+### 수행 기록 — 원문 대화와 별도
+
+- `pdf`와 `presentations` 스킬을 읽고 사용했다. 사용자의 python-pptx/PptxGenJS 선호에 따라 PPTX는 python-pptx로 작성하고 Artifact Tool로 렌더링·OOXML 검사했다. 과학 그래프는 matplotlib, 사용자가 요청한 도식은 TikZ·네이티브 PPTX 개체로 작성했다.
+- 첨부 PDF는 16장 전체 텍스트 추출·렌더링으로 구성과 디자인을 확인했다. 음성은 파일/컨테이너 메타데이터(812.9793초)만 확인했다. 전사·청취·발화 복원은 하지 않았다. 다른 연구의 식·알고리즘·그림·실험 수치는 전용하지 않았다.
+- 최종 코드와 D98–D100/E62–E68 및 기존 연구 기록, 실제 discovery/IPPO/진행 중 분기 로그를 읽었다. 예전 논문 서지 자료도 참고하고 PPO/GAE/MAMBA/SEAC/SePS 원문·공식 서지를 확인했다. 근거 파일과 해시는 `paper/evidence_manifest.json`에 있다.
+- 결과물은 한영 논문 각각 7쪽, Beamer/PPTX 각각 17장, 한국어 대본과 새 구조도 3개다. 수식 11개·인용7개·label은 한영 동일, 발표/대본은 공통 slides.json에서 만들었다. 그림·표·슬라이드 렌더링을 확인하고 오류를 수정했다. PDF 3개 실제 컴파일 성공, overfull/누락 glyph 없음. PPTX native chart2/table3, notes17, geometry/structure finding0. Microsoft PowerPoint 앱에서 직접 검증한 것은 아니다.
+- 첫 TeX 그림 줄바꿈 오류, 수식 이미지 parser의 mathcal 표기, strict PPTX importer의 signed axis ID, 누락 TeX 글꼴, 패키지 ZIP의 pptx 확장자 누락을 고쳐 최종 산출물·묶음을 검증했다. 이들은 문서 제작 문제이며 연구 코드/알고리즘 수정이 아니다.
+- 영어·한국어는 포터블 2단 검토 초안이며, 목표 연도 공식 IJCAI 양식·분량 충족은 아직 별도 작업이다. 최종 통합 PGCT의 장기 성능은 Pending, E68의 기존72 tests/64step smoke만 구현 근거로 인용했고 재실행하지 않았다.
+- 문서 제작 중 연구 코드·학습 설정·실행 상태를 변경하지 않았으며 새 학습·환경 rollout·pytest·중단·재시작·커밋 없음. 새 TeX 실행 파일/캐시만 프로젝트 제작 폴더에 받았다. 연구 코드 해시 불변을 확인했다.
+- `DECISIONS.md` D101, `EXPERIMENTS.md` E69, `RESEARCH_STATE.md`, 이 T167과 통합 사본을 갱신했다. 접근하지 못한 이전 영어 논문 지시나 웹 대화를 복원했다고 쓰지 않았다.
+
+### Assistant — 최종 답변
+
+완성했습니다. 영어·한국어 논문은 각각 **7쪽**, 발표자료는 **17장**입니다.
+
+[전체 묶음 ZIP](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/PGCT_paper_presentation_20261102.zip) — LaTeX 원본·공통 문헌·그림·대본 포함
+
+영어 논문 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/paper/english/main.pdf" purpose="output"}
+
+한국어 논문 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/paper/korean/main.pdf" purpose="output"}
+
+Beamer 발표 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_beamer.pdf" purpose="output"}
+
+편집 가능한 PowerPoint
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_presentation.pptx" purpose="output"}
+
+[한국어 발표 대본](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_script_ko.md)
+
+최종 PGCT 성능은 **Pending**으로 표시했습니다. 녹음은 전사하지 못했으며, 발표 방식을 추측하지 않았습니다. 논문은 검토용 2단 초안으로 공식 IJCAI 양식 적용은 남아 있습니다.
+
+연구 코드·학습 설정·실험 실행은 변경하지 않았습니다.
+
+## 원문 기록 T168 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+Codex로 구현된 PGCT-D2 구현 제대로 됐는지 확인해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- Codex 구현(D100, E68, T166) 검토. 읽은 코드: `git diff`의 `latent_team/reward_probe_ac_v2.py`·`max_gae.py`·`train_from_scratch.py`, `tests/test_pgct_max.py`.
+- pytest: `test_pgct_max.py`·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 72개 통과. 실제 trainer 테스트는 scratchpad의 긴 경로에서 Windows 260자 한도로 실패했고, `C:\Users\95101\AppData\Local\Temp\pgt`에서 통과했다(코드 문제 아님). 임시 폴더는 지웠다.
+- 자연 경로 smoke 1 job(64 step, 1M 분기, `pgct_max`, 느슨한 v2 설정, `Temp\pgt2`, 지움). 결과는 E70.
+- 실행 중인 분기(`runs/maxgae_br1M_20261102_165216`, PID 28892)는 상태만 읽었다. 중단·재시작 없음.
+- 코드 수정·커밋 없음. 기록: D102, E70, `RESEARCH_STATE.md`, 이 T168, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Codex 변경은 세 파일(v2 `approved()`·`maturity()`, `max_gae.py`의 `gate`·`oracle_mature`, `train_from_scratch.py`의 두 모드)입니다. 핵심 설계 변경이 하나 보입니다. v2 비교 자체를 update 직전 이웃이 아니라 rollout 접촉으로 하도록 바꿨습니다. 테스트 파일과 검증 산출물을 읽겠습니다.
+
+테스트는 승인 없음(성숙 차단)과 정답 승인 주입(monkeypatch)만 실제 trainer로 확인합니다. v2가 rollout 접촉으로 실제 비교하고 승인해서 donor가 생기는 자연 경로는 끝까지 검증되지 않았습니다. 먼저 전체 테스트를 돌리고, 실행 중이라는 분기 실험의 상태를 읽기 전용으로 확인하겠습니다.
+
+한 테스트가 실패했습니다. 원인을 보겠습니다.
+
+실패 원인은 코드가 아니라 경로 길이입니다. 제 scratchpad 경로가 길어서 `oracle_mature_max` job 파일 경로가 Windows 한도(260자)를 넘었습니다(약 261자). 더 짧은 경로로 다시 돌립니다.
+
+여전히 같은 경로 길이 문제입니다(파일 이름이 더 길어 262자). 시스템 임시 폴더의 짧은 경로(`C:\Users\95101\AppData\Local\Temp\pgt`)에서 다시 돌리고, 끝나면 지우겠습니다.
+
+실제 trainer 테스트도 짧은 경로에서는 통과합니다(전체 72개 통과). 이제 테스트가 다루지 않은 자연 경로를 확인합니다. v2 설정을 느슨하게 줘서(사건 기준 .1, 성숙 1개, round 1, 문턱 1.0) 실제 비교 → 승인 → donor가 생기는지, 그리고 비교 대상이 rollout 접촉인지 64 step smoke로 보겠습니다.
+
+자연 경로도 동작합니다. update 2에서 rollout 중에만 만난 쌍(update 직전에는 이웃 아님)이 실제로 비교됐고, donor = 접촉 ∧ 승인이 정확히 성립했으며, trainer allocation은 0이었습니다. 문턱을 1.0으로 풀었기 때문에 다른 팀 쌍이 승인된 것은 예상대로입니다. 임시 폴더를 지우고 기록 번호를 확인하겠습니다.
+
+### Assistant — 최종 답변
+
+결론부터 말씀드리면, **배선은 제대로 됐고 실행을 막는 버그는 없습니다.** 다만 Codex가 설계 하나를 바꿨습니다. v2의 비교 대상을 "update 직전 이웃"에서 "rollout 중 접촉"으로 바꿨는데, 이 때문에 통신 모델의 인과성 문제가 생깁니다. 그 밖에 작은 문제가 몇 개 있습니다. 코드는 고치지 않았습니다.
+
+## 재현해서 확인한 것
+
+- **테스트**: Codex가 적은 72개가 모두 통과했습니다.
+  - 실제 trainer 테스트 하나는 처음에 실패했습니다. 제 임시 경로가 길어 `oracle_mature_max` job의 파일 경로가 Windows 260자 한도를 넘었기 때문입니다(261–262자). 짧은 경로에서는 통과했습니다. 코드 문제는 아닙니다. `runs/` 아래 실제 run 경로는 약 200자라 괜찮습니다.
+- **자연 경로 smoke(제가 추가, 64 step, 1M 분기)**: Codex 테스트는 "승인 없음"(min_events 100만)과 "정답 승인 주입"(monkeypatch)만 다룹니다. 그래서 v2를 느슨하게 설정해(사건 기준 .1, 성숙 1개, round 1, 문턱 1.0) 실제 비교 → 승인 → donor 경로를 돌려 봤습니다.
+  - update 2에서 rollout 접촉 10쌍, update 직전 이웃 4쌍이었습니다. 비교된 1쌍은 update 직전 이웃이 아니었습니다. 즉 rollout 접촉으로 비교하는 것이 맞게 동작합니다.
+  - donor = 접촉 ∧ 승인이 정확히 성립했고, trainer allocation은 0이었습니다(증류 없음).
+  - 문턱을 1.0으로 풀어서 다른 팀 쌍이 승인됐습니다. 배선 확인용 설정이라 예상된 결과입니다.
+- **기존 모드 영향**: oracle/all/allk는 구조만 정리됐고 결과는 같습니다. EV 계산 위치를 앞당긴 것도 순수 계산이라 영향이 없습니다.
+- **실행 중인 분기**: `runs/maxgae_br1M_20261102_165216`, PID 28892(16:52 시작), 현재 `ippo_s1` running입니다. Codex의 수정(16:57–17:05)보다 먼저 코드를 불러와 한 프로세스에서 순차로 돌기 때문에 영향이 없습니다.
+
+## 설계 대비 점검
+
+| 항목 | 구현 | 판정 |
+|---|---|---|
+| 지속 승인 | `approved()`: round ≥ 3 ∧ EMA < .5 ∧ 현재 두 agent 성숙, 대칭, 접촉과 무관, 복사본 반환 ([reward_probe_ac_v2.py:313](latent_team/reward_probe_ac_v2.py:313)) | 맞음 |
+| donor 규칙 | `gate` = 접촉 ∧ 승인(∧ 선택적 critic EV). 팀 라벨을 쓰지 않음 ([max_gae.py:98](latent_team/max_gae.py:98)) | 맞음 |
+| 대조군 | `oracle_mature` = 접촉 ∧ 같은 팀 ∧ 두 agent r̂ 성숙 | 맞음 |
+| 모드 | `pgct_max`·`oracle_mature_max`: IPPO 경로, peer loss 0, v2 learn=True, `--ac-gate v2` 필수 ([train_from_scratch.py:70](latent_team/train_from_scratch.py:70)) | 맞음 |
+| controller 활성화 | Max-GAE가 update마다 한 번 직접 호출, warm-up 뒤 비교 ([max_gae.py:281](latent_team/max_gae.py:281)) | 맞음, 단 아래 1번 |
+| critic 성숙 | `--max-gae-min-critic-ev` 옵션, 기본 꺼짐(임계값 미정) | 계획대로 |
+| 감사 로그 | 승인 arc, 같은 팀·다른 팀, 승인 범위(12 arc 중), `ac_pairs` | 맞음 |
+| D2 식 | shrink·가림 그대로 | 맞음 |
+
+## 문제점
+
+**1. (중요) v2 비교를 rollout 접촉으로 바꾼 설계 변경**
+
+D98에서 저는 "승인 학습은 v2 그대로(update 직전 비교)"를 권했습니다. Codex는 D100에 이유(Oracle과 기준 일치, IPPO 경로의 `active=False` 해결)를 적고 바꿨습니다. 기준을 맞춘 점은 장점이지만 세 가지가 따라옵니다.
+
+- **인과성**: v2 `__call__`은 먼저 예측기를 다시 학습하고([reward_probe_ac_v2.py:244](latent_team/reward_probe_ac_v2.py:244)) 그다음 비교합니다. 그래서 rollout 중간에 만났다가 헤어진 쌍도, 헤어진 뒤의 경험까지 학습한 예측기와 그 뒤에 생긴 사건 probe로 비교합니다. "통신 범위 안에서만 주고받는다"는 모델이라면 실제로는 주고받을 수 없는 정보입니다. smoke에서도 update 직전에 이웃이 아닌 쌍이 비교됐습니다. D2의 critic 가중치는 rollout 동안 고정이라 문제가 없습니다. 문제는 v2 비교뿐입니다.
+- **기존 수치의 이전 불가**: E59·E60·E65의 승인 시점과 오승인 수치는 update 직전 기준입니다. pgct_max에 그대로 옮길 수 없습니다. 비교 빈도가 늘어 다른 팀 쌍도 더 자주 비교됩니다.
+- **로그 의미 변화**: W&B `update/ac_v2_*`의 비교 대상 집합이 v2 PGCT run과 다릅니다. `ac_v2_gate_arcs`는 D2 donor가 아니라 옛 증류 gate입니다. D2는 `max_gae_*`를 봐야 합니다.
+
+선택지는 둘입니다.
+- (i) 코드는 그대로 두고, 논문에 "직전 rollout에서 만난 쌍은 update 시점에 한 번 교환한다(지연 메시지)"는 통신 가정을 명시합니다.
+- (ii) 엄밀하게 고칩니다. pgct_max에서는 재학습 전에 비교하고, probe는 rollout 시작 시점까지의 사건으로 제한합니다. 그러면 접촉 시점에 실제로 있던 예측기와 사건만 씁니다.
+
+논문이 "제한된 지역 통신"을 내세운다면 (ii)를 권합니다. 수정 범위는 v2 비교 순서와 probe 스냅샷 정도로 작습니다.
+
+**2. (작음) 승인에 유효기간이 없습니다.** 예전 EMA로 승인된 쌍은 다음 비교 round(5 update마다)까지 그 승인으로 donor가 됩니다. E65 같은 후반 거리 감소와 겹치면 반영이 늦어집니다.
+
+**3. (작음, 옵션을 켤 때만) `allk` 수 맞춤이 EV 필터 전 기준입니다.** `--max-gae-min-critic-ev`를 켜면 oracle과 donor 수가 어긋날 수 있습니다.
+
+**4. (테스트 공백) 실제 비교 → 승인 → donor 경로의 회귀 테스트가 없습니다.** 제 smoke로 동작은 확인했지만, 느슨한 설정의 smoke를 테스트로 고정해 두는 편이 좋습니다.
+
+## 그대로 남는 연구상 한계 (Codex도 명시)
+
+- a0·a4처럼 보상 사건이 없는 agent는 `pgct_max`·`oracle_mature_max`에서 receiver가 될 수 없습니다.
+- 분기에서는 v2가 새로 시작하므로 승인이 늦게 생깁니다.
+- donor critic EV 임계값은 아직 정하지 않았습니다.
+
+**권고**: 분기 2단계(`pgct_max`, `oracle_mature_max`)를 실행하기 전에 1번을 결정해야 합니다. 1단계(지금 돌고 있는 oracle 분기)에는 영향이 없습니다.
+
+기록은 `DECISIONS.md` D102, `EXPERIMENTS.md` E70, `RESEARCH_STATE.md`, 대화 기록 T168에 남겼습니다. 코드 수정·커밋은 하지 않았습니다.
+
+## 원문 기록 T169 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+엄밀하게 수정(ii)
+
+### 수행 기록 — 원문 대화와 별도
+
+- T168 다음 단계 버튼(D102의 선택지 ii)이다.
+- 코드 변경: `latent_team/reward_probe_ac_v2.py`(`contact_snapshot`, `snapshot()`, `compare_neighbors()`, 비교 후 재학습 순서, 고정 성숙, 재학습 감지 오류, install의 rollout 시작 스냅샷), `latent_team/train_from_scratch.py`(PGCT-D2 두 모드에 플래그 자동 설정, 옛 계획 거부), `tests/test_pgct_max.py`(새 테스트 5개), `docs/MAX_GAE.md`, `docs/REWARD_PROBE_AC.md`. trainer·`rware/`·`examples/`와 기존 모드는 바꾸지 않았다.
+- 검증: pytest 77개 통과(`AppData\Local\Temp\pgt`를 basetemp로 쓰고 지움). 실제 trainer 자연 경로 테스트 포함.
+- 진행 안내 일부를 영어로 보냈다(아래 원문 그대로).
+- 논문 초안(`paper/`)은 고치지 않았다. 학습 시작·중단·커밋 없음.
+- 기록: D103, E71, `RESEARCH_STATE.md`, 이 T169, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+(ii)로 고치겠습니다. 방식은 "rollout 시작 때 각 agent가 보낼 수 있는 것(예측기·최근 사건 probe·성숙 여부)을 고정하고, 그 rollout에서 만난 쌍만 그 고정본으로 비교한 뒤 재학습"입니다. 기존 v2 증류 모드는 그대로 둡니다.
+
+현재 v2 controller는 재학습 → 성숙 판정 → 비교 순서입니다. 설정 플래그 `contact_snapshot`(기본 False)을 추가해, 켜져 있을 때만 rollout 시작 스냅샷으로 비교한 뒤 재학습하도록 고치겠습니다.
+
+Now the rollout-start hook in `install` and the `approved()` docstring.
+
+Old `pgct_max` manifests made before this change would silently run the old comparison order, so I'll refuse those in `run_job`.
+
+No existing PGCT-D2 runs, so nothing is affected by the refusal. Now the tests: snapshot causality (unit), the refit guard, plan wiring, refusal of old plans, and the natural approval path on the real trainer (the gap I flagged).
+
+One fix before running: with the new order, maturity at update 2 comes from the rollout-2 start (only rollout-1 events), so in a 2-update smoke only one agent may be mature. I'll lower the test's event threshold so several agents mature from positive shaping rewards.
+
+77개(기존 72 + 새 5) 모두 통과했습니다. 자연 경로 테스트의 실제 수치를 읽어 보고하고, 임시 폴더를 지우겠습니다.
+
+Now the docs. Let me find the PGCT-D2 section Codex added to `docs/MAX_GAE.md`.
+
+Codex가 만든 논문 초안(D101)이 v2 비교 순서를 어떻게 서술하는지 확인하겠습니다.
+
+논문 초안 영어판 102행 등은 "재학습 후 비교"(이전 순서)로 적혀 있습니다. 이번에는 고치지 않고 답변에 남기겠습니다. 이제 연구 기록과 대화 기록을 작성합니다.
+
+### Assistant — 최종 답변
+
+(ii)로 수정했습니다. trainer·`rware/`·`examples/`는 그대로이고, 기존 v2 증류 모드(`pgct`)의 동작도 바뀌지 않았습니다.
+
+## 바꾼 것
+
+| 내용 | 위치 |
+|---|---|
+| `ACV2Config.contact_snapshot` 추가(기본 False). `pgct_max`·`oracle_mature_max`는 계획 단계에서 자동으로 True가 됩니다 | [reward_probe_ac_v2.py](latent_team/reward_probe_ac_v2.py), [train_from_scratch.py](latent_team/train_from_scratch.py) `plan` |
+| rollout 시작 때 `snapshot()`: agent별 최근 사건 probe 사본, 보상 예측기 성숙, 예측기 버전을 고정합니다 | `ACV2Controller.snapshot`, `install.collect` |
+| update에서는 접촉 쌍을 고정본(probe·성숙)과 아직 재학습하지 않은 예측기로 **먼저 비교하고, 그 뒤 재학습**합니다. 스냅샷과 비교 사이에 재학습이 끼면 오류로 멈춥니다 | `ACV2Controller.__call__`, `compare` |
+| `maturity()`, 이를 쓰는 `approved()`, `oracle_mature`도 고정된 성숙을 씁니다 | `ACV2Controller.maturity` |
+| 이 규칙 이전에 만든 PGCT-D2 계획은 실행 시 거부합니다("re-plan"). `runs/`에 PGCT-D2 run이 없어서 영향받는 것은 없습니다 | `run_job` |
+
+예측기는 rollout이 끝난 뒤에만 재학습되므로, 고정된 버전이 곧 rollout 동안 쓰인 예측기입니다. 즉 비교에는 그 rollout의 어떤 접촉에서도 실제로 보낼 수 있었던 정보만 들어갑니다. donor critic 가중치는 원래 rollout 동안 고정이라 바꾸지 않았습니다.
+
+## 검증
+
+- **pytest 77개 통과**(기존 72 + 새 5). 새 테스트는 다음을 확인합니다.
+  - 스냅샷 비교 거리가 rollout 시작 상태로 직접 계산한 값과 같고, 기존 순서였다면 다른 값이 나옵니다.
+  - 스냅샷 뒤 재학습이 끼면 거부합니다.
+  - 계획 단계 플래그가 PGCT-D2 두 모드에만 켜집니다(`pgct`는 False).
+  - 플래그 없는 옛 계획은 거부합니다.
+  - 실제 trainer에서 비교 → 승인 → donor 자연 경로가 동작합니다(D102에서 지적한 테스트 공백).
+- **자연 경로 수치**(실제 trainer, 1M 분기, 64 step, 배선 확인용 느슨한 설정):
+  - update 1: rollout 시작 시 6명 모두 미성숙이라 비교 0.
+  - update 2: rollout 시작 시 6명 성숙, 접촉 10쌍 모두 비교(거리 .31–.99), donor 20 arc = 접촉 ∧ 승인.
+  - 비교에 쓴 예측기는 버전 1(rollout 동안 쓰인 것)이고, 그 뒤 버전 2로 재학습됐습니다. trainer allocation은 0입니다.
+- 실제 trainer 테스트는 짧은 `--basetemp`가 필요합니다. `oracle_mature_max` job 경로가 깊은 임시 폴더에서 260자를 넘습니다.
+
+## 영향과 남은 일
+
+- 비교에 한 rollout 전의 예측기와 사건을 쓰므로, 승인이 기존 순서보다 조금 늦게 생길 수 있습니다. smoke로는 그 크기를 잴 수 없습니다.
+- 지금 돌고 있는 1단계 oracle 분기에는 영향이 없습니다. oracle 계열 모드는 v2를 쓰지 않고, 프로세스도 이전에 불러온 코드로 돌고 있습니다.
+- Codex 논문 초안의 알고리즘 단계([paper/english/main.tex:102](paper/english/main.tex:102)와 한국어판의 같은 단계)는 "재학습 후 비교"로 적혀 있고, 테스트 수도 72개로 되어 있습니다. 다음에 논문을 고칠 때 "rollout 시작 스냅샷으로 비교한 뒤 재학습"으로 바꿔야 합니다. 이번에는 고치지 않았습니다.
+- D102의 작은 문제 두 가지(승인 유효기간 없음, EV 필터를 켤 때 `allk` 수 맞춤 어긋남)는 그대로입니다.
+
+## 2단계 실행 명령 (1단계 결과가 긍정일 때, 앱 밖 PowerShell에서 사용자 실행, 새 폴더)
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('pgctd2_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes oracle_mature_max pgct_max --seeds 1 3 5 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label pgctd2_branch --output-dir $run
+```
+
+6 job이고, job당 약 5.5시간으로 추정합니다. v2 학습이 더해져 조금 더 느릴 수 있습니다.
+
+기록은 `DECISIONS.md` D103, `EXPERIMENTS.md` E71, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, `docs/REWARD_PROBE_AC.md`, 대화 기록 T169에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T170 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+지금 돌아가고 있는 코드가 2개인데 꺼도 돼?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 질문 turn이다. 학습 프로세스 2개(PID 18880, 28892)의 명령줄·자식 프로세스와 각 job의 job_status.json·metrics.jsonl 마지막 줄을 읽기 전용으로 확인했다(11-02 17:59).
+- 아무 프로세스도 끄지 않았다. 코드 변경·커밋 없음.
+
+### Assistant — 진행 안내
+
+두 프로세스가 무엇을 돌리고 있는지 읽기 전용으로 확인하겠습니다. 끄지는 않습니다.
+
+### Assistant — 최종 답변
+
+둘 다 끄는 것은 권하지 않습니다. **PID 18880은 꺼도 되고, 끄는 편을 권합니다. PID 28892는 끄면 안 됩니다.** 저는 아무것도 끄지 않았습니다.
+
+## 지금 도는 두 프로세스 (11-02 17:59 기준)
+
+| PID | 시작 | 무엇 | 진행 |
+|---|---|---|---|
+| 18880 | 10-23 18:55 | A+C **v1** 본 학습 `runs/ac_20261023_185556`(8 job 순차, 5M) | 8개 중 5개 complete. 지금 `pgct_s2`가 3.19M/5M. 그다음 `oracle_s2`, `all_s2`가 남음 |
+| 28892 | 11-02 16:52 | **1단계 분기** `runs/maxgae_br1M_20261102_165216`(12 job, 0.5M) | 첫 job `ippo_s1`이 0.10M/0.5M |
+
+## PID 18880(v1 run): 꺼도 됩니다
+
+- **남은 비용이 큽니다.** 약 11.8M step이 남았습니다(pgct_s2 나머지 1.8M + oracle_s2 5M + all_s2 5M). 지금 속도(약 26 step/s)로 5일 정도이고, 그동안 분기 실험과 GPU를 나눠 둘 다 느려집니다.
+- **지금 돌고 있는 job(pgct_s2)은 가치가 낮습니다.** v1 gate는 사실상 닫혀 있어 v1 PGCT가 IPPO와 거의 같습니다(E56·E57; s1은 5M 동안 전이 48 arc, 첫 전이는 2.8M). 연구 방향도 v2 + D2로 옮겼습니다.
+- **잃는 것은 하나입니다.** "critic 증류는 IPPO보다 빠르지 않다"(E61)의 두 번째 seed(`oracle_s2`, `all_s2`)입니다. 논문에서 증류를 버린 근거로 seed 2가 필요하면 나중에 따로 돌릴 수 있습니다. 두 job은 아직 시작 전이라 폴더가 없으니 덮어쓸 위험도 없습니다.
+  ```powershell
+  & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --plan runs/ac_20261023_185556 --run-job b6_corner_indiv_pen005_ac_oracle_s2
+  ```
+- 끈 뒤에도 `pgct_s2`의 3.19M까지 로그와 checkpoint는 남습니다. 다만 `job_status.json`은 계속 "running"으로 남으니, 끈 시각을 알려 주시면 기록에 "중단"으로 남기겠습니다.
+
+## PID 28892(1단계 분기): 끄면 안 됩니다
+
+- 지금 연구의 중심 실험입니다(IPPO / Oracle-max D2 / D1 / allk, seed 1·3·5).
+- 수정 1–4가 반영된 코드로 시작했습니다. 그 뒤 바뀐 Codex 구현과 D103 수정은 이 모드들의 동작을 바꾸지 않으므로 결과는 유효합니다.
+- 이어 학습 기능이 없어서, 끄면 처음부터 다시 돌려야 합니다.
+
+## 18880 끄는 방법 (앱 밖 PowerShell)
+
+python만 끄면 W&B가 crashed로 바뀌지 않으므로, 자식 `wandb-core`(현재 PID 33904)와 그 하위 프로세스까지 함께 끕니다(E24).
+
+먼저 끌 대상을 확인합니다.
+
+```powershell
+$ids = @(18880); $i = 0; while ($i -lt $ids.Count) { $ids += @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($ids[$i])" | ForEach-Object ProcessId); $i++ }; $ids
+```
+
+목록에 28892나 28716(분기 쪽 wandb)이 없고 18880과 그 자식만 있으면, 같은 창에서 이어서 실행합니다.
+
+```powershell
+$ids | Sort-Object -Descending | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+```
+
+대화는 T170으로 기록했습니다.
+
+## 원문 기록 T171 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문 (1)
+
+추가 요청: 한국어 LaTeX 논문 및 PGCT 발표자료 제작
+앞서 요청한 PGCT 영어 IJCAI 논문 초판 작성에 더해, 다음 결과물도 함께 제작해 주세요.
+최종 산출물은 영어 LaTeX 논문, 한국어 LaTeX 논문, Beamer 발표자료입니다.
+모든 결과물은 동일한 최종 PGCT 알고리즘과 실제 실험 기록을 기반으로 해야 합니다.
+14. 참고 발표자료 및 발표 녹음
+다음 두 파일을 참고자료로 사용하세요.
+
+* `이기윤_ICCAS.pdf`: 기존 연구 발표자료
+* `음성 261023_135711.m4a`: 발표 녹음
+
+먼저 두 파일을 확인하고 발표자료의 구성과 발표 방식을 분석하세요.
+참고할 내용은 다음과 같습니다.
+
+* 연구 배경을 설명하는 순서
+* 기존 연구의 한계와 연구 목적을 연결하는 방식
+* 핵심 Contribution을 소개하는 방식
+* Proposed Method를 단계별로 설명하는 방식
+* 알고리즘 구조도와 수식의 배치
+* 실험 환경과 비교 결과를 제시하는 방식
+* 결론을 정리하는 방식
+* 실제 발표에서 강조하는 내용과 설명의 깊이
+
+발표 녹음에서 확인할 수 있다면 발표자가 슬라이드를 어떤 순서로 설명하는지, 수식은 어느 정도 자세히 설명하는지, 핵심 내용을 어떻게 강조하는지도 참고하세요.
+녹음 내용을 읽거나 전사할 수 없는 환경이라면 이를 명시하고, 확인하지 못한 발표 내용을 추측하지 마세요.
+중요: 참고자료는 Multi-UAV 연구입니다. 해당 연구의 알고리즘, 실험 결과, 수식, 성능 수치를 PGCT 논문이나 발표에 가져오지 마세요.
+참고하는 것은 발표의 구성, 정보 전달 방식, 슬라이드 디자인과 설명 수준입니다.
+PGCT 연구의 내용과 그림은 새로 작성해야 합니다.
+15. 한국어 LaTeX 논문
+영어 논문과 별도로 한국어 LaTeX 논문 전체 초안도 작성해 주세요.
+단순한 요약본이 아니라 영어 논문과 동일한 기술 내용을 포함하는 완전한 논문이어야 합니다.
+다음 원칙을 적용하세요.
+
+1. 영어 논문과 한국어 논문의 섹션 구성은 최대한 일치시킵니다.
+2. 모든 핵심 수식과 알고리즘 정의를 동일하게 유지합니다.
+3. 실험 설정, 결과, 수치, 인용문헌도 동일하게 유지합니다.
+4. 영어 논문을 기계적으로 직역하지 말고 자연스러운 한국어 학술 문체를 사용합니다.
+5. 불필요하게 긴 문장과 어려운 한자어를 피합니다.
+6. Actor, Critic, Reward Probe, GAE, PPO 등 중요한 기술 용어는 일관되게 사용합니다.
+7. 영어와 한국어 사이에 주장이나 결과가 달라지지 않도록 검토합니다.
+
+한국어 논문은 다음 목적을 가집니다.
+
+* 연구 내용을 정확히 이해하기 위한 개인 검토용
+* 지도교수님과 논의하기 위한 자료
+* 수식과 알고리즘의 논리적 흐름을 점검하기 위한 자료
+* 영어 논문을 수정할 때 참고할 원본
+
+따라서 영어 논문보다 과도하게 축약하지 마세요.
+한국어 LaTeX는 `kotex` 등 적절한 패키지를 사용하고, 가능하면 XeLaTeX 또는 LuaLaTeX로 컴파일 가능하도록 구성하세요.
+영어와 한국어 논문은 공통된 BibTeX 참고문헌을 사용해도 됩니다.
+16. Beamer 발표자료
+첨부된 `이기윤_ICCAS.pdf`의 발표 구성과 시각적 스타일을 참고하여 PGCT 연구 발표용 Beamer 슬라이드를 작성해 주세요.
+발표자료는 논문 내용을 단순히 슬라이드에 복사한 형태가 아니어야 합니다.
+연구 배경부터 알고리즘, 실험, 결론까지 자연스럽게 이어지는 발표로 구성하세요.
+발표자료 구성
+다음 구성을 기본으로 합니다.
+
+1. Title
+2. Outline
+3. Introduction — Research Background
+4. Introduction — Problem Definition
+5. Introduction — Related Work
+6. Introduction — Research Goal and Contributions
+7. Proposed Method — Overall PGCT Architecture
+8. Proposed Method — Individual Reward Prediction
+9. Proposed Method — Reward Probe Construction
+10. Proposed Method — Reward Response Distance and Team Discovery
+11. Proposed Method — Selective Peer Critic Access
+12. Proposed Method — Max-GAE Advantage Estimation
+13. Proposed Method — Actor and Critic Updates
+14. Simulation Results — Experimental Setup
+15. Simulation Results — Team Discovery Performance
+16. Simulation Results — Learning Performance
+17. Conclusion
+
+이 순서는 기본안이며, 실제 내용과 발표 흐름에 맞춰 일부 조정해도 됩니다.
+약 15~18장 내외로 구성하되 슬라이드 수를 맞추기 위해 불필요한 내용을 추가하지 마세요.
+발표자료 디자인
+
+* 16:9 비율을 사용합니다.
+* 첨부 ICCAS 발표자료처럼 밝고 깔끔한 학술 발표 스타일을 사용합니다.
+* 슬라이드 제목은 명확하게 작성합니다.
+* 문장보다 핵심 문구, 수식, 그림을 중심으로 구성합니다.
+* 한 슬라이드에 너무 많은 내용을 넣지 않습니다.
+* 수식은 실제 발표에서 설명할 핵심 수식만 포함합니다.
+* 전체 알고리즘을 보여주는 구조도를 제작합니다.
+* Reward Probe를 통한 팀 판별 과정을 시각화합니다.
+* Critic 선택 및 Max-GAE 계산 과정을 그림으로 설명합니다.
+* 실험 비교는 실제 로그에 근거한 표와 그래프를 사용합니다.
+* 표와 그래프의 축, 범례, 글자 크기를 읽기 쉽게 만듭니다.
+
+다음 그림은 특히 신경 써서 제작하세요.
+Figure 1. Overall PGCT Architecture
+Independent Learning → Individual Reward Prediction → Reward Probe → Latent Team Discovery → Peer Critic Selection → Advantage Estimation → PPO Update
+Figure 2. Reward-Based Team Discovery
+서로 다른 에이전트가 공통 probe에 대해 예상 보상을 계산하고, 응답 차이를 바탕으로 같은 팀인지 판단하는 과정입니다.
+Figure 3. Selective Peer Critic Learning
+승인된 팀원의 Critic으로 자신의 관측 이력을 평가하고, 개인 Critic과의 가치 차이를 Actor Advantage에 반영하는 과정을 설명합니다.
+그림에는 실제 코드에서 사용하지 않는 정보 교환이나 중앙집중식 학습 과정을 넣지 마세요.
+슬라이드 언어
+발표 슬라이드는 첨부한 ICCAS 자료처럼 간단한 영어로 작성해 주세요.
+
+* 짧은 문장
+* 핵심 용어 중심
+* 복잡한 영어 문법 최소화
+* 지나치게 어려운 단어 지양
+* 자연스러운 학술 발표 표현 사용
+
+수식과 알고리즘은 정확하게 유지하세요.
+별도의 한국어 발표 대본도 작성해 주세요.
+발표 대본은 슬라이드별로 구분하고, 단순한 번역이 아니라 실제 발표자가 말하는 자연스러운 한국어로 작성합니다.
+특히 수식이 등장하는 슬라이드에서는 수식의 모든 기호를 읽기보다 해당 수식이 무엇을 의미하는지 설명하도록 작성하세요.
+17. PPTX 파일도 별도로 생성
+Beamer `.tex`만 만들지 말고 실제 PowerPoint에서 열 수 있는 `.pptx` 파일도 생성해 주세요.
+Beamer와 PowerPoint는 별도의 형식이라는 점을 고려하세요.
+다음 결과물을 모두 생성합니다.
+
+* Beamer `.tex` 원본
+* 컴파일된 Beamer `.pdf`
+* PowerPoint `.pptx`
+
+PowerPoint 파일은 Beamer 슬라이드와 내용, 순서, 디자인이 최대한 일치해야 합니다.
+가능하면 `python-pptx` 또는 `PptxGenJS`를 사용하여 텍스트, 도형, 표 등을 수정할 수 있는 PPTX로 작성하세요.
+PDF 페이지를 이미지로만 삽입한 PPTX는 편집성이 떨어지므로 가능하면 피하세요.
+수식이나 복잡한 도식 등 일부 요소를 이미지로 처리해야 한다면 해당 부분을 구분해 주세요.
+PPTX 생성 도구가 없다면 임의의 확장자 변경으로 PPTX를 만든 것처럼 처리하지 말고, Beamer PDF를 우선 완성하고 PPTX 생성 제한을 보고하세요.
+18. 논문과 발표자료의 일관성
+네 가지 결과물은 동일한 연구를 설명해야 합니다.
+
+* 영어 논문
+* 한국어 논문
+* Beamer 발표자료
+* PPTX 발표자료
+
+다음 사항을 반드시 일치시키세요.
+
+1. 최종 알고리즘 구성
+2. Reward Predictor 정의
+3. Reward Probe의 거리와 승인 규칙
+4. Donor 선택 조건
+5. Max-GAE의 수식과 설정
+6. 실험 환경 및 baseline
+7. 실제 실험 결과
+8. 연구 기여와 한계
+
+논문에서 사용하지 않은 새로운 알고리즘이나 가정을 발표자료에 추가하지 마세요.
+또한 이전 PGCT 버전의 개발 과정을 발표자료에 포함하지 마세요.
+v1, v2, D1, D2 같은 내부 버전 명칭 대신 최종 알고리즘 PGCT의 구성요소로 설명하세요.
+아직 완료되지 않은 실험의 결과를 만들어서는 안 됩니다.
+진행 중인 실험은 결과 슬라이드에 명확한 placeholder를 두고, 실제 결과가 확보되면 교체할 수 있도록 구성하세요.
+19. 폴더 구성 및 최종 산출물
+다음과 같이 정리해 주세요.
+
+```
+paper/
+├── english/
+│   └── main.tex
+├── korean/
+│   └── main.tex
+├── references.bib
+├── figures/
+│
+presentation/
+├── pgct_beamer.tex
+├── pgct_beamer.pdf
+├── pgct_presentation.pptx
+├── pgct_script_ko.md
+└── figures/
+```
+
+논문과 발표자료에서 공통으로 사용할 수 있는 그림은 재사용해도 됩니다.
+컴파일된 영어 논문 PDF와 한국어 논문 PDF도 생성할 수 있으면 함께 제공하세요.
+최종적으로 다음 항목을 검토하세요.
+
+* 영어 논문과 한국어 논문의 내용이 같은가?
+* LaTeX 컴파일 오류가 없는가?
+* 그림과 표가 잘리지 않는가?
+* Beamer와 PPTX의 슬라이드 순서가 같은가?
+* PPTX에서 글자나 수식이 겹치지 않는가?
+* 발표 대본이 슬라이드의 실제 내용과 일치하는가?
+* 실험 결과를 임의로 만들어 넣지 않았는가?
+* 논문과 발표 모두 잠재 팀 발견을 핵심 기여로 유지하는가?
+
+이번 작업에서는 연구 코드와 학습 설정을 변경하지 마세요.
+기존 실험도 중단하거나 새로 실행하지 마세요.
+목표는 PGCT의 영어·한국어 논문 초판과, 이를 바탕으로 한 실제 연구 발표자료를 함께 완성하는 것입니다.
+@"C:\Users\95101\OneDrive\Documents\카카오톡 받은 파일\이기윤_ICCAS.pdf" @"C:\Users\95101\OneDrive\Documents\카카오톡 받은 파일\음성 261023_135711.m4a"
+
+### 사용자 — 원문 (2, 작업 중)
+
+혹시 말하는데 codex 얘들 논문 제대로 못만드는거 같은데 직접 해야된다?
+
+### 사용자 — 원문 (3, 작업 중)
+
+꼭 PPTX로 만들 필요까진 없어 그냥 Beamer로 만들어주면 돼
+
+### 수행 기록 — 원문 대화와 별도
+
+- 첨부: `이기윤_ICCAS.pdf` 16장 전체를 Codex 런타임의 poppler로 렌더링해 확인. `음성 261023_135711.m4a`는 M4A 머리 정보로 812.98초만 확인(전사 도구 없음).
+- Codex 초안(T167)을 렌더링해 점검한 뒤, 수식 파일·Tectonic 빌드 도구만 재사용하고 논문 본문·그림·발표자료를 새로 썼다.
+- 새 파일: `paper/figures/{pgct_style,fig_architecture,fig_discovery,fig_critic}.tex`, `paper/figures/{discovery_log,baseline_ippo}.pdf`, `presentation/figures/{discovery_ema,discovery_alloc,baseline_ippo}.*`, `presentation/figures/eq_*.png`, `output/pgct_docs_20261102/{evidence_plots,deck_spec,build_deck,render_deck_equations,preview_pptx,check_consistency}.py`와 CSV·`evidence.json`.
+- 고친 파일: `paper/english/main.tex`, `paper/korean/main.tex`(전면 재작성), `paper/method_equations.tex`(D103 표기, η 0.5 표기), `paper/references.bib`(6편 추가), `presentation/pgct_beamer.tex`·`pgct_presentation.pptx`·`pgct_script_ko.md`(생성), `PGCT_DELIVERABLES_README.md`(재작성). Codex의 이전 그림·스크립트 파일은 지우지 않았다.
+- 검증: 세 문서 컴파일 오류·Overfull·누락 글자 0, 전 페이지 렌더링 확인, 한영·슬라이드 일관성 자동 점검 통과, PPTX 근사 미리보기 글자 넘침 0(PowerPoint로 열어 보지는 않음).
+- 연구 코드·학습 설정 변경, 실험 중단·실행, 커밋 없음. 실행 상태는 읽기만 했다(v1 `pgct_s2` 18:01 KeyboardInterrupt 기록 확인, 분기 1단계 진행 중).
+- 진행 안내 상당수를 영어로 보냈다(아래 원문 그대로).
+- 기록: `DECISIONS.md` D104, `EXPERIMENTS.md` E72, `RESEARCH_STATE.md`, 이 T171, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+PDF 렌더링 도구가 없어 다른 방법을 찾겠습니다. 이 PC의 도구(LaTeX, PDF 라이브러리, python-pptx, 음성 도구)와 Codex가 만든 기존 산출물을 함께 확인합니다.
+
+Codex가 이미 같은 요구의 산출물(영어·한국어 논문, Beamer 17장, PPTX, 대본, 참고자료 분석)을 만들어 두었습니다. 처음부터 다시 만들기보다 이를 기준으로 요구사항·최종 알고리즘(D103 반영 여부)·실험 기록과 대조해 고치는 쪽으로 진행하겠습니다. Codex가 쓴 빌드 도구(Tectonic, PPTX 생성 Python)가 이 PC에서 쓸 수 있는지 확인합니다.
+
+Tectonic 0.17.0과 python-pptx가 든 Python(Codex 런타임)을 쓸 수 있습니다. PDF를 그림으로 렌더링할 도구가 있는지 찾아보겠습니다.
+
+Codex 런타임에 poppler(`pdftoppm`)가 있습니다. 참고 PDF를 이미지로 렌더링해 구성을 직접 보겠습니다.
+
+참고 PDF 16장을 렌더링했습니다. 한 장씩 보기 전에 전체 구성을 한눈에 보도록 접촉 시트로 묶겠습니다.
+
+참고 발표의 구성과 스타일을 확인했습니다. 흰 배경에 파란 제목, 파란 삼각형 bullet, 핵심어 색 강조(빨간 "Research gap"), 왼쪽 bullet·오른쪽 그림 배치, 밑줄 괄호로 항 이름을 단 수식 순서였습니다. 녹음은 이 PC에 ffmpeg·전사 도구가 없어 들을 수 없습니다. 이제 Codex가 만든 Beamer를 렌더링해 상태를 보겠습니다.
+
+Codex Beamer는 내용 순서는 맞지만, 참고 자료에 비해 시각 자료가 약합니다. 구조도·팀 판별·Critic 선택 그림이 모두 단순한 상자 나열이고, 앞쪽 슬라이드 다수가 빈 공간이 큰 글머리표뿐입니다. 또 D103(rollout 시작 스냅샷 비교)이 반영되지 않았습니다. 제작 파이프라인 구조를 보고 어디를 고칠지 정하겠습니다.
+
+Codex 논문은 수식과 범위 설명은 정확한 편입니다. 하지만 논문으로는 약한 점이 있습니다. 초록에 테스트 개수 같은 구현 검증이 들어가 있고, 기여 목록과 동기 설명이 얇으며, 본문에 내부 파일 경로가 섞여 있습니다. 또 D103 비교 순서가 반영되지 않았습니다. 그래서 수식 파일은 유지·보완하고, 그림 3개는 새로 그리고, 논문 본문과 발표자료는 다시 쓰겠습니다. 먼저 그림에 쓸 실제 로그 데이터를 확인합니다.
+
+분기 실험은 아직 첫 job(`ippo_s1`, 0.12M)이 진행 중이라 결과 슬라이드는 placeholder로 둡니다. v1 run의 `pgct_s2`는 "failed"로 바뀌어 있어, 사용자가 끈 것으로 보고 기록에 남기겠습니다. 이제 원본 로그에서 그래프 데이터를 직접 다시 계산합니다.
+
+원본 로그에서 다시 계산한 값이 기존 기록(E65)과 Codex 수치와 일치합니다: 같은 팀 5,252 / 다른 팀 352 arc(93.72%), 첫 다른 팀 4,280,320 step. IPPO 기준선 마지막 평가는 seed 1 25.65, seed 2 24.05입니다. 이제 공통 TikZ 그림 3개를 새로 그리겠습니다. 먼저 참고문헌 파일을 확인합니다.
+
+Three layout problems show up. Figure 1's stage boxes are too narrow, so the text wraps. In Figure 2 the probe-set frame covers the probe cards. In Figure 3 the donor-set box overlaps the peer Critic box. I'll fix all three.
+
+Figures are readable now. One fix remains: in Figure 3 the uplift formula breaks across lines, so I'll widen that box.
+
+Figures are done. Now I'll update the shared equation file for the D103 rule (rollout-start snapshot) before writing the papers.
+
+그림 3개와 공통 수식 갱신을 마쳤습니다. 지금은 영어 논문 본문을 새로 쓰고 있습니다. 이어서 한국어 논문, Beamer, 대본, PPTX를 만듭니다.
+
+Before compiling I'll check two numbers I used against the records: the abstained pairs in the offline replay (E59), and the E63 counterfactual setup.
+
+The English paper compiles (8 pages). One overfull box remains around line 120–128. I'll render the pages to check layout.
+
+Two layout problems: the "One update" box runs into the right margin, and the legend in Figure 4(a) covers the curves. I'll fix both.
+
+Now the Korean paper. I'll reuse the font setup from Codex's Korean preamble, which compiled.
+
+두 논문 모두 오류·overfull·누락 글자 없이 8쪽으로 컴파일됩니다. 한국어 논문 렌더링을 확인합니다.
+
+Both papers render cleanly in the Korean and English versions. Next is the presentation. Beamer, PPTX and the Korean script will be generated from one shared slide spec, so their content and order stay identical. I'll write that spec first.
+
+Now the equation images for the PowerPoint (matplotlib mathtext, from the same spec).
+
+Equation images are ready. Codex's PPTX builder includes a fix for chart axis IDs that strict PowerPoint importers need, so I'll check it before writing the builder.
+
+I'll generate the Beamer deck and the PPTX from one shared geometry, so both use the same positions on a 13.33×7.5-inch canvas. For the PPTX, the three TikZ figures are redrawn as native shapes, which needs their exact TikZ bounding boxes. I'll measure those first.
+
+The bounding boxes are in hand. Now I'll write the deck builder. It emits the Beamer `.tex`, the PPTX and the Korean script from the spec.
+
+네, 지금 제가 직접 하고 있습니다. Codex 초안은 수식 파일과 빌드 도구(Tectonic)만 재사용했고, 논문 본문은 영어·한국어 모두 새로 썼습니다. Codex 초안의 문제는 이랬습니다.
+
+- 초록과 본문에 "72개 테스트 통과" 같은 구현 검증이 들어가 있었습니다. 논문 기여로 쓸 내용이 아닙니다.
+- 기여 목록과 동기 설명(왜 정책 유사도가 아니라 보상 응답인가)이 얇았습니다.
+- 그림 3개가 단순한 상자 나열이었습니다.
+- D103(rollout 시작 스냅샷 비교)이 빠져 있었습니다.
+
+지금까지 새로 만든 것:
+- 영어·한국어 논문 전체(각 8쪽, 컴파일 오류·overfull 0)
+- 공통 TikZ 그림 3개(구조도, Reward Probe 팀 판별, Critic 선택·Max-GAE)
+- 원본 로그에서 다시 계산한 실험 그래프
+
+지금은 Beamer, PPTX, 대본을 하나의 원본에서 같은 배치로 생성하는 중입니다. 계속 진행하겠습니다.
+
+Beamer 17장이 컴파일됐습니다. 렌더링해서 배치를 확인하겠습니다.
+
+Beamer 글자가 2.5배 크게 나왔습니다. 글꼴 크기 환산에 2.54를 잘못 곱했기 때문입니다(위치는 cm, 글꼴은 비율로만 바꿔야 함). 선 굵기도 같은 실수가 있습니다. 또 `▶` 같은 기호가 Arial에 없어 빈 상자로 보입니다. 세 가지를 고쳐서 다시 만듭니다.
+
+Most slides are fine now. Two issues remain. Equations on slides 8, 11 and 13 run past the left edge, because I sized them by height. Figure 2 on slide 10 is taller than planned and overlaps the equation, because Beamer's 11pt base font enlarges the TikZ text. I'll switch equations to width-based sizing and set Beamer's base font to 10pt to match the papers.
+
+Beamer now has no clipping or overlap, apart from two small label overlaps in Figure 2: "same probes" overlaps the probe-set frame, and the bottom labels touch. I'll remove the redundant "same probes" label, then rebuild everything.
+
+Both papers and the 17-slide Beamer deck compile with no overfull boxes and no missing glyphs. This PC has no PowerPoint renderer such as LibreOffice. To check the PPTX for overlapping text and equations, I'll write a simple PIL renderer that draws its shapes, text, images, tables and chart lines.
+
+PPTX preview has a few problems: some boxes in Figures 2–3 overflow, `▶` and `⇒` aren't in Arial, and figure text uses `A^PGCT`-style caret notation that reads poorly. Let me check the other two contact sheets before fixing everything together.
+
+PPTX preview looks right overall. I'll apply the remaining fixes together:
+- Bullet glyph: use `►`, which Arial has.
+- Replace `⇒` with `→`.
+- Rewrite the PPTX figure text in plain words instead of caret notation like `A^PGCT`.
+- Shrink figure text where it overflows.
+- Tighten the line-count estimate so bullet spacing is even.
+
+Only one tiny overflow is left: the "left–right mirrors of both" card, by 0.04 in. I'll shorten that label in both the TikZ figure and the PPTX, then recompile everything.
+
+Beamer (top) and PPTX (bottom) now match. One spot on the Beamer slide 10, below the dashed box, may have overlapping text, so I'll zoom in on it.
+
+The arrow from the probe set to the response panel points backwards, and the two boxes touch even though the coordinates leave a 1.35 cm gap. I'll read the figure source to find out why.
+
+Found it. In Beamer the figure is drawn as a nested `tikzpicture` inside an overlay node, and it inherits that node's options (`anchor=north west`, `inner sep=0pt`). Inner nodes without an explicit anchor are therefore offset by half their width. The paper versions are unaffected. I'll reset those two options in Beamer right before the figure is inserted.
+
+The nested-figure problem is fixed, and all three method figures in Beamer now match the papers. Last, I'll check automatically that the English and Korean papers use the same numbers, equations, citations and labels.
+
+알겠습니다. 발표자료는 Beamer를 기준으로 하겠습니다. PPTX는 같은 원본에서 이미 함께 생성돼 있으니 지우지 않고 참고용으로 두되, 더 다듬지는 않겠습니다.
+
+방금 일관성 점검 결과도 정상입니다. 영어·한국어 논문의 수식·인용·라벨·그림·수치가 같습니다(한국어에만 있는 `1.08`은 줄 간격 설정값입니다). 슬라이드 17장의 제목 순서도 Beamer와 대본이 같습니다. 녹음 파일 길이만 확인한 뒤 기록과 안내 문서를 정리하겠습니다.
+
+Now the deliverables guide. I'll rewrite it to describe the current files, and mark which Codex-era files are superseded.
+
+Now the research records and the conversation log.
+
+### Assistant — 최종 답변
+
+논문 2편과 Beamer 발표자료를 완성했습니다. Codex 초안은 수식 파일과 빌드 도구만 재사용했고, 논문 본문·그림·발표자료는 새로 썼습니다. 연구 코드와 학습 설정은 바꾸지 않았고, 실험도 중단하거나 새로 돌리지 않았습니다.
+
+## 결과물
+
+| 파일 | 내용 |
+|---|---|
+| [paper/english/main.pdf](paper/english/main.pdf) | 영어 논문, 8쪽(참고문헌·부록 포함) |
+| [paper/korean/main.pdf](paper/korean/main.pdf) | 한국어 논문, 8쪽. 같은 절 구성·수식·수치·인용 |
+| [presentation/pgct_beamer.pdf](presentation/pgct_beamer.pdf) | 16:9 영어 Beamer 17장 |
+| [presentation/pgct_script_ko.md](presentation/pgct_script_ko.md) | 슬라이드별 한국어 대본 |
+| [PGCT_DELIVERABLES_README.md](PGCT_DELIVERABLES_README.md) | 파일 안내, 재생성 방법, 검증, 주장 경계 |
+
+PPTX(`presentation/pgct_presentation.pptx`)는 말씀하시기 전에 이미 같은 원본에서 생성돼 있어 지우지 않고 참고본으로 두었습니다. 더 다듬지는 않았습니다.
+
+## Codex 초안에서 바뀐 점
+
+- **논문 구성**:
+  - 초록에서 구현 검증(테스트 수)을 뺐습니다.
+  - 서론에 Q1(발견)·Q2(활용)와 기여 4개를 명시했습니다.
+  - "정책 유사도가 아니라 보상 응답인 이유"를 동기로 설명했습니다.
+  - 관련 연구를 13편으로 늘렸습니다(FDMARL, GPI, MAPPO, IPPO, ad hoc 팀워크 추가).
+- **최종 알고리즘 반영**: rollout 시작 스냅샷으로 비교한 뒤 재학습하는 규칙(D103)을 수식($\mathcal Q_{ij}^u$, $\widehat r^{\,u}$)과 절차에 넣었습니다. v1·v2·D1·D2 같은 내부 이름은 쓰지 않았습니다.
+- **그림 3개 새로 작성**(논문·Beamer 공용 TikZ):
+  - 그림 1: 7단계 구조도. 발견과 활용 두 영역으로 나누고, 접촉 때만 주고받는 정보를 함께 표시했습니다.
+  - 그림 2: 두 에이전트가 공통 probe에 답하고, 같은 팀은 응답이 겹치고 다른 팀은 대칭 probe에서 엇갈리는 과정입니다. 막대는 설명용이라고 명시했습니다.
+  - 그림 3: 승인된 팀원 Critic이 내 이력을 평가하고, 상승분이 Actor advantage에만 들어가며, Critic은 자기 return만 학습하는 과정입니다.
+  - 그림에는 코드에 없는 정보 교환이나 중앙 학습을 넣지 않았습니다.
+- **실험 근거**: 그래프는 원본 로그에서 다시 계산했습니다(Codex 수치와 일치).
+  - 발견: 0.1–0.25M에 같은 팀 거리 0.25 대 다른 팀 0.99. 팀원 접근 93.7%(5,252 / 352 arc). 첫 다른 팀 승인 4.28M.
+  - 오프라인 재생(E59): 판정한 10쌍 모두 정답.
+  - 반사실 점검(E63)은 "팀 관계가 팀원 가치에 왜 중요한가"라는 절로 넣었습니다.
+  - IPPO 기준선은 seed 1·2를 썼습니다(5M에서 25.7 / 24.1 배송).
+  - 통합 PGCT 학습 비교는 표에 *pending* 칸으로만 두었습니다.
+
+## 참고 자료 분석
+
+- **ICCAS PDF(16장)**: 그림으로 렌더링해서 전체를 봤습니다. 따른 것은 다음과 같습니다.
+  - 흰 배경, 파란 "Section: Topic" 제목, 파란 삼각형 글머리표, 핵심어 색 강조(한계와 핵심 메시지는 빨강)
+  - 왼쪽 글머리표·오른쪽 그림 배치
+  - Approach/Strength/Limitation 관련 연구 표와 빨간 Research gap
+  - 목표·핵심 아이디어·기여 번호 순서
+  - 전체 구조도 → 구성요소별 슬라이드 → 실험(설정 → 결과) → 결론(Summary, Main contribution, Validation, Future work)
+  - Multi-UAV 알고리즘·식·그림·수치는 하나도 가져오지 않았습니다.
+- **녹음(m4a)**: 파일 머리에서 길이(812.98초)만 확인했습니다. 이 PC에는 ffmpeg나 음성 전사 도구가 없어 듣거나 전사하지 못했습니다. 그래서 발표자의 설명 순서, 강조, 수식 설명 깊이는 반영하지 않았습니다. 대본은 새로 쓴 제안 대본입니다.
+
+## 검토 항목
+
+| 항목 | 결과 |
+|---|---|
+| 영어·한국어 내용이 같은가 | 자동 점검: 수식·인용·라벨·참조·그림 파일·본문 수치가 같음 |
+| LaTeX 컴파일 오류 | 세 문서 모두 오류·Overfull box·누락 글자 0 |
+| 그림·표 잘림 | 전 페이지와 전 슬라이드를 그림으로 렌더링해 확인. 잘림·겹침 없음 |
+| Beamer와 대본 순서 | 같은 원본에서 생성. 17장 제목 순서 일치 |
+| 결과를 만들어 넣지 않았는가 | 학습 비교는 pending. 진행 중인 분기의 부분 곡선은 넣지 않음 |
+| 잠재 팀 발견이 핵심 기여인가 | 초록·서론·결론·발표 모두 발견을 중심에 두고, Critic 활용은 검증 수단으로 설명 |
+
+## 남은 것
+
+- 공식 IJCAI 양식은 아직 적용하지 않았습니다. 지금은 2단 작업 초안입니다. 저자 정보도 아직 없고, 발표 표지의 `[Presenter] · [Affiliation]`은 바꿔 넣어야 합니다.
+- 분기 실험이 끝나면 논문 표 2, 슬라이드 16의 표, 대본 16번을 실제 결과로 채워야 합니다.
+- 문구를 고칠 때 Beamer `.tex`는 생성 파일이므로 `output/pgct_docs_20261102/deck_spec.py`를 고친 뒤 `build_deck.py`를 다시 돌립니다.
+- 프로젝트 루트의 `PGCT_paper_presentation_20261102.zip`은 Codex의 이전 묶음이라 새 파일이 들어 있지 않습니다. 공유할 때는 위 파일을 쓰세요.
+- 실행 상태(읽기 전용 확인): v1 run의 `pgct_s2`는 18:01에 중단된 것으로 기록됐습니다(KeyboardInterrupt). 1단계 분기는 계속 진행 중입니다.
+
+기록은 `DECISIONS.md` D104, `EXPERIMENTS.md` E72, `RESEARCH_STATE.md`, 대화 기록 T171에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T172 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+지금 돌아가는 실험들 설명해주고,
+현재 작성된 논문은 IJCAI 2027을 잘 따르고 있는지 확인
+
+### 수행 기록 — 원문 대화와 별도
+
+- 실행 중인 학습 프로세스 명령줄, 각 job의 `job_status.json`·`metrics.jsonl` 마지막 줄, 2단계 `experiment.json`·`max_gae.jsonl`을 읽기 전용으로 확인했다(18:45).
+- 웹 검색: IJCAI 2027 메인 트랙 Call for Papers와 저자 키트 페이지를 읽었다. 키트 zip은 내려받지 않았다.
+- `paper/english/main.pdf`, `paper/korean/main.pdf`의 쪽별 절 위치와 메타데이터를 pypdf·pdfinfo로 확인했다.
+- 코드·학습·논문 파일 변경 없음, 커밋 없음. 진행 안내 일부를 영어로 보냈다.
+- 기록: `DECISIONS.md` D105, `RESEARCH_STATE.md`, 이 T172, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+Two experiments are running. I'll read the early logs of the second run, which the user started at 18:02, to confirm its settings and approval progress so far.
+
+Stage 2 already shows what D98 R1 predicted. At 66 updates, only a2, a3 and a5 are mature, the three agents that were already delivering. The lagging a0, a1 and a4 are still immature. Donors are therefore used only among already-delivering agents (2 arcs, same team). Now I'll look up the IJCAI 2027 submission rules.
+
+The official IJCAI 2027 main-track call is up. It requires a 7-page body plus up to 2 pages of references only, the IJCAI-27 style, and double-blind submission, and appendices go into supplementary material. To check the current paper against this, I'll find on which pages its references and appendix start, and inspect the PDF metadata.
+
+The two experiments are explained, and I've finished checking the paper against the official IJCAI 2027 call. I'll record this in the notes and the log.
+
+### Assistant — 최종 답변
+
+## 1. 지금 돌아가는 실험 (11-02 18:45 기준, 읽기 전용 확인)
+
+두 실험 모두 같은 출발점에서 갈라집니다. 출발점은 A+C 독립 PPO seed 1의 1.024M checkpoint(모서리 목적지, 개인 보상, 좌표 마스킹)입니다. 각 job은 0.5M step을 더 학습하고, seed는 goal 배치가 같은 1·3·5만 씁니다.
+
+| | 1단계: 정답 팀으로 Q2 검증 | 2단계: 발견한 팀으로 같은 효과가 나는가 |
+|---|---|---|
+| PID / 시작 | 28892 / 16:52 | 25380 / 18:02 |
+| 폴더 | `runs/maxgae_br1M_20261102_165216` | `runs/pgctd2_br1M_20261102_180212` |
+| 모드 | `ippo`(계속 학습), `oracle_max`(D2 shrink, η .5), `oracle_maxd1`(D1), `allk_max`(같은 수의 무작위 donor) | `oracle_mature_max`(정답 팀이지만 보상 예측기가 성숙한 에이전트만), `pgct_max`(최종 PGCT) |
+| job 수 | 4 모드 × 3 seed = 12 | 2 모드 × 3 seed = 6 |
+| 진행 | 1/12번째 `ippo_s1` 0.18M | 1/6번째 `oracle_mature_max_s1` 0.07M |
+| 속도·종료 추정 | 약 26 step/s, job당 약 5.3시간, 11-05 오전 무렵 | 약 26 step/s, 11-04 새벽 무렵 |
+
+- 두 실험이 GPU를 함께 쓰지만, 2단계를 시작한 뒤에도 1단계 속도는 줄지 않았습니다(26 → 27 step/s).
+- 2단계 설정이 맞는지 `experiment.json`으로 확인했습니다. 6 job 모두 rollout 시작 스냅샷 비교(`contact_snapshot=True`)와 shrink 척도를 씁니다.
+- v1 run의 `pgct_s2`는 18:01에 중단됐고(KeyboardInterrupt), 그 뒤에 2단계가 시작됐습니다.
+
+**2단계 초기 관찰(66 update, 약 0.07M)**: 보상 예측기가 성숙한 에이전트는 a2·a3·a5뿐입니다. 이미 배송하던 앞선 에이전트들입니다. 뒤처진 a0·a1·a4는 아직 미성숙이라, donor는 앞선 같은 팀 에이전트 사이의 2 arc만 생겼습니다. D98에서 예상한 대로입니다. 이 상태가 계속되면 2단계는 "뒤처진 에이전트를 돕는가"보다 "앞선 에이전트를 해치지 않는가"와 승인 동작을 주로 보여 주게 됩니다. 뒤처진 에이전트에 대한 효과는 1단계의 `oracle_max` 대 `ippo` 비교에서 봐야 합니다. 다만 아직 초반이라, 뒤처진 에이전트가 배송을 시작하면 바뀔 수 있습니다.
+
+## 2. 현재 논문은 IJCAI 2027을 따르는가
+
+**결론: 내용 초안으로는 쓸 수 있지만, 지금 형식 그대로는 제출 규정을 만족하지 않습니다.** 공식 메인 트랙 Call for Papers와 대조한 결과입니다.
+
+| 규정 (IJCAI 2027 메인 트랙) | 현재 논문 (`paper/english/main.pdf`) | 판정 |
+|---|---|---|
+| IJCAI-27 스타일 필수, 여백·글자 크기 축소 시 심사 없이 거절 | `article` + 임의 여백(0.75in)과 Times New Roman(XeLaTeX)으로 비슷하게 맞춘 것 | **불충족**: 공식 키트(`FormattingGuidelines-IJCAI-27.zip`)로 옮겨야 함 |
+| 본문 7쪽(그림·표 포함) + 참고문헌만 최대 2쪽, 전체 9쪽 이내 | 본문이 6쪽에서 끝나지만 그림 4·5가 참고문헌 뒤인 7쪽에 밀려 있음 | **불충족**: 그림이 본문 안에 들어가야 함. 공식 스타일에서 쪽수 다시 확인 필요 |
+| 부록은 본문 PDF가 아니라 보조 자료(PDF/ZIP, 50MB 이하) | 참고문헌 뒤 8쪽에 부록 | **불충족**: 보조 자료로 옮겨야 함 |
+| 이중 맹검: 저자·소속·감사의 글 없음, PDF 메타데이터에 신원 정보 없음 | 저자 "Anonymous submission", 감사의 글 없음, 메타데이터에 제목·저자 없음 | 충족 |
+| 보조 자료·코드도 익명화(경로·URL 포함) | 부록에 `runs/...` 폴더 경로가 있음(신원 정보는 아님) | 보조 자료로 옮길 때 정리 권장 |
+| 재현성 체크리스트는 제출 시 작성 | 미작성 | 제출 전 준비 필요 |
+| LLM 사용: 저자가 모든 내용에 책임, 방법론에 쓴 LLM 출력은 논문에 기술 | 방법론에는 LLM을 쓰지 않음. 글쓰기 보조에 대해서는 저자가 직접 검토해야 함 | 주의 |
+| 용지·단 | US Letter, 2단, 10pt | 형식은 맞지만 공식 스타일 적용이 전제 |
+
+형식 외에 더 중요한 문제가 있습니다.
+
+1. **결과가 비어 있습니다.** 학습 성능 표가 pending이면 메인 트랙 심사를 통과하기 어렵습니다. 마감은 초록 2027-01-04, 본문 2027-01-11(AoE)로 약 9주 남았습니다. 분기 결과(이번 주)에 더해, 독립 seed 3개 이상으로 처음부터 학습한 비교가 필요할 가능성이 큽니다. 5M job이 하나에 약 2일 걸리므로, 분기 결과를 보고 바로 시작해야 일정이 맞습니다.
+2. **결과가 들어오면 7쪽을 넘기 쉽습니다.** 지금도 본문과 그림을 합치면 거의 7쪽입니다. 결과 표와 그래프가 늘어나는 만큼 Properties 절이나 반사실 점검 절을 줄여야 합니다.
+3. **환경이 하나입니다.** 심사에서 일반성을 물을 가능성이 큽니다. 인접 목적지 배치처럼 이미 있는 변형을 추가 근거나 음성 사례로 쓰는 방안을 검토할 만합니다.
+
+공식 키트 zip은 아직 내려받지 않았습니다. 그래서 2027 스타일 파일의 세부(사용 엔진, 참고문헌 스타일, 익명 저자 블록 형식)는 확인하지 못했습니다. 내려받아 옮기면 위 표의 "불충족" 세 항목을 바로 고치고 실제 쪽수를 확인할 수 있습니다.
+
+출처:
+- [IJCAI 2027 Call for papers (Main Track)](https://2027.ijcai.org/ijcai-2027-call-for-papers-main-track/)
+- [IJCAI Authors Kit](https://www.ijcai.org/authors_kit)
+- [WikiCFP: IJCAI](http://www.wikicfp.com/cfp/program?id=1567)
+
+기록은 `DECISIONS.md` D105, `RESEARCH_STATE.md`, 대화 기록 T172에 남겼습니다. 코드·학습·논문 파일은 바꾸지 않았습니다.
+
+## 원문 기록 T173 — 2026-11-02 KST, Claude Code
+
+### 사용자 — 원문
+
+@"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.docx" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.tex" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.bib" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.sty" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\named.bst"
+
+### 수행 기록 — 원문 대화와 별도
+
+- 첨부: IJCAI-27 저자 키트. `ijcai27.tex`·`ijcai27.bib`·`ijcai27.sty`·`named.bst`를 읽었다(`ijcai27.docx`는 읽지 않음). T172의 "키트로 옮길까요?"에 대한 답으로 보고 전환 작업을 했다.
+- 변경: `paper/english/main.tex`(키트 형식 재작성), `paper/english/{ijcai27.sty,named.bst}`(복사), `paper/english/supplementary.tex`(새 파일), `paper/figures/fig_critic.tex`(배치 변경), `paper/korean/main.tex`(초록·알고리즘 1·부록 제목·패키지), `output/pgct_docs_20261102/{build_deck.py,check_consistency.py,make_overleaf.py}`, `paper/overleaf_ijcai27/`와 zip, `PGCT_DELIVERABLES_README.md`. Beamer·PPTX 재생성.
+- 검증: 영어 7쪽, 한국어 8쪽, 보조 자료 2쪽, Beamer 17장 모두 오류·Overfull·누락 글자 0. Overleaf 사본 7쪽. 일관성 점검 통과. 초록 170단어.
+- 실행 중인 학습은 건드리지 않았다. 커밋 없음. 진행 안내 상당수를 영어로 보냈다.
+- 기록: `DECISIONS.md` D106, `RESEARCH_STATE.md`, 이 T173, 통합 사본 재생성.
+
+### Assistant — 진행 안내
+
+공식 IJCAI-27 키트를 받았으니 영어 논문을 이 키트로 옮기겠습니다. 키트에서 확인한 핵심 규정은 이렇습니다.
+- `ijcai27.sty`와 `named.bst`를 쓰고, 인용은 `\cite`로 [저자, 연도] 형식입니다(`natbib`는 쓰지 않음).
+- `\pdfinfo` 블록은 손대지 않고 둡니다.
+- 심사본에는 `\linenumbers`가 필요합니다.
+- 초록은 200단어 이하입니다.
+- 부록을 넣는다면 참고문헌 앞에 두고 7쪽에 포함합니다.
+- 알고리즘은 캡션이 위에 붙는 float로 넣습니다.
+
+이 PC의 Tectonic은 XeTeX 기반이라 pdfLaTeX 전용 명령(`\pdfinfo`)을 처리하지 못합니다. 그래서 원본은 pdfLaTeX(Overleaf)에서 그대로 컴파일되게 쓰고, 이 PC에서는 그 명령만 대신 처리하는 작은 장치를 두고 확인하겠습니다.
+
+The sources are all ASCII, so they will also compile under pdfLaTeX. Now I'll rewrite the English paper on the IJCAI-27 template. Changes:
+- Template preamble.
+- An abstract of 200 words or fewer.
+- `\cite` with the named bibliography style.
+- An `algorithm` float.
+- The appendix moved out to supplementary material.
+
+Under XeTeX, `times` did not switch the text to Times; the body came out in Latin Modern. That would make the page count differ from the official pdfLaTeX build. For local XeTeX builds only, I'll substitute TeX Gyre Termes, which has the same metrics as Times. pdfLaTeX ignores this line.
+
+The IJCAI-27 version is 7 pages in total. The body ends on page 6 (about 5.6 pages), and references take about 1.2 pages, so it fits the 7+2 limit with roughly 1.4 pages free for the learning results. All figures now sit before the references, line numbers are on, and the PDF metadata carries `TemplateVersion IJCAI.2027.0` with no title or author.
+
+One readability problem remains. Figure 3 is wide (20.5 cm), so it is shrunk to 84% and its smallest labels come out around 6pt. IJCAI asks for 9pt text in figures, so I'll move the Actor and Critic update boxes below the advantage boxes and narrow the figure to about 17 cm.
+
+Now the matching changes in the PPTX redraw of Figure 3, then new bounding boxes.
+
+Figure 3 is now readable in both the paper and the slide. I'll check the abstract's word count, then move the removed appendix into a supplementary-material file.
+
+The supplementary material (2 pages) compiles. Now I'll sync the Korean paper with the English changes: the shorter abstract, the procedure steps matching Algorithm 1, and an appendix note saying it corresponds to the English supplementary material.
+
+Three issues came up:
+- The Korean sentence fix failed on backslash quoting; I'll use the edit tool instead.
+- The checker looks only for `\citep`, but the English paper now uses `\cite`.
+- To give the Korean paper the same `alg:pgct` label, I'll turn its procedure box into the same `algorithm` float the English paper uses.
+
+Both `sed` edits missed (quoting). I'll make them with the edit tool.
+
+The two papers now share the same equations, citations, labels, references and figures. The remaining number differences are only formatting values and wording (for example "6 에이전트" vs "six-agent").
+
+One more practical issue: the English paper references files through `../` paths. Overleaf compiles from the project root, so those paths may not resolve after upload. I'll make a flat, upload-ready folder for Overleaf and compile it once to confirm.
+
+The flat Overleaf package also compiles to 7 pages. Last, I'll update the guide and the records.
+
+### Assistant — 최종 답변
+
+영어 논문을 IJCAI-27 공식 키트로 옮겼습니다. 이제 키트 규정을 대부분 만족하고, 결과를 넣을 여유가 약 1.4쪽 있습니다.
+
+## 결과물
+
+| 파일 | 내용 |
+|---|---|
+| [paper/english/main.pdf](paper/english/main.pdf) | IJCAI-27 템플릿, 7쪽(본문 약 5.6쪽 + 참고문헌 약 1.2쪽), 줄 번호, 익명 |
+| [paper/english/supplementary.pdf](paper/english/supplementary.pdf) | 보조 자료 2쪽(구현 세부, 환원 점검, 근거 출처). 9쪽 제한 밖에서 따로 제출 |
+| `paper/overleaf_ijcai27.zip` | Overleaf에 그대로 올리는 평평한 사본(주 파일 `main.tex`). 이 PC에서 같은 7쪽으로 컴파일되는 것을 확인했습니다 |
+
+## 키트 규정 대조
+
+| 규정 (`ijcai27.tex`) | 현재 | 판정 |
+|---|---|---|
+| `ijcai27.sty`, `times`, `\pdfinfo{/TemplateVersion (IJCAI.2027.0)}` | 키트의 전처리 구성 그대로 사용. PDF 메타데이터에 TemplateVersion이 있고 제목·저자는 없음 | 충족 |
+| 본문 7쪽 + 참고문헌 등 2쪽 | 본문이 6쪽 중간에서 끝나고, 모든 그림·표가 참고문헌 앞에 있음 | 충족 |
+| 심사본에는 `\linenumbers` | 켜 둠 | 충족 |
+| 익명: 저자·소속·감사의 글 없음 | "Anonymous Submission", 감사의 글 없음 | 충족 |
+| 초록 200단어 이하 | 170단어로 줄임 | 충족 |
+| 인용은 저자-연도(`named.bst`, `\cite`) | `natbib` 제거, `\cite`로 바꿈 | 충족 |
+| 부록은 참고문헌 앞에 두고 7쪽에 포함, 아니면 보조 자료 | 부록을 보조 자료로 분리 | 충족 |
+| 알고리즘은 캡션이 위에 붙는 float | 절차 상자를 `algorithm` float(알고리즘 1)로 바꿈 | 충족 |
+| 제목·절 제목은 Title Case, 표는 booktabs·숫자 오른쪽 정렬 | 맞춤 | 충족 |
+| 그림 안 글자는 9pt 권장 | 그림 3을 20.5cm에서 17.4cm로 줄여 본문 글자가 약 9pt가 됨. 그림 2의 가장 작은 라벨은 약 7pt | 대부분 충족 |
+
+그림 3은 Actor·Critic update 상자를 오른쪽에서 아래로 옮겼습니다. Beamer 12번 슬라이드와 PPTX에도 같은 배치로 반영했습니다.
+
+## 한국어 논문
+
+검토용이라 기존 2단 형식을 유지했습니다. 대신 내용을 영어판에 맞췄습니다.
+- 줄인 초록
+- 같은 단계의 알고리즘 1(같은 `alg:pgct` 라벨)
+- 부록 제목에 "영어판에서는 별도 보조 자료"라고 명시
+
+자동 점검 결과 수식·인용·라벨·참조·그림이 같습니다.
+
+## 주의할 점
+
+- **최종 제출 PDF는 Overleaf(pdfLaTeX)에서 만드세요.**
+  - 키트는 pdfLaTeX 기준이고, 이 PC의 Tectonic은 XeTeX라서 `\pdfinfo`를 대신 처리하고 Times 대신 치수가 같은 TeX Gyre Termes를 씁니다. 그래서 여기서 확인한 7쪽은 쪽수 확인용입니다.
+  - 원본은 모두 ASCII이고 대체 처리는 XeTeX에서만 동작하도록 적어서, pdfLaTeX에서는 키트 원본 그대로 동작해야 합니다. 다만 Overleaf에서 직접 컴파일해 보지는 않았습니다.
+- **재현성 체크리스트**는 키트에 없고 제출 시스템에서 작성합니다. 미리 준비해야 합니다.
+- **결과가 아직 비어 있습니다.** 남은 약 1.4쪽 안에 분기 결과 표·그래프와 처음부터 학습한 비교를 넣어야 합니다. 넘치면 Properties 절이나 반사실 점검 절을 줄입니다.
+
+기록은 `DECISIONS.md` D106, `RESEARCH_STATE.md`, `PGCT_DELIVERABLES_README.md`, 대화 기록 T173에 남겼습니다. 실행 중인 학습은 건드리지 않았고, 커밋은 하지 않았습니다.

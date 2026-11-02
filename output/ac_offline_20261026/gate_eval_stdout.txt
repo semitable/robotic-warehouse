@@ -1,0 +1,30 @@
+[v2] corner/indiv A+C IPPO s1, 0.26-5M: rounds 28 deliveries [2, 113, 175, 150, 73, 131] mature [False, True, True, True, True, True]
+   v1 {"true_accept_same": 1, "false_accept_cross": 0, "reject_same": 3, "reject_cross": 4, "abstain_same": 2, "abstain_cross": 5, "decided": 8, "decision_accuracy": 0.625, "auroc_ema_distance": 1.0, "pairs_with_distance": 11}
+   v2 {"true_accept_same": 4, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 6, "abstain_same": 2, "abstain_cross": 3, "decided": 10, "decision_accuracy": 1.0, "auroc_ema_distance": 1.0, "pairs_with_distance": 10} (40s)
+[v2] corner/indiv IPPO s1, 0.26-1M: rounds 16 deliveries [0, 5, 19, 0, 0, 0] mature [False, False, True, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 2, "abstain_same": 0, "abstain_cross": 7, "decided": 8, "decision_accuracy": 0.25, "auroc_ema_distance": 0.4166666666666667, "pairs_with_distance": 8}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (20s)
+[v2] corner/indiv IPPO s2, 0.26-1M: rounds 16 deliveries [14, 0, 0, 7, 0, 0] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 6, "abstain_same": 0, "abstain_cross": 3, "decided": 12, "decision_accuracy": 0.5, "auroc_ema_distance": 0.4166666666666667, "pairs_with_distance": 12}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (21s)
+[v2] adjacent/indiv IPPO s1, 0.26-1M: rounds 16 deliveries [2, 1, 1, 1, 1, 3] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 9, "abstain_same": 0, "abstain_cross": 0, "decided": 15, "decision_accuracy": 0.6, "auroc_ema_distance": 0.3148148148148148, "pairs_with_distance": 15}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (21s)
+[v2] adjacent/indiv IPPO s2, 0.26-1M: rounds 16 deliveries [0, 17, 0, 0, 0, 12] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 4, "reject_cross": 5, "abstain_same": 2, "abstain_cross": 4, "decided": 9, "decision_accuracy": 0.556, "auroc_ema_distance": 0.3, "pairs_with_distance": 9}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (20s)
+[v2_no_mirror] corner/indiv A+C IPPO s1, 0.26-5M: rounds 28 deliveries [2, 113, 175, 150, 73, 131] mature [False, True, True, True, True, True]
+   v1 {"true_accept_same": 1, "false_accept_cross": 0, "reject_same": 3, "reject_cross": 4, "abstain_same": 2, "abstain_cross": 5, "decided": 8, "decision_accuracy": 0.625, "auroc_ema_distance": 1.0, "pairs_with_distance": 11}
+   v2 {"true_accept_same": 4, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 6, "abstain_same": 2, "abstain_cross": 3, "decided": 10, "decision_accuracy": 1.0, "auroc_ema_distance": 1.0, "pairs_with_distance": 10} (38s)
+[v2_no_mirror] corner/indiv IPPO s1, 0.26-1M: rounds 16 deliveries [0, 5, 19, 0, 0, 0] mature [False, False, True, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 2, "abstain_same": 0, "abstain_cross": 7, "decided": 8, "decision_accuracy": 0.25, "auroc_ema_distance": 0.4166666666666667, "pairs_with_distance": 8}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (21s)
+[v2_no_mirror] corner/indiv IPPO s2, 0.26-1M: rounds 16 deliveries [14, 0, 0, 7, 0, 0] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 6, "abstain_same": 0, "abstain_cross": 3, "decided": 12, "decision_accuracy": 0.5, "auroc_ema_distance": 0.4166666666666667, "pairs_with_distance": 12}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (21s)
+[v2_no_mirror] adjacent/indiv IPPO s1, 0.26-1M: rounds 16 deliveries [2, 1, 1, 1, 1, 3] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 6, "reject_cross": 9, "abstain_same": 0, "abstain_cross": 0, "decided": 15, "decision_accuracy": 0.6, "auroc_ema_distance": 0.3148148148148148, "pairs_with_distance": 15}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (21s)
+[v2_no_mirror] adjacent/indiv IPPO s2, 0.26-1M: rounds 16 deliveries [0, 17, 0, 0, 0, 12] mature [False, False, False, False, False, False]
+   v1 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 4, "reject_cross": 5, "abstain_same": 2, "abstain_cross": 4, "decided": 9, "decision_accuracy": 0.556, "auroc_ema_distance": 0.3, "pairs_with_distance": 9}
+   v2 {"true_accept_same": 0, "false_accept_cross": 0, "reject_same": 0, "reject_cross": 0, "abstain_same": 6, "abstain_cross": 9, "decided": 0, "decision_accuracy": null, "auroc_ema_distance": null, "pairs_with_distance": 0} (20s)

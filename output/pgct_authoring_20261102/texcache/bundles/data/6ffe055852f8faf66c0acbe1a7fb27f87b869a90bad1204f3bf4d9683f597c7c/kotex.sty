@@ -1,0 +1,103 @@
+% kotex.sty
+%
+% (C) Copyright 2007-2015 Koaunghi Un <koaunghi at kornet net>
+%                         Kangsoo Kim <karnes at gmail com>
+%                         Dohyun Kim  <nomos at ktug org>
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%  http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2006/05/20 or later.
+%
+% -------------------------------------------------
+%
+% main style of ko.TeX
+%
+% Usage : \usepackage{kotex}          \usepackage[hangul]{kotex}
+%         \usepackage[euc]{kotex}     \usepackage[euc,hangul]{kotex}
+%         \usepackage[cjk]{kotex}     \usepackage[cjk,hangul]{kotex}
+
+\begingroup\expandafter\expandafter\expandafter\endgroup
+\expandafter\ifx\csname ProvidesPackage\endcsname\relax\else
+  \ProvidesPackage{kotex}[2015/04/19 v1.6 Korean TeX (ko.TeX)]
+\fi
+
+\ifx\directlua\relax \let\directlua\undefined \fi
+\ifx\XeTeXrevision\relax \let\XeTeXrevision\undefined \fi
+
+\begingroup\expandafter\expandafter\expandafter\endgroup
+\expandafter\ifx\csname selectfont\endcsname\relax
+  \ifx\directlua\undefined
+    \ifx\XeTeXrevision\undefined
+      \input kotexutf
+    \else
+      \input xetexko.sty
+    \fi
+  \else
+    \input luatexko.sty
+  \fi
+\endinput\fi
+
+
+\newif\if@ko@euc
+\let\@ko@cjk\undefined
+
+\IfFileExists{kotexutf.sty}{}{\let\@ko@cjk\empty}
+
+\DeclareOption{utf}{}
+\DeclareOption{euc}{\@ko@euctrue}
+\DeclareOption{cjk}{\let\@ko@cjk\empty}
+\DeclareOption*{
+  \ifx\directlua\undefined
+    \ifx\XeTeXrevision\undefined
+      \if@ko@euc
+        \PassOptionsToPackage{\CurrentOption}{kotex-euc}
+      \else
+        \ifx\@ko@cjk\undefined
+          \PassOptionsToPackage{\CurrentOption}{kotexutf}
+        \else
+          \PassOptionsToPackage{\CurrentOption}{cjkutf8-ko}
+        \fi
+      \fi
+    \else
+      \PassOptionsToPackage{\CurrentOption}{xetexko}
+    \fi
+  \else
+    \PassOptionsToPackage{\CurrentOption}{luatexko}
+  \fi
+}
+\InputIfFileExists{kotex.cfg}{}{}
+\ProcessOptions\relax
+
+%%% compatibility
+\if@ko@euc \else
+ \let\gtfamily\sffamily
+ \DeclareTextFontCommand{\textgt}{\gtfamily}
+\fi
+
+%%% load one of ko.TeX packages
+\ifx\directlua\undefined
+  \ifx\XeTeXrevision\undefined
+    \if@ko@euc
+      \RequirePackage{kotex-euc}
+    \else
+      \ifx\@ko@cjk\undefined
+        \RequirePackage{kotexutf}
+      \else
+        \RequirePackage{cjkutf8-ko}
+      \fi
+    \fi
+  \else
+    \RequirePackage{xetexko}
+  \fi
+\else
+  \RequirePackage{luatexko}
+  \if@ko@euc
+    \luatexuhcinputencoding=1
+  \fi
+\fi
+
+\endinput
