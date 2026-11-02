@@ -6,7 +6,9 @@ Codex가 T167에 만든 초안을 바탕으로, 논문 본문·그림·발표자
 
 | 파일 | 내용 |
 |---|---|
-| `paper/english/main.tex`, `main.pdf` | 영어 논문 전체 초안, 8쪽(참고문헌·부록 포함) |
+| `paper/english/main.tex`, `main.pdf` | 영어 논문, **IJCAI-27 공식 템플릿**(`ijcai27.sty`, `named.bst`, 줄 번호, 익명). 7쪽 = 본문 약 5.6쪽 + 참고문헌 약 1.2쪽 (T173) |
+| `paper/english/supplementary.tex`, `.pdf` | 보조 자료 2쪽(구현 세부, 환원 점검, 근거 출처). 본문 9쪽 제한 밖에서 따로 제출 |
+| `paper/overleaf_ijcai27/`, `paper/overleaf_ijcai27.zip` | Overleaf(pdfLaTeX)에 그대로 올릴 수 있는 평평한 사본. `make_overleaf.py`로 다시 만든다 |
 | `paper/korean/main.tex`, `main.pdf` | 같은 구성·수식·수치·인용의 한국어 논문, 8쪽(`kotex`, XeLaTeX) |
 | `paper/method_equations.tex` | 두 논문이 함께 쓰는 수식 11개. rollout 시작 스냅샷 표기($\mathcal Q_{ij}^u$, $\widehat r^{\,u}$) 반영 |
 | `paper/references.bib` | 공통 참고문헌 13개 |
@@ -49,4 +51,11 @@ Codex가 T167에 만든 초안을 바탕으로, 논문 본문·그림·발표자
 
 - 핵심 기여는 잠재 팀 발견(Reward Probe 검정)이다. Critic 활용은 발견한 관계의 유용성을 검증하는 보조 메커니즘이다.
 - 발견 근거는 seed 1, 5M의 발견 구성요소 학습 로그(update 종료 위치 접촉, 이전 팀원 활용 규칙)와 오프라인 재생(E59), 반사실 점검(E63)이다. 통합 PGCT의 학습 성능은 진행 중이며 수치를 넣지 않았다.
-- MAMBA의 성능 보장은 주장하지 않는다. 논문 양식은 2단 작업 초안이며, 공식 IJCAI 양식·저자 정보·분량 규정은 투고 전에 적용해야 한다.
+- MAMBA의 성능 보장은 주장하지 않는다.
+
+## IJCAI-27 형식 (T173)
+
+- 영어 논문은 공식 키트(`FormattingGuidelines-IJCAI-27`)의 `ijcai27.sty`·`named.bst`·전처리 구성을 그대로 따른다. `\pdfinfo{/TemplateVersion (IJCAI.2027.0)}`, `\linenumbers`, `\cite`(named), `algorithm` float, 초록 170단어, 부록 없음(보조 자료로 분리).
+- 제출용 PDF는 Overleaf에서 pdfLaTeX로 만든다(`paper/overleaf_ijcai27.zip` 업로드, 주 파일 `main.tex`). 이 PC의 Tectonic(XeTeX) 빌드는 `\pdfinfo`를 대체 처리하고 Times 대신 같은 치수의 TeX Gyre Termes를 쓰므로, 쪽수 확인용이다.
+- 한국어 논문은 검토용이라 기존 2단 형식을 유지하되 내용(초록, 알고리즘 1, 수식, 수치)은 영어판과 맞췄다. 한국어판 부록은 영어판 보조 자료에 해당한다.
+- 남은 일: 재현성 체크리스트(제출 시 작성), Overleaf pdfLaTeX 빌드로 최종 쪽수 확인, 결과 표·그래프 채우기(약 1.4쪽 여유).

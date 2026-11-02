@@ -1507,3 +1507,13 @@
 - 현재 `paper/english/main.pdf`(8쪽): 공식 스타일이 아니다(article + 임의 여백). 그림 4·5가 참고문헌 뒤 7쪽에 밀려 있고, 부록이 8쪽에 있다. 익명 저자, 감사의 글 없음, 메타데이터에 신원 정보 없음은 충족.
 - 필요한 일: 공식 키트로 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트 준비. 형식보다 큰 문제는 학습 결과가 pending이라는 점이다. 결과가 들어오면 쪽수를 줄여야 하고, 환경이 하나뿐이라는 점도 심사 위험이다.
 - 실행 상태(18:45): 1단계 분기(PID 28892) `ippo_s1` 0.18M/0.5M, 12 job 중 1번째. 2단계(PID 25380, 사용자가 18:02에 시작, `runs/pgctd2_br1M_20261102_180212`, `oracle_mature_max`·`pgct_max` × seed 1·3·5, `contact_snapshot=True`) `oracle_mature_max_s1` 0.07M. 2단계 초기 66 update에서 성숙 agent는 a2·a3·a5뿐이고 donor는 같은 팀 앞선 agent 사이 2 arc다(D98 R1 예상과 일치).
+
+## D106. 영어 논문을 IJCAI-27 공식 키트로 전환, 부록은 보조 자료로, 그림 3 축소 — 2026-11-02 Claude Code (사용자 T173, 키트 파일 첨부)
+
+- 근거: 사용자가 첨부한 `FormattingGuidelines-IJCAI-27`(`ijcai27.tex`, `ijcai27.sty`, `named.bst`, `ijcai27.bib`, `ijcai27.docx`). 규정: 본문 7쪽 + 참고문헌 등 2쪽, `\pdfinfo{/TemplateVersion (IJCAI.2027.0)}` 유지, 심사본 `\linenumbers`, 초록 200단어 이하, named 인용, 부록은 참고문헌 앞(7쪽에 포함), 알고리즘 float 캡션은 위, 그림 글자 9pt 권장.
+- 결정:
+  1. `paper/english/main.tex`를 키트 전처리 그대로 다시 썼다. `natbib` 제거, `\cite`, 초록 170단어, 절차 상자를 `algorithm` float로, 부록은 `supplementary.tex`(2쪽)로 분리. 결과 7쪽(본문 약 5.6쪽 + 참고문헌 약 1.2쪽).
+  2. 원본은 pdfLaTeX(Overleaf)가 기준이다. 이 PC의 Tectonic(XeTeX)에서는 `\pdfinfo` 대체와 TeX Gyre Termes·Heros를 `\ifdefined\XeTeXrevision` 안에서만 쓴다. `paper/overleaf_ijcai27.zip`(평평한 사본)을 만들고 같은 7쪽으로 컴파일됨을 확인했다. Overleaf에서 직접 컴파일하지는 않았다.
+  3. 그림 3의 Actor·Critic update 상자를 아래로 옮겨 폭을 20.5cm에서 17.4cm로 줄였다(본문 글자 약 9pt). Beamer·PPTX에도 반영.
+  4. 한국어 논문은 검토용 2단 형식을 유지하고 초록·알고리즘 1·부록 제목을 영어판과 맞췄다.
+- 남은 일: 재현성 체크리스트, Overleaf 최종 빌드, 결과 약 1.4쪽 채우기.

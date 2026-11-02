@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 en = (ROOT / "paper/english/main.tex").read_text(encoding="utf-8")
 ko = (ROOT / "paper/korean/main.tex").read_text(encoding="utf-8")
 CHECKS = {"equations": r"\\(Model|RewardLoss|Probe|Distance|Approval|Donor|Max|GAE|Blend|PPO|Bound)Equation",
-          "cites": r"\\citep\{([^}]*)\}", "labels": r"\\label\{([^}]*)\}", "refs": r"\\ref\{([^}]*)\}",
+          "cites": r"\\citep?\{([^}]*)\}", "labels": r"\\label\{([^}]*)\}", "refs": r"\\ref\{([^}]*)\}",
           "figures": r"\{\.\./figures/([^}]*)\}"}
 ok = True
 for name, pat in CHECKS.items():

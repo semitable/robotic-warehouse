@@ -1,5 +1,10 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-02 KST, Claude Code (T173, IJCAI-27 형식 전환)
+
+- **논문(D106)**: 영어판은 IJCAI-27 공식 템플릿, 7쪽(본문 약 5.6 + 참고문헌 약 1.2), 보조 자료 2쪽, Overleaf용 `paper/overleaf_ijcai27.zip`. 한국어판은 내용 동기화.
+- **남은 일**: 재현성 체크리스트, Overleaf pdfLaTeX 최종 빌드, 분기 결과로 표·그래프 채우기. 실행 중인 두 분기 실험은 그대로다.
+
 ## 최신 확인 — 2026-11-02 18:45 KST, Claude Code (T172)
 
 - **실행 중**: 1단계 분기 PID 28892(`runs/maxgae_br1M_20261102_165216`, 12 job, `ippo_s1` 0.18M, 11-05 오전 무렵 종료 추정). 2단계 PID 25380(`runs/pgctd2_br1M_20261102_180212`, 사용자가 18:02 시작, `oracle_mature_max`·`pgct_max` × seed 1·3·5, 6 job, 11-04 새벽 무렵 종료 추정).

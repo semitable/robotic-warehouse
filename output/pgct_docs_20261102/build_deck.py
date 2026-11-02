@@ -441,8 +441,8 @@ def fig_critic(d, m, s):
     node(14.0, 1.65, 3.65, 1.35, "Max-GAE", "advantage from f and own reward;\nmasked difference Δ")
     node(14.0, -0.15, 3.65, 1.35, "Actor advantage", "own advantage + η · s · Δ\ns ≤ 1 only shrinks Δ",
          line="pgorange", lw=1.6)
-    node(17.75, 1.65, 2.5, 1.1, "Actor", "PPO with PGCT advantage")
-    node(17.75, -2.1, 2.5, 1.1, "Critic", "own-return target only")
+    node(14.0, -2.15, 3.6, 1.0, "Actor update", "PPO with PGCT advantage")
+    node(9.2, -2.15, 3.6, 1.0, "Critic update", "own-return target only")
     d.arrow([m(1.375, 0.8), m(1.75, 0.8), m(1.75, 1.65), m(2.475, 1.65)])
     d.arrow([m(1.75, 0.8), m(1.75, -0.15), m(2.475, -0.15)])
     d.arrow([m(4.4, 2.875), m(4.4, 2.325)], "pggreen")
@@ -452,8 +452,8 @@ def fig_critic(d, m, s):
     d.arrow([m(11.325, 1.65), m(12.175, 1.65)])
     d.arrow([m(14.0, 0.975), m(14.0, 0.525)])
     d.arrow([m(11.325, -0.15), m(12.175, -0.15)])
-    d.arrow([m(15.825, -0.15), m(16.2, -0.15), m(16.2, 1.65), m(16.5, 1.65)], "pgorange")
-    d.arrow([m(9.2, -0.825), m(9.2, -2.1), m(16.5, -2.1)])
+    d.arrow([m(14.0, -0.825), m(14.0, -1.65)], "pgorange")
+    d.arrow([m(9.2, -0.825), m(9.2, -1.65)])
     tx, ty = m(2.25, -1.2)
     d.text(tx, ty, 4.3 * s, 0.7 * s, [("peer values never enter Critic targets;\nno peer distillation loss", "pggrey", False)],
            fsz * 0.8, PP_ALIGN.CENTER, beamer=False)
@@ -464,7 +464,7 @@ def fig_critic(d, m, s):
 
 FIGS = {"fig_architecture": (fig_architecture, (-2.674, -4.751, 14.290, 1.607)),
         "fig_discovery": (fig_discovery, (-1.605, -3.274, 16.255, 2.442)),
-        "fig_critic": (fig_critic, (-1.455, -2.664, 19.019, 4.273))}
+        "fig_critic": (fig_critic, (-1.455, -2.664, 15.917, 4.273))}
 
 
 # ---------------- small right-hand visuals (drawn identically in both decks) ----------------

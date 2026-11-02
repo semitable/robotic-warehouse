@@ -1,6 +1,6 @@
 # PGCT 연구 통합 기록
 
-자동 생성: 2026-11-02 18:48 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
+자동 생성: 2026-11-02 19:05 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
 
 새 세션은 **Part 1(인수인계 요약)만 먼저 읽고**, 필요할 때 아래 목차에서 해당 부분을 찾는다.
 
@@ -14,7 +14,7 @@
 - Part 3. 현재 연구 상태
   - `RESEARCH_STATE.md` (39 KB)
 - Part 4. 질문·결론·설계 판단
-  - `DECISIONS.md` (188 KB)
+  - `DECISIONS.md` (190 KB)
 - Part 5. 실험·평가 기록
   - `EXPERIMENTS.md` (156 KB)
 - Part 6. 분석 보고서 (output/, 작성일 순)
@@ -35,7 +35,7 @@
   - `examples/PGCT_TRANSFER_EXPERIMENTS.md` (13 KB)
   - `examples/HARD_RWARE_EXPERIMENTS.md` (9 KB)
 - Part 8. 대화 기록 원문 (Codex + Claude Code)
-  - `CONVERSATION_LOG.md` (1158 KB)
+  - `CONVERSATION_LOG.md` (1167 KB)
 - 부록. 통합 타임라인 (D=결정, E=실험, L/T=대화)
 
 ---
@@ -272,9 +272,14 @@ Codex의 지침 파일 동작은 [OpenAI 공식 AGENTS.md 문서](https://learn.
 
 # Part 3. 현재 연구 상태
 
-## 출처: `RESEARCH_STATE.md` (수정 2026-11-02 18:48)
+## 출처: `RESEARCH_STATE.md` (수정 2026-11-02 19:05)
 
 ### PGCT 현재 연구 상태
+
+#### 최신 확인 — 2026-11-02 KST, Claude Code (T173, IJCAI-27 형식 전환)
+
+- **논문(D106)**: 영어판은 IJCAI-27 공식 템플릿, 7쪽(본문 약 5.6 + 참고문헌 약 1.2), 보조 자료 2쪽, Overleaf용 `paper/overleaf_ijcai27.zip`. 한국어판은 내용 동기화.
+- **남은 일**: 재현성 체크리스트, Overleaf pdfLaTeX 최종 빌드, 분기 결과로 표·그래프 채우기. 실행 중인 두 분기 실험은 그대로다.
 
 #### 최신 확인 — 2026-11-02 18:45 KST, Claude Code (T172)
 
@@ -575,7 +580,7 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
 
 # Part 4. 질문·결론·설계 판단
 
-## 출처: `DECISIONS.md` (수정 2026-11-02 18:48)
+## 출처: `DECISIONS.md` (수정 2026-11-02 19:05)
 
 ### PGCT 질문·결론·설계 판단
 
@@ -2086,6 +2091,16 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
 - 현재 `paper/english/main.pdf`(8쪽): 공식 스타일이 아니다(article + 임의 여백). 그림 4·5가 참고문헌 뒤 7쪽에 밀려 있고, 부록이 8쪽에 있다. 익명 저자, 감사의 글 없음, 메타데이터에 신원 정보 없음은 충족.
 - 필요한 일: 공식 키트로 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트 준비. 형식보다 큰 문제는 학습 결과가 pending이라는 점이다. 결과가 들어오면 쪽수를 줄여야 하고, 환경이 하나뿐이라는 점도 심사 위험이다.
 - 실행 상태(18:45): 1단계 분기(PID 28892) `ippo_s1` 0.18M/0.5M, 12 job 중 1번째. 2단계(PID 25380, 사용자가 18:02에 시작, `runs/pgctd2_br1M_20261102_180212`, `oracle_mature_max`·`pgct_max` × seed 1·3·5, `contact_snapshot=True`) `oracle_mature_max_s1` 0.07M. 2단계 초기 66 update에서 성숙 agent는 a2·a3·a5뿐이고 donor는 같은 팀 앞선 agent 사이 2 arc다(D98 R1 예상과 일치).
+
+#### D106. 영어 논문을 IJCAI-27 공식 키트로 전환, 부록은 보조 자료로, 그림 3 축소 — 2026-11-02 Claude Code (사용자 T173, 키트 파일 첨부)
+
+- 근거: 사용자가 첨부한 `FormattingGuidelines-IJCAI-27`(`ijcai27.tex`, `ijcai27.sty`, `named.bst`, `ijcai27.bib`, `ijcai27.docx`). 규정: 본문 7쪽 + 참고문헌 등 2쪽, `\pdfinfo{/TemplateVersion (IJCAI.2027.0)}` 유지, 심사본 `\linenumbers`, 초록 200단어 이하, named 인용, 부록은 참고문헌 앞(7쪽에 포함), 알고리즘 float 캡션은 위, 그림 글자 9pt 권장.
+- 결정:
+  1. `paper/english/main.tex`를 키트 전처리 그대로 다시 썼다. `natbib` 제거, `\cite`, 초록 170단어, 절차 상자를 `algorithm` float로, 부록은 `supplementary.tex`(2쪽)로 분리. 결과 7쪽(본문 약 5.6쪽 + 참고문헌 약 1.2쪽).
+  2. 원본은 pdfLaTeX(Overleaf)가 기준이다. 이 PC의 Tectonic(XeTeX)에서는 `\pdfinfo` 대체와 TeX Gyre Termes·Heros를 `\ifdefined\XeTeXrevision` 안에서만 쓴다. `paper/overleaf_ijcai27.zip`(평평한 사본)을 만들고 같은 7쪽으로 컴파일됨을 확인했다. Overleaf에서 직접 컴파일하지는 않았다.
+  3. 그림 3의 Actor·Critic update 상자를 아래로 옮겨 폭을 20.5cm에서 17.4cm로 줄였다(본문 글자 약 9pt). Beamer·PPTX에도 반영.
+  4. 한국어 논문은 검토용 2단 형식을 유지하고 초록·알고리즘 1·부록 제목을 영어판과 맞췄다.
+- 남은 일: 재현성 체크리스트, Overleaf 최종 빌드, 결과 약 1.4쪽 채우기.
 
 ---
 
@@ -5612,7 +5627,7 @@ Detour에서도 기존 정책의 즉시 성능은 크게 떨어졌다. 장애물
 
 # Part 8. 대화 기록 원문 (Codex + Claude Code)
 
-## 출처: `CONVERSATION_LOG.md` (수정 2026-11-02 18:48)
+## 출처: `CONVERSATION_LOG.md` (수정 2026-11-02 19:05)
 
 ### PGCT 대화 기록 — 과거 요약과 이후 원문
 
@@ -22679,6 +22694,112 @@ The two experiments are explained, and I've finished checking the paper against 
 
 기록은 `DECISIONS.md` D105, `RESEARCH_STATE.md`, 대화 기록 T172에 남겼습니다. 코드·학습·논문 파일은 바꾸지 않았습니다.
 
+#### 원문 기록 T173 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+@"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.docx" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.tex" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.bib" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\ijcai27.sty" @"C:\Users\95101\Downloads\FormattingGuidelines-IJCAI-27\named.bst"
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 첨부: IJCAI-27 저자 키트. `ijcai27.tex`·`ijcai27.bib`·`ijcai27.sty`·`named.bst`를 읽었다(`ijcai27.docx`는 읽지 않음). T172의 "키트로 옮길까요?"에 대한 답으로 보고 전환 작업을 했다.
+- 변경: `paper/english/main.tex`(키트 형식 재작성), `paper/english/{ijcai27.sty,named.bst}`(복사), `paper/english/supplementary.tex`(새 파일), `paper/figures/fig_critic.tex`(배치 변경), `paper/korean/main.tex`(초록·알고리즘 1·부록 제목·패키지), `output/pgct_docs_20261102/{build_deck.py,check_consistency.py,make_overleaf.py}`, `paper/overleaf_ijcai27/`와 zip, `PGCT_DELIVERABLES_README.md`. Beamer·PPTX 재생성.
+- 검증: 영어 7쪽, 한국어 8쪽, 보조 자료 2쪽, Beamer 17장 모두 오류·Overfull·누락 글자 0. Overleaf 사본 7쪽. 일관성 점검 통과. 초록 170단어.
+- 실행 중인 학습은 건드리지 않았다. 커밋 없음. 진행 안내 상당수를 영어로 보냈다.
+- 기록: `DECISIONS.md` D106, `RESEARCH_STATE.md`, 이 T173, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+공식 IJCAI-27 키트를 받았으니 영어 논문을 이 키트로 옮기겠습니다. 키트에서 확인한 핵심 규정은 이렇습니다.
+- `ijcai27.sty`와 `named.bst`를 쓰고, 인용은 `\cite`로 [저자, 연도] 형식입니다(`natbib`는 쓰지 않음).
+- `\pdfinfo` 블록은 손대지 않고 둡니다.
+- 심사본에는 `\linenumbers`가 필요합니다.
+- 초록은 200단어 이하입니다.
+- 부록을 넣는다면 참고문헌 앞에 두고 7쪽에 포함합니다.
+- 알고리즘은 캡션이 위에 붙는 float로 넣습니다.
+
+이 PC의 Tectonic은 XeTeX 기반이라 pdfLaTeX 전용 명령(`\pdfinfo`)을 처리하지 못합니다. 그래서 원본은 pdfLaTeX(Overleaf)에서 그대로 컴파일되게 쓰고, 이 PC에서는 그 명령만 대신 처리하는 작은 장치를 두고 확인하겠습니다.
+
+The sources are all ASCII, so they will also compile under pdfLaTeX. Now I'll rewrite the English paper on the IJCAI-27 template. Changes:
+- Template preamble.
+- An abstract of 200 words or fewer.
+- `\cite` with the named bibliography style.
+- An `algorithm` float.
+- The appendix moved out to supplementary material.
+
+Under XeTeX, `times` did not switch the text to Times; the body came out in Latin Modern. That would make the page count differ from the official pdfLaTeX build. For local XeTeX builds only, I'll substitute TeX Gyre Termes, which has the same metrics as Times. pdfLaTeX ignores this line.
+
+The IJCAI-27 version is 7 pages in total. The body ends on page 6 (about 5.6 pages), and references take about 1.2 pages, so it fits the 7+2 limit with roughly 1.4 pages free for the learning results. All figures now sit before the references, line numbers are on, and the PDF metadata carries `TemplateVersion IJCAI.2027.0` with no title or author.
+
+One readability problem remains. Figure 3 is wide (20.5 cm), so it is shrunk to 84% and its smallest labels come out around 6pt. IJCAI asks for 9pt text in figures, so I'll move the Actor and Critic update boxes below the advantage boxes and narrow the figure to about 17 cm.
+
+Now the matching changes in the PPTX redraw of Figure 3, then new bounding boxes.
+
+Figure 3 is now readable in both the paper and the slide. I'll check the abstract's word count, then move the removed appendix into a supplementary-material file.
+
+The supplementary material (2 pages) compiles. Now I'll sync the Korean paper with the English changes: the shorter abstract, the procedure steps matching Algorithm 1, and an appendix note saying it corresponds to the English supplementary material.
+
+Three issues came up:
+- The Korean sentence fix failed on backslash quoting; I'll use the edit tool instead.
+- The checker looks only for `\citep`, but the English paper now uses `\cite`.
+- To give the Korean paper the same `alg:pgct` label, I'll turn its procedure box into the same `algorithm` float the English paper uses.
+
+Both `sed` edits missed (quoting). I'll make them with the edit tool.
+
+The two papers now share the same equations, citations, labels, references and figures. The remaining number differences are only formatting values and wording (for example "6 에이전트" vs "six-agent").
+
+One more practical issue: the English paper references files through `../` paths. Overleaf compiles from the project root, so those paths may not resolve after upload. I'll make a flat, upload-ready folder for Overleaf and compile it once to confirm.
+
+The flat Overleaf package also compiles to 7 pages. Last, I'll update the guide and the records.
+
+##### Assistant — 최종 답변
+
+영어 논문을 IJCAI-27 공식 키트로 옮겼습니다. 이제 키트 규정을 대부분 만족하고, 결과를 넣을 여유가 약 1.4쪽 있습니다.
+
+#### 결과물
+
+| 파일 | 내용 |
+|---|---|
+| [paper/english/main.pdf](paper/english/main.pdf) | IJCAI-27 템플릿, 7쪽(본문 약 5.6쪽 + 참고문헌 약 1.2쪽), 줄 번호, 익명 |
+| [paper/english/supplementary.pdf](paper/english/supplementary.pdf) | 보조 자료 2쪽(구현 세부, 환원 점검, 근거 출처). 9쪽 제한 밖에서 따로 제출 |
+| `paper/overleaf_ijcai27.zip` | Overleaf에 그대로 올리는 평평한 사본(주 파일 `main.tex`). 이 PC에서 같은 7쪽으로 컴파일되는 것을 확인했습니다 |
+
+#### 키트 규정 대조
+
+| 규정 (`ijcai27.tex`) | 현재 | 판정 |
+|---|---|---|
+| `ijcai27.sty`, `times`, `\pdfinfo{/TemplateVersion (IJCAI.2027.0)}` | 키트의 전처리 구성 그대로 사용. PDF 메타데이터에 TemplateVersion이 있고 제목·저자는 없음 | 충족 |
+| 본문 7쪽 + 참고문헌 등 2쪽 | 본문이 6쪽 중간에서 끝나고, 모든 그림·표가 참고문헌 앞에 있음 | 충족 |
+| 심사본에는 `\linenumbers` | 켜 둠 | 충족 |
+| 익명: 저자·소속·감사의 글 없음 | "Anonymous Submission", 감사의 글 없음 | 충족 |
+| 초록 200단어 이하 | 170단어로 줄임 | 충족 |
+| 인용은 저자-연도(`named.bst`, `\cite`) | `natbib` 제거, `\cite`로 바꿈 | 충족 |
+| 부록은 참고문헌 앞에 두고 7쪽에 포함, 아니면 보조 자료 | 부록을 보조 자료로 분리 | 충족 |
+| 알고리즘은 캡션이 위에 붙는 float | 절차 상자를 `algorithm` float(알고리즘 1)로 바꿈 | 충족 |
+| 제목·절 제목은 Title Case, 표는 booktabs·숫자 오른쪽 정렬 | 맞춤 | 충족 |
+| 그림 안 글자는 9pt 권장 | 그림 3을 20.5cm에서 17.4cm로 줄여 본문 글자가 약 9pt가 됨. 그림 2의 가장 작은 라벨은 약 7pt | 대부분 충족 |
+
+그림 3은 Actor·Critic update 상자를 오른쪽에서 아래로 옮겼습니다. Beamer 12번 슬라이드와 PPTX에도 같은 배치로 반영했습니다.
+
+#### 한국어 논문
+
+검토용이라 기존 2단 형식을 유지했습니다. 대신 내용을 영어판에 맞췄습니다.
+- 줄인 초록
+- 같은 단계의 알고리즘 1(같은 `alg:pgct` 라벨)
+- 부록 제목에 "영어판에서는 별도 보조 자료"라고 명시
+
+자동 점검 결과 수식·인용·라벨·참조·그림이 같습니다.
+
+#### 주의할 점
+
+- **최종 제출 PDF는 Overleaf(pdfLaTeX)에서 만드세요.**
+  - 키트는 pdfLaTeX 기준이고, 이 PC의 Tectonic은 XeTeX라서 `\pdfinfo`를 대신 처리하고 Times 대신 치수가 같은 TeX Gyre Termes를 씁니다. 그래서 여기서 확인한 7쪽은 쪽수 확인용입니다.
+  - 원본은 모두 ASCII이고 대체 처리는 XeTeX에서만 동작하도록 적어서, pdfLaTeX에서는 키트 원본 그대로 동작해야 합니다. 다만 Overleaf에서 직접 컴파일해 보지는 않았습니다.
+- **재현성 체크리스트**는 키트에 없고 제출 시스템에서 작성합니다. 미리 준비해야 합니다.
+- **결과가 아직 비어 있습니다.** 남은 약 1.4쪽 안에 분기 결과 표·그래프와 처음부터 학습한 비교를 넣어야 합니다. 넘치면 Properties 절이나 반사실 점검 절을 줄입니다.
+
+기록은 `DECISIONS.md` D106, `RESEARCH_STATE.md`, `PGCT_DELIVERABLES_README.md`, 대화 기록 T173에 남겼습니다. 실행 중인 학습은 건드리지 않았고, 커밋은 하지 않았습니다.
+
 ---
 
 # 부록. 통합 타임라인
@@ -23023,6 +23144,7 @@ DECISIONS·EXPERIMENTS·CONVERSATION_LOG의 항목 제목을 날짜순으로 모
 | 2026-11-02 | Claude Code | DECISIONS.md | D103. PGCT-D2의 v2 비교를 rollout 시작 스냅샷으로: 비교 후 재학습 — 2026-11-02 Claude Code (사용자 결정 T169, D102 선택지 ii) |
 | 2026-11-02 | Claude Code | DECISIONS.md | D104. PGCT 논문·발표자료 재작성: 잠재 팀 발견을 핵심 기여로, 근거는 실제 로그만, Beamer를 주 발표자료로 — 2026-11-02 Claude Code (사용자 요청 T171) |
 | 2026-11-02 | Claude Code | DECISIONS.md | D105. 현재 논문의 IJCAI 2027 적합성 점검: 내용 초안은 가능, 형식은 공식 키트 전환 필요 — 2026-11-02 Claude Code (사용자 질문 T172) |
+| 2026-11-02 | Claude Code | DECISIONS.md | D106. 영어 논문을 IJCAI-27 공식 키트로 전환, 부록은 보조 자료로, 그림 3 축소 — 2026-11-02 Claude Code (사용자 T173, 키트 파일 첨부) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E64. Max-GAE(D) 구현, smoke·동등성 검증, 1M 분기 규모 측정 — 2026-11-02 Claude Code, 사용자 요청(T154) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E65. A+C r̂와 희소 보상: 보상 밀도, v2 사건 누적·성숙·거리 시간표(학습 로그 읽기 전용) — 2026-11-02 Claude Code, 사용자 질문(T155) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E66. PGCT-D2 검토용 점검: Max-GAE 척도·가림의 합성 수치, 1M 무렵 agent별 보상 사건(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T163) |
@@ -23055,3 +23177,4 @@ DECISIONS·EXPERIMENTS·CONVERSATION_LOG의 항목 제목을 날짜순으로 모
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T170 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T171 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T172 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T173 — 2026-11-02 KST, Claude Code |

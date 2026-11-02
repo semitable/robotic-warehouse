@@ -9,7 +9,8 @@
 \renewcommand{\refname}{참고문헌}
 \renewcommand{\figurename}{그림}
 \renewcommand{\tablename}{표}
-\usepackage{amsmath,amssymb,graphicx,booktabs,tikz,natbib,xcolor,hyperref}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tikz,natbib,xcolor,hyperref,algorithm,algorithmic}
+\floatname{algorithm}{알고리즘}
 \hypersetup{colorlinks=true,linkcolor=blue!55!black,citecolor=blue!55!black,urlcolor=blue!55!black}
 \input{../figures/pgct_style.tex}
 \input{../method_equations.tex}
@@ -23,7 +24,7 @@
 \maketitle
 
 \begin{abstract}
-많은 다중 에이전트 시스템에서 에이전트들은 같은 공간을 쓰지만 같은 목표를 갖지는 않는다. 한 창고의 로봇들이 서로 다른 요청 목록을 처리할 수 있고, 에이전트는 가까이 있다는 사실만으로 어떤 이웃이 같은 과제를 하는지 알 수 없다. 이 논문은 완전 분산 다중 팀 강화학습에서 \emph{온라인 잠재 팀 발견}을 다룬다. 각 에이전트는 자기 관측과 자기 개인 보상만 보고, 팀 라벨은 주어지지 않으며, 물리적으로 가까울 때만 제한된 정보를 주고받는다. 우리는 Probe-Gated Critic Transfer(PGCT)를 제안한다. 각 에이전트는 자기 보상을 예측하는 작은 모델을 학습한다. 두 에이전트가 만나면 공통 Reward Probe, 즉 공개 보상 사건 묶음에 두 예측기를 함께 적용하고, 응답 차이를 정규화된 거리로 비교한다. 거리가 반복해서 낮고 두 에이전트 모두 자기 보상 경험이 충분하면 잠재 팀원으로 승인한다. 증거가 부족하면 판정을 보류한다. 발견한 관계가 학습에 유용한지 확인하기 위해, 승인된 팀원의 Critic으로 받는 에이전트 자신의 관측 이력을 평가한다. 그 양의 가치 상승분은 마스크와 크기 제한을 둔 Max-GAE advantage를 통해 Actor에만 반영되고, 모든 Critic은 자기 return만 학습한다. 개인 보상을 쓰는 6 에이전트·2 팀 창고 과제에서, 발견 구성요소는 약 0.25M step부터 같은 팀과 다른 팀 쌍을 구분했다(평균 응답 거리 0.25 대 0.99). 5M step 동안 승인된 팀원 접근의 93.7\%가 실제 팀원에게 향했다. 통합 방법의 학습 비교는 진행 중이며, 결과는 진행 중으로 표시한다.
+같은 공간을 쓰는 에이전트라도 같은 목표를 갖는다고 할 수는 없다. 이 논문은 완전 분산 다중 팀 강화학습에서 \emph{온라인 잠재 팀 발견}을 다룬다. 각 에이전트는 자기 관측과 자기 개인 보상만 보고, 팀 라벨은 주어지지 않으며, 물리적으로 접촉했을 때만 통신한다. 우리는 Probe-Gated Critic Transfer(PGCT)를 제안한다. 각 에이전트는 자기 보상을 예측하는 모델을 학습한다. 두 에이전트가 만나면 두 예측기가 공통 공개 보상 사건 probe, 즉 Reward Probe에 답하고, 여러 round에 걸쳐 평활한 정규화 응답 거리로 지속적인 일치를 승인한다. 보상 경험이 충분하지 않은 에이전트는 판정을 보류한다. 발견한 관계가 유용한지 확인하기 위해, 승인된 팀원의 Critic이 받는 에이전트 자신의 이력을 평가하고, 그 양의 상승분은 마스크와 크기 제한을 둔 Max-GAE advantage를 통해 Actor에만 들어간다. 모든 Critic은 계속 자기 return을 학습한다. 6 에이전트·2 팀 창고 과제에서 발견은 약 0.25M step부터 팀원을 구분하고(응답 거리 0.25 대 0.99), 5M step 동안 승인된 팀원 접근의 93.7\%를 실제 팀원에게 보낸다. 통합 방법의 학습 비교는 진행 중이다.
 \end{abstract}
 
 \section{서론}
@@ -68,7 +69,7 @@ Q1에 먼저 떠오르는 신호는 정책 유사도다. 하지만 같은 과제
 \caption{한 에이전트의 PGCT 전체 절차. 2--4단계는 자기 보상에서 잠재 팀원을 찾고, 5--7단계는 승인된 팀원을 Actor advantage로만 활용한다. 모든 계산은 국소적이며, 팀원끼리는 접촉했을 때만 공개 사건 view, 예측 응답, Critic 가중치를 주고받는다.}\label{fig:architecture}
 \end{figure*}
 
-그림~\ref{fig:architecture}는 PGCT 한 번의 update를 요약한다. 1--4단계가 Q1, 5--7단계가 Q2에 해당한다.
+그림~\ref{fig:architecture}와 알고리즘~\ref{alg:pgct}가 PGCT 한 번의 update를 요약한다. 1--4단계가 Q1, 5--7단계가 Q2에 해당한다.
 
 \subsection{개인 보상 예측}
 각 에이전트는 공개 전이 $q=(u_t,a_t,u_{t+1})$에서 자기 보상을 예측하는 다층 퍼셉트론을 학습한다.
@@ -123,15 +124,21 @@ $d_t$는 episode 종료 표시이고, $z^f_{i,t}$는 시간 제한으로 끝난 
 \PPOEquation
 Actor는 clip된 목적함수에 엔트로피 보너스를 더해 최대화한다. Critic은 자기 return $R^{\rm self}$를 향한 trainer의 clip된 가치 손실을 최소화하며, 팀원 증류 손실은 없다. Actor와 Critic은 encoder와 recurrent 층을 따로 쓴다. 다만 gradient norm clip 하나를 함께 쓰므로, Actor advantage가 달라지면 Critic의 실제 step 크기는 달라질 수 있다. 목표는 바뀌지 않는다.
 
-\smallskip\noindent\textbf{절차(PGCT update 한 번).}\par\smallskip
-\noindent\fbox{\begin{minipage}{.93\columnwidth}\small
-1.\ rollout 시작 시 probe, 성숙 여부, 예측기 버전을 고정한다.\\
-2.\ rollout을 모으고, 자기 공개 전이와 자기 사건을 저장하며, 접촉을 기록한다.\\
-3.\ 5 update마다 접촉한 성숙 쌍을 고정 probe로 비교해 $\bar D_{ij}$를 갱신한 뒤 보상 예측기를 다시 학습한다.\\
-4.\ donor: 이번 rollout에서 만난 승인 쌍.\\
-5.\ 자기 이력을 donor Critic에 재생하고, 마스크와 축소를 적용한 Max-GAE를 계산한다.\\
-6.\ Actor는 $A^{\rm PGCT}$로 PPO, Critic은 자기 return 손실로 update한다.
-\end{minipage}}
+\begin{algorithm}[tb]
+\caption{에이전트 $i$의 PGCT update 한 번}
+\label{alg:pgct}
+\begin{algorithmic}[1]
+\STATE rollout 시작 시 사건 probe, 성숙 여부, 예측기 버전을 고정한다.
+\STATE rollout을 모으고, 자기 공개 전이와 자기 사건을 저장하며, 접촉 $C^u_{ij}$를 기록한다.
+\IF{update 번호가 5의 배수}
+\STATE 접촉한 성숙 쌍을 고정 probe로 비교하고 $\bar D_{ij}$, $n_{ij}$를 갱신한다(식~\ref{eq:distance}--\ref{eq:approval}).
+\STATE 자기 경험으로 보상 예측기를 다시 학습한다(식~\ref{eq:rloss}).
+\ENDIF
+\STATE donor: 이번 rollout에서 만난 승인 팀원(식~\ref{eq:donorset}).
+\STATE 자기 이력을 donor Critic에 재생하고 $b$, $f$, $A^{\rm PGCT}$를 계산한다(식~\ref{eq:max}--\ref{eq:blend}).
+\STATE Actor는 $A^{\rm PGCT}$로 PPO update, Critic은 자기 return으로 update한다(식~\ref{eq:ppo}).
+\end{algorithmic}
+\end{algorithm}
 
 \section{성질}
 \paragraph{범위가 정해진, 척도 무관 거리.} 삼각부등식에 의해 분모가 양수이면 $D_{ij}^u\in[0,1]$이다. 두 예측기에 공통인 보상 척도에 거리가 의존하지 않는다.

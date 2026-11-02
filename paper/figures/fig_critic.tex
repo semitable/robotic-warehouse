@@ -29,10 +29,10 @@
 \draw[flow] (mg) -- (blend);
 \draw[flow] (af) -- (blend);
 % updates
-\node[stage,text width=2.3cm,minimum height=1.1cm] (actor) at (17.75,1.65) {\stagetitle{Actor}\\PPO with $A^{\rm PGCT}$};
-\node[stage,text width=2.3cm,minimum height=1.1cm] (critic) at (17.75,-2.1) {\stagetitle{Critic}\\target $R^{\rm self}$ only};
-\draw[flowo] (blend.east) -- ++(0.35,0) |- (actor.west);
-\draw[flow] (af.south) |- (critic.west);
+\node[stage,text width=3.3cm,minimum height=1.0cm] (actor) at (14.0,-2.15) {\stagetitle{Actor update}\\PPO with $A^{\rm PGCT}$};
+\node[stage,text width=3.3cm,minimum height=1.0cm] (critic) at (9.2,-2.15) {\stagetitle{Critic update}\\target $R^{\rm self}$ only};
+\draw[flowo] (blend) -- (actor);
+\draw[flow] (af) -- (critic);
 \node[lbl,text width=4.3cm,anchor=north] at (4.4,-1.2) {peer values never enter Critic targets;\\no peer distillation loss};
 \node[lbl,text width=3.6cm] at (14.0,3.55) {no donor or no uplift\\$\Rightarrow$ $A^{\rm PGCT}=A^{\rm self}$ (independent PPO)};
 \end{tikzpicture}

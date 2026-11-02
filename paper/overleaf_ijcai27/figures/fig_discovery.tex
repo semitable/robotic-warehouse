@@ -1,0 +1,44 @@
+% Figure 2: reward-based team discovery for one contacted pair (i, j). Bars are illustrative, not data.
+\begin{tikzpicture}[pg]
+\def\pgbars#1#2#3#4{% colour, x0, y0, list of heights
+  \foreach \h [count=\k] in {#4} {\fill[#1] (#2+0.27*\k-0.27,#3) rectangle ++(0.17,0.55*\h);}}
+% agents
+\node[box,text width=2.9cm] (ai) at (0,1.5) {\stagetitle{Agent $i$}\\[2pt]own reward events $\mathcal E_i$\\reward MLP $\widehat r_i$};
+\node[box,text width=2.9cm,draw=pgorange] (aj) at (0,-1.5) {{\bfseries\color{pgorange}Agent $j$}\\[2pt]own reward events $\mathcal E_j$\\reward MLP $\widehat r_j$};
+% probe set
+\node[card,text width=2.6cm,fill=pgsky] (ei) at (4.15,0.85) {32 recent events of $i$};
+\node[card,text width=2.6cm,fill=pgsand] (ej) at (4.15,0.0) {32 recent events of $j$};
+\node[card,text width=2.6cm,fill=pglight] (mi) at (4.15,-0.85) {left--right mirrors};
+\node[box,fill=none,fit=(ei)(ej)(mi),inner sep=6pt,label={[font=\sffamily\small\bfseries,text=pgblue]above:Common probes $\mathcal Q_{ij}$}] (Q) {};
+\draw[flowg] (ai.east) -- (Q.west|-ei);
+\draw[flowg] (aj.east) -- (Q.west|-mi);
+\node[lbl,text width=3.3cm] at (4.15,-2.05) {public views and actions only;\\reward values stay private};
+% response panels (illustrative)
+\begin{scope}[shift={(7.3,0.45)}]
+  \node[font=\sffamily\scriptsize\bfseries,text=pggreen,anchor=west] at (-0.05,1.6) {same team};
+  \pgbars{pgblue}{0}{0.8}{.9,.8,.85,.75,0,0,0,0}
+  \pgbars{pgorange}{0}{0}{.85,.75,.9,.8,0,.05,0,0}
+  \node[font=\sffamily\scriptsize,anchor=west] at (2.2,1.05) {$\widehat r_i(q)$};
+  \node[font=\sffamily\scriptsize,anchor=west] at (2.2,0.25) {$\widehat r_j(q)$};
+  \node[font=\sffamily\small\bfseries,text=pggreen,anchor=west] at (3.0,0.65) {$D_{ij}\!\approx\!0$};
+\end{scope}
+\begin{scope}[shift={(7.3,-1.95)}]
+  \node[font=\sffamily\scriptsize\bfseries,text=pgorange,anchor=west] at (-0.05,1.6) {different team};
+  \pgbars{pgblue}{0}{0.8}{.9,.8,0,0,0,0,.85,.8}
+  \pgbars{pgorange}{0}{0}{0,0,.9,.85,.8,.85,0,0}
+  \node[font=\sffamily\scriptsize,anchor=west] at (2.2,1.05) {$\widehat r_i(q)$};
+  \node[font=\sffamily\scriptsize,anchor=west] at (2.2,0.25) {$\widehat r_j(q)$};
+  \node[font=\sffamily\small\bfseries,text=pgorange,anchor=west] at (3.0,0.65) {$D_{ij}\!\approx\!1$};
+\end{scope}
+\node[draw=pggrey,dashed,rounded corners=3pt,fit={(7.1,2.4)(11.2,-2.2)},inner sep=1pt,
+      label={[lbl,text width=4cm]below:predicted rewards on the same probes\\(illustration, not data)}] (R) {};
+\draw[flow] (Q.east) -- (R.west|-Q.east);
+% decision
+\node[box,text width=4.1cm] (dec) at (14.05,0.35) {\stagetitle{Response distance}\\[3pt]
+  $D_{ij}=\dfrac{\sum_q|\widehat r_i(q)-\widehat r_j(q)|}{\sum_q\big(|\widehat r_i(q)|+|\widehat r_j(q)|\big)}$\\[5pt]
+  EMA over rounds $\to\bar D_{ij}$\\[3pt]
+  \textbf{approve} if $\bar D_{ij}<0.5$,\\ $\ge3$ rounds, both mature};
+\draw[flow] (R.east|-dec.west) -- (dec.west);
+\node[card,text width=4.0cm,anchor=north,fill=pglight,font=\sffamily\scriptsize] at ($(dec.south)+(0,-0.3)$)
+  {fewer than 20 own events \emph{or} no fitted predictor\\$\Rightarrow$ \textbf{abstain} (no decision)};
+\end{tikzpicture}
