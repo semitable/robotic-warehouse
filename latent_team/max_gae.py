@@ -15,11 +15,14 @@ Donor hidden states start cold at the rollout boundary; on the first `window - 1
 uplift is unknown, so the actor advantage there is A_self (zeroing only b would put a spurious positive step
 into the GAE of those steps; E66).
 A receiver without donors gets the untouched IPPO update; with no donors at all the trainer runs unchanged.
-Every update also logs each critic's explained variance on its own rollout (donor maturity is not yet gated).
+Every update logs each critic's explained variance on its own rollout; an optional donor-only EV floor is
+disabled by default until a research threshold is selected. Reward maturity and critic EV are distinct.
 
 Donors: 'oracle' same team, 'all' anyone, 'allk' as many random agents as the oracle set would give (control
 for the max over more noisy critics). Candidates are agents met inside the communication range (Chebyshev)
 at any step of the rollout: weights are fixed during a rollout, so one contact suffices to share them.
+'gate' intersects contact with v2 reward approval; 'oracle_mature' uses true teammates with both reward
+predictors mature. Both refit v2 on own experience and compare on rollout contacts, with zero peer loss.
 MAMBA-like but without MAMBA's guarantees (D94/D95): donor critics are extrapolated to the receiver's
 histories instead of being re-estimated by oracle roll-outs.
 """
@@ -37,7 +40,7 @@ import torch
 
 from examples import train_recurrent_ippo_consensus as T
 
-DONOR_MODES = ("oracle", "all", "allk")
+DONOR_MODES = ("oracle", "all", "allk", "gate", "oracle_mature")
 SCALES = ("raw", "shrink", "relative")
 
 
@@ -51,6 +54,7 @@ class MaxGAEConfig:
     window: int = 8                      # donor warm-up steps after a cold start at the rollout boundary
     warmup_updates: int = 0              # first updates without donors (matched_transfer's rule: update <= warmup)
     seed: int = 0                        # 'allk' sampling stream
+    min_critic_ev: Optional[float] = None  # optional donor-only EV floor; no research threshold chosen yet
 
     def __post_init__(self):
         if self.donors not in DONOR_MODES:
@@ -65,6 +69,8 @@ class MaxGAEConfig:
             raise ValueError("cap must be positive")
         if self.window < 1 or self.warmup_updates < 0:
             raise ValueError("window must be >= 1 and warmup_updates >= 0")
+        if self.min_critic_ev is not None and not np.isfinite(self.min_critic_ev):
+            raise ValueError("min_critic_ev must be finite")
 
 
 class ContactEnv(gym.Wrapper):
@@ -89,21 +95,38 @@ class ContactEnv(gym.Wrapper):
         return obs, rewards, done, truncated, info
 
 
-def select_donors(mode, team_ids, contact, rng):
+def select_donors(mode, team_ids, contact, rng, *, approved=None, mature=None, critic_mature=None):
     """receiver x donor; met agents only, never oneself."""
     team_ids = np.asarray(team_ids)
     met = np.asarray(contact, dtype=bool).copy()
     np.fill_diagonal(met, False)
-    oracle = met & (team_ids[:, None] == team_ids[None, :])
-    if mode == "oracle":
-        return oracle
-    if mode == "all":
-        return met
-    donors = np.zeros_like(met)
-    for i in range(len(team_ids)):
-        k = int(oracle[i].sum())
-        if k:
-            donors[i, rng.choice(np.flatnonzero(met[i]), size=k, replace=False)] = True
+    if mode not in DONOR_MODES:
+        raise ValueError(f"Unknown donor mode: {mode}")
+    if mode == "gate":  # no ground-truth labels participate in this decision
+        if approved is None or np.shape(approved) != met.shape:
+            raise ValueError("gate donors require an approved matrix matching contact")
+        donors = met & np.asarray(approved, dtype=bool)
+    elif mode == "oracle_mature":
+        if mature is None or np.shape(mature) != (len(met),):
+            raise ValueError("oracle_mature donors require per-agent reward maturity")
+        mature = np.asarray(mature, dtype=bool)
+        donors = met & (team_ids[:, None] == team_ids[None, :]) & mature[:, None] & mature[None, :]
+    elif mode == "all":
+        donors = met
+    else:
+        oracle = met & (team_ids[:, None] == team_ids[None, :])
+        if mode == "oracle":
+            donors = oracle
+        else:
+            donors = np.zeros_like(met)
+            for i in range(len(team_ids)):
+                k = int(oracle[i].sum())
+                if k:
+                    donors[i, rng.choice(np.flatnonzero(met[i]), size=k, replace=False)] = True
+    if critic_mature is not None:
+        if np.shape(critic_mature) != (len(met),):
+            raise ValueError("critic maturity must have one flag per donor")
+        donors &= np.asarray(critic_mature, dtype=bool)[None, :]
     return donors
 
 
@@ -210,10 +233,12 @@ def max_targets(agents, rollout, donors, timeout_obs, last_obs, config, device):
 
 
 @contextmanager
-def install(cfg, run_dir=None, config=None):
+def install(cfg, run_dir=None, config=None, *, controller=None):
     """Scoped adapter; the trainer source is unchanged. Wraps make_env (contact log), collect_rollout (last
     observation) and update_ippo (actor advantages injected at its single compute_gae call)."""
     config = config or MaxGAEConfig()
+    if config.donors in ("gate", "oracle_mature") and controller is None:
+        raise ValueError("gate/oracle_mature Max-GAE requires a learning A+C v2 controller")
     if json.loads(cfg.env_kwargs_json).get("team_reward_mode") != "individual":
         raise ValueError("Max-GAE keeps each agent's individual reward (D82); team/ALL reward is refused")
     originals = {name: getattr(T, name) for name in ("make_env", "collect_rollout", "update_ippo")}
@@ -249,9 +274,22 @@ def install(cfg, run_dir=None, config=None):
         contact = (env.contact if isinstance(env, ContactEnv) and env.contact is not None
                    else np.zeros((n, n), dtype=bool))
         team_ids = np.asarray(env.unwrapped.get_oracle_team_assignments())
-        donors = np.zeros((n, n), dtype=bool) if held else select_donors(config.donors, team_ids, contact, rng)
+        # Refit and compare on the completed rollout's contacts, before PPO changes any weights.
+        # The IPPO trainer never activates a peer gate; Max-GAE owns this single controller call.
+        approved, mature = None, None
+        if controller is not None:
+            controller(state["update"], contact, active=not held)
+            mature, approved = controller.maturity(), controller.approved()
+        _, own_returns = originals_gae(rollout.rewards, rollout.dones, rollout.values, rollout.last_values,
+                                       run_cfg.gamma, run_cfg.gae_lambda, rollout.timeout_values)
+        ev = explained_variance(rollout.values, own_returns)
+        critic_mature = (np.ones(n, dtype=bool) if config.min_critic_ev is None else
+                         np.isfinite(ev.numpy()) & (ev.numpy() >= config.min_critic_ev))
+        donors = np.zeros((n, n), dtype=bool) if held else select_donors(
+            config.donors, team_ids, contact, rng, approved=approved, mature=mature, critic_mature=critic_mature)
         call = lambda: originals["update_ippo"](agents, optimizers, rollout, run_cfg, graph_estimator, device,
-                                                 rng_ippo, peer_allocation=peer_allocation,
+                                                 rng_ippo, peer_allocation=(np.zeros((n, n), dtype=np.float32)
+                                                                           if controller is not None else peer_allocation),
                                                  peer_probe_sequences=peer_probe_sequences)
         same = team_ids[:, None] == team_ids[None, :]
         extra = dict(max_gae_held=float(held), max_gae_contact_arcs=float(np.sum(contact & ~np.eye(n, dtype=bool))),
@@ -261,13 +299,24 @@ def install(cfg, run_dir=None, config=None):
                      max_gae_arc_changes=float(np.sum(donors ^ state["previous"]))
                      if state["previous"] is not None else 0.0)
         state["previous"] = donors
-        # Each critic on its own rollout against its own value targets (pre-update weights; pure computation).
-        _, own_returns = originals_gae(rollout.rewards, rollout.dones, rollout.values, rollout.last_values,
-                                       run_cfg.gamma, run_cfg.gae_lambda, rollout.timeout_values)
-        ev = explained_variance(rollout.values, own_returns)
         extra.update({f"max_gae_critic_ev_agent_{k}": float(v) for k, v in enumerate(ev)})
-        row = dict(update=state["update"], held=held, contact=contact.tolist(), donors=donors.tolist(),
-                   critic_ev=[float(v) for v in ev])
+        extra.update({f"max_gae_critic_mature_agent_{k}": float(v) for k, v in enumerate(critic_mature)})
+        row = dict(update=state["update"], env_steps=state["update"] * cfg.rollout_steps,
+                   held=held, contact=contact.tolist(), donors=donors.tolist(),
+                   matrix_convention="receiver_donor", critic_ev=[float(v) for v in ev],
+                   critic_mature=critic_mature.tolist(), critic_ev_filter_enabled=config.min_critic_ev is not None)
+        if controller is not None:
+            eligible_same = same & ~np.eye(n, dtype=bool)
+            extra.update(max_gae_reward_mature_agents=float(mature.sum()),
+                         max_gae_approved_arcs=float(approved.sum()),
+                         max_gae_approved_same_team_arcs=float(np.sum(approved & eligible_same)),
+                         max_gae_approved_cross_team_arcs=float(np.sum(approved & ~same)),
+                         max_gae_same_team_approval_coverage=float(np.sum(approved & eligible_same)
+                                                                 / max(1, eligible_same.sum())))
+            extra.update({f"max_gae_reward_mature_agent_{k}": float(v) for k, v in enumerate(mature)})
+            row.update(reward_mature=mature.tolist(), approved=approved.tolist(),
+                       same_team_possible_arcs=int(eligible_same.sum()),
+                       ac_probe_update=controller.last_probe_update, ac_pairs=controller.last_log.get("ac_pairs", []))
         if not donors.any():
             metrics = call()  # bit-identical IPPO update
         else:

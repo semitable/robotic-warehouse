@@ -1397,3 +1397,64 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - `--seeds 1 2` 분기 plan-only는 seed 2의 goal 배치 불일치로 거부되고, 폴더를 만들지 않았다.
 - 한계: smoke는 학습 결과가 아니다. 분기 실험 자체는 아직 실행하지 않았다.
 - 근거: D99, `docs/MAX_GAE.md`.
+
+## E68. PGCT-D2 필수 5–8 단위·회귀·실제 trainer smoke 검증 — 2026-11-02 KST, Codex (사용자 요청 T166)
+
+- 코드: `latent_team/reward_probe_ac_v2.py`, `latent_team/max_gae.py`, `latent_team/train_from_scratch.py`; 새 테스트 `tests/test_pgct_max.py`. trainer·환경 소스 수정 없음. D100 참조.
+- 실제 수행: 새 15개 + 기존 Max-GAE/A+C/latent_team 57개 = **72 passed**(33.69초). XML `output/pgct_d2_validation_20261102/pytest_final.xml`. 첫 실행의 임시 상위 폴더 오류(17 setup errors)와 다음 실행의 테스트 fixture 오류 2개를 수정한 뒤 최종 성공했다. 학습 구현 오류로 분류하지 않는다. 첫 smoke 산출물도 보존했다.
+- 실제 trainer smoke: `b6_corner_indiv_pen005`, 개인 보상, A+C 좌표 마스킹, seed 1, CPU, 32-step rollout × 2 update = 64 step/job, 총 9 job. 초기 모델 `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt`(1,024,000 step), 새 optimizer·v2 상태. W&B off. 최종 평가는 smoke용 1 episode × 16 step이며 성능 근거가 아니다.
+- 산출물 기준 폴더 `output/pgct_d2_validation_20261102/pytest_final/test_real_trainer_closed_gate_0/`:
+  - `plan/`: IPPO, `pgct_max`, `oracle_mature_max`, `oracle_max` 4 job. v2가 실제 refit(version=2)하되 min_events=1000000으로 승인을 막는 테스트 조건에서 앞의 세 모드 최종 모든 가중치 tensor 비트 동등.
+  - `injected/`: 테스트 monkeypatch로 정답 승인·현재 성숙을 주입한 두 새 모드. 두 모드 모두 `oracle_max`와 최종 모든 tensor 비트 동등. 실제 donor와 actor 변화 있음; cross-team donor 0; 승인 범위 12/12.
+  - `filtered/`: 같은 주입에 EV floor=1e9(테스트용 값)로 두 모드의 donor 전부 차단. 둘 다 IPPO와 비트 동등.
+  - `held/`: `pgct_max`, warm-up=1. update 1 donor 0, update 2 donor 존재.
+- v2 refit 테스트 조건: interval=1, batch_size=16, train_steps=2. 연구용 기본값 변경이 아니다. 자연스러운 온라인 팀 승인을 만들거나 검증한 smoke가 아니다.
+- 합성 테스트: 접촉 상실 후 승인 보존·대칭·복사본·현재 성숙 회귀·round/거리 경계, gate 판정의 라벨 독립, contact/EV 교집합, oracle_mature의 양쪽 보상 성숙, 잘못된 입력 거부, v2 아닌 계획 거부, 자기 복제 critic의 actor/self 차이 ≤1e-6(raw/shrink).
+- 한계: 장기 학습·독립 training seed 결과 아님. D2 실제 성능·EV 임계값·보상 사건 없는 agent·E65 후반 오승인은 미결. PGCT-D2 새 본 학습 미실행, 커밋 없음. 기존 분기는 읽기만 했다.
+- 자세한 명령·근거: `output/pgct_d2_validation_20261102/README.md`, `docs/MAX_GAE.md`.
+
+## E69. 최종 PGCT 논문·발표 제작용 기존 로그 읽기와 산출물 검증 — 2026-11-02 KST, Codex (T167, 새 학습·실험 없음)
+
+- 목적: 영어/한국어 논문과 17장 발표에 동일한 실제 근거를 넣는다. 기존 학습·평가·probe를 다시 실행하지 않았다.
+- 읽은 로그:
+  - `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1/{transfer,metrics}.jsonl`: 모서리·개인·좌표 마스킹·seed 1, 최종 5,000,192 step. same/cross directed allocation 누적 5,252/352, 비중 93.71877230549608%, 첫 cross 4,280,320 step. 그림은 100k-step 구간 평균의 실제 EMA와 보상 예측기 성숙이다. 기존 접촉/전이 규칙의 발견 구성요소 진단이며, 최종 PGCT 학습 결과로 재명명하지 않았다.
+  - `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/metrics.jsonl`: 독립 PPO 기준선. deterministic 평가 20 episode × 500 step, seed 1. 추출한 평가점 97개, 마지막 4,966,400 step의 단일 평가 배송 25.65/ep. 과거 E61의 평균이나 최종 5회 평균과 같은 통계라고 설명하지 않는다.
+  - `runs/maxgae_br1M_20261102_165216/experiment.json` 및 상태/마지막 로그: 문서 근거를 추출할 때 독립 PPO s1이 추가 35,840 step, 나머지 계획 상태인 스냅샷. 최종 성능 비교에는 넣지 않았다.
+- 공통 초기 모델 설명: 기존 1,024,000-step 독립 PPO s1 checkpoint에서 0.5M 추가 분기, seed 1·3·5. 처음부터 독립 training seed라고 세지 않았다. 최종 PGCT, mature-oracle, count-matched 비교 결과는 대기다.
+- 실제 수행: 파일 읽기, 표/CSV/과학 그래프 생성, 새 구조도 3개 제작, LaTeX/PPTX/대본 생성, PDF 컴파일·렌더링·내용 대응 확인만 했다. `E68`의 72 tests/64-step smoke는 기존 검증 인용이며 재실행하지 않았다.
+- 산출물: `paper/english/main.{tex,pdf}`, `paper/korean/main.{tex,pdf}` 각 7쪽; `presentation/pgct_beamer.{tex,pdf}`와 `pgct_presentation.pptx` 각 17장; 한국어 대본. PPTX 본문·도식·표3·그래프2는 native, 수식만 8·10·12·13장에서 이미지. PowerPoint 앱 자체 검사는 하지 않았으며 Artifact Tool 렌더링과 OOXML 검사를 했다.
+- 검증: 한영 공통 수식 11개, 인용 7개, label 일치; 17장 제목/대본 순서 일치; PDF 3개 컴파일 성공, overfull·누락 glyph 오류 없음; PPTX 구조/geometry finding 0. 연구 코드 SHA-256는 읽기 시작과 같음.
+- 참고자료: 사용자 ICCAS PDF 전체16장 구성·스타일만 참고. 음성 M4A는 812.9793초 메타데이터만 확인, 전사/청취내용 미확인. 다른 연구 수치·식·그림을 가져오지 않았다.
+- 근거·재생성: `output/pgct_authoring_20261102/{collect_evidence.py,evidence.json,quality_report.json}`, `paper/evidence_manifest.json`, `presentation/reference_analysis_ko.md`, `PGCT_DELIVERABLES_README.md`. TeX 빌드는 Tectonic 0.17.0(XeTeX 기반). 공식 목표 연도 IJCAI 양식 적용은 별도다.
+- 연구 코드·보상·gate 기준·실험 실행 변경 없음. 새 학습·중단·재시작·커밋 없음. 문서 컴파일용 도구·캐시는 새 제작 폴더에만 저장했다.
+
+## E70. Codex PGCT-D2 구현 재검증: 테스트 재실행과 자연 승인 경로 smoke(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T168)
+
+- pytest: `test_pgct_max.py`·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 72개 통과. 실제 trainer 테스트는 scratchpad의 긴 basetemp에서 `oracle_mature_max` job 경로가 260자를 넘어(261–262자) FileNotFoundError로 실패했고, 짧은 경로(`AppData\Local\Temp\pgt`)에서 통과했다.
+- 자연 경로 smoke: `pgct_max`, A+C IPPO s1 `checkpoint_01000.pt` 분기, seed 1, `--smoke-test`(32 step × 2 update). v2 설정은 배선 확인용으로 느슨하게 줬다(interval 1, batch 16, train_steps 2, min_events 1, min_event_response −1, event_reward .1, min_rounds 1, distance_threshold 1.0, min_probes 1). 임시 폴더는 지웠다.
+  - update 1: 성숙 1명(a2), 비교 0, donor 0.
+  - update 2: 성숙 2명(a2·a3). rollout 접촉 10쌍, update 직전 이웃 4쌍. 비교된 1쌍은 update 직전 이웃이 아니었다. 승인 arc 2, donor arc 2(다른 팀, 문턱 1.0 때문), donor = 접촉 ∧ 승인 성립, adv_shift .088.
+  - 두 update 모두 `transfer.jsonl` 실제 allocation 0.
+- 해석: rollout 접촉으로 비교하는 경로가 실제로 동작한다. 보상 사건이 없는 a0·a1·a4는 느슨한 설정에서도 성숙하지 않았다.
+- 한계: 설정이 연구 기본값이 아니고 2 update뿐이라 승인 정확도와 성능 근거가 아니다.
+
+## E71. D103 rollout 시작 스냅샷 비교 검증: pytest와 실제 trainer 자연 승인 경로 — 2026-11-02 Claude Code, 사용자 요청(T169)
+
+- pytest: `test_pgct_max.py`(새 5개)·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 77개 통과(basetemp `AppData\Local\Temp\pgt`, 지움).
+  - 단위: 스냅샷 비교 거리가 rollout 시작 상태로 직접 계산한 값과 같고(비교 버전 (1, 1)), 비교 뒤에만 버전 2로 재학습된다. 접촉 뒤 경험과 재학습 예측기로 계산하면 다른 값이 나온다. 스냅샷 뒤 재학습은 RuntimeError.
+  - 계획: 플래그는 `pgct_max`·`oracle_mature_max`에만 True, `pgct`는 False. 플래그 없는 옛 `pgct_max` job은 `run_job`에서 거부.
+- 실제 trainer 자연 경로(`test_real_trainer_natural_approval`): A+C IPPO s1 `checkpoint_01000.pt` 분기, seed 1, `pgct_max`, `--smoke-test`(32 step × 2 update). 배선 확인용 설정: interval 1, batch 16, train_steps 2, min_events 1, min_event_response −1, event_reward .001, min_rounds 1, distance_threshold 1.0, min_probes 1.
+  - update 1: rollout 시작 시 6명 모두 미성숙, 비교 0, donor 0.
+  - update 2: rollout 시작 시 6명 성숙, 접촉 10쌍 모두 비교(거리 .31–.99), donor 20 arc = 접촉 ∧ 승인.
+  - final 상태: 비교 버전 모두 (1, 1), 예측기 버전 모두 2, `transfer.jsonl` allocation 0.
+- 한계: 연구 기본값이 아닌 배선 확인용 설정, 2 update. 승인 정확도·지연·성능 근거가 아니다.
+
+## E72. 논문·발표자료용 근거 재계산과 문서 검증(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T171)
+
+- 근거 재계산: `output/pgct_docs_20261102/evidence_plots.py`가 원본 로그를 읽어 `evidence.json`, CSV 3개, 논문·발표 그래프를 만든다.
+  - 발견 로그 `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1`: 같은 팀 5,252 / 다른 팀 352 arc(93.72%), 첫 다른 팀 4,280,320 step, 100k 구간 51개. E65·Codex 값과 같다.
+  - IPPO 기준선 `runs/ac_20261023_185556` seed 1·2: 마지막 평가(4.97M) 25.65 / 24.05 배송/episode(20 episode × 500 step).
+- 문서 검증: 영어·한국어 논문(각 8쪽), Beamer 17장 모두 Tectonic 0.17.0으로 컴파일 오류·Overfull·누락 글자 0. PDF를 그림으로 렌더링해 전 페이지를 확인했다. `check_consistency.py`: 한영 수식·인용·라벨·참조·그림·수치 일치, Beamer·PPTX·대본 17장 제목 순서 일치. `preview_pptx.py` 근사 미리보기에서 PPTX 글자 넘침 0(PowerPoint로 직접 열어 보지는 않음).
+- 참고 자료: ICCAS PDF 16장을 렌더링해 구성 확인. M4A는 머리 정보로 812.98초만 확인, 전사 못 함.
+- 실행 상태(읽기 전용): v1 run `runs/ac_20261023_185556`의 `pgct_s2`는 `job_status.json`이 failed(KeyboardInterrupt, 2026-11-02 18:01:52)로 바뀌었다. 약 3.19M에서 사용자가 중단한 것으로 보인다(T170 뒤). 1단계 분기 `runs/maxgae_br1M_20261102_165216`는 진행 중이며(작업 중 확인 시 `ippo_s1` 0.12M), 부분 결과는 문서에 넣지 않았다.
+- 한계: 그래프는 seed 1(발견)과 seed 2개(기준선)뿐이다. 통합 PGCT 학습 결과는 없다.

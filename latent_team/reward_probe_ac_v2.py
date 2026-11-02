@@ -59,6 +59,9 @@ class ACV2Config:
     min_rounds: int = 3
     interval: int = 5
     seed: int = 0
+    # D102 (ii): compare only what each agent held at the rollout start (predictor, recent own event views,
+    # maturity), i.e. what it could send on a contact during that rollout; refit after the comparison.
+    contact_snapshot: bool = False
 
     def __post_init__(self):
         counts = (self.radius, self.buffer_size, self.event_buffer_size, self.hidden, self.train_steps,
@@ -211,6 +214,16 @@ class ACV2Controller:
         self.episode = 0
         self.last_log = {}
         self.last_metrics = {}
+        self.frozen = None  # contact_snapshot: state at the start of the current rollout
+
+    def snapshot(self):
+        """contact_snapshot: freeze what each agent can send on a contact during the coming rollout.
+
+        Predictors are refitted only inside __call__ (after a rollout), so the frozen versions are the
+        weights used throughout the rollout; the probe views are copies of the recent own events."""
+        self.frozen = dict(probes=[p.event_probes() for p in self.predictors],
+                           mature=[p.mature() for p in self.predictors],
+                           versions=[p.version for p in self.predictors])
 
     def observe(self, before, actions, after, rewards):
         n = len(self.predictors)
@@ -225,7 +238,10 @@ class ACV2Controller:
             predictor.learn(before[i], int(actions[i]), after[i], float(rewards[i]))
 
     def probes(self, i, j):
-        parts = [self.predictors[i].event_probes(), self.predictors[j].event_probes()]
+        if self.config.contact_snapshot:
+            parts = [self.frozen["probes"][i], self.frozen["probes"][j]]
+        else:
+            parts = [self.predictors[i].event_probes(), self.predictors[j].event_probes()]
         b, a, f = (np.concatenate(x) for x in zip(*parts))
         if self.config.mirror and len(b):
             r = self.config.radius
@@ -241,15 +257,15 @@ class ACV2Controller:
         self.gate &= neighbors  # lost contact never keeps a stale transfer
         if update % self.config.interval == 0 and update != self.last_probe_update:
             self.last_probe_update = update
-            losses = [p.train() for p in self.predictors]  # also during warm-up, so votes are ready
-            mature = [p.mature() for p in self.predictors]
-            details = []
-            if active:
-                for i in range(len(self.predictors)):
-                    for j in range(i + 1, len(self.predictors)):
-                        if not (neighbors[i, j] and neighbors[j, i]):
-                            continue
-                        details.append(self.compare(i, j, mature))
+            if self.config.contact_snapshot:
+                # Compare with the rollout-start state first (sendable on contact), then refit.
+                mature = self.maturity().tolist()
+                details = self.compare_neighbors(neighbors, mature) if active else []
+                losses = [p.train() for p in self.predictors]
+            else:
+                losses = [p.train() for p in self.predictors]  # also during warm-up, so votes are ready
+                mature = [p.mature() for p in self.predictors]
+                details = self.compare_neighbors(neighbors, mature) if active else []
             self.last_log = dict(ac_pairs=details, ac_mature=mature)
             done = [x for x in losses if x is not None]
             self.last_metrics = dict(
@@ -270,12 +286,23 @@ class ACV2Controller:
                                 ac_probe_update=self.last_probe_update,
                                 ac_own_events=[p.events_seen for p in self.predictors])
 
+    def compare_neighbors(self, neighbors, mature):
+        details = []
+        for i in range(len(self.predictors)):
+            for j in range(i + 1, len(self.predictors)):
+                if neighbors[i, j] and neighbors[j, i]:
+                    details.append(self.compare(i, j, mature))
+        return details
+
     def compare(self, i, j, mature):
         row = dict(receiver=i, donor=j, probes=0, distance=None, raw_distance=None, distance_ema=None,
                    rounds=int(self.rounds[i, j]), accepted=False, reason="immature")
         if not (mature[i] and mature[j]):
             self.gate[i, j] = self.gate[j, i] = False
             return row
+        if self.config.contact_snapshot and any(self.predictors[k].version != self.frozen["versions"][k]
+                                                for k in (i, j)):
+            raise RuntimeError("A+C v2 predictor refitted after the rollout snapshot")
         b, a, f = self.probes(i, j)
         row["probes"] = int(len(b))
         if len(b) < self.config.min_probes:
@@ -305,6 +332,27 @@ class ACV2Controller:
                     ema=self.ema, rounds=self.rounds, gate=self.gate,
                     last_versions={f"{i}-{j}": v for (i, j), v in self.last_versions.items()},
                     last_probe_update=self.last_probe_update, episode=self.episode)
+
+    def maturity(self):
+        """Reward-predictor maturity, independent of contact and the last logged round: current, or with
+        contact_snapshot the flags frozen at the rollout start (all False before the first snapshot)."""
+        if self.config.contact_snapshot:
+            flags = self.frozen["mature"] if self.frozen is not None else [False] * len(self.predictors)
+            return np.asarray(flags, dtype=bool)
+        return np.asarray([p.mature() for p in self.predictors], dtype=bool)
+
+    def approved(self):
+        """Symmetric reward approval, without a physical-contact mask or team labels.
+
+        Unlike the legacy distillation gate (cleared on lost contact), this is derived from
+        the retained pair evidence. Max-GAE intersects it with this rollout's contacts.
+        Maturity comes from maturity() (current, or frozen at the rollout start with contact_snapshot), also
+        between probe rounds; callers receive a fresh array.
+        """
+        mature = self.maturity()
+        upper = np.triu((self.rounds >= self.config.min_rounds)
+                        & (self.ema < self.config.distance_threshold), k=1)
+        return (upper | upper.T) & mature[:, None] & mature[None, :]
 
 
 def audit(controller, team_ids):
@@ -361,6 +409,8 @@ def install(cfg, run_dir=None, config=None, *, learn=True):
 
     def collect(*args, **kwargs):
         if controller is not None:
+            if controller.config.contact_snapshot:
+                controller.snapshot()  # before this rollout's first step (and before any contact in it)
             controller.active = True
         try:
             return originals["collect_rollout"](*args, **kwargs)
@@ -399,6 +449,8 @@ def install(cfg, run_dir=None, config=None, *, learn=True):
             (Path(run_dir) / "reward_probe_ac_v2.json").write_text(json.dumps(dict(
                 config=asdict(config), learning=learn, reward="individual", coordinates="masked",
                 predictor="mlp_own_reward", probes="own reward events + mirror",
+                comparison=("rollout-start snapshot, compared before refit" if config.contact_snapshot
+                            else "refit, then compare"),
                 distance="sum|a-b|/sum(|a|+|b|)", unsupported="abstain"), indent=2), encoding="utf-8")
         yield controller
     finally:

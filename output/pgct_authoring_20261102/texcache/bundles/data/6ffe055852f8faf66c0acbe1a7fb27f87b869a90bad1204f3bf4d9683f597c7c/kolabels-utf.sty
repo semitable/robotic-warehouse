@@ -1,0 +1,96 @@
+% kolabels-utf.sty
+%
+% Copyright (C) 2009-2015 Koaunghi Un <koaunghi at kornet net>
+%                         Kangsoo Kim <karnes at ktug or kr>
+%                         Dohyun Kim  <nomos at ktug org>
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%  http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2006/05/20 or later.
+%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{kolabels-utf}[2015/03/20 v1.5 UTF-8 Hangul item labels]
+
+% hangul item labels
+\newcommand*\jaso[1]{\@jaso{\@nameuse{c@#1}}}
+\newcommand*\@jaso[1]{\ifcase#1\or
+  ㄱ\or ㄴ\or ㄷ\or ㄹ\or ㅁ\or ㅂ\or ㅅ\or ㅇ\or
+  ㅈ\or ㅊ\or ㅋ\or ㅌ\or ㅍ\or ㅎ\else\@ctrerr\fi}
+\newcommand*\gana[1]{\@gana{\@nameuse{c@#1}}}
+\newcommand*\@gana[1]{\ifcase#1\or
+  가\or 나\or 다\or 라\or 마\or 바\or 사\or 아\or
+  자\or 차\or 카\or 타\or 파\or 하\else\@ctrerr\fi}
+\newcommand*\ojaso[1]{\@ojaso{\@nameuse{c@#1}}}
+\newcommand*\@ojaso[1]{\ifcase#1\or
+  ㉠\or ㉡\or ㉢\or ㉣\or ㉤\or ㉥\or ㉦\or ㉧\or
+  ㉨\or ㉩\or ㉪\or ㉫\or ㉬\or ㉭\else\@ctrerr\fi}
+\newcommand*\ogana[1]{\@ogana{\@nameuse{c@#1}}}
+\newcommand*\@ogana[1]{\ifcase#1\or
+  ㉮\or ㉯\or ㉰\or ㉱\or ㉲\or ㉳\or ㉴\or ㉵\or
+  ㉶\or ㉷\or ㉸\or ㉹\or ㉺\or ㉻\else\@ctrerr\fi}
+\newcommand*\pjaso[1]{\@pjaso{\@nameuse{c@#1}}}
+\newcommand*\@pjaso[1]{\ifcase#1\or
+  ㈀\or ㈁\or ㈂\or ㈃\or ㈄\or ㈅\or ㈆\or ㈇\or
+  ㈈\or ㈉\or ㈊\or ㈋\or ㈌\or ㈍\else\@ctrerr\fi}
+\newcommand*\pgana[1]{\@pgana{\@nameuse{c@#1}}}
+\newcommand*\@pgana[1]{\ifcase#1\or
+  ㈎\or ㈏\or ㈐\or ㈑\or ㈒\or ㈓\or ㈔\or ㈕\or
+  ㈖\or ㈗\or ㈘\or ㈙\or ㈚\or ㈛\else\@ctrerr\fi}
+\newcommand*\onum[1]{\@onum{\@nameuse{c@#1}}}
+\newcommand*\@onum[1]{\ifcase#1\or
+  ①\or ②\or ③\or ④\or ⑤\or ⑥\or ⑦\or ⑧\or
+  ⑨\or ⑩\or ⑪\or ⑫\or ⑬\or ⑭\or ⑮\else\@ctrerr\fi}
+\newcommand*\pnum[1]{\@pnum{\@nameuse{c@#1}}}
+\newcommand*\@pnum[1]{\ifcase#1\or
+  ⑴\or ⑵\or ⑶\or ⑷\or ⑸\or ⑹\or ⑺\or ⑻\or
+  ⑼\or ⑽\or ⑾\or ⑿\or ⒀\or ⒁\or ⒂\else\@ctrerr\fi}
+\newcommand*\oeng[1]{\@oeng{\@nameuse{c@#1}}}
+\newcommand*\@oeng[1]{\ifcase#1\or
+  ⓐ\or ⓑ\or ⓒ\or ⓓ\or ⓔ\or ⓕ\or ⓖ\or ⓗ\or ⓘ\or
+  ⓙ\or ⓚ\or ⓛ\or ⓜ\or ⓝ\or ⓞ\or ⓟ\or ⓠ\or ⓡ\or
+  ⓢ\or ⓣ\or ⓤ\or ⓥ\or ⓦ\or ⓧ\or ⓨ\or ⓩ\else\@ctrerr\fi}
+\newcommand*\peng[1]{\@peng{\@nameuse{c@#1}}}
+\newcommand*\@peng[1]{\ifcase#1\or
+  ⒜\or ⒝\or ⒞\or ⒟\or ⒠\or ⒡\or ⒢\or ⒣\or ⒤\or
+  ⒥\or ⒦\or ⒧\or ⒨\or ⒩\or ⒪\or ⒫\or ⒬\or ⒭\or
+  ⒮\or ⒯\or ⒰\or ⒱\or ⒲\or ⒳\or ⒴\or ⒵\else\@ctrerr\fi}
+\newcommand*\hnum[1]{\@hnum{\@nameuse{c@#1}}}
+\newcommand*\@hnum[1]{\ifcase#1\or
+  하나\or 둘\or 셋\or 넷\or 다섯\or 여섯\or 일곱\or 여덟\or
+  아홉\or 열\or 열하나\or 열둘\or 열셋\or 열넷\or 열다섯\or
+  열여섯\or 열일곱\or 열여덟\or 열아홉\or 스물\or 스물하나\or
+  스물둘\or 스물셋\or 스물넷\else\@ctrerr\fi}
+\newcommand*\Hnum[1]{\@Hnum{\@nameuse{c@#1}}}
+\newcommand*\@Hnum[1]{\ifcase#1\or
+  첫\or 둘\or 셋\or 넷\or 다섯\or 여섯\or 일곱\or 여덟\or
+  아홉\or 열\or 열한\or 열두\or 열셋\or 열넷\or 열다섯\or
+  열여섯\or 열일곱\or 열여덟\or 열아홉\or 스무\or 스물한\or
+  스물두\or 스물셋\or 스물넷\else\@ctrerr\fi 째}
+\newcommand*\hroman[1]{\@hroman{\@nameuse{c@#1}}}
+\newcommand*\@hroman[1]{\ifcase#1\or
+  ⅰ\or ⅱ\or ⅲ\or ⅳ\or ⅴ\or ⅵ\or ⅶ\or ⅷ\or
+  ⅸ\or ⅹ\or ⅺ\or ⅻ\else\@ctrerr\fi}
+\newcommand*\hRoman[1]{\@hRoman{\@nameuse{c@#1}}}
+\newcommand*\@hRoman[1]{\ifcase#1\or
+  Ⅰ\or Ⅱ\or Ⅲ\or Ⅳ\or Ⅴ\or Ⅵ\or Ⅶ\or Ⅷ\or
+  Ⅸ\or Ⅹ\or Ⅺ\or Ⅻ\else\@ctrerr\fi}
+
+% from kosections-utf.tex
+\def\hNum#1{\@hNum{\@nameuse{c@#1}}}
+\def\@hNum#1{\ifcase#1\or 일\or 이\or 삼\or 사\or 오\or 육\or 칠\or
+  팔\or 구\or 십\or 십일\or 십이\or 십삼\or 십사\or 십오\or 십육\or
+  십칠\or 십팔\or 십구\or 이십\or 이십일\or 이십이\or 이십삼\or
+  이십사\else\@ctrerr\fi}
+\def\hanjanum#1{\@hanjanum{\@nameuse{c@#1}}}
+\def\@hanjanum#1{\ifcase#1\or 一\or 二\or 三\or
+  四\or 五\or 六\or 七\or 八\or 九\or 十\or
+  十一\or 十二\or 十三\or 十四\or 十五\or
+  十六\or 十七\or 十八\or 十九\or 二十\or
+  二十一\or 二十二\or 二十三\or 二十四\else\@ctrerr\fi}
+
+\endinput

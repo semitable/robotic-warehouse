@@ -1,5 +1,46 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-02 18:45 KST, Claude Code (T172)
+
+- **실행 중**: 1단계 분기 PID 28892(`runs/maxgae_br1M_20261102_165216`, 12 job, `ippo_s1` 0.18M, 11-05 오전 무렵 종료 추정). 2단계 PID 25380(`runs/pgctd2_br1M_20261102_180212`, 사용자가 18:02 시작, `oracle_mature_max`·`pgct_max` × seed 1·3·5, 6 job, 11-04 새벽 무렵 종료 추정).
+- **2단계 초기**: 성숙 agent a2·a3·a5뿐, 뒤처진 a0·a1·a4는 미성숙. donor는 앞선 같은 팀 2 arc.
+- **IJCAI 2027(D105)**: 공식 키트 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트가 필요하다. 마감은 초록 01-04, 본문 01-11.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T171, 논문·발표자료 재작성)
+
+- **산출물(D104, E72)**: `paper/english/main.pdf`, `paper/korean/main.pdf`(각 8쪽), `presentation/pgct_beamer.pdf`(17장), `presentation/pgct_script_ko.md`, 참고용 `pgct_presentation.pptx`. 안내는 `PGCT_DELIVERABLES_README.md`. 원본은 `output/pgct_docs_20261102/`.
+- **주장 경계**: 핵심 기여는 잠재 팀 발견. 학습 비교는 pending. 그래프는 실제 로그 재계산값.
+- **실행 상태**: v1 `pgct_s2`는 18:01에 중단됨(KeyboardInterrupt). 1단계 분기는 진행 중.
+- **남은 일**: 분기 결과로 표·그래프·대본 갱신, IJCAI 공식 양식, 발표자 정보.
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T169, PGCT-D2 v2 비교의 인과성 수정)
+
+- **수정(D103, E71)**: `pgct_max`·`oracle_mature_max`는 v2를 rollout 시작 스냅샷(사건 probe·성숙·예측기 버전)으로 rollout 접촉 쌍과 먼저 비교하고, 그 뒤 재학습한다(`contact_snapshot`). 기존 v2 증류 모드는 그대로다. 플래그 없는 옛 PGCT-D2 계획은 거부한다. pytest 77개 통과.
+- **남은 것**: 논문 초안의 알고리즘 단계 문구(재학습 후 비교 → 스냅샷 비교 후 재학습)와 테스트 수, 승인 유효기간, EV 필터 시 `allk` 수 맞춤, 1단계 분기 결과 확인 뒤 2단계 실행(명령은 T169 최종 답변).
+
+## 최신 확인 — 2026-11-02 KST, Claude Code (T168, Codex PGCT-D2 구현 검토)
+
+- **판정(D102, E70)**: 배선은 맞고 실행을 막는 버그는 없다. 72개 테스트 통과, 자연 경로 smoke에서 rollout 접촉 비교 → 승인 → donor = 접촉 ∧ 승인, trainer allocation 0을 확인했다.
+- **결정 필요**: Codex가 v2 비교를 update 직전 이웃 → rollout 접촉으로 바꿨다. 재학습 뒤 비교라 접촉 뒤의 정보를 쓴다(인과성). 통신 가정 명시(i) 또는 재학습 전 비교·probe 스냅샷(ii). `pgct_max` 분기 실행 전에 정해야 한다.
+- **실행 상태**: `runs/maxgae_br1M_20261102_165216`(PID 28892)의 `ippo_s1` running. Codex 수정 전에 시작한 단일 프로세스라 영향 없음.
+
+## 최신 확인 — 2026-11-02 KST, Codex (T167, 논문·발표자료 제작; 정확한 시각 기록하지 않음)
+
+- **산출물(D101, E69)**: `paper/english/main.{tex,pdf}`, `paper/korean/main.{tex,pdf}`(각 7쪽), 공통 수식·BibTeX·그림, `presentation/pgct_beamer.{tex,pdf}`·편집 가능한 `pgct_presentation.pptx`(17장), 슬라이드별 한국어 대본. 전체 묶음과 안내는 `PGCT_DELIVERABLES_README.md`.
+- **최종 알고리즘 일치**: 개인 보상 예측·공개 사건 probe·EMA/성숙/지속 승인·rollout 접촉·선택 Critic 가중치 접근·자기 관측열 replay·mask/shrink Max-GAE Actor·자기 return Critic. 한영 공통 수식 11개와 인용 7개·label·발표 순서 확인. 실제 최종 PGCT 장기 학습 결과는 Pending으로 남겼다.
+- **근거 재집계(읽기 전용)**: 기존 보상 발견 seed 1 약 5M 로그는 구성요소 진단으로 한정했다(같은 팀/다른 팀 allocation 5,252/352, 비중 93.72%). update 종료 접촉을 사용한 로그이므로 최종 donor 정밀도·성능으로 설명하지 않는다. 독립 PPO s1 평가 곡선만 기준선으로 사용했다. 진행 중 분기 부분 결과는 최종 비교에서 제외했다.
+- **첨부**: ICCAS PDF 16장 전체 구성/렌더링 참고. M4A는 812.9793초의 메타데이터만 확인했으며 전사·청취 분석 못 함. Multi-UAV 연구 내용·식·성능·그림은 가져오지 않았다.
+- **검증**: PDF 3개 실제 컴파일, overfull/누락 glyph 오류 없음. PPTX 렌더링·구조·배치 확인, native chart 2·table 3, 대본 notes 17개. PowerPoint 앱에서 직접 열어 검증한 것은 아니다. 공식 목표 연도 IJCAI 양식 전환은 남아 있다.
+- **범위**: 이번 turn은 문서 제작뿐이다. 연구 코드·학습 설정·기존 실험 변경 없음, 새 학습·환경 rollout·pytest 재실행 없음. E68의 기존 검증 결과를 인용했다. 커밋 없음.
+
+## 최신 확인 — 2026-11-02 KST, Codex (T166, PGCT-D2 구현; 정확한 시각 기록하지 않음)
+
+- **구현(D100, E68)**: v2의 접촉 독립·대칭 `approved()`와 현재 `maturity()`, Max-GAE donor 규칙 `gate`·`oracle_mature`, 실행 모드 `pgct_max`·`oracle_mature_max`, 실제 donor/승인/성숙 감사 로그. 두 새 모드는 `--reward-probe-ac --ac-gate v2`가 필요하다. Max-GAE가 완료 rollout의 접촉으로 v2를 직접 활성화하고 trainer 증류 allocation은 0이다.
+- **검증**: 새 15개 + 기존 57개, 총 72개 통과. 공통 A+C IPPO s1 checkpoint(update 1000, 1,024,000 step)에서 모서리·개인·seed 1·CPU·64 step/job smoke 9 job. 승인 없음 → IPPO와 비트 동등; 테스트용 정답 승인/성숙 주입 → Oracle-max와 비트 동등; EV 필터 차단 → IPPO와 비트 동등; warm-up 차단/해제 확인. 자연스러운 온라인 승인·학습 가속의 증거는 아니다.
+- **critic EV 조건**: `--max-gae-min-critic-ev` 선택 옵션 구현, 기본 비활성. D99대로 실측 로그를 보고 임계값을 정할 일은 남아 있다. 보상 예측기 성숙과 critic 성숙을 구분한다. 보상 사건이 없는 agent 및 E65 후반 다른 팀 오승인은 미해결이다.
+- **실제 분기 진행 확인(읽기 전용)**: `runs/maxgae_br1M_20261102_165216` manifest가 있으며 IPPO s1 로그에서 6,144 step(분기 이후)을 확인했다. `job_status.json`은 running이다. CIM 프로세스 조회는 권한 제한으로 실패했으므로 PID 생존은 확정하지 않았다. 기존 실행을 중단·재시작하지 않았다.
+- **근거**: `docs/MAX_GAE.md`, `tests/test_pgct_max.py`, `output/pgct_d2_validation_20261102/README.md`, `pytest_final.xml`. trainer·`rware/`·`examples/` 소스 수정 없음. 새 본 학습 시작·커밋 없음.
+
 ## 최신 확인 — 2026-11-02 KST, Claude Code (T164, D98 필수 수정 1–4 구현)
 
 - **구현(D99, E67)**: 분기 goal 배치 검사, D2 `shrink` 척도(`--max-gae-scale` 기본값 relative → shrink), rollout 첫 7 step Δ = 0, agent별 critic explained variance 로그. pytest 57개 통과. smoke에서 donor를 끈 동등성(비트 단위), 1M 분기, seed 2 거부를 확인했다.

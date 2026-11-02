@@ -1442,3 +1442,68 @@
 - 바꾸지 않은 것: trainer·`rware/`·`examples/`, ippo·pgct 등 기존 모드, raw·D1 정의, donor 규칙(oracle/all/allk, rollout 접촉).
 - 분기 실행 명령(사용자 실행): T164 최종 답변. T154 명령은 쓰지 않는다.
 - 검증: E67.
+
+## D100. PGCT-D2 필수 5–8 구현: 접촉 독립 승인과 rollout 접촉으로 Max-GAE 연결 — 2026-11-02 KST, Codex (사용자 요청 T166)
+
+- 사용자 승인 범위: 실행 중인 1M 분기와 별개로 D98 필수 5–8을 구현한다. 본 학습 추가 실행·중단·재시작이나 커밋은 요청하지 않았다.
+- `ACV2Controller.approved()`는 기존 `gate`를 쓰지 않고 보존된 rounds·EMA와 현재 두 agent의 보상 예측기 성숙을 읽는다. 기본 조건 rounds ≥ 3, EMA < .5는 그대로다. 대칭 행렬이며 자기 자신은 제외하고 복사본을 반환한다. 기존 증류 모드의 접촉 마스킹은 유지했다.
+- donor 규칙: `gate` = rollout 접촉 ∧ approved; `oracle_mature` = rollout 접촉 ∧ 정답 팀 ∧ receiver와 donor의 보상 예측기 성숙. 선택 critic EV 조건은 donor 열에만 적용한다. `gate` donor 판정은 팀 라벨에 의존하지 않는다.
+- `pgct_max`·`oracle_mature_max`는 A+C v2 필수, IPPO trainer 경로, v2 learn=True, peer loss 0이다. v2 사건/성숙/거리 규칙과 D2 shrink 식은 바꾸지 않았다.
+- D98 6절의 제안된 wrapper 배치와 차이: matched_transfer가 마지막 위치에서 v2를 부르는 대신, Max-GAE가 완료 rollout의 접촉 행렬로 update 시작에 controller를 정확히 한 번 직접 호출한다. refit·비교는 기존 interval마다, 비교는 warm-up 이후다. 이로써 IPPO의 active=False 문제를 풀고 Oracle과 PGCT의 접촉 기준을 맞춘다. 현재 rollout 경험만 쓰고 PPO update 이전이므로 미래 정보는 쓰지 않는다. matched_transfer adapter는 감사 필드와 0 allocation만 반환한다.
+- critic EV 임계값은 D99에서 미결이다. 임의의 연구 기준을 강제하지 않고 `--max-gae-min-critic-ev` 선택 옵션(기본 None)을 구현했다. 활성화하면 nonfinite EV는 보류한다. 실제 임계값 선정은 분기 로그를 보고 결정한다.
+- 감사 로그: `max_gae.jsonl`의 실제 donors, 승인, 현재 보상/critic 성숙, 실제 same/cross donor arc, 전체 정답 팀 directed arc 중 승인 비율(현재 6명 3+3은 12 arc), v2 pair 근거와 probe-update 시점을 남긴다. `transfer.jsonl`의 증류 allocation=0과 D2 donor 사용을 혼동하지 않는다.
+- 1M IPPO checkpoint 분기는 actor/critic 가중치만 복사한다. 새 모드의 v2 예측기·buffer·승인 이력은 새로 시작한다. 학습 가속·보상 사건 없는 agent 구제·E65 오승인 해결을 주장하지 않는다.
+- 검증 E68: 72 tests, 실제 trainer 64 step smoke 9 job. 승인 없음/EV 차단은 IPPO와 비트 동등, 테스트 전용 정답 승인 주입은 Oracle-max와 비트 동등. 기존 실행·결과 보존.
+
+## D101. 최종 PGCT 논문·발표 초안의 기술 정의와 실증 경계 통일 — 2026-11-02 KST, Codex (T167 사용자 요청)
+
+- 사용자 요청: 영어·한국어 전체 LaTeX 논문, Beamer 원본/PDF, 편집 가능한 PPTX, 슬라이드별 한국어 대본. ICCAS PDF와 녹음은 구성·스타일 참고만 하고 Multi-UAV 알고리즘·식·성능을 전용하지 않는다. 연구 코드/설정/학습 실행 변경 금지.
+- 모든 산출물의 PGCT는 D100의 실제 구현으로 정의했다. 발견을 핵심 기여로 두고 개인 보상 기준을 유지한다. 내부 버전명을 슬라이드 알고리즘 이름으로 사용하지 않았다. 소스 CLI 식별자는 논문 재현성 부록에서만 설명했다.
+- 수식은 `paper/method_equations.tex` 11개를 한영 원고가 그대로 호출한다. cold-start의 uplift mask뿐 아니라 advantage mask도 정의했고, shrink는 표준편차 비율에 1 상한을 둔다. Critic EV 조건은 선택·기본 비활성, cap은 기본 무한이며 성숙 Critic 자동 보장이나 성능 개선 보장은 주장하지 않는다.
+- 기존 발견 로그는 update 종료 접촉을 쓴 구성요소의 관측이다. 최종 rollout 접촉 기반 PGCT donor/학습 결과와 구분한다. 93.72%는 allocation 가중 같은 팀 비중이며 쌍 분류 정확도가 아니다. 장기 통합 PGCT·oracle 비교는 Pending으로 명시하고, 기존 독립 PPO 단일 seed의 실제 곡선만 보여 준다.
+- MAMBA는 계산 동기의 인용이며 보장을 가져오지 않는다. own-return 목표가 유지돼도 공동 gradient clipping 때문에 Critic의 수치 update가 반드시 같은 것은 아니라는 점을 설명했다. 현재 warm-up 8관측은 sliding-window 8 질의가 아니라 cold-start rollout 전체 순환 처리라는 점도 명시했다.
+- 첨부 PDF는 전체 16장 텍스트·디자인 확인. 음성은 파일과 메타데이터(약 13분33초)만 확인, 전사 도구 부재로 실제 발화·강조·설명 시간을 추정하지 않았다. 대본은 새 제안 대본이다.
+- 초안은 포터블 2단 검토 원고다. 목표 연도의 공식 IJCAI 스타일·저자 정보·분량 기준까지 충족한 투고본이라고 하지 않는다. 저자·소속은 참고자료에서 복사하지 않았다.
+- E69에 제작·검증 근거를 기록했다. 새 실험이나 연구 코드 변경은 없다.
+
+## D102. Codex PGCT-D2 구현 검토: 배선은 맞음, v2 비교의 rollout 접촉 전환은 인과성 문제를 남김 — 2026-11-02 Claude Code (사용자 요청 T168, 사용자 결정 대기)
+
+- 확인: `approved()`·`maturity()`, donor 규칙 `gate`·`oracle_mature`, `pgct_max`·`oracle_mature_max`(IPPO 경로, peer loss 0, v2 learn=True), 선택적 critic EV floor, 감사 로그가 D98 5–8과 맞다. 기존 oracle/all/allk 동작은 같다. 72개 테스트 통과, 자연 경로 smoke 통과(E70).
+- 설계 변경(D100): v2 비교 대상이 update 직전 이웃에서 rollout 접촉으로 바뀌었다. D98은 v2 비교를 그대로 두라고 권했다.
+  - 인과성: v2 `__call__`은 재학습 뒤 비교한다. rollout 중 만났다 헤어진 쌍도 접촉 뒤 경험으로 학습한 예측기와 그 뒤의 사건 probe로 비교한다. "범위 안 교환" 모델에서는 주고받을 수 없는 정보다. D2 critic 가중치는 rollout 동안 고정이라 문제없다.
+  - E59·E60·E65의 승인 시점·오승인 수치는 update 직전 기준이라 pgct_max에 옮길 수 없다. W&B `ac_v2_*` 의미도 달라진다. D2 donor는 `max_gae_*`로 본다.
+  - 선택지: (i) 통신 가정 명시("직전 rollout에서 만난 쌍은 update 시점에 한 번 교환"), (ii) pgct_max에서 재학습 전 비교 + rollout 시작 시점 사건 probe. 논문이 제한 지역 통신을 내세우면 (ii) 권고.
+- 작은 문제: 승인 유효기간 없음(다음 비교 round까지 옛 EMA 사용), EV 필터를 켜면 `allk` 수 맞춤이 어긋남, 실제 비교 → 승인 경로의 회귀 테스트 없음.
+- 1단계 oracle 분기에는 영향 없음. 2단계 실행 전 (i)/(ii) 결정 필요.
+
+## D103. PGCT-D2의 v2 비교를 rollout 시작 스냅샷으로: 비교 후 재학습 — 2026-11-02 Claude Code (사용자 결정 T169, D102 선택지 ii)
+
+- 사용자 결정(T169): "엄밀하게 수정(ii)".
+- 규칙(`ACV2Config.contact_snapshot`, PGCT-D2 두 모드에서 계획 단계 자동 True, 그 밖의 모드 기본 False):
+  1. rollout 시작 때 agent별 최근 사건 probe 사본, 보상 예측기 성숙, 예측기 버전을 고정한다. 예측기는 rollout 뒤에만 재학습되므로 고정 버전이 rollout 동안 쓰인 예측기다.
+  2. update에서 rollout 접촉 쌍을 고정 probe·고정 성숙·재학습 전 예측기로 먼저 비교하고, 그 뒤 재학습한다. 스냅샷과 비교 사이 재학습은 오류다.
+  3. `maturity()`·`approved()`·`oracle_mature`도 고정 성숙을 쓴다.
+  4. 이 규칙 전에 만든 PGCT-D2 계획은 실행 시 거부한다.
+- 근거: 비교에 쓰는 정보가 그 rollout의 어떤 접촉에서도 실제로 보낼 수 있었던 것만 남는다. 통신 가정은 "접촉 때 rollout 시작 상태를 교환, 계산은 update 시점"이다. donor critic 가중치는 원래 rollout 동안 고정이다.
+- 대가: 비교가 한 rollout 전 상태를 쓰므로 승인이 조금 늦어질 수 있다(크기 미측정).
+- 바꾸지 않은 것: 기존 v2 증류 모드(`pgct`)의 재학습 후 비교 순서, v2 사건·거리·EMA·문턱, D2 식, donor 규칙.
+- 후속: 논문 초안(`paper/english/main.tex:102`과 한국어판의 같은 단계)의 문구와 테스트 수 갱신.
+
+## D104. PGCT 논문·발표자료 재작성: 잠재 팀 발견을 핵심 기여로, 근거는 실제 로그만, Beamer를 주 발표자료로 — 2026-11-02 Claude Code (사용자 요청 T171)
+
+- 요청(T171): 영어·한국어 LaTeX 논문, ICCAS 발표 구성을 참고한 Beamer, 한국어 대본, PPTX. 연구 코드·학습 설정 변경과 실험 중단·실행 금지. 작업 중 사용자 의견: Codex 논문이 부족해 보이니 직접 해야 한다. 이후 PPTX는 꼭 필요하지 않고 Beamer면 된다.
+- 결정:
+  1. Codex 초안(T167, D101)은 수식 파일·빌드 도구만 재사용하고, 논문 본문·그림·발표자료를 새로 썼다. 이유: 초록에 구현 검증(테스트 수)이 들어가 있고, 기여·동기 설명이 얇았으며, 그림이 단순 상자 나열이었고, D103(rollout 시작 스냅샷)이 빠져 있었다.
+  2. 핵심 기여는 잠재 팀 발견(Reward Probe 검정: 개인 보상 예측, 공개 사건 probe, 척도 무관 거리, 성숙·보류, 지속 승인, 접촉 시점 정보만 사용)이다. Critic 활용(선택적 팀원 Critic + 마스크·shrink Max-GAE, Actor 전용)은 발견 관계의 유용성을 검증하는 보조 메커니즘으로 쓴다. MAMBA 보장은 주장하지 않는다.
+  3. 근거는 실제 로그만 쓴다: 발견 로그(E65, seed 1, 5M, update 종료 접촉·이전 활용 규칙이라 발견 구성요소만 평가), 오프라인 재생(E59), 반사실 점검(E63), IPPO 기준선 seed 1·2. 통합 PGCT 학습 비교는 pending 칸으로 둔다.
+  4. 공통 수식 파일을 D103 표기로 고쳤다($\mathcal Q_{ij}^u$, $\widehat r^{\,u}$, $m^u$).
+  5. Beamer·대본(·PPTX)은 `output/pgct_docs_20261102/deck_spec.py` 하나에서 생성한다. 사용자 의견에 따라 Beamer가 주 발표자료이고, PPTX는 함께 생성되는 참고본으로 두며 더 다듬지 않는다.
+  6. 참고 발표자료는 구성·스타일만 따랐다. 녹음은 도구가 없어 전사하지 못했고, 발표 방식은 추측해 반영하지 않았다.
+- 남은 일: 공식 IJCAI 양식·저자 정보 적용, 분기 결과가 나오면 표·그래프·대본 갱신, 발표자 이름·소속 placeholder 교체.
+
+## D105. 현재 논문의 IJCAI 2027 적합성 점검: 내용 초안은 가능, 형식은 공식 키트 전환 필요 — 2026-11-02 Claude Code (사용자 질문 T172)
+
+- 근거: IJCAI 2027 메인 트랙 Call for Papers(2027.ijcai.org). 본문 7쪽(그림·표 포함) + 참고문헌만 최대 2쪽, 전체 9쪽. IJCAI-27 스타일 필수(여백·글자 축소 시 심사 없이 거절). 이중 맹검. 부록은 보조 자료(PDF/ZIP, 50MB). 재현성 체크리스트 제출. 초록 2027-01-04, 본문 2027-01-11(AoE). 학회는 교토, 2027-08-07~13. 저자 키트 `FormattingGuidelines-IJCAI-27.zip`은 아직 내려받지 않았다.
+- 현재 `paper/english/main.pdf`(8쪽): 공식 스타일이 아니다(article + 임의 여백). 그림 4·5가 참고문헌 뒤 7쪽에 밀려 있고, 부록이 8쪽에 있다. 익명 저자, 감사의 글 없음, 메타데이터에 신원 정보 없음은 충족.
+- 필요한 일: 공식 키트로 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트 준비. 형식보다 큰 문제는 학습 결과가 pending이라는 점이다. 결과가 들어오면 쪽수를 줄여야 하고, 환경이 하나뿐이라는 점도 심사 위험이다.
+- 실행 상태(18:45): 1단계 분기(PID 28892) `ippo_s1` 0.18M/0.5M, 12 job 중 1번째. 2단계(PID 25380, 사용자가 18:02에 시작, `runs/pgctd2_br1M_20261102_180212`, `oracle_mature_max`·`pgct_max` × seed 1·3·5, `contact_snapshot=True`) `oracle_mature_max_s1` 0.07M. 2단계 초기 66 update에서 성숙 agent는 a2·a3·a5뿐이고 donor는 같은 팀 앞선 agent 사이 2 arc다(D98 R1 예상과 일치).

@@ -1,0 +1,300 @@
+% Copyright 2003--2007 by Till Tantau
+% Copyright 2010 by Vedran Mileti\'c
+% Copyright 2015 by Vedran Mileti\'c, Joseph Wright
+% Copyright 2017,2018 by Louis Stuart, Joseph Wright
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Public License.
+%
+% See the file doc/licenses/LICENSE for more details.
+
+% To track which slide we are on in a frame
+\newcount\beamer@slideinframe
+\newcount\beamer@minimum
+
+% Indicate whether another slide needs to be processed in this frame
+\newif\ifbeamer@anotherslide
+\newif\ifbeamer@localanotherslide
+
+% Used to know that beamerpauses needs to be used in substitution
+\newif\ifbeamer@plusencountered
+
+% The main decoding macro tolerates a range of active characters, which
+% require a little set up. In particular, as an active space is allowed
+% all of the lines here have to be terminated with "%". The two-step
+% setup for \beamer@@@temp makes sure everything is expanded and removes
+% all of the spaces at this stage.
+\newbox\beamer@decode@box
+\begingroup
+  \catcode`\|=\active
+  \catcode`\:=\active
+  \catcode`\,=\active
+  \catcode`\.=\active
+  \catcode`\+=\active
+  \catcode`\-=\active
+  \catcode`\(=\active
+  \catcode`\)=\active
+  \catcode`\ =\active
+\xdef\beamer@masterdecode#1{%
+\noexpand\beamer@localanotherslidefalse%
+\setbox\beamer@decode@box=\hbox{%
+\unexpanded{%
+\ifnum\catcode`\|=\active\edef|{\string|}\fi%
+\ifnum\catcode`\:=\active\edef:{\string:}\fi%
+\ifnum\catcode`\,=\active\edef,{\string,}\fi%
+\ifnum\catcode`\.=\active\edef.{\string.}\fi%
+\ifnum\catcode`\+=\active\edef+{\string+}\fi%
+\ifnum\catcode`\-=\active\edef-{\string-}\fi%
+\ifnum\catcode`\(=\active\edef({\string(}\fi%
+\ifnum\catcode`\)=\active\edef){\string)}\fi%
+\ifnum\catcode`\ =\active\edef {\string }\fi}%
+\edef\noexpand\beamer@@@temp{#1\string|stop\string:0\string|}%
+\edef\noexpand\beamer@@@temp{\unexpanded{\expandafter\zap@space\beamer@@@temp}%
+\space\noexpand\@empty}%
+\unexpanded{\expandafter\beamer@decode\beamer@@@temp%
+\ifbeamer@localanotherslide\aftergroup\beamer@localanotherslidetrue\fi}%
+}%
+}%
+\endgroup
+
+% Sets dowhat to doif, if \beamer@slideinframe is in the specified
+% interval. Example: 5-7,-3,9,11,13- would mean pages
+% 1,2,3,5,6,7,9,11,13,14,15,16,...
+%
+% As a side effect, \@another is called whenever the there is a number
+% in the list that is larger than the current serialnumber
+
+\def\beamer@allsign{*}
+
+% The main decoding routine starts by initialising the starting a search
+% for everything up to "|": to allow for the simple case of overlays in
+% slides for presentations there is a need to insert "beamer:". Notice
+% that \beamer@@decodefind may be called multiple times, hence being set
+% up as an auxiliary.
+\def\beamer@decode{%
+  \beamer@plusencounteredfalse
+  \global\beamer@minimum=10000\relax
+  \gdef\beamer@decaction{}%
+  \global\let\beamer@decodefound=\beamer@allsign
+  \beamer@@decodefind}
+\def\beamer@@decodefind#1|{\beamer@@@decodefind#1:|}
+\def\beamer@@@decodefind#1:#2|{%
+  \ifblank{#2}%
+    {\beamer@decodefind beamer:#1:}%
+    {\beamer@decodefind #1:#2}}
+
+% A list of possible overlay modes
+\def\beamer@default{default}
+\def\beamer@articlemode{article}
+\def\beamer@secondmode{second}
+\def\beamer@beamermode{beamer}
+\def\beamer@presentationmode{presentation}
+\def\beamer@modeall{all}
+\def\beamer@ovmodestop{stop}
+
+% The main parsing function for each sub-part starts by splitting at any
+% "@" and then checking the spec for various cases: keywords, "+", ".".
+% After that, there is some cleanup to do before potentially looping.
+\def\beamer@decodefind#1:#2:{%
+  \def\beamer@ovmode{#1}%
+  \beamer@decodeaction{#2}%
+  \expandafter\futurelet\expandafter\next\expandafter
+    \beamer@checkcat\beamer@spec:%
+  \expandafter\beamer@decodeplus\beamer@spec+:%
+  \expandafter\beamer@decodedot\beamer@spec.:%
+  \ifx\beamer@ovmode\beamer@ovmodestop
+    \expandafter\beamer@@decode\beamer@decodefound,!%
+    \let\beamer@next=\relax
+    \ifbeamer@plusencountered\stepcounter{beamerpauses}\fi
+  \else
+    \ifx\beamer@ovmode\beamer@currentmode
+      \beamer@@decodefound
+    \else
+      \ifx\beamer@ovmode\beamer@modeall
+        \beamer@@decodefound
+      \else
+        \ifx\beamer@ovmode\beamer@presentationmode
+          \ifx\beamer@currentmode\beamer@articlemode
+          \else
+            \beamer@@decodefound
+          \fi
+        \else
+          \ifx\beamer@ovmode\beamer@beamermode
+            \ifx\beamer@currentmode\beamer@secondmode
+              \beamer@@decodefound
+            \fi
+          \fi
+        \fi
+      \fi
+    \fi
+    \let\beamer@next=\beamer@@decodefind
+  \fi
+ \beamer@next}
+
+% The aim here is to find any "<action>@" spec, and to split it off the
+% action from the rest. That uses a pretty stand search approach.
+\edef\beamer@decodeaction#1{%
+  \noexpand\beamer@@decodeaction#1\string @\string @:}
+\begingroup
+\edef\beamer@@@temp{%
+  \endgroup
+  \def\noexpand\beamer@@decodeaction##1\string @##2\string @##3:{%
+    \noexpand\ifblank{##2}%
+      {%
+        \def\noexpand\beamer@action{default}%
+        \def\noexpand\beamer@spec{##1}%
+      }%
+      {%
+        \def\noexpand\beamer@action{##1}%
+        \def\noexpand\beamer@spec{##2}%
+      }%
+  }%
+}%
+\beamer@@@temp
+
+% Search for the case where the specification is a keyword, and if it
+% is set the overlay mode and spec.
+\def\beamer@checkcat#1:{%
+  \ifcat\next a%
+    \gdef\beamer@ovmode{#1}%
+    \ifx\beamer@decodefound\beamer@allsign
+      \gdef\beamer@decodefound{0}%
+    \fi
+    \def\beamer@spec{1-}%
+  \fi}
+
+\def\beamer@decodeplus{%
+  \def\beamer@spec{}\beamer@@decodeplus}
+\def\beamer@@decodeplus#1+#2:{%
+  \edef\beamer@spec{\beamer@spec#1}% everything up to a +
+  \ifblank{#2}{}
+  {% ok, check if followed by number:
+    \beamer@plusencounteredtrue
+    \beamer@@@decodeplus#2:}}
+\def\beamer@@@decodeplus{%
+  \kernel@ifnextchar(%)
+    {\beamer@relnumber}{\beamer@relnumber(0)}}
+\def\beamer@relnumber(#1){%
+  \beamer@plusencounteredtrue
+  \@tempcnta=\numexpr #1 + \value{beamerpauses}\relax%
+  \ifnum\@tempcnta<0\@tempcnta=0\fi%
+  \edef\beamer@spec
+    {\beamer@spec\number\@tempcnta}%
+  \beamer@@decodeplus}
+
+\def\beamer@decodedot{%
+  \def\beamer@spec{}\beamer@@decodedot}
+\def\beamer@@decodedot#1.#2:{%
+  \edef\beamer@spec{\beamer@spec#1}% everything up to first .
+  \ifblank{#2}{}{\beamer@@@decodedot#2:}}
+\def\beamer@@@decodedot{%
+  \kernel@ifnextchar(%)
+    {\beamer@relnumberdot}{\beamer@relnumberdot(0)}}
+\def\beamer@relnumberdot(#1){%
+  \@tempcnta=\numexpr #1 + \value{beamerpauses} -1\relax%
+  \ifnum\@tempcnta<0\@tempcnta=0\fi%
+  \edef\beamer@spec
+    {\beamer@spec\number\@tempcnta}%
+  \beamer@@decodedot}
+
+\def\beamer@@decodefound{%
+  \ifx\beamer@action\beamer@default
+    \xdef\beamer@decodefound{\beamer@spec}%
+  \else
+    \xdef\beamer@decaction{\beamer@decaction{\beamer@action<\beamer@spec>}}%
+  \fi}
+\def\beamer@currentaction{default}
+
+\def\beamer@doifnotinframe{}
+
+% A set of macros to deal with what can form the basis of an action
+% spec once we know the basic shape: the key concepts are whether there
+% are more slides to do and how many there are in total.
+\def\beamer@@decode{%
+  \kernel@ifnextchar!%
+  {\beamer@decodeend}%
+  {%
+    \kernel@ifnextchar*%
+    {\beamer@decodeall}{%
+      \kernel@ifnextchar-%
+      {\beamer@decodeuntil}%
+      {\beamer@decodenumber}}}}
+\def\beamer@decodeend!{}
+\def\beamer@decodeall*,{%
+  \ifnum1<\beamer@minimum
+    \global\beamer@minimum=1\relax
+  \fi
+  \ifnum1>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \gdef\beamer@doifnotinframe{\beamer@doifinframe}%
+  \beamer@@decode}
+\def\beamer@decodeuntil-#1,{%
+  \ifnum1<\beamer@minimum
+    \global\beamer@minimum=1\relax
+  \fi
+  \ifnum#1>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \ifnum\beamer@slideinframe>#1\relax
+  \else
+    \gdef\beamer@doifnotinframe{\beamer@doifinframe}%
+  \fi
+  \beamer@@decode}
+\def\beamer@decodenumber#1{%
+  \kernel@ifnextchar,%
+  {\beamer@decodeone{#1}}%
+  {\kernel@ifnextchar-%
+    {\beamer@decodenumberto{#1}}%
+    {\beamer@decodegobble{#1}}}}
+\def\beamer@decodegobble#1#2{%
+  \beamer@decodenumber{#1#2}}
+\def\beamer@decodenumberto#1-{%
+  \kernel@ifnextchar,%
+  {\beamer@decodeto{#1}}%
+  {\beamer@decodebetween{#1}}}
+\def\beamer@decodeto#1,{%
+  \ifnum#1<\beamer@minimum
+    \global\beamer@minimum=#1\relax
+  \fi
+  \ifnum#1>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \ifnum#1>\beamer@slideinframe
+  \else
+    \gdef\beamer@doifnotinframe{\beamer@doifinframe}%
+  \fi
+  \beamer@@decode}
+\def\beamer@decodebetween#1#2,{%
+  \ifnum#1<\beamer@minimum
+    \global\beamer@minimum=#1\relax
+  \fi
+  \ifnum#1>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \ifnum#2>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \ifnum#1>\beamer@slideinframe
+  \else
+    \ifnum#2<\beamer@slideinframe
+    \else
+      \gdef\beamer@doifnotinframe{\beamer@doifinframe}%
+    \fi
+  \fi
+  \beamer@@decode}
+\def\beamer@decodeone#1,{%
+  \ifnum#1<\beamer@minimum
+    \global\beamer@minimum=#1\relax
+  \fi
+  \ifnum#1>\beamer@slideinframe
+    \global\beamer@anotherslidetrue\beamer@localanotherslidetrue
+  \fi
+  \ifnum#1=\beamer@slideinframe
+    \gdef\beamer@doifnotinframe{\beamer@doifinframe}%
+  \fi
+  \beamer@@decode}
+
+\def\beamer@donow{\beamer@doifnotinframe}

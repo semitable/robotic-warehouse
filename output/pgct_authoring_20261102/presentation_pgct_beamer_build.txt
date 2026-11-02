@@ -1,0 +1,19 @@
+note: Running TeX ...
+Fontconfig error: Cannot load default config file: No such file: (null)
+warning: accessing absolute path `C:/WINDOWS/fonts\arialbd.ttf`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ARIALN.TTF`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ARIALNI.TTF`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ariblk.ttf`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\arialbi.ttf`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ARIALNBI.TTF`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ariali.ttf`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\arial.ttf`; build may not be reproducible in other environments
+warning: accessing absolute path `C:/WINDOWS/fonts\ARIALNB.TTF`; build may not be reproducible in other environments
+warning: pgct_beamer.tex:55: Underfull \hbox (badness 1383) in paragraph at lines 55--55
+note: Rerunning TeX because "pgct_beamer.aux" changed ...
+warning: pgct_beamer.tex:55: Underfull \hbox (badness 1383) in paragraph at lines 55--55
+warning: warnings were issued by the TeX engine; use --print and/or --keep-logs for details.
+note: Running xdvipdfmx ...
+note: Writing `C:\RWARE\MARL_RWARE\third_party\robotic-warehouse\presentation\pgct_beamer.pdf` (173.6962890625 KiB)
+note: Writing `C:\RWARE\MARL_RWARE\third_party\robotic-warehouse\presentation\pgct_beamer.log` (40.4736328125 KiB)
+note: Skipped writing 5 intermediate files (use --keep-intermediates to keep them)

@@ -1,0 +1,17 @@
+[
+  {
+    "file": "paper/english/main.tex",
+    "returncode": 0,
+    "pdf_exists": true
+  },
+  {
+    "file": "paper/korean/main.tex",
+    "returncode": 0,
+    "pdf_exists": true
+  },
+  {
+    "file": "presentation/pgct_beamer.tex",
+    "returncode": 0,
+    "pdf_exists": true
+  }
+]

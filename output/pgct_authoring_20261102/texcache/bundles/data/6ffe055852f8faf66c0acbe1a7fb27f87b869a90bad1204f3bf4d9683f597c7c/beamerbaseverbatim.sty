@@ -1,0 +1,167 @@
+% Copyright 2003--2007 by Till Tantau
+% Copyright 2010 by Vedran Mileti\'c
+% Copyright 2011,2012,2015 by Vedran Mileti\'c, Joseph Wright
+% Copyright 2016 by Joseph Wright
+% Copyright 2017,2018 by Louis Stuart, Joseph Wright
+%
+% This file may be distributed and/or modified
+%
+% 1. under the LaTeX Project Public License and/or
+% 2. under the GNU Public License.
+%
+% See the file doc/licenses/LICENSE for more details.
+
+\mode
+<presentation>
+
+
+\newwrite\beamer@verbatimfileout
+
+\def\beamer@verbatimreadframe{%
+  \begingroup
+  \let\do\@makeother\dospecials
+  \count@=127 %
+  \@whilenum\count@<255 \do{%
+    \advance\count@ by 1 %
+    \catcode\count@=11 %
+  }%
+  \@makeother\^^L% and whatever other special cases
+  \@makeother\^^I % Allow tab chars
+  \endlinechar`\^^M \catcode`\^^M=12%
+  \@ifnextchar\bgroup{\afterassignment\beamer@specialprocessframefirstline\let\beamer@temp=}{\beamer@processframefirstline}}%
+
+{
+  \catcode`\{=12 %\}
+  \catcode`\<=1 %\>
+  \gdef\beamer@specialprocessframefirstline<%>{
+    \beamer@processframefirstline{%}
+  }
+}
+
+\begingroup
+  \catcode`\^^M=12 %
+  \endlinechar=-1 %
+  \long\gdef\beamer@processframefirstline#1#2^^M{%
+    \def\beamer@test{#1#2}%
+    \ifx\beamer@test\beamer@stopframefirst%
+      \let\next=\beamer@framewritten%
+    \else%
+      \def\beamer@test{#1}%
+      \def\beamer@test@par{\par}%
+      \ifx\beamer@test\beamer@test@par
+        \def\beamer@test{^^J}%
+      \else%
+        \@onelevel@sanitize\beamer@test
+        \edef\beamer@test{\beamer@test\space}%
+        \edef\beamer@test{\expandafter\zap@space\beamer@test\@empty}%
+      \fi
+      \@temptokena{#2}%
+      \immediate\write\beamer@verbatimfileout{\beamer@test\the\@temptokena}%
+       \let\next=\beamer@processframeline%
+    \fi%
+    \next%
+  }%
+  \protected\long\gdef\beamer@processframeline#1^^M{%
+    \edef\beamer@test{\beamer@strip@whitespace#1\beamer@strip@stop}%
+    \ifx\beamer@test\beamer@stopframe%
+      \let\next=\beamer@framewritten%
+    \else%
+      \immediate\write\beamer@verbatimfileout{#1}%
+      \let\next=\beamer@processframeline%
+    \fi%
+    \next%
+  }%
+\endgroup
+
+\begingroup
+\lccode`\+=`\^^I %
+\catcode`\ =12\relax
+\lowercase{%
+\endgroup
+\gdef\beamer@strip@whitespace#1{%
+\ifx#1\beamer@strip@stop
+\else
+\ifx#1 \expandafter\expandafter\expandafter\beamer@strip@whitespace
+\else
+\ifx#1+\expandafter\expandafter\expandafter\expandafter\expandafter
+\expandafter\expandafter\beamer@strip@whitespace
+\else
+\noexpand#1%
+\beamer@strip@end
+\fi
+\fi
+\fi
+}%
+}%
+
+\long\def\beamer@strip@end\fi\fi\fi#1\beamer@strip@stop{\fi\fi\fi\unexpanded{#1}}
+\def\beamer@strip@stop{\beamer@strip@stop}
+
+\def\beamer@setupstoppers#1{%
+  {
+    \escapechar=-1\relax%
+    \xdef\beamer@stopframe{\string\\end\string\{#1\string\}}
+    \xdef\beamer@stopframefirst{\noexpand\end\string\{#1\string\}}
+}
+}
+
+
+\def\beamer@framewritten{\endgroup%
+  \beamer@afterexternalframe%
+}
+
+
+
+
+% The following code is partly adapted from code from the alltt package.
+
+\mode
+<all>
+{
+\begingroup
+\lccode`\~=`\'
+\lowercase{\endgroup
+\newenvironment{semiverbatim}{%
+  \trivlist
+  \item\relax
+    \if@minipage
+    \else
+      \vskip\parskip
+    \fi
+    \leftskip\@totalleftmargin
+    \rightskip\z@skip
+    \parindent\z@
+    \parfillskip\@flushglue
+    \parskip\z@skip
+    \@@par
+    \@tempswafalse
+    \def\par{%
+      \if@tempswa
+        \leavevmode\null\@@par\penalty\interlinepenalty
+    \else
+      \@tempswatrue
+      \ifhmode\@@par\penalty\interlinepenalty\fi
+    \fi}
+    \obeylines
+    \def\verbatim@nolig@list{\do\`\do\,\do\'\do\-}
+    \verbatim@font
+    \let\org@prime~%
+    \everymath\expandafter{\the\everymath
+      \catcode`\'=12 \let~\org@prime}
+    \everydisplay\expandafter{\the\everydisplay
+      \catcode`\'=12 \let~\org@prime}
+    \def\dospecials{\do\ \do\$\do\&%
+     \do\#\do\^\do\_\do\%\do\~\do\`\do\,\do\'\do\-}
+    \let\do\@makeother
+    \dospecials
+    \def\\{\char`\\}
+    \def\{{\char`\{}
+    \def\}{\char`\}}
+    \frenchspacing\@vobeyspaces
+    \everypar \expandafter{\the\everypar \unpenalty}}
+{\endtrivlist}}
+}
+
+
+\mode
+<all>

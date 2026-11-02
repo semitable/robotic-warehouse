@@ -1,0 +1,545 @@
+%% File `kotexutf.sty`
+%%
+%% Copyright (C) 2012-2013 Dohyun Kim <nomos at ktug org>
+%%
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3c
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%  http://www.latex-project.org/lppl.txt
+%% and version 1.3c or later is part of all distributions of LaTeX
+%% version 2006/05/20 or later.
+%%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{kotexutf}
+  [2015/07/18 v2.1.1 typesetting UTF-8 Korean documents]
+
+\newif\if@nonfrench
+\newif\if@hangul
+\newif\if@nojosa
+\newif\if@hanja
+\newif\if@dhucsfinemath
+
+%% Options. hangul, nonfrench, nojosa, hanja, finemath.
+\DeclareOption{nonfrench}{\@nonfrenchtrue\AtEndOfPackage{\nonfrenchspacing}}
+\DeclareOption{hangul}{\@hangultrue}
+\DeclareOption{hanja}{\@hanjatrue\@hangultrue}
+\DeclareOption{nojosa}{\@nojosatrue}
+\DeclareOption{finemath}{\def\finemath{}\@dhucsfinemathtrue}
+\DeclareOption{strictcharcheck}{\def\strictcharcheck{}}
+\ProcessOptions\relax
+
+%% we use latex's standard utf8.def
+\RequirePackage[utf8]{inputenc}
+
+\input kotexutf-core
+
+% modified from lucenc.def
+\DeclareFontEncoding{LUC}{}{}
+%\DeclareFontSubstitution{LUC}{utbt}{m}{n}
+\DeclareFontSubstitution{LUC}{nanummj}{m}{n}
+\providecommand*\LUC@@empty[1]{%
+  \edef\mandatory@arg{\mandatory@arg\h@ngulpl@ne}%
+  \ifx\optional@arg\@empty
+    \empty@sfcnt#1%
+  \else % suppress redundant warning
+    \ifcsname dhucsluc@\curr@fontshape/\optional@arg\endcsname
+      \empty@sfcnt\@gobble
+    \else
+      \empty@sfcnt#1\expandafter
+      \gdef\csname dhucsluc@\curr@fontshape/\optional@arg\endcsname{}%
+    \fi
+  \fi
+  \xdef\font@name{\csname \curr@fontshape/\f@size/\h@ngulpl@ne\endcsname}}
+\providecommand*\LUC@@sub[1]{% suppress redundant warning
+  \ifcsname dhucsluc@\mandatory@arg/\f@size\endcsname
+    \sub@sfcnt\@gobble
+  \else
+    \expandafter\gdef\csname dhucsluc@\mandatory@arg/\f@size\endcsname{}%
+    \sub@sfcnt#1%
+  \fi}
+\DeclareSizeFunction{LUC}{\LUC@@empty\@font@warning}
+\DeclareSizeFunction{LUCb}{\LUC@@empty\@font@warning}
+\DeclareSizeFunction{sLUC}{\LUC@@empty\@font@info}
+\DeclareSizeFunction{sLUCb}{\LUC@@empty\@font@info}
+\DeclareSizeFunction{LUCsub}{\LUC@@sub\@font@warning}
+\DeclareSizeFunction{LUCssub}{\LUC@@sub\@font@info}
+
+%% redefinition of \pickup@font (seems to be needed for microtype.sty)
+\edef\pickup@font{%
+  \unexpanded{%
+    \ifcsname h@ngulpl@ne\endcsname
+      \ifcsname \curr@fontshape/\f@size/\h@ngulpl@ne\endcsname
+        \xdef\font@name{\csname \curr@fontshape/\f@size/\h@ngulpl@ne\endcsname}%
+      \else
+        \dhucs@define@newfont
+      \fi
+    \else}%
+      \unexpanded\expandafter{\pickup@font
+    \fi}}
+\let\dhucs@define@newfont\define@newfont
+
+%% hangul font selection interface
+\protected\def\SetHangulFonts#1#2#3{%
+  \def\dhucs@serifhangulfont{#1}%
+  \def\dhucs@sanshangulfont{#2}%
+  \def\dhucs@monohangulfont{#3}%
+}
+\protected\def\SetHanjaFonts#1#2#3{%
+  \def\dhucs@serifhanjafont{#1}%
+  \def\dhucs@sanshanjafont{#2}%
+  \def\dhucs@monohanjafont{#3}%
+}
+\protected\def\SetSerifFonts#1#2{%
+  \def\dhucs@serifhangulfont{#1}%
+  \def\dhucs@serifhanjafont{#2}%
+}
+\protected\def\SetSansFonts#1#2{%
+  \def\dhucs@sanshangulfont{#1}%
+  \def\dhucs@sanshanjafont{#2}%
+}
+\protected\def\SetAdhocFonts#1#2{%
+  \def\dhucs@temp@hangulfont{#1}%
+  \def\dhucs@temp@hanjafont {#2}%
+}
+
+\protected\edef\normalfont{%
+  \unexpanded{%
+    \let\dhucs@temp@hangulfont\dhucs@undefined
+    \let\dhucs@temp@hanjafont \dhucs@undefined
+  }%
+  \unexpanded\expandafter{\normalfont}%
+}
+\let\reset@font\normalfont
+
+%% now print out \unihangulchar
+\newcommand*\unihangulchar@@@{%
+  \getthish@ngulcl@ss
+  \geth@ngulfontn@me
+  \dobeforeh@ngulch@r
+  \leavevmode %%% 2010.01.04 moved from inside group
+  \begingroup
+    \geth@ngulpl@ne@ndch@r
+    \fontencoding{LUC}\fontfamily\h@ngulfontn@me\selectfont
+    \dhucs@check@if@char@exists
+    \dhucs@emph\h@ngulch@r % bangjom emphasis
+    \h@ngulch@r
+  \endgroup
+  % see http://www.ktug.or.kr/jsboard/read.php?table=operate&no=27177
+  \ifnum\unih@ngulpoint="3009\else % 〉
+    \josa@buf@del\global\@josa\unih@ngulpoint
+  \fi
+  \do@fterh@ngulch@r
+}
+
+\newcommand*\geth@ngulfontn@me{%
+  \ifnum\thish@ngul=\@ne
+    \def\hangul@hanja{hangul}%
+  \else
+    \def\hangul@hanja{hanja}%
+  \fi
+  \edef\@tempa{\f@family}\edef\@tempb{\ttdefault}\edef\@tempc{\sfdefault}%
+  \ifx\@tempa\@tempb
+    \edef\h@ngulfontn@me{\csname dhucs@mono\hangul@hanja font\endcsname}%
+    \def\dhucs@hu{\z@}% do not insert micro-space when ttfamily,
+                      % under which it should be fixed-width.
+  \else\ifx\@tempa\@tempc
+    \edef\h@ngulfontn@me{\csname dhucs@sans\hangul@hanja font\endcsname}%
+  \else
+    \edef\h@ngulfontn@me{\csname dhucs@serif\hangul@hanja font\endcsname}%
+  \fi\fi
+  \ifdefined\dhucs@temp@hangulfont
+    \edef\h@ngulfontn@me{\csname dhucs@temp@\hangul@hanja font\endcsname}%
+  \fi
+}
+
+%% dhucs-interword.sty will use this command.
+\newcommand*\setInterHangulSkip[1]{\def\dhucs@interhchar{#1}}
+
+%% ... why is this needed?
+%\newcommand*\hfontfamilynameprefix{ut}
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Autojosa and hangul.
+\newcount\@josa
+\newtoks\josatoks
+\def\josa@buf@del{\global\josatoks{^^J}}\josa@buf@del
+\protected\def\jong{\josa@buf@del\global\@josa\z@}
+\protected\def\rieul{\josa@buf@del\global\@josa\@ne}
+\protected\def\jung{\josa@buf@del\global\@josa\tw@}
+
+\AtBeginDocument{%
+  \if@dhucsfinemath
+    % redefine ref/pageref for finemath
+    \let\@setref@dhucs@orig@\@setref
+    \def\@setref#1#2#3{\@setref@dhucs@orig@{#1}{#2}{#3}%
+      \ifx#1\relax\else
+        \bgroup\setbox\z@\lastbox\egroup
+      \fi}%
+  \fi
+  \if@nojosa\else
+    % redefine ref/pageref for autojosa
+    \let\@setref@dhucs@orig\@setref
+    \def\@setref#1#2#3{\@setref@dhucs@orig{#1}{#2}{#3}%
+      \ifx#1\relax\else
+        \bgroup
+        \dhucs@make@cjkchar@null
+        \edef\@temp{\expandafter#2#1}\global\josatoks\expandafter{\@temp}%
+        \egroup
+      \fi}%
+    % redefine cite for autojosa: base only or with hyperref.sty
+    \let\@cite@ofmt@dhucs@orig\@cite@ofmt
+    \def\@cite@ofmt#1{\@cite@ofmt@dhucs@orig{#1}%
+      \bgroup
+      \let\@safe@activesfalse\@empty %%% workaround babel %%%
+      \dhucs@make@cjkchar@null
+      \def\hyper@@link[##1]##2##3##4{##4}%
+      \def\beamer@sort##1##2{}%
+      \edef\@temp{#1}\global\josatoks\expandafter{\@temp}%
+      \egroup}%
+  \fi
+  % version 4.0.14 :
+  % redefine footref for autojosa (footmisc v5.3d)
+  \@ifpackageloaded{footmisc}{%
+    \if@nojosa\else
+      \renewcommand\footref[1]{%
+        \begingroup
+          \let\@setref\@setref@dhucs@orig@
+          \unrestored@protected@xdef\@thefnmark{\ref{#1}}%
+        \endgroup
+        \@footnotemark
+        \global\josatoks\expandafter{\@thefnmark}}%
+    \fi
+  }{}
+  % redefine cite for autojosa: with cite.sty
+  \@ifpackageloaded{cite}{%
+    \if@nojosa\else
+      \let\citeform@dhucs@orig\citeform
+      \def\citeform#1{\citeform@dhucs@orig{#1}%
+        \bgroup
+        \dhucs@make@cjkchar@null
+        \def\hyper@@link[##1]##2##3##4{##4}%
+        \edef\@temp{#1}\global\josatoks\expandafter{\@temp}%
+        \egroup}%
+    \fi
+  }{}%
+  % redefine cite for autojosa: with natbib.sty (NOT a full support yet)
+  \@ifpackageloaded{natbib}{%
+    \if@nojosa\else
+      \expandafter\def\expandafter\hyper@natlinkend\expandafter{%
+        \hyper@natlinkend
+        \bgroup%\def\protect##1##2{^^J}% how to do about \protect
+        \ifnum\NAT@ctype=1
+          \edef\@temp{\NAT@nm}%
+        \else
+          \ifNAT@numbers
+          \edef\@temp{\NAT@num}\else
+          \edef\@temp{\NAT@date}\fi
+        \fi
+        \global\josatoks\expandafter{\@temp}%
+        \egroup}%
+    \fi
+  }{}%
+  % support of autojosa for apacite.sty
+  \@ifpackageloaded{apacite}{%
+    \if@nojosa\else
+      \let\dhucs@@cite@orig\@@cite
+      \def\@@cite<#1>[#2]#3{%
+        \dhucs@@cite@orig<#1>[#2]{#3}%
+        \begingroup
+        \dhucs@make@cjkchar@null
+        \def\hyper@@link[##1]##2##3##4{##4}%
+        \if@Y@cite
+          \@for\@citeb:=#3\do{%
+            \@ifundefined{b@\@citeb\@extra@b@citeb}{}{%
+              \edef\@temp{\csname Y@\@citeb\@extra@b@citeb\endcsname}}}%
+        \else
+          \let\BCA\@firstoftwo
+          \@for\@citeb:=#3\do{%
+            \@ifundefined{b@\@citeb\@extra@b@citeb}{}{%
+              \edef\@temp{\csname b@\@citeb\@extra@b@citeb\endcsname}}}%
+        \fi
+        \global\josatoks\expandafter{\@temp}%
+        \endgroup}%
+    \fi
+  }{}%
+}
+\newcommand*\dh@unichar@null@[1]{^^J}
+\newcommand*\dhucs@make@cjkchar@null{\let\unihangulchar\dh@unichar@null@}
+\newcommand*\josa@hyper@link{%
+  \begingroup
+  \toks@{}\expandafter\josa@hyper@link@\the\josatoks\@nil
+  \endgroup
+}
+\newcommand*\josa@hyper@link@{%
+  \afterassignment\josa@link@reversetoks\let\dhucs@tmp@next= }
+\newcommand*\josa@link@reversetoks{%
+  \ifx\dhucs@tmp@next\@nil
+    \expandafter\josa@hyper@link@@
+  \else
+    \if\noexpand\dhucs@tmp@next\relax
+    \else\ifx)\dhucs@tmp@next
+    \else\ifx]\dhucs@tmp@next
+    \else\ifcat\dhucs@cat@eleven\dhucs@tmp@next
+      \edef\act{\noexpand\toks@{\expandafter\strip@letter@meaning@prefix
+        \meaning\dhucs@tmp@next\the\toks@}}\act % by little tree
+    \else\ifcat\dhucs@cat@twelve\dhucs@tmp@next
+      \edef\act{\noexpand\toks@{\expandafter\strip@character@meaning@prefix
+        \meaning\dhucs@tmp@next\the\toks@}}\act % by little tree
+    \fi\fi\fi\fi\fi
+    \expandafter\josa@hyper@link@
+  \fi}
+
+\begingroup
+\catcode`\A=11
+\catcode`\0=12
+\global\let\dhucs@cat@eleven=A
+\global\let\dhucs@cat@twelve=0
+\endgroup
+
+\expandafter\def\expandafter\strip@character@meaning@prefix
+  \detokenize{the character} #1{#1}
+\expandafter\def\expandafter\strip@letter@meaning@prefix
+  \detokenize{the letter} #1{#1}
+
+\newcommand*\josa@hyper@link@@{%
+  \expandafter\josa@hyper@link@@@\the\toks@\@empty\@empty\@empty\@empty\@nil}
+\def\josa@hyper@link@@@#1#2#3#4\@nil{%
+  \if#1^^J\else
+    \if 1#1\rieul\else
+    \if 3#1\jong\else
+    \if 6#1\jong\else
+    \if 7#1\rieul\else
+    \if 8#1\rieul\else
+    \if 0#1\jong\else
+    \if l#1\rieul\else
+    \if m#1\jong\else
+    \if n#1\jong\else
+    \if L#1\rieul\else
+    \if M#1\jong\else
+    \if N#1\jong\else
+      \jung
+    \fi\fi\fi\fi\fi \fi\fi\fi\fi\fi \fi\fi
+    \if n#2\if g#1\jong\fi\fi%skating
+    \if a#2\if p#1\jong\fi\fi%cap
+    \if u#2\if p#1\jong\fi\fi%cup
+    \if a#2\if t#1\jong\fi\fi%cat
+    \if e#2\if t#1\jong\fi\fi%Hamlet
+    \if i#2\if t#1\jong\fi\fi%summit
+    \if o#2\if t#1\jong\fi\fi%not
+    \if u#2\if t#1\jong\fi\fi%nut
+    \if o#2\if k#1\jong\fi\fi%book
+    \if i#2\if c#1\jong\fi\fi%picnic
+    \if l#2\if e#1\rieul\fi\fi%apple
+    \if i#3\if m#2\if e#1\jong\fi\fi\fi%time
+    \if i#3\if n#2\if e#1\jong\fi\fi\fi%mine
+    \if a#3\if c#2\if k#1\jong\fi\fi\fi%back
+    \if i#3\if c#2\if k#1\jong\fi\fi\fi%pick
+    \if o#3\if a#2\if t#1\jung\fi\fi\fi%boat
+    \if T#3\if e#2\if X#1\jong\fi\fi\fi%TeX
+  \fi}
+\if@nojosa
+  \let\josa@hyper@link\relax
+\fi
+\newcommand*\josa@hanja@hangul[1]{\begingroup
+  \count@=\z@
+  \openin1=#1\relax \josa@hanja \closein1
+  \endgroup}
+\newcommand*\josa@hanja{\read1 to \@tempa
+  \ifnum\count@=\@josa
+    \global\@josa\@tempa \let\next\relax
+  \else
+    \advance\count@\@ne \let\next\josa@hanja
+  \fi \next}
+\protected\def\makejosa#1#2{%
+  \josa@hyper@link
+  \ifnum\@josa>19967 \ifnum\@josa<40870 %%% CJK UNIFIED IDEOGRAPHS
+    \advance\@josa-19968 % "4E00
+    \josa@hanja@hangul{hanja_hangul.tab}\fi\fi
+  \ifnum\@josa>13311 \ifnum\@josa<19894 %%% CJK UNIFIED IDEOGRAPHS EXT. A
+    \advance\@josa-13312 % "3400
+    \josa@hanja@hangul{hanjaexa_hangul.tab}\fi\fi
+  \ifnum\@josa>63743 \ifnum\@josa<64046 %%% CJK COMPATIBILITY IDEOGRAPHS
+    \advance\@josa-63744 % "F900
+    \josa@hanja@hangul{hanjacom_hangul.tab}\fi\fi
+  \ifnum\@josa>44031 \ifnum\@josa<55204 %%% hangul syllables
+    \advance\@josa-44032 % "AC00
+    \count@=\@josa \divide\count@28 \multiply\count@28
+    \advance\@josa-\count@ \advance\@josa4519 % "11A7
+    \ifnum\@josa=4519 \jung
+    \else\ifnum\@josa=4527 \rieul % "11AF
+    \else \jong \fi\fi \fi\fi
+  \ifnum\@josa>12592 \ifnum\@josa<12623 %%% ㄱㄴㄷㄹ
+    \ifnum\@josa=12601 \rieul
+    \else\jong\fi \fi\fi
+  \ifnum\@josa>12895 \ifnum\@josa<12924 \advance\@josa-96 \fi\fi
+  \ifnum\@josa>12799 \ifnum\@josa<12814 %%% ㉠ or ㈀
+    \ifnum\@josa=12803 \rieul
+    \else\jong\fi \fi\fi
+  \ifnum\@josa>12813 \ifnum\@josa<12829 %%% ㉮ or ㈎
+    \jung \fi\fi
+  \ifnum\@josa>9311 \ifnum\@josa<9372 %%% ① or ⑴
+    \advance\@josa\m@ne \num@josa{\@josa}\fi\fi
+  \ifnum\@josa>9423 \ifnum\@josa<9450 \advance\@josa-26 \fi\fi
+  \ifnum\@josa>9397 \ifnum\@josa<9424 \advance\@josa-26 \fi\fi
+  \ifnum\@josa>9371 \ifnum\@josa<9398 %%% ⓐ or ⒜
+    \ifnum\@josa=9383 \rieul\else % l
+    \ifnum\@josa=9384 \jong\else  % m
+    \ifnum\@josa=9385 \jong\else  % n
+    \jung\fi\fi\fi \fi\fi
+  \ifnum\@josa>8543 \ifnum\@josa<8556 % ⅰⅱⅲ
+    \advance\@josa-3 \num@josa{\@josa}\fi\fi
+  \ifnum\@josa>8559 \ifnum\@josa<8572 % ⅠⅡⅢ
+    \advance\@josa\@ne \num@josa{\@josa}\fi\fi
+  \ifnum\@josa=\@ne
+    \ifx\@empty#1\@empty \else#2\relax\fi% rieul
+  \else
+    \ifnum\@josa=\tw@ #1\relax% jung
+    \else #2\relax% jong
+    \fi
+  \fi}
+\newcommand*\num@josa[1]{\bgroup\count@#1%
+  \ifnum\count@<\z@ \count@-\count@ \fi\count2\count@
+  \divide\count2 10 \multiply\count2 10 \advance\count@-\count2
+  \ifcase\count@\jong\or\rieul\or\jung\or\jong\or\jung\or
+    \jung\or\jong\or\rieul\or\rieul\or\jung\fi\egroup}
+\newcommand*\error@josa{\PackageError{kotex}{Undefined Control Sequence}{}}
+
+%% \nobreak다: see http://kts.ktug.kr/node/204
+\newcommand*\nobreak@hangul@da{\nobreak다}
+
+\newcommand*\^^ea[2]{%
+  \if\string#1\string^^b0%
+    \if\string#2\string^^80\makejosa{가}{이}\else\error@josa\fi% 가
+  \else\if\string#1\string^^b3%
+    \if\string#2\string^^bc\makejosa{와}{과}\else\error@josa\fi% 과
+  \else\error@josa \fi\fi}
+\newcommand*\^^eb[2]{%
+  \if\string#1\string^^8b\if\string#2\string^^a4% avoid orphan "다"
+    \expandafter\expandafter\expandafter\nobreak@hangul@da\else\error@josa\fi
+  \else\if\string#1\string^^8a%
+    \if\string#2\string^^94\makejosa{는}{은}\else\error@josa\fi% 는
+  \else\if\string#1\string^^9d%
+    \if\string#2\string^^bc\makejosa{라}{이라}\else\error@josa\fi% 라
+  \else\if\string#1\string^^a1%
+    \if\string#2\string^^9c\makejosa{}{으}로\else\error@josa\fi% 로
+  \else\if\string#1\string^^a5%
+    \if\string#2\string^^bc\makejosa{를}{을}\else\error@josa\fi% 를
+  \else\error@josa \fi\fi\fi\fi\fi}
+\newcommand*\^^ec[2]{%
+  \edef\@tempa{\string#1}\edef\@tempb{\string#2}%
+  \futurelet\next\@josa@begin@ec}
+\def\@josa@begin@ec{%
+  \if\@tempa\string^^99%
+    \if\@tempb\string^^80\makejosa{와}{과}\else\error@josa\fi% 와
+  \else\if\@tempa\string^^9c%
+    \if\@tempb\string^^bc\makejosa{}{으}\else\error@josa\fi% 으
+  \else\if\@tempa\string^^9d%
+    \if\@tempb\string^^80\makejosa{는}{은}% 은
+    \else\if\@tempb\string^^84\makejosa{를}{을}% 을
+    \else\if\@tempb\string^^b4%
+      \ifx\next^^eb\makejosa\relax{이}% 이라
+      \else\makejosa{가}{이}% 이
+      \fi
+    \else\error@josa \fi\fi\fi
+  \else\error@josa \fi\fi\fi}
+
+%% hangul item titles
+\RequirePackage{kolabels-utf}
+
+\AtBeginDocument{
+%% compatibility with apacite.sty (reported by slomo)
+%% see http://www.ktug.or.kr/jsboard/read.php?table=operate&no=21183
+%  \@ifpackageloaded{apacite}{%
+%    \@ifpackagewith{apacite}{noaccentfix}{}{%
+%      \def\unihangulchar@APAC#1{uni#1}%
+%      \g@addto@macro\@pre@accentfix{%
+%        \let\old@unihangulchar@APAC\unihangulchar
+%        \let\unihangulchar\unihangulchar@APAC}%
+%      \g@addto@macro\@post@accentfix{%
+%        \let\unihangulchar\old@unihangulchar@APAC}%
+%    }%
+%  }{}%
+%% compatibility with ulem.sty
+%% allowing linebreaking inside ulem'ed text.
+  \@ifpackageloaded{ulem}{%
+    \let\orig@lastnodetype\lastnodetype
+    \edef\UL@stop{\unexpanded{%
+        \ifnum\lastkern=\thr@@ % empty hbox
+        \else
+          \global\chardef\dhucs@ul@lastnodetype\orig@lastnodetype
+          \global\mathchardef\dhucs@ul@spacefactor\spacefactor
+        \fi}\unexpanded\expandafter{\UL@stop}}
+    \def\dhucs@ul@stop{\ifx\UL@start\@empty
+      \ifx\ \LA@space\else\UL@stop\fi\fi}
+    \def\dhucs@ul@start{\ifx\UL@start\@empty\else
+      \ifx\ \LA@space\else\UL@start\fi\fi}
+    \addto@hook\UL@hook{%
+      \def\discretionary#1#2#3{%
+        \ifx\\#3\\\hskip\z@skip\else\hskip\dhucs@interhchar\fi}%
+      \def\unihangulchar#1{\dhucs@ul@stop
+        \unih@ngulpoint#1\relax \futurelet\dhucs@next\unihangulchar@@}%
+      \edef\dobeforeh@ngulch@r{%
+        \unexpanded{\ifdefined\dhucs@ul@lastnodetype
+            \let\lastnodetype\dhucs@ul@lastnodetype
+            \spacefactor\dhucs@ul@spacefactor
+          \fi}\unexpanded\expandafter{\dobeforeh@ngulch@r\dhucs@ul@start}}%
+      \edef\breakbeforeasciichar{\unexpanded{\dhucs@ul@stop}%
+        \unexpanded\expandafter{\breakbeforeasciichar\dhucs@ul@start}}%
+      \edef\cjksymbolextraspace{\unexpanded{\dhucs@ul@stop}%
+        \unexpanded\expandafter{\cjksymbolextraspace\dhucs@ul@start}}%
+      \let\hskip\LA@hskip
+      \let\asciiexclamationafterhangul\relax
+      \let\asciiquestionafterhangul\relax
+      \let\asciifullstopafterhangul\relax
+    }%
+  }{}%
+}
+
+% for pdfstring, we should unprotect protected characters
+\def\unihangul@unprotect@range#1#2#3{% #1: begin range
+  \count@ "#1\relax                  % #2: end range
+  \loop                              % #3: two/three/four
+    \begingroup
+      \lccode`\~\count@
+      \lowercase{\endgroup
+        \def~{\csname unihangul@#3@octets\endcsname~}}%
+    \ifnum\count@<"#2\relax \advance\count@\@ne
+  \repeat
+}
+%% use hyperref's unichar support
+\unless\ifdefined\pdfstringdefPreHook
+  \let\pdfstringdefPreHook\@empty\fi
+\g@addto@macro\pdfstringdefPreHook{%
+  \unihangul@unprotect@range{C2}{DF}{two}%
+  \unihangul@unprotect@range{E0}{EF}{three}%
+  \unihangul@unprotect@range{F0}{F4}{four}%
+  \let\unihangulchar\HyPsd@unichar
+  \let\makejosa\@secondoftwo
+  \let\dotemph\@firstofone
+  \let\jong\@empty
+  \let\jung\@empty
+  \let\rieul\@empty
+  \def\SetHangulFonts#1#2#3{}%
+  \def\SetHanjaFonts#1#2#3{}%
+  \def\SetSerifFonts#1#2{}%
+  \def\SetSansFonts#1#2{}%
+  \def\SetAdhocFonts#1#2{}%
+}
+
+
+%% for downward compatibility
+\let\PrerenderUnicode\@gobble
+\let\dhucsPrerenderUnicode\@gobble
+\let\BreakBeforeAsciiOParen\@gobble
+\let\unichar\unihangulchar
+
+%% load ucs-hangul upon [hangul] option
+\if@hangul
+  \RequirePackage{kosections-utf}
+\fi
+
+\endinput
+
+%%% karnes: 2013/10/21, .tab files --- xetexko’s
+%%% karnes: 2013/10/20, konames, kosections, kolabes --- cjk-ko’s.

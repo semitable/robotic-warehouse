@@ -1,0 +1,2558 @@
+% xetexko.sty
+%
+% Copyright (c) 2013-2022 Dohyun Kim  <nomos at ktug org>
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either version 1.3c
+% of this license or (at your option) any later version.
+% The latest version of this license is in
+%  http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions of LaTeX
+% version 2006/05/20 or later.
+
+\ifdefined\XeKocatcodeofATchar\endinput\fi
+\edef\XeKocatcodeofATchar{\catcode`@=\the\catcode`@\relax}
+\catcode`@=11
+
+\ifdefined\ProvidesPackage
+  \NeedsTeXFormat{LaTeX2e}[2021/06/01]
+  \ProvidesPackage{xetexko}[2022/03/18 v4.1 typesetting Korean with XeTeX]
+\else
+  \ifdefined\@tempcnta\else \newcount\@tempcnta \fi
+  \ifdefined\@sptoken \else
+    \begingroup\def\:{\global\let\@sptoken= } \: \endgroup
+  \fi
+\fi
+
+\chardef\XeTeXcharclassBoundary=4095
+\chardef\XeTeXcharclassIgnore  =4096
+
+\newXeTeXintercharclass\XeTeXcharclassID
+\newXeTeXintercharclass\XeTeXcharclassCJ
+\newXeTeXintercharclass\XeTeXcharclassOP
+\newXeTeXintercharclass\XeTeXcharclassCL
+\newXeTeXintercharclass\XeTeXcharclassEX
+\let\XeTeXcharclassIS\XeTeXcharclassCJ
+\let\XeTeXcharclassNS\XeTeXcharclassCJ
+\newXeTeXintercharclass\XeTeXcharclassCM
+\input load-unicode-xetex-classes %
+
+\newXeTeXintercharclass\XeTeXcharclassHG
+\newXeTeXintercharclass\XeTeXcharclassJJ % hangul MV and TC
+\newXeTeXintercharclass\XeTeXcharclassMD % ・ ： ；
+\newXeTeXintercharclass\XeTeXcharclassFS % 。 ．
+\newXeTeXintercharclass\XeTeXcharclassLD % ― … ‥
+\newXeTeXintercharclass\XeTeXcharclassSY % KS symbols
+\newXeTeXintercharclass\XeTeXcharclassAO % ascii ( `` etc
+\newXeTeXintercharclass\XeTeXcharclassAC % ascii ) '' etc
+\newXeTeXintercharclass\XeTeXcharclassAM % ascii colons
+\newXeTeXintercharclass\XeTeXcharclassAH % ascii hyphen and its ligatures
+\newXeTeXintercharclass\XeTeXcharclassAP % ascii punctuations
+\newXeTeXintercharclass\XeTeXcharclassVC % colons in vertical writing
+\let\XeTeXcharclassAA=\z@                % other non-cjk chars
+
+% more CM
+\count@"FE00 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassCM
+  \ifnum\count@<"FE0F \advance\count@\@ne \repeat
+\count@"E0100 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassCM
+  \ifnum\count@<"E01EF \advance\count@\@ne \repeat
+
+% hangul
+\count@="AC00 \loop
+  \catcode\count@=12 % for josa
+  \XeTeXcharclass\count@=\XeTeXcharclassHG
+  \ifnum\count@<"D7A3 \advance\count@\@ne \repeat
+\count@="1100 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassHG
+  \ifnum\count@<"115F \advance\count@\@ne \repeat
+\count@="A960 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassHG
+  \ifnum\count@<"A97C \advance\count@\@ne \repeat
+\count@="3131 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassHG
+  \ifnum\count@<"318E \advance\count@\@ne \repeat
+% hangul MV and TC
+\count@="1160 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassJJ
+  \ifnum\count@<"11FF \advance\count@\@ne \repeat
+\count@="D7B0 \loop
+  \XeTeXcharclass\count@=\XeTeXcharclassJJ
+  \ifnum\count@<"D7FB \advance\count@\@ne \repeat
+
+% ascii opening
+\XeTeXcharclass "28=\XeTeXcharclassAO % ( LEFT PARENTHESIS
+\XeTeXcharclass "3C=\XeTeXcharclassAO % < LESS-THAN SIGN
+\XeTeXcharclass "5B=\XeTeXcharclassAO % [ LEFT SQUARE BRACKET
+\XeTeXcharclass "60=\XeTeXcharclassAO % ` GRAVE ACCENT
+\XeTeXcharclass "7B=\XeTeXcharclassAO % { LEFT CURLY BRACKET
+\XeTeXcharclass "AB=\XeTeXcharclassAO % « LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
+% ascii closing
+\XeTeXcharclass "27=\XeTeXcharclassAC % ' APOSTROPHE
+\XeTeXcharclass "29=\XeTeXcharclassAC % ) RIGHT PARENTHESIS
+\XeTeXcharclass "3E=\XeTeXcharclassAC % > GREATER-THAN SIGN
+\XeTeXcharclass "5D=\XeTeXcharclassAC % ] RIGHT SQUARE BRACKET
+\XeTeXcharclass "7D=\XeTeXcharclassAC % } RIGHT CURLY BRACKET
+\XeTeXcharclass "BB=\XeTeXcharclassAC % » RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
+% ascii colons
+\XeTeXcharclass "3A=\XeTeXcharclassAM % : COLON
+\XeTeXcharclass "3B=\XeTeXcharclassAM % ; SEMICOLON
+\XeTeXcharclass "7E=\XeTeXcharclassAM % ~ TILDE
+% ascii hyphen
+\XeTeXcharclass "2D  =\XeTeXcharclassAH % -
+\XeTeXcharclass "2F  =\XeTeXcharclassAH % /
+\XeTeXcharclass "2013=\XeTeXcharclassAH % –
+\XeTeXcharclass "2014=\XeTeXcharclassAH % —
+% ascii punctuations
+\XeTeXcharclass "21=\XeTeXcharclassAP % ! EXCLAMATION MARK
+\XeTeXcharclass "2C=\XeTeXcharclassAP % , COMMA
+\XeTeXcharclass "2E=\XeTeXcharclassAP % . FULL STOP
+\XeTeXcharclass "3F=\XeTeXcharclassAP % ? QUESTION MARK
+%
+\XeTeXcharclass "2018=\XeTeXcharclassOP % ‘ LEFT SINGLE QUOTATION MARK
+\XeTeXcharclass "201C=\XeTeXcharclassOP % “ LEFT DOUBLE QUOTATION MARK
+%
+\XeTeXcharclass "2019=\XeTeXcharclassCL % ’ RIGHT SINGLE QUOTATION MARK
+\XeTeXcharclass "201D=\XeTeXcharclassCL % ” RIGHT DOUBLE QUOTATION MARK
+% IS : these are not expected to be input
+\XeTeXcharclass "FE10=\XeTeXcharclassCL % ︐ PRESENTATION FORM FOR VERTICAL COMMA
+\XeTeXcharclass "FE13=\XeTeXcharclassVC % ︓ PRESENTATION FORM FOR VERTICAL COLON
+\XeTeXcharclass "FE14=\XeTeXcharclassVC % ︔ PRESENTATION FORM FOR VERTICAL SEMICOLON
+% NS
+\XeTeXcharclass "00B7=\XeTeXcharclassMD % · MIDDLE DOT
+\XeTeXcharclass "30FB=\XeTeXcharclassMD % ・ KATAKANA MIDDLE DOT
+\XeTeXcharclass "FE54=\XeTeXcharclassMD % ﹔ SMALL SEMICOLON
+\XeTeXcharclass "FE55=\XeTeXcharclassMD % ﹕ SMALL COLON
+\XeTeXcharclass "FF1A=\XeTeXcharclassMD % ： FULLWIDTH COLON
+\XeTeXcharclass "FF1B=\XeTeXcharclassMD % ； FULLWIDTH SEMICOLON
+\XeTeXcharclass "FF65=\XeTeXcharclassMD % ･ HALFWIDTH KATAKANA MIDDLE DOT
+%
+\XeTeXcharclass "3002=\XeTeXcharclassFS % 。 IDEOGRAPHIC FULL STOP
+\XeTeXcharclass "FE12=\XeTeXcharclassFS % ︒ PRESENTATION FORM FOR VERTICAL IDEOGRAPHIC FULL STOP
+\XeTeXcharclass "FE52=\XeTeXcharclassFS % ﹒ SMALL FULL STOP
+\XeTeXcharclass "FF0E=\XeTeXcharclassFS % ． FULLWIDTH FULL STOP
+\XeTeXcharclass "FF61=\XeTeXcharclassFS % ｡ HALFWIDTH IDEOGRAPHIC FULL STOP
+%
+\XeTeXcharclass "2015=\XeTeXcharclassLD % ― HORIZONTAL BAR
+\XeTeXcharclass "2025=\XeTeXcharclassLD % ‥ TWO DOT LEADER
+\XeTeXcharclass "2026=\XeTeXcharclassLD % … HORIZONTAL ELLIPSIS
+\XeTeXcharclass "3003=\XeTeXcharclassLD % 〃 DITTO MARK : KS symbol
+% 결락기호
+\XeTeXcharclass "25A1=\XeTeXcharclassID % □
+% some KS symbols
+\XeTeXcharclass "2032=\XeTeXcharclassSY % ′
+\XeTeXcharclass "2033=\XeTeXcharclassSY % ″
+\XeTeXcharclass "203B=\XeTeXcharclassSY % ※
+\XeTeXcharclass "2103=\XeTeXcharclassSY % ℃
+\XeTeXcharclass "2109=\XeTeXcharclassSY % ℉
+\XeTeXcharclass "2113=\XeTeXcharclassSY % ℓ
+\XeTeXcharclass "2121=\XeTeXcharclassSY % ℡
+\count@="2160 \loop % Ⅰ..Ⅹ
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"2169 \advance\count@\@ne \repeat
+\count@="2170 \loop % ⅰ..ⅹ
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"2179 \advance\count@\@ne \repeat
+\count@="2190 \loop % ←..↙
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"2199 \advance\count@\@ne \repeat
+\XeTeXcharclass "21D2=\XeTeXcharclassSY % ⇒
+\XeTeXcharclass "21D4=\XeTeXcharclassSY % ⇔
+\XeTeXcharclass "2225=\XeTeXcharclassSY % ∥
+\XeTeXcharclass "223C=\XeTeXcharclassSY % ∼ TILDE OPERATOR
+\XeTeXcharclass "226A=\XeTeXcharclassSY % ≪ 꽉찬 전각! 어디에 배정해야 하나?
+\XeTeXcharclass "226B=\XeTeXcharclassSY % ≫ 꽉찬 전각! 어디에 배정해야 하나?
+\XeTeXcharclass "2299=\XeTeXcharclassSY % ⊙
+\count@="2460 \loop % ①..⑮
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"246E \advance\count@\@ne \repeat
+\count@="2474 \loop % ⑴..⒂
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"2482 \advance\count@\@ne \repeat
+\count@="249C \loop % ⒜..⒵
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"24B5 \advance\count@\@ne \repeat
+\count@="24D0 \loop % ⓐ..ⓩ
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"24E9 \advance\count@\@ne \repeat
+\XeTeXcharclass "2500 = \XeTeXcharclassSY % ─
+\XeTeXcharclass "2501 = \XeTeXcharclassSY % ━
+\XeTeXcharclass "2502 = \XeTeXcharclassSY % │
+\XeTeXcharclass "2503 = \XeTeXcharclassSY % ┃
+\count@="250C \loop % ─..╋
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"254B \advance\count@\@ne \repeat
+\XeTeXcharclass "2592 = \XeTeXcharclassSY % ▒
+\XeTeXcharclass "25A0 = \XeTeXcharclassSY % ■
+\XeTeXcharclass "25A3 = \XeTeXcharclassSY % ▣
+\XeTeXcharclass "25A4 = \XeTeXcharclassSY % ▤
+\XeTeXcharclass "25A5 = \XeTeXcharclassSY % ▥
+\XeTeXcharclass "25A6 = \XeTeXcharclassSY % ▦
+\XeTeXcharclass "25A7 = \XeTeXcharclassSY % ▧
+\XeTeXcharclass "25A8 = \XeTeXcharclassSY % ▨
+\XeTeXcharclass "25A9 = \XeTeXcharclassSY % ▩
+\XeTeXcharclass "25B2 = \XeTeXcharclassSY % ▲
+\XeTeXcharclass "25B3 = \XeTeXcharclassSY % △
+\XeTeXcharclass "25B6 = \XeTeXcharclassSY % ▶
+\XeTeXcharclass "25B7 = \XeTeXcharclassSY % ▷
+\XeTeXcharclass "25BC = \XeTeXcharclassSY % ▼
+\XeTeXcharclass "25BD = \XeTeXcharclassSY % ▽
+\XeTeXcharclass "25C0 = \XeTeXcharclassSY % ◀
+\XeTeXcharclass "25C1 = \XeTeXcharclassSY % ◁
+\XeTeXcharclass "25C6 = \XeTeXcharclassSY % ◆
+\XeTeXcharclass "25C7 = \XeTeXcharclassSY % ◇
+\XeTeXcharclass "25C8 = \XeTeXcharclassSY % ◈
+\XeTeXcharclass "25CB = \XeTeXcharclassSY % ○
+\XeTeXcharclass "25CE = \XeTeXcharclassSY % ◎
+\XeTeXcharclass "25CF = \XeTeXcharclassSY % ●
+\XeTeXcharclass "25D0 = \XeTeXcharclassSY % ◐
+\XeTeXcharclass "25D1 = \XeTeXcharclassSY % ◑
+\XeTeXcharclass "2605 = \XeTeXcharclassSY % ★
+\XeTeXcharclass "2606 = \XeTeXcharclassSY % ☆
+\XeTeXcharclass "260E = \XeTeXcharclassSY % ☎
+\XeTeXcharclass "260F = \XeTeXcharclassSY % ☏
+\XeTeXcharclass "261C = \XeTeXcharclassSY % ☜
+\XeTeXcharclass "261E = \XeTeXcharclassSY % ☞
+\XeTeXcharclass "2640 = \XeTeXcharclassSY % ♀
+\XeTeXcharclass "2642 = \XeTeXcharclassSY % ♂
+\XeTeXcharclass "2660 = \XeTeXcharclassSY % ♠
+\XeTeXcharclass "2661 = \XeTeXcharclassSY % ♡
+\XeTeXcharclass "2663 = \XeTeXcharclassSY % ♣
+\XeTeXcharclass "2664 = \XeTeXcharclassSY % ♤
+\XeTeXcharclass "2665 = \XeTeXcharclassSY % ♥
+\XeTeXcharclass "2667 = \XeTeXcharclassSY % ♧
+\XeTeXcharclass "2668 = \XeTeXcharclassSY % ♨
+\XeTeXcharclass "2669 = \XeTeXcharclassSY % ♩
+\XeTeXcharclass "266A = \XeTeXcharclassSY % ♪
+\XeTeXcharclass "266C = \XeTeXcharclassSY % ♬
+\XeTeXcharclass "266D = \XeTeXcharclassSY % ♭
+\XeTeXcharclass "3000 = \XeTeXcharclassSY % 　
+\XeTeXcharclass "3013 = \XeTeXcharclassSY % 〓
+\count@="3200 \loop % ㈀..㈞
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"321E \advance\count@\@ne \repeat
+\count@="3260 \loop % ㉠..㉿
+  \XeTeXcharclass\count@=\XeTeXcharclassSY
+  \ifnum\count@<"327F \advance\count@\@ne \repeat
+\XeTeXcharclass "33C2 = \XeTeXcharclassSY % ㏂
+\XeTeXcharclass "33C7 = \XeTeXcharclassSY % ㏇
+\XeTeXcharclass "33D8 = \XeTeXcharclassSY % ㏘
+\XeTeXcharclass "FF04 = \XeTeXcharclassSY % ＄
+\XeTeXcharclass "FF05 = \XeTeXcharclassSY % ％
+\XeTeXcharclass "FF3C = \XeTeXcharclassSY % ＼
+\XeTeXcharclass "FF5E = \XeTeXcharclassSY % ～ FULLWIDTH TILDE : KS symbol
+\XeTeXcharclass "FFE0 = \XeTeXcharclassSY % ￠
+\XeTeXcharclass "FFE1 = \XeTeXcharclassSY % ￡
+\XeTeXcharclass "FFE5 = \XeTeXcharclassSY % ￥
+\XeTeXcharclass "FFE6 = \XeTeXcharclassSY % ￦
+
+% spaces
+\def\XeKo@halfzero         {\hskip 2\XeKo@quarterdim \relax}
+\def\XeKo@halfhalf         {\hskip 2\XeKo@quarterdim minus 2\XeKo@quarterdim \relax}
+\def\XeKo@halfquarter      {\hskip 2\XeKo@quarterdim minus  \XeKo@quarterdim \relax}
+\def\XeKo@quarterquarter   {\hskip  \XeKo@quarterdim minus  \XeKo@quarterdim \relax}
+\def\XeKo@iiiquarterquarter{\hskip 3\XeKo@quarterdim minus  \XeKo@quarterdim \relax}
+\let\XeKo@nobreak\nobreak
+
+\def\XKinterhangulbreak{% compat
+  \ifnum\XeKo@typesetclassic=\z@
+    \penalty\XeTeXlinebreakpenalty
+  \fi
+  \hskip
+  \ifdefined\xetexkointerhchar \xetexkointerhchar \else \z@ \fi
+  \XeKo@stretchshrink
+  }
+\def\XKinterhanjabreak{% compat
+  \ifnum\XeKo@typesetclassic=\z@
+    \penalty\XeTeXlinebreakpenalty
+  \fi
+  \hskip\z@ \XeKo@stretchshrink
+  }
+
+\def\XeKo@latincjk@classic{%
+  \hskip
+  \ifdefined\xetexkohu
+    \xetexkohu plus .5\dimexpr\xetexkohu\relax minus.25\dimexpr\xetexkohu\relax
+  \else
+    \XeKo@quarterdim plus .5\XeKo@quarterdim minus.25\XeKo@quarterdim
+  \fi
+  \relax
+  }
+\def\XeKo@latincjk@modern{%
+  \hskip \ifdefined\xetexkohu \xetexkohu \else \XeKo@quarterdim \fi
+  \XeKo@stretchshrink
+  }
+\def\XeKo@postmath@modern{%
+  \hskip 2\ifdefined\xetexkohu \dimexpr\xetexkohu\relax \else \XeKo@quarterdim \fi
+  \XeKo@stretchshrink
+  }
+
+% 고아글자 억제. verbatim 에서는 이 명령을 꺼야 한다
+\def\XeKo@suppress@linebreak{%
+  \ifnum\lastnodetype=11 % glue node
+    \XeKo@skip@=\lastskip \unskip
+    \XeKo@count@=\lastpenalty \unpenalty
+    \ifnum\XeKo@count@<5000 \XeKo@count@=5000 \fi
+    \penalty\XeKo@count@
+    \hskip\XeKo@skip@
+  \fi
+  }
+
+\protected\def\inhibitglue{\hskip\z@\XeKo@stretchshrink}
+
+% typesetting modes
+\protected\def\typesetclassic{%
+  \chardef\XeKo@typesetclassic\@ne
+  \def\XeKo@quarterdim{\dimexpr.25em\relax}%
+  \def\XeKo@stretchshrink{plus.08em minus.04em\relax}%
+  \let\XeKo@latincjk\XeKo@latincjk@classic
+  \let\XeKo@postmath\XeKo@latincjk@classic
+  \XeTeXlinebreakpenalty=\z@
+  \XeTeXlinebreakskip=\z@ \XeKo@stretchshrink
+  \parindent=1em
+  }
+\protected\def\typesetmodern{%
+  \chardef\XeKo@typesetclassic\z@
+  \def\XeKo@quarterdim{\dimexpr.05em\relax}%
+  \def\XeKo@stretchshrink{plus.04em minus.02em\relax}%
+  \let\XeKo@latincjk\XeKo@latincjk@modern
+  \let\XeKo@postmath\XeKo@postmath@modern
+  \XeTeXlinebreakpenalty=50
+  \XeTeXlinebreakskip=\z@ \XeKo@stretchshrink
+  }
+\typesetmodern
+
+\chardef\XeKo@typesetvertical\z@
+\chardef\XeKo@STchineseJapanese\z@ % 0=KOR, 1=SC, 2=TC, 3=JPN
+
+\protected\def\japanese{%
+  \typesetclassic
+  \chardef\XeKo@STchineseJapanese\thr@@
+  \XeTeXcharclass "FF1A = \XeTeXcharclassMD % ： both horizontal and vertical glyphs
+  }
+\protected\def\Tchinese{%
+  \typesetclassic
+  \chardef\XeKo@STchineseJapanese\tw@
+  \XeKo@Tchinese@classes
+  \parindent=2em
+  }
+\protected\def\Schinese{%
+  \typesetclassic
+  \chardef\XeKo@STchineseJapanese\@ne
+  \ifnum\XeKo@typesetvertical=\@ne
+    \XeKo@Schinese@vertical
+  \else
+    \XeKo@Schinese@horizontal
+  \fi
+  \parindent=2em
+  }
+\let\chinese\Schinese
+\def\XeKo@Schinese@horizontal{% these glyphs in simplified chinese fonts are left-aligned.
+  \XeTeXcharclass "FF01 = \XeTeXcharclassFS % ！
+  \XeTeXcharclass "FF1A = \XeTeXcharclassCL % ：
+  \XeTeXcharclass "FF1B = \XeTeXcharclassCL % ；
+  \XeTeXcharclass "FF1F = \XeTeXcharclassFS % ？
+  }
+\def\XeKo@Schinese@vertical{%
+  \XeTeXcharclass "FF01 = \XeTeXcharclassEX % ！
+  \XeTeXcharclass "FF1A = \XeTeXcharclassVC % ：
+  \XeTeXcharclass "FF1B = \XeTeXcharclassVC % ；
+  \XeTeXcharclass "FF1F = \XeTeXcharclassEX % ？
+  }
+\def\XeKo@Tchinese@classes{% these glyphs in traditional chinese fonts are center-aligned
+  \XeTeXcharclass "3001 = \XeTeXcharclassMD % 、
+  \XeTeXcharclass "3002 = \XeTeXcharclassLD % 。
+  \XeTeXcharclass "FF0C = \XeTeXcharclassMD % ，
+  \XeTeXcharclass "FF0E = \XeTeXcharclassLD % ．
+  }
+
+\protected\def\typesetvertical{%
+  \chardef\XeKo@typesetvertical\@ne
+  \XeTeXcharclass "FF1A = \XeTeXcharclassVC % ：
+  \XeTeXcharclass "FF1B = \XeTeXcharclassVC % ；
+  \ifcase\XeKo@STchineseJapanese
+    \parindent=1em
+  \or \XeKo@Schinese@vertical
+  \or \XeKo@Tchinese@classes
+  \or \XeTeXcharclass "FF1A = \XeTeXcharclassMD % ：
+  \fi
+  }
+\protected\def\typesethorizontal{%
+  \chardef\XeKo@typesetvertical\z@
+  \XeTeXcharclass "FF1A = \XeTeXcharclassMD % ：
+  \XeTeXcharclass "FF1B = \XeTeXcharclassMD % ；
+  \ifcase\XeKo@STchineseJapanese
+  \or \XeKo@Schinese@horizontal
+  \or \XeKo@Tchinese@classes
+  \fi
+  \parindent\z@
+  }
+\protected\def\vertical#1{%
+  \leavevmode
+  \ifx\empty#1\empty
+    \setbox\z@\hbox\bgroup
+  \else
+    \setbox\z@\vbox\bgroup \hsize#1\relax
+  \fi
+  \typesetvertical
+  }
+\protected\def\endvertical{%
+  \ifinner\else \par\fi
+  \egroup
+  \XeKo@rotatebox\z@
+  \box\z@
+  }
+\protected\def\horizontal#1{%
+  \leavevmode
+  \ifx\empty#1\empty
+    \setbox\z@\hbox\bgroup
+  \else
+    \setbox\z@\vbox\bgroup \hsize#1\relax
+  \fi
+  \typesethorizontal
+  }
+\protected\def\endhorizontal{%
+  \ifinner\else \par\fi
+  \egroup
+  \XeKo@unrotatebox\z@
+  \ifdefined\xetexkocharraise \raise\xetexkocharraise \fi
+  \box\z@
+  }
+\def\XeKo@rotatebox#1{%
+  \dimen@\dimexpr\ht#1+\dp#1\relax
+  \setbox#1\hbox to\dimen@\bgroup
+    \hfil
+    \vbox to\wd#1\bgroup
+      \wd#1\z@
+      \special{x:gsave}\relax
+      \special{x:rotate -90}\relax
+      \box#1\relax
+      \kern-\dimen@
+      \special{x:grestore}\relax
+      \vfil
+    \egroup
+    \kern-.5ex
+  \egroup
+  }
+\def\XeKo@unrotatebox#1{%
+  \dimen@\dimexpr\ht#1+\dp#1\relax
+  \setbox#1\hbox to\dimen@\bgroup
+    \lower.5\wd#1\vbox to\wd#1\bgroup
+      \vfil
+      \wd#1\z@
+      \special{x:gsave}\relax
+      \special{x:rotate 90}\relax
+      \box#1\relax
+      \kern-\dimen@
+      \special{x:grestore}\relax
+    \egroup
+    \hfil
+  \egroup
+  }
+
+\protected\def\vertlatin#1{\leavevmode\lower.5ex\hbox{\latinmarks #1}} % compat
+
+% fonts
+\def\XeKo@reset@options{%
+  \let\xetexkohu        \XeKo@undefined
+  \let\xetexkocharraise \XeKo@undefined
+  \let\xetexkointerhchar\XeKo@undefined
+  }
+
+\expandafter\let\expandafter\XeKo@latin@font\the\font
+
+\def\XeKo@font@Hangul{%
+  \expandafter\ifx\the\font\XeKo@raw@hangul@font \else
+  \expandafter\ifx\the\font\XeKo@raw@hanja@font \else
+    \expandafter\let\expandafter\XeKo@latin@font\the\font
+  \fi\fi
+  \ifdefined\XeKo@hangul@font
+      \XeKo@reset@options
+      \XeKo@hangul@font
+      \expandafter\let\expandafter\XeKo@raw@hangul@font\the\font
+  \fi
+  }
+\def\XeKo@font@CJK{%
+  \expandafter\ifx\the\font\XeKo@raw@hangul@font \else
+  \expandafter\ifx\the\font\XeKo@raw@hanja@font \else
+    \expandafter\let\expandafter\XeKo@latin@font\the\font
+  \fi\fi
+  \ifdefined\XeKo@hanja@font
+      \XeKo@reset@options
+      \XeKo@hanja@font
+      \expandafter\let\expandafter\XeKo@raw@hanja@font\the\font
+  \fi
+  }
+\def\XeKo@font@Latin{%
+  \expandafter\ifx\the\font\XeKo@raw@hangul@font
+    \XeKo@latin@font
+  \else \expandafter\ifx\the\font\XeKo@raw@hanja@font
+    \XeKo@latin@font
+  \fi\fi
+  }
+\let\XeKo@fontHG\XeKo@font@Hangul
+\let\XeKo@fontID\XeKo@font@CJK
+\let\XeKo@fontCJ\XeKo@font@CJK
+\let\XeKo@fontSY\XeKo@font@Hangul
+\let\XeKo@fontAA\XeKo@font@Latin
+\let\XeKo@fontAO\XeKo@font@Hangul
+\let\XeKo@fontAC\XeKo@font@Hangul
+\let\XeKo@fontAP\relax % prevfont
+\let\XeKo@fontAM\relax % prevfont
+\let\XeKo@fontAH\XeKo@font@Latin
+\let\XeKo@fontOP\XeKo@font@Hangul
+\let\XeKo@fontCL\XeKo@font@Hangul
+\let\XeKo@fontMD\XeKo@font@Hangul
+\let\XeKo@fontFS\XeKo@font@Hangul
+\let\XeKo@fontEX\XeKo@font@Hangul
+\let\XeKo@fontLD\XeKo@font@Hangul
+\let\XeKo@fontVC\XeKo@font@Hangul
+
+\protected\def\latinalphs  {\let\XeKo@fontAA\XeKo@font@Latin}
+\protected\def\latinparens {\let\XeKo@fontAO\XeKo@font@Latin\let\XeKo@fontAC\XeKo@font@Latin}
+\protected\def\latinpuncts {\let\XeKo@fontAP\XeKo@font@Latin}
+\protected\def\latincolons {\let\XeKo@fontAM\XeKo@font@Latin}
+\protected\def\latinhyphens{\let\XeKo@fontAH\XeKo@font@Latin}
+\protected\def\latincjksymbols{%
+  \let\XeKo@fontSY\XeKo@font@Latin
+  \let\XeKo@fontOP\XeKo@font@Latin
+  \let\XeKo@fontCL\XeKo@font@Latin
+  \let\XeKo@fontMD\XeKo@font@Latin
+  \let\XeKo@fontFS\XeKo@font@Latin
+  \let\XeKo@fontEX\XeKo@font@Latin
+  \let\XeKo@fontLD\XeKo@font@Latin
+  \let\XeKo@fontVC\XeKo@font@Latin
+  }
+\protected\def\latinmarks{%
+  \latinalphs\latinparens\latinpuncts\latincolons\latinhyphens\latincjksymbols
+  }
+\let\latinnums\latinalphs
+\let\latinquotes\latinparens
+
+\protected\def\hangulalphs  {\let\XeKo@fontAA\XeKo@font@Hangul}
+\protected\def\hangulparens {\let\XeKo@fontAO\XeKo@font@Hangul\let\XeKo@fontAC\XeKo@font@Hangul}
+\protected\def\hangulpuncts {\let\XeKo@fontAP\XeKo@font@Hangul}
+\protected\def\hangulcolons {\let\XeKo@fontAM\XeKo@font@Hangul}
+\protected\def\hangulhyphens{\let\XeKo@fontAH\XeKo@font@Hangul}
+\protected\def\hangulcjksymbols{%
+  \let\XeKo@fontSY\XeKo@font@Hangul
+  \let\XeKo@fontOP\XeKo@font@Hangul
+  \let\XeKo@fontCL\XeKo@font@Hangul
+  \let\XeKo@fontMD\XeKo@font@Hangul
+  \let\XeKo@fontFS\XeKo@font@Hangul
+  \let\XeKo@fontEX\XeKo@font@Hangul
+  \let\XeKo@fontLD\XeKo@font@Hangul
+  \let\XeKo@fontVC\XeKo@font@Hangul
+  }
+\protected\def\hangulmarks{%
+  \hangulalphs\hangulparens\hangulpuncts\hangulcolons\hangulhyphens\hangulcjksymbols
+  }
+\let\hangulnums\hangulalphs
+\let\hangulquotes\hangulparens
+
+\protected\def\hanjaalphs  {\let\XeKo@fontAA\XeKo@font@CJK}
+\protected\def\hanjaparens {\let\XeKo@fontAO\XeKo@font@CJK\let\XeKo@fontAC\XeKo@font@CJK}
+\protected\def\hanjapuncts {\let\XeKo@fontAP\XeKo@font@CJK}
+\protected\def\hanjacolons {\let\XeKo@fontAM\XeKo@font@CJK}
+\protected\def\hanjahyphens{\let\XeKo@fontAH\XeKo@font@CJK}
+\protected\def\hanjacjksymbols{%
+  \let\XeKo@fontSY\XeKo@font@CJK
+  \let\XeKo@fontOP\XeKo@font@CJK
+  \let\XeKo@fontCL\XeKo@font@CJK
+  \let\XeKo@fontMD\XeKo@font@CJK
+  \let\XeKo@fontFS\XeKo@font@CJK
+  \let\XeKo@fontEX\XeKo@font@CJK
+  \let\XeKo@fontLD\XeKo@font@CJK
+  \let\XeKo@fontVC\XeKo@font@CJK
+  }
+\protected\def\hanjamarks{%
+  \hanjaalphs\hanjaparens\hanjapuncts\hanjacolons\hanjahyphens\hanjacjksymbols
+  }
+\let\hanjanums\hanjaalphs
+\let\hanjaquotes\hanjaparens
+
+\protected\def\prevfontalphs  {\let\XeKo@fontAA\relax}
+\protected\def\prevfontparens {\let\XeKo@fontAO\relax\let\XeKo@fontAC\relax}
+\protected\def\prevfontpuncts {\let\XeKo@fontAP\relax}
+\protected\def\prevfontcolons {\let\XeKo@fontAM\relax}
+\protected\def\prevfonthyphens{\let\XeKo@fontAH\relax}
+\protected\def\prevfontcjksymbols{%
+  \let\XeKo@fontSY\relax
+  \let\XeKo@fontOP\relax
+  \let\XeKo@fontCL\relax
+  \let\XeKo@fontMD\relax
+  \let\XeKo@fontFS\relax
+  \let\XeKo@fontEX\relax
+  \let\XeKo@fontLD\relax
+  \let\XeKo@fontVC\relax
+  }
+\protected\def\prevfontmarks{%
+  \prevfontalphs\prevfontparens\prevfontpuncts\prevfontcolons\prevfonthyphens\prevfontcjksymbols
+  }
+\let\prevfontnums\prevfontalphs
+\let\prevfontquotes\prevfontparens
+
+% interchartoks
+\chardef\XeKo@cjk@ignorespaces\z@
+\protected\def\removeclassicspaces{\chardef\XeKo@cjk@ignorespaces\@ne}
+
+\expandafter\let\csname XeKo@6@class\endcsname =\XeTeXcharclassHG
+\expandafter\let\csname XeKo@7@class\endcsname =\XeTeXcharclassID
+\expandafter\let\csname XeKo@8@class\endcsname =\XeTeXcharclassSY
+\expandafter\let\csname XeKo@9@class\endcsname =\XeTeXcharclassAA
+\expandafter\let\csname XeKo@10@class\endcsname=\XeTeXcharclassAO
+\expandafter\let\csname XeKo@11@class\endcsname=\XeTeXcharclassAC
+\expandafter\let\csname XeKo@12@class\endcsname=\XeTeXcharclassAP
+\expandafter\let\csname XeKo@13@class\endcsname=\XeTeXcharclassAM
+\expandafter\let\csname XeKo@14@class\endcsname=\XeTeXcharclassAH
+\expandafter\let\csname XeKo@15@class\endcsname=\XeTeXcharclassOP
+\expandafter\let\csname XeKo@16@class\endcsname=\XeTeXcharclassCL
+\expandafter\let\csname XeKo@17@class\endcsname=\XeTeXcharclassMD
+\expandafter\let\csname XeKo@18@class\endcsname=\XeTeXcharclassFS
+\expandafter\let\csname XeKo@19@class\endcsname=\XeTeXcharclassEX
+\expandafter\let\csname XeKo@20@class\endcsname=\XeTeXcharclassLD
+\expandafter\let\csname XeKo@21@class\endcsname=\XeTeXcharclassVC
+
+\newtoks\XeKo@toks@
+\newtoks\XeKo@toks@ii
+\newskip\XeKo@skip@
+\newcount\XeKo@count@
+\newdimen\XeKo@dimen@
+
+\def\XeKo@check@next@tok{\futurelet\XeKo@let@token\XeKo@check@next@tok@}
+\def\XeKo@check@next@tok@{%
+  \XeKo@get@charslot
+  \ifnum\XeKo@charslot="FFFF
+    \expandafter\XeKo@flush@toks
+  \else
+    \ifnum 0\ifnum\XeKo@currclass>8 \ifnum\XeKo@currclass<15 % AA..AH
+           1\fi\fi >\z@
+      \expandafter\expandafter\expandafter\XeKo@check@next@tok@latin
+    \else % HG ID
+      \expandafter\expandafter\expandafter\XeKo@check@next@tok@cjk
+    \fi
+  \fi
+  }
+\def\XeKo@check@next@tok@cjk{%
+  \ifnum 0\ifnum\XeTeXcharclass\XeKo@charslot=\XeTeXcharclassJJ 1\else
+          \ifnum\XeTeXcharclass\XeKo@charslot=\XeTeXcharclassCM 1\fi\fi >\z@
+    \expandafter\XeKo@addto@toks
+  \else
+    \expandafter\XeKo@flush@toks
+  \fi
+  }
+\def\XeKo@check@next@tok@latin{%
+  % load-unicode-xetex-classes가 설정하는 모든 CM은 한글, 한자, 가나 뒤에 온다.
+  % 따라서 영문자는 CM을 고려할 필요가 없다.
+  % 아니다!!! 위에서 FE00-FE0F를 CM으로 지정했으므로 CJK에 한정되지 않는다.
+  \ifnum 0%
+      \ifnum\XeTeXcharclass\XeKo@charslot=\csname XeKo@\XeKo@currclass @class\endcsname 1\else
+      \ifnum\XeTeXcharclass\XeKo@charslot=\XeTeXcharclassCM 1\fi\fi >\z@
+    \expandafter\XeKo@addto@toks
+  \else
+    \expandafter\XeKo@flush@toks
+  \fi
+  }
+\def\XeKo@addto@toks#1{%
+  \ifnum\XeKo@currclass=9 % AA
+    \global\let\XeKo@josatoken=#1\relax
+  \else\ifnum\XeTeXcharclass\XeKo@charslot=\XeTeXcharclassJJ
+    \global\let\XeKo@josatoken=#1\relax
+  \else\ifnum\XeKo@currclass=8 % SY
+    \global\let\XeKo@josatoken=#1\relax
+  \fi\fi\fi
+  \XeKo@toks@\expandafter{\the\XeKo@toks@ #1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@flush@toks{%
+  \ifnum\XeKo@currclass<8 %
+    \XeKo@toks@ii{}\expandafter\XeKo@char@orphan % HG, ID
+  \else
+    \expandafter\XeKo@do@flush@toks
+  \fi
+  }
+\def\XeKo@char@orphan{%
+  \ifx\XeKo@let@token\par
+    \XeKo@suppress@linebreak
+    \let\XeKo@next\XeKo@flush@char@orphan
+  \else \ifx\@sptoken\XeKo@let@token
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii \@sptoken}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else \ifx ^^2e\XeKo@let@token % .
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii ^^2e}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else \ifx ^^3f\XeKo@let@token % ?
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii ^^3f}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else \ifx ^^21\XeKo@let@token % !
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii ^^21}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else \ifx ^^^^3002\XeKo@let@token % 。
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii ^^^^3002}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else \ifx ^^^^ff0e\XeKo@let@token % ．
+    \XeKo@toks@ii\expandafter{\the\XeKo@toks@ii ^^^^ff0e}%
+    \let\XeKo@next\XeKo@char@orphan@
+  \else
+    \let\XeKo@next\XeKo@flush@char@orphan
+  \fi\fi\fi\fi\fi \fi\fi
+  \XeKo@next
+  }
+\def\XeKo@char@orphan@{\afterassignment\XeKo@char@orphan@@\let\XeKo@let@token= }
+\def\XeKo@char@orphan@@{\futurelet\XeKo@let@token\XeKo@char@orphan}
+\def\XeKo@flush@char@orphan{\expandafter \XeKo@do@flush@toks \the\XeKo@toks@ii }
+\def\XeKo@char@raise@start{%
+  \ifdefined\xetexkocharraise
+    \expandafter\ifx\the\font\XeKo@raw@hangul@font
+      \raise\xetexkocharraise\hbox\bgroup
+    \else \expandafter\ifx\the\font\XeKo@raw@hanja@font
+      \raise\xetexkocharraise\hbox\bgroup
+    \fi\fi
+  \fi
+  }
+\def\XeKo@char@raise@stop{%
+  \ifdefined\xetexkocharraise
+    \expandafter\ifx\the\font\XeKo@raw@hangul@font
+      \egroup
+    \else \expandafter\ifx\the\font\XeKo@raw@hanja@font
+      \egroup
+    \fi\fi
+  \fi
+  }
+\def\XeKo@do@flush@toks{%
+  \begingroup
+    \XeTeXinterchartokenstate\z@
+    \ifdefined\XeKo@pre@hang
+      \XeKo@pre@hang % hanging punctuations
+    \fi
+    \XeKo@char@raise@start % charraise
+    \ifnum\XeKo@currclass=6 %
+      \XeKo@everyhangul{\XeKo@maybe@dotemph \the\XeKo@toks@}% everyhangul
+    \else
+      \ifnum\XeKo@currclass=7 %
+        \XeKo@everyhanja{\XeKo@maybe@dotemph \the\XeKo@toks@}% everyhanja
+      \else
+        \ifnum\XeKo@compresspuncts=\@ne
+          \ifnum\XeKo@currclass=15      % OP
+            \hbox to.5em\bgroup\hss \the\XeKo@toks@ \egroup
+          \else\ifnum\XeKo@currclass=16 % CL
+            \hbox to.5em\bgroup \the\XeKo@toks@ \hss\egroup
+          \else\ifnum\XeKo@currclass=17 % MD
+            \hbox to.5em\bgroup\hss \the\XeKo@toks@ \hss\egroup
+          \else\ifnum\XeKo@currclass=18 % FS
+            \hbox to.5em\bgroup \the\XeKo@toks@ \hss\egroup
+          \else
+            \the\XeKo@toks@
+          \fi\fi\fi\fi
+        \else
+          \the\XeKo@toks@
+        \fi
+      \fi
+    \fi
+    \XeKo@char@raise@stop % charraise
+    \ifdefined\XeKo@post@hang
+      \XeKo@post@hang % hanging punctuations
+    \fi
+  \endgroup
+  \futurelet\XeKo@let@token\XeKo@maybe@kern@ii
+  }
+\def\XeKo@maybe@kern@ii{%
+  \ifx\XeKo@let@token\@sptoken
+    \ifnum\XeKo@cjk@ignorespaces=\@ne % try to remove space
+      \expandafter\expandafter\expandafter\XeKo@maybe@ignorespaces
+    \fi
+  \else
+    \XeKo@insert@kerns
+  \fi
+  }
+\def\XeKo@insert@kerns{%
+  \kern-\XeKo@currclass sp \kern \XeKo@currclass sp
+  }
+% remove space
+\def\XeKo@maybe@ignorespaces{%
+  \ifnum 0\ifnum\XeKo@currclass<9  1\else  % HG ID SY
+          \ifnum\XeKo@currclass>14 1\fi\fi % CJK punctuations
+          >\z@
+    \expandafter\XeKo@ignorespaces@iv
+  \fi
+  }
+\def\XeKo@ignorespaces@iv{\afterassignment\XeKo@ignorespaces@v\let\XeKo@let@token= }
+\def\XeKo@ignorespaces@v{\futurelet\XeKo@let@token\XeKo@ignorespaces@vi}
+\def\XeKo@ignorespaces@vi{%
+  \XeKo@get@charslot
+  \XeKo@count@=\XeTeXcharclass\XeKo@charslot
+  \ifnum\XeKo@count@=\XeTeXcharclassAA \@sptoken \else
+  \ifnum\XeKo@count@=\XeTeXcharclassAO \@sptoken \else
+  \ifnum\XeKo@count@=\XeTeXcharclassAC \@sptoken \else
+  \ifnum\XeKo@count@=\XeTeXcharclassAP \@sptoken \else
+  \ifnum\XeKo@count@=\XeTeXcharclassAM \@sptoken \else
+  \ifnum\XeKo@count@=\XeTeXcharclassAH \@sptoken \else
+    \XeKo@insert@kerns
+  \fi\fi\fi\fi\fi \fi
+  }
+
+% hanging punctuations
+\chardef\XeKo@hangingpuncts\z@
+\protected\def\hangingpunctuation{\chardef\XeKo@hangingpuncts\@ne }
+\let\hangingpunctuations\hangingpunctuation
+
+\protected\def\sethangingratio#1=#2 {%
+  \expandafter\def\csname XeKo@hanging@ratio@\number#1\endcsname{#2}%
+  }
+\protected\def\unsethangingratio{\afterassignment\unsethangingratio@\count@= }
+\def\unsethangingratio@{%
+  \expandafter\let\csname XeKo@hanging@ratio@\number\count@\endcsname\XeKo@undefined
+  }
+\def\XeKo@def@pre@hang#1{%
+  \ifnum\XeKo@hangingpuncts=\@ne
+    \ifcsname XeKo@hanging@ratio@\number`#1\endcsname
+      \ifnum 0\ifnum\XeKo@compresspuncts=\@ne
+              \ifnum\XeKo@currclass=15 % OP
+              1\fi\fi >\z@
+        \XeKo@dimen@=.5em
+      \else
+        \setbox\XeKo@box@\hbox{\XeTeXinterchartokenstate\z@ #1}%
+        \XeKo@dimen@=\wd\XeKo@box@
+      \fi
+      \XeKo@dimen@=\csname XeKo@hanging@ratio@\number`#1\endcsname\XeKo@dimen@
+      \edef\XeKo@pre@hang{%
+        \kern\the\XeKo@dimen@
+        \vrule width-\the\XeKo@dimen@ height\z@ depth\z@
+        }%
+    \fi
+  \fi
+  }
+\def\XeKo@def@post@hang#1{%
+  \ifnum\XeKo@hangingpuncts=\@ne
+    \ifcsname XeKo@hanging@ratio@\number`#1\endcsname
+      \ifnum 0\ifnum\XeKo@compresspuncts=\@ne
+              \ifnum\XeKo@currclass>15 %
+              \ifnum\XeKo@currclass<19 % CL MD FS
+              1\fi\fi\fi >\z@
+        \XeKo@dimen@=.5em
+      \else
+        \setbox\XeKo@box@\hbox{\XeTeXinterchartokenstate\z@ #1}%
+        \XeKo@dimen@=\wd\XeKo@box@
+      \fi
+      \XeKo@dimen@=\csname XeKo@hanging@ratio@\number`#1\endcsname\XeKo@dimen@
+      \edef\XeKo@post@hang{%
+        \noexpand\XeKo@count@\noexpand\spacefactor
+        \vrule width-\the\XeKo@dimen@ height\z@ depth\z@
+        \kern\the\XeKo@dimen@
+        \noexpand\spacefactor\noexpand\XeKo@count@
+        }%
+    \fi
+  \fi
+  }
+\sethangingratio"2C=1 % , 반점
+\sethangingratio"2E=1 % . 온점
+\sethangingratio"3001=1 % 、 모점
+\sethangingratio"3002=1 % 。 고리점
+\sethangingratio"FF0C=1 % ， 전각반점
+\sethangingratio"FF0E=1 % ． 전각온점
+
+% compress CJK punctuations to .5em
+\protected\def\compresspunctuations{\chardef\XeKo@compresspuncts\@ne }
+\protected\def\nocompresspunctuations{\chardef\XeKo@compresspuncts\z@ }
+\compresspunctuations
+
+%% everyhangul/hanja
+\def\everyhangul#1{\def\XeKo@everyhangul##1{#1}}
+\def\everyhanja #1{\def\XeKo@everyhanja ##1{#1}}
+\def\XeKo@everyhangul#1{#1}
+\def\XeKo@everyhanja #1{#1}
+
+\def\XeKo@startHG#1{%
+  \global\let\XeKo@josatoken=#1\relax
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{6}%
+  \XeKo@toks@{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startID#1{%
+  \global\let\XeKo@josatoken=#1\relax
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{7}%
+  \XeKo@toks@{#1}%
+  \ifdefined\fallbackhanjafont
+    \iffontchar\font`#1\else
+      \XeKo@toks@{\fallbackhanjafont #1}%
+    \fi
+  \fi
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startCJ#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{7}% same as ID
+  \XeKo@toks@{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startSY#1{%
+  \global\let\XeKo@josatoken=#1\relax
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{8}%
+  \XeKo@toks@{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAA#1{%
+  \global\let\XeKo@josatoken=#1\relax
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{9}%
+  \XeKo@toks@{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAO#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{10}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@pre@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAC#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{11}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAP#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{12}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAM#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{13}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startAH#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{14}%
+  \XeKo@toks@{#1}%
+  \ifnum`#1=\hyphenchar\font \else % exclude hyphen char
+    \XeKo@def@post@hang{#1}%
+  \fi
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startOP#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{15}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@pre@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startCL#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{16}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startMD#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{17}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startFS#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{18}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startEX#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{19}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startLD#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{20}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+\def\XeKo@startVC#1{%
+  \let\XeKo@pre@hang\XeKo@undefined \let\XeKo@post@hang\XeKo@undefined
+  \def\XeKo@currclass{21}%
+  \XeKo@toks@{#1}%
+  \XeKo@def@post@hang{#1}%
+  \XeKo@check@next@tok
+  }
+
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassHG{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XKinterhanjabreak \or \or \or \or % 1: ruby를 한자처럼 취급
+      \or \unkern\unkern \XKinterhangulbreak % HG HG
+      \or \unkern\unkern \XKinterhanjabreak   % ID HG
+      \or \unkern\unkern                      % SY HG
+      \or \unkern\unkern \XeKo@latincjk       % AA HG
+      \or \unkern\unkern                      % AO HG
+      \or \unkern\unkern \XeKo@latincjk       % AC HG
+      \or \unkern\unkern \XeKo@latincjk       % AP HG
+      \or \unkern\unkern \XeKo@latincjk       % AM HG
+      \or \unkern\unkern \XKinterhanjabreak   % AH HG
+      \or \unkern\unkern                      % OP HG
+      \or \unkern\unkern \XeKo@halfhalf       % CL HG
+      \or \unkern\unkern \XeKo@quarterquarter % MD HG
+      \or \unkern\unkern \XeKo@halfzero       % FS HG
+      \or \unkern\unkern \XeKo@halfhalf       % EX HG
+      \or \unkern\unkern \XKinterhanjabreak   % LD HG
+      \or \unkern\unkern \XeKo@quarterquarter % VC HG
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@postmath
+  \fi\fi
+  \XeKo@fontHG\expandafter\XeKo@startHG
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassID{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XKinterhanjabreak \or \or \or \or
+      \or \unkern\unkern \XKinterhanjabreak   % HG ID
+      \or \unkern\unkern \XKinterhanjabreak % ID ID
+      \or \unkern\unkern                      % SY ID
+      \or \unkern\unkern \XeKo@latincjk       % AA ID
+      \or \unkern\unkern                      % AO ID
+      \or \unkern\unkern \XeKo@latincjk       % AC ID
+      \or \unkern\unkern \XeKo@latincjk       % AP ID
+      \or \unkern\unkern \XeKo@latincjk       % AM ID
+      \or \unkern\unkern \XKinterhanjabreak   % AH ID
+      \or \unkern\unkern                      % OP ID
+      \or \unkern\unkern \XeKo@halfhalf       % CL ID
+      \or \unkern\unkern \XeKo@quarterquarter % MD ID
+      \or \unkern\unkern \XeKo@halfzero       % FS ID
+      \or \unkern\unkern \XeKo@halfhalf       % EX ID
+      \or \unkern\unkern \XKinterhanjabreak   % LD ID
+      \or \unkern\unkern \XeKo@quarterquarter % VC ID
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@postmath
+  \fi\fi
+  \XeKo@fontID\expandafter\XeKo@startID
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassCJ{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XKinterhanjabreak \XeKo@suppress@linebreak \or \or \or \or
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % HG CJ
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % ID CJ
+      \or \unkern\unkern                                               % SY CJ
+      \or \unkern\unkern \XeKo@latincjk                                % AA CJ
+      \or \unkern\unkern                                               % AO CJ
+      \or \unkern\unkern \XeKo@latincjk                                % AC CJ
+      \or \unkern\unkern \XeKo@latincjk                                % AP CJ
+      \or \unkern\unkern \XeKo@latincjk                                % AM CJ
+      \or \unkern\unkern \XKinterhanjabreak                            % AH CJ
+      \or \unkern\unkern                                               % OP CJ
+      \or \unkern\unkern \XeKo@halfhalf       \XeKo@suppress@linebreak % CL CJ
+      \or \unkern\unkern \XeKo@quarterquarter \XeKo@suppress@linebreak % MD CJ
+      \or \unkern\unkern \XeKo@halfzero       \XeKo@suppress@linebreak % FS CJ
+      \or \unkern\unkern \XeKo@halfhalf       \XeKo@suppress@linebreak % EX CJ
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % LD CJ
+      \or \unkern\unkern \XeKo@quarterquarter \XeKo@suppress@linebreak % VC CJ
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@postmath
+  \fi\fi
+  \XeKo@fontCJ\expandafter\XeKo@startCJ
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassSY{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                      % HG SY
+      \or \unkern\unkern                      % ID SY
+      \or \unkern\unkern % SY SY
+      \or \unkern\unkern                      % AA SY
+      \or \unkern\unkern                      % AO SY
+      \or \unkern\unkern \XeKo@latincjk       % AC SY
+      \or \unkern\unkern \XeKo@latincjk       % AP SY
+      \or \unkern\unkern \XeKo@latincjk       % AM SY
+      \or \unkern\unkern                      % AH SY
+      \or \unkern\unkern                      % OP SY
+      \or \unkern\unkern \XeKo@halfhalf       % CL SY
+      \or \unkern\unkern \XeKo@quarterquarter % MD SY
+      \or \unkern\unkern \XeKo@halfzero       % FS SY
+      \or \unkern\unkern \XeKo@halfhalf       % EX SY
+      \or \unkern\unkern                      % LD SY
+      \or \unkern\unkern \XeKo@quarterquarter % VC SY
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@postmath
+  \fi\fi
+  \XeKo@fontSY\expandafter\XeKo@startSY
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAA{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@latincjk \or \or \or \or
+      \or \unkern\unkern \XeKo@latincjk       % HG AA
+      \or \unkern\unkern \XeKo@latincjk       % ID AA
+      \or \unkern\unkern                      % SY AA
+      \or \unkern\unkern % AA AA
+      \or \unkern\unkern                      % AO AA
+      \or \unkern\unkern                      % AC AA
+      \or \unkern\unkern                      % AP AA
+      \or \unkern\unkern                      % AM AA
+      \or \unkern\unkern                      % AH AA
+      \or \unkern\unkern                      % OP AA
+      \or \unkern\unkern \XeKo@halfhalf       % CL AA
+      \or \unkern\unkern \XeKo@quarterquarter % MD AA
+      \or \unkern\unkern \XeKo@halfzero       % FS AA
+      \or \unkern\unkern \XeKo@halfhalf       % EX AA
+      \or \unkern\unkern \XeKo@latincjk       % LD AA
+      \or \unkern\unkern \XeKo@quarterquarter % VC AA
+    \fi
+  \fi
+  \XeKo@fontAA\expandafter\XeKo@startAA
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAO{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@latincjk \or \or \or \or
+      \or \unkern\unkern \XeKo@latincjk       % HG AO
+      \or \unkern\unkern \XeKo@latincjk       % ID AO
+      \or \unkern\unkern \XeKo@latincjk       % SY AO
+      \or \unkern\unkern                      % AA AO
+      \or \unkern\unkern % AO AO
+      \or \unkern\unkern                      % AC AO
+      \or \unkern\unkern                      % AP AO
+      \or \unkern\unkern                      % AM AO
+      \or \unkern\unkern                      % AH AO
+      \or \unkern\unkern                      % OP AO
+      \or \unkern\unkern \XeKo@halfhalf       % CL AO
+      \or \unkern\unkern \XeKo@quarterquarter % MD AO
+      \or \unkern\unkern \XeKo@halfzero       % FS AO
+      \or \unkern\unkern \XeKo@halfhalf       % EX AO
+      \or \unkern\unkern \XeKo@latincjk       % LD AO
+      \or \unkern\unkern \XeKo@quarterquarter % VC AO
+    \fi
+  \fi
+  \XeKo@fontAO\expandafter\XeKo@startAO
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAC{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG AC
+      \or \unkern\unkern                                   % ID AC
+      \or \unkern\unkern                                   % SY AC
+      \or \unkern\unkern                                   % AA AC
+      \or \unkern\unkern                                   % AO AC
+      \or \unkern\unkern % AC AC
+      \or \unkern\unkern                                   % AP AC
+      \or \unkern\unkern                                   % AM AC
+      \or \unkern\unkern                                   % AH AC
+      \or \unkern\unkern                                   % OP AC
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % CL AC
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD AC
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfzero       % FS AC
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % EX AC
+      \or \unkern\unkern                                   % LD AC
+      \or \unkern\unkern                                   % VC AC
+    \fi
+  \fi
+  \XeKo@fontAC\expandafter\XeKo@startAC
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAP{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG AP
+      \or \unkern\unkern                                   % ID AP
+      \or \unkern\unkern                                   % SY AP
+      \or \unkern\unkern                                   % AA AP
+      \or \unkern\unkern                                   % AO AP
+      \or \unkern\unkern                                   % AC AP
+      \or \unkern\unkern % AP AP
+      \or \unkern\unkern                                   % AM AP
+      \or \unkern\unkern                                   % AH AP
+      \or \unkern\unkern                                   % OP AP
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % CL AP
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD AP
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfzero       % FS AP
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % EX AP
+      \or \unkern\unkern                                   % LD AP
+      \or \unkern\unkern                                   % VC AP
+    \fi
+  \fi
+  \XeKo@fontAP\expandafter\XeKo@startAP
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAM{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@nobreak\XeKo@latincjk \or \or \or \or
+      \or \unkern\unkern \XeKo@nobreak\XeKo@latincjk       % HG AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@latincjk       % ID AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@latincjk       % SY AM
+      \or \unkern\unkern                                   % AA AM
+      \or \unkern\unkern                                   % AO AM
+      \or \unkern\unkern                                   % AC AM
+      \or \unkern\unkern                                   % AP AM
+      \or \unkern\unkern % AM AM
+      \or \unkern\unkern                                   % AH AM
+      \or \unkern\unkern                                   % OP AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % CL AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfzero       % FS AM
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % EX AM
+      \or \unkern\unkern                                   % LD AM
+      \or \unkern\unkern                                   % VC AM
+    \fi
+  \fi
+  \XeKo@fontAM\expandafter\XeKo@startAM
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassAH{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@nobreak \or \or \or \or
+      \or \unkern\unkern \XeKo@nobreak                     % HG AH
+      \or \unkern\unkern \XeKo@nobreak                     % ID AH
+      \or \unkern\unkern \XeKo@nobreak                     % SY AH
+      \or \unkern\unkern                                   % AA AH
+      \or \unkern\unkern                                   % AO AH
+      \or \unkern\unkern                                   % AC AH
+      \or \unkern\unkern                                   % AP AH
+      \or \unkern\unkern                                   % AM AH
+      \or \unkern\unkern % AH AH
+      \or \unkern\unkern                                   % OP AH
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % CL AH
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD AH
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfzero       % FS AH
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % EX AH
+      \or \unkern\unkern \XeKo@nobreak                     % LD AH
+      \or \unkern\unkern \XeKo@nobreak                     % VC AH
+    \fi
+  \fi
+  \XeKo@fontAH\expandafter\XeKo@startAH
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassOP{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@halfhalf \or \or \or \or
+      \or \unkern\unkern \XeKo@halfhalf              % HG OP
+      \or \unkern\unkern \XeKo@halfhalf              % ID OP
+      \or \unkern\unkern \XeKo@halfhalf              % SY OP
+      \or \unkern\unkern \XeKo@halfhalf              % AA OP
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf % AO OP
+      \or \unkern\unkern \XeKo@halfhalf              % AC OP
+      \or \unkern\unkern \XeKo@halfhalf              % AP OP
+      \or \unkern\unkern \XeKo@halfhalf              % AM OP
+      \or \unkern\unkern \XeKo@halfhalf              % AH OP
+      \or \unkern\unkern % OP OP
+      \or \unkern\unkern \XeKo@halfhalf              % CL OP
+      \or \unkern\unkern \XeKo@quarterquarter        % MD OP
+      \or \unkern\unkern \XeKo@halfzero              % FS OP
+      \or \unkern\unkern \XeKo@halfhalf              % EX OP
+      \or \unkern\unkern \XeKo@halfhalf              % LD OP
+      \or \unkern\unkern \XeKo@quarterquarter        % VC OP
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@halfhalf
+  \fi\fi
+  \XeKo@fontOP\expandafter\XeKo@startOP
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassCL{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG CL
+      \or \unkern\unkern                                   % ID CL
+      \or \unkern\unkern                                   % SY CL
+      \or \unkern\unkern                                   % AA CL
+      \or \unkern\unkern                                   % AO CL
+      \or \unkern\unkern                                   % AC CL
+      \or \unkern\unkern                                   % AP CL
+      \or \unkern\unkern                                   % AM CL
+      \or \unkern\unkern                                   % AH CL
+      \or \unkern\unkern                                   % OP CL
+      \or \unkern\unkern % CL CL
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD CL
+      \or \unkern\unkern                                   % FS CL
+      \or \unkern\unkern                                   % EX CL
+      \or \unkern\unkern                                   % LD CL
+      \or \unkern\unkern                                   % VC CL
+    \fi
+  \fi
+  \XeKo@fontCL\expandafter\XeKo@startCL
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassMD{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XeKo@nobreak\XeKo@quarterquarter \or \or \or \or
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % HG MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % ID MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % SY MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AA MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AO MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AC MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AP MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AM MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % AH MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % OP MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % CL MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfquarter % MD MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@iiiquarterquarter % FS MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % EX MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % LD MD
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter    % VC MD
+    \fi
+  \else\ifnum\lastnodetype=10 % mathoff
+    \XeKo@nobreak\XeKo@quarterquarter
+  \fi\fi
+  \XeKo@fontMD\expandafter\XeKo@startMD
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassFS{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG FS
+      \or \unkern\unkern                                   % ID FS
+      \or \unkern\unkern                                   % SY FS
+      \or \unkern\unkern                                   % AA FS
+      \or \unkern\unkern                                   % AO FS
+      \or \unkern\unkern                                   % AC FS
+      \or \unkern\unkern                                   % AP FS
+      \or \unkern\unkern                                   % AM FS
+      \or \unkern\unkern                                   % AH FS
+      \or \unkern\unkern                                   % OP FS
+      \or \unkern\unkern                                   % CL FS
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD FS
+      \or \unkern\unkern % FS FS
+      \or \unkern\unkern                                   % EX FS
+      \or \unkern\unkern                                   % LD FS
+      \or \unkern\unkern                                   % VC FS
+    \fi
+  \fi
+  \XeKo@fontFS\expandafter\XeKo@startFS
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassEX{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG EX
+      \or \unkern\unkern                                   % ID EX
+      \or \unkern\unkern                                   % SY EX
+      \or \unkern\unkern                                   % AA EX
+      \or \unkern\unkern                                   % AO EX
+      \or \unkern\unkern                                   % AC EX
+      \or \unkern\unkern                                   % AP EX
+      \or \unkern\unkern                                   % AM EX
+      \or \unkern\unkern                                   % AH EX
+      \or \unkern\unkern                                   % OP EX
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfhalf       % CL EX
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD EX
+      \or \unkern\unkern \XeKo@nobreak\XeKo@halfzero       % FS EX
+      \or \unkern\unkern % EX EX
+      \or \unkern\unkern                                   % LD EX
+      \or \unkern\unkern                                   % VC EX
+    \fi
+  \fi
+  \XeKo@fontEX\expandafter\XeKo@startEX
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassLD{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \XKinterhanjabreak \XeKo@suppress@linebreak \or \or \or \or
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % HG LD
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % ID LD
+      \or \unkern\unkern                                               % SY LD
+      \or \unkern\unkern                                               % AA LD
+      \or \unkern\unkern                                               % AO LD
+      \or \unkern\unkern                                               % AC LD
+      \or \unkern\unkern                                               % AP LD
+      \or \unkern\unkern                                               % AM LD
+      \or \unkern\unkern                                               % AH LD
+      \or \unkern\unkern                                               % OP LD
+      \or \unkern\unkern \XeKo@halfhalf       \XeKo@suppress@linebreak % CL LD
+      \or \unkern\unkern \XeKo@quarterquarter \XeKo@suppress@linebreak % MD LD
+      \or \unkern\unkern \XeKo@halfzero       \XeKo@suppress@linebreak % FS LD
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % EX LD
+      \or \unkern\unkern % LD LD
+      \or \unkern\unkern \XKinterhanjabreak   \XeKo@suppress@linebreak % VC LD
+    \fi
+  \fi
+  \XeKo@fontLD\expandafter\XeKo@startLD
+  \fi
+  }
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassVC{%
+  \ifx\f@encoding\UTFencname
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+      \or \or \or \or \or
+      \or \unkern\unkern                                   % HG VC
+      \or \unkern\unkern                                   % ID VC
+      \or \unkern\unkern                                   % SY VC
+      \or \unkern\unkern                                   % AA VC
+      \or \unkern\unkern                                   % AO VC
+      \or \unkern\unkern                                   % AC VC
+      \or \unkern\unkern                                   % AP VC
+      \or \unkern\unkern                                   % AM VC
+      \or \unkern\unkern                                   % AH VC
+      \or \unkern\unkern                                   % OP VC
+      \or \unkern\unkern                                   % CL VC
+      \or \unkern\unkern \XeKo@nobreak\XeKo@quarterquarter % MD VC
+      \or \unkern\unkern                                   % FS VC
+      \or \unkern\unkern                                   % EX VC
+      \or \unkern\unkern                                   % LD VC
+      \or \unkern\unkern % VC VC
+    \fi
+  \fi
+  \XeKo@fontVC\expandafter\XeKo@startVC
+  \fi
+  }
+
+\newbox\XeKo@box@
+
+% \char"1112\char"119E\char"11AB etc.
+% !!!!! 이 경우 \everyhangul 등이 제대로 작동 않는다 !!!!!
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassJJ{%
+  \ifnum\lastnodetype=12 %
+    \ifnum\lastkern=6 %
+      \unkern\unkern
+      \expandafter\expandafter\expandafter\XeKo@startJJ
+    \fi
+  \fi
+  }
+\def\XeKo@startJJ#1{%
+  \global\let\XeKo@josatoken=#1\relax
+  \begingroup
+  \XeTeXinterchartokenstate\z@
+  \ifnum\lastnodetype=\@ne % hbox (charraise box)
+    \setbox\XeKo@box@=\lastbox
+    \XeKo@char@raise@start \unhbox\XeKo@box@ #1\XeKo@char@raise@stop
+  \else
+    #1\relax
+  \fi
+  \endgroup
+  \XeKo@insert@kerns
+  }
+% \char"9AA8\char"E0102 etc.
+\XeTeXinterchartoks\XeTeXcharclassBoundary\XeTeXcharclassCM{%
+  \ifnum\lastnodetype=12 %
+    \ifcase\lastkern
+    \or \or \or \or \or
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % HG
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % ID
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % SY
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AA
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AO
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AC
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AP
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AM
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % AH
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % OP
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % CL
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % MD
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % FS
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % EX
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % LD
+    \or \unkern\unkern \expandafter\expandafter\expandafter\XeKo@startCM % VC
+    \fi
+  \fi
+  }
+\def\XeKo@startCM#1{%
+  \begingroup
+  \XeTeXinterchartokenstate\z@
+  \ifnum\lastnodetype=\@ne % hbox
+    \ifdefined\xetexkocharraise
+      \setbox\XeKo@box@=\lastbox % charraise box
+      \XeKo@char@raise@start
+      \unhbox\XeKo@box@
+      \ifnum\lastnodetype=\@ne % hbox again
+        \XeKo@rebox@punctbox{#1}% compressed punctuation box
+      \else
+        #1\relax
+      \fi
+      \XeKo@char@raise@stop
+    \else
+      \XeKo@rebox@punctbox{#1}% compressed punctuation box
+    \fi
+  \else
+    #1\relax
+  \fi
+  \endgroup
+  \XeKo@insert@kerns
+  }
+\def\XeKo@rebox@punctbox#1{%
+  \ifnum 0\ifnum\XeKo@currclass>14 \ifnum\XeKo@currclass<19 % OP .. FS
+         1\fi\fi >\z@
+    \setbox\XeKo@box@=\lastbox
+    \hbox to.5em\bgroup
+      \unhbox\XeKo@box@
+      \XeKo@skip@\lastskip \unskip
+      #1\hskip\XeKo@skip@
+    \egroup
+  \else
+    #1\relax
+  \fi
+  }
+
+%%% josa selection
+\begingroup
+\catcode`A=11\relax \global\let\XeKo@catcode@letter=A
+\catcode`0=12\relax \global\let\XeKo@catcode@other =0
+\endgroup
+\def\XeKo@striptw@words#1 #2 #3\relax{#3}
+\def\XeKo@get@charslot{%
+  \if\noexpand\XeKo@let@token\relax
+    \chardef\XeKo@charslot="FFFF
+  \else
+    \expandafter\XeKo@get@charslot@
+  \fi
+  }
+\def\XeKo@get@charslot@{%
+  \ifnum 0\ifcat\XeKo@let@token\XeKo@catcode@letter 1\else
+          \ifcat\XeKo@let@token\XeKo@catcode@other  1\fi\fi >\z@
+    \edef\@tempa{\expandafter\XeKo@striptw@words\meaning\XeKo@let@token\relax}%
+    \expandafter\chardef\expandafter\XeKo@charslot\expandafter`\@tempa\relax
+  \else
+    \chardef\XeKo@charslot="FFFF
+  \fi
+  }
+
+\def\XeKo@read@hanja@hangul@file#1{%
+  \begingroup
+  \@tempcnta=\z@
+  \openin1=#1\relax \XeKo@read@hanja@hangul@line \closein1
+  \endgroup
+  }
+\def\XeKo@read@hanja@hangul@line{%
+  \read1 to \@tempa
+  \ifnum\XeKo@count@=\@tempcnta
+    \global\XeKo@count@\@tempa
+  \else
+    \advance\@tempcnta\@ne \expandafter\XeKo@read@hanja@hangul@line
+  \fi
+  }
+
+\def\XeKo@num@josa{%
+  \ifnum\XeKo@count@<\z@ \XeKo@count@=-\XeKo@count@ \fi
+  \count@\XeKo@count@
+  \divide\count@ 10
+  \multiply\count@ 10
+  \advance\XeKo@count@-\count@
+  \XeKo@count@=\ifcase\XeKo@count@ \z@
+    \or \@ne
+    \or \tw@
+    \or \z@
+    \or \tw@
+    \or \tw@
+    \or \z@
+    \or \@ne
+    \or \@ne
+    \or \tw@
+  \fi
+  \XeKo@do@make@josa
+  }
+\def\XeKo@alph@josa{%
+  \XeKo@count@=\ifnum "4C=\XeKo@count@ \@ne % L
+          \else\ifnum "4D=\XeKo@count@ \z@  % M
+          \else\ifnum "4E=\XeKo@count@ \z@  % N
+          \else\ifnum "6C=\XeKo@count@ \@ne % l
+          \else\ifnum "6D=\XeKo@count@ \z@  % m
+          \else\ifnum "6E=\XeKo@count@ \z@  % n
+          \else \tw@
+          \fi\fi\fi\fi\fi \fi
+  \XeKo@do@make@josa
+  }
+
+\protected\def\jong {\global\let\XeKo@josatoken=0}\jong
+\protected\def\rieul{\global\let\XeKo@josatoken=1}
+\protected\def\jung {\global\let\XeKo@josatoken=2}
+\protected\def\가{\XeKo@make@josa 가이}
+\protected\def\이{\futurelet\XeKo@let@token\XeKo@make@josa@I}
+\protected\def\은{\XeKo@make@josa 는은} \let\는\은
+\protected\def\을{\XeKo@make@josa 를을} \let\를\을
+\protected\def\와{\XeKo@make@josa 와과} \let\과\와
+\protected\def\으{\XeKo@make@josa \empty 으}
+\protected\def\로{\으로}
+\protected\def\라{\XeKo@make@josa 라{이라}}
+\def\XeKo@make@josa@II{\XeKo@make@josa\relax 이}
+\def\XeKo@make@josa@I{%
+  \XeKo@get@charslot
+  \ifnum\XeKo@charslot="FFFF
+    \expandafter\가%
+  \else
+    \ifnum 0\ifnum\XeKo@charslot>"ABFF \ifnum\XeKo@charslot<"D7A4 1\fi\fi >\z@
+      \expandafter\expandafter\expandafter\XeKo@make@josa@II
+    \else
+      \expandafter\expandafter\expandafter\가%
+    \fi
+  \fi
+  }
+\def\XeKo@make@josa{%
+  \let\XeKo@let@token=\XeKo@josatoken
+  \XeKo@get@charslot
+  \XeKo@count@=\XeKo@charslot
+  \ifnum\XeKo@count@<"FF00
+  \else\ifnum\XeKo@count@<"FF5B
+    \advance\XeKo@count@-"FEE0
+  \fi\fi
+  \let\XeKo@next\XeKo@make@josa@
+  \ifnum\XeKo@count@<"30 % 0
+  \else\ifnum\XeKo@count@<"3A
+    \advance\XeKo@count@-"30 \let\XeKo@next\XeKo@num@josa
+  \else\ifnum\XeKo@count@<"41
+  \else\ifnum\XeKo@count@<"7B \let\XeKo@next\XeKo@alph@josa
+  \else\ifnum\XeKo@count@<"2160 % roman numneral I
+  \else\ifnum\XeKo@count@<"216C
+    \advance\XeKo@count@-"215F \let\XeKo@next\XeKo@num@josa
+  \else\ifnum\XeKo@count@<"2170 % roman numneral i
+  \else\ifnum\XeKo@count@<"217C
+    \advance\XeKo@count@-"216F \let\XeKo@next\XeKo@num@josa
+  \else\ifnum\XeKo@count@<"2460 % ①
+  \else\ifnum\XeKo@count@<"249C % ⒜
+    \advance\XeKo@count@-"245F \let\XeKo@next\XeKo@num@josa
+  \else\ifnum\XeKo@count@<"24B6 % Ⓐ
+    \advance\XeKo@count@-"245B \let\XeKo@next\XeKo@alph@josa
+  \else\ifnum\XeKo@count@<"24D0 % ⓐ
+    \advance\XeKo@count@-"2475 \let\XeKo@next\XeKo@alph@josa
+  \else\ifnum\XeKo@count@<"24EA
+    \advance\XeKo@count@-"248F \let\XeKo@next\XeKo@alph@josa
+  \fi\fi\fi\fi\fi \fi\fi\fi\fi\fi \fi\fi\fi
+  \XeKo@next
+  }
+\def\XeKo@make@josa@{%
+  \ifnum\XeKo@count@<"3260 % ㉠
+  \else\ifnum\XeKo@count@<"3280
+    \advance\XeKo@count@-"60
+  \fi\fi
+  \let\XeKo@next\XeKo@make@josa@@
+  \ifnum\XeKo@count@<"3131 % ㄱ
+  \else\ifnum\XeKo@count@<"318F
+    \ifnum     \XeKo@count@="3139 \XeKo@count@\@ne
+    \else\ifnum\XeKo@count@<"314F \XeKo@count@\z@
+    \else\ifnum\XeKo@count@>"3164
+         \ifnum\XeKo@count@<"3187 \XeKo@count@\z@ \fi
+    \fi\fi\fi
+    \let\XeKo@next\XeKo@do@make@josa
+  \else\ifnum\XeKo@count@<"3200 % ㈀
+  \else\ifnum\XeKo@count@<"321F
+    \ifnum     \XeKo@count@="3203 \XeKo@count@\@ne
+    \else\ifnum\XeKo@count@<"320E \XeKo@count@\z@
+    \fi\fi
+    \let\XeKo@next\XeKo@do@make@josa
+  \fi\fi\fi\fi
+  \XeKo@next
+  }
+\def\XeKo@make@josa@@{%
+  \ifnum\XeKo@count@<"3400 \else\ifnum\XeKo@count@<"4DB6
+    \advance\XeKo@count@-"3400 \XeKo@read@hanja@hangul@file{hanjaexa_hangul.tab}%
+  \else\ifnum\XeKo@count@<"4E00 \else\ifnum\XeKo@count@<"9FA6
+    \advance\XeKo@count@-"4E00 \XeKo@read@hanja@hangul@file{hanja_hangul.tab}%
+  \else\ifnum\XeKo@count@<"F900 \else\ifnum\XeKo@count@<"FA2E
+    \advance\XeKo@count@-"F900 \XeKo@read@hanja@hangul@file{hanjacom_hangul.tab}%
+  \fi\fi\fi\fi\fi \fi
+  \ifnum\XeKo@count@<"AC00 \else\ifnum\XeKo@count@<"D7A4 % Hangul syllables
+    \advance\XeKo@count@-"AC00
+    \@tempcnta\XeKo@count@ \divide\@tempcnta28 \multiply\@tempcnta28
+    \advance\XeKo@count@-\@tempcnta \advance\XeKo@count@"11A7
+  \fi\fi
+  \ifnum\XeKo@count@<"11A8
+  \else\ifnum\XeKo@count@<"1200
+    \ifnum\XeKo@count@="11AF \XeKo@count@\@ne \else \XeKo@count@\z@ \fi
+  \else\ifnum\XeKo@count@<"D7CB
+  \else\ifnum\XeKo@count@<"D7FC
+    \XeKo@count@\z@
+  \fi\fi\fi\fi
+  \XeKo@do@make@josa
+  }
+\def\XeKo@do@make@josa#1#2{%
+  \ifcase\XeKo@count@ #2% jong
+    \or \ifx#1\empty\else#2\fi % rieul
+    \else #1% jung
+  \fi
+  }
+
+% dotemph
+\def\dotemphraise{0.4em }
+\ifcsname bfseries\endcsname
+  \def\dotemphchar{\bfseries ^^^^02d9}
+\else
+  \def\dotemphchar{\bf \char95 }
+\fi
+
+\newbox\XeKo@dotemph@box
+\let\XeKo@maybe@dotemph\relax
+
+\protected\def\dotemph#1{%
+  \leavevmode
+  \setbox\XeKo@dotemph@box\hbox{\raise\dotemphraise\hbox{\dotemphchar}}%
+  \begingroup
+  \let\XeKo@maybe@dotemph\XeKo@do@dotemph
+  #1\relax
+  \endgroup
+}
+\def\XeKo@do@dotemph{%
+  \XeKo@check@hangulTM % 방점 너비를 감안하자
+  \setbox\z@\hbox{\the\XeKo@toks@}%
+  \setbox\tw@\hbox to\wd\z@{%
+    \hss
+    \ifnum\XeKo@has@hangulTM>\z@
+      \kern\fontcharwd\font\XeKo@has@hangulTM
+    \fi
+    \unhcopy\XeKo@dotemph@box
+    \hss
+  }\wd\tw@\z@ \ht\tw@\z@ \dp\tw@\z@
+  \box\tw@
+}
+\def\XeKo@check@hangulTM{%
+  \chardef\XeKo@has@hangulTM\z@
+  \expandafter\XeKo@check@hangulTM@e \the\XeKo@toks@ ^^^^302e\relax
+  \ifnum\XeKo@has@hangulTM=\z@
+    \expandafter\XeKo@check@hangulTM@f \the\XeKo@toks@ ^^^^302f\relax
+  \fi
+}
+\def\XeKo@check@hangulTM@e#1^^^^302e#2\relax{%
+  \ifx\empty#2\empty \else
+    \chardef\XeKo@has@hangulTM="302E
+  \fi
+}
+\def\XeKo@check@hangulTM@f#1^^^^302f#2\relax{%
+  \ifx\empty#2\empty \else
+    \chardef\XeKo@has@hangulTM="302F
+  \fi
+}
+
+% other commands
+\let\enablecjksymbolspacing\compresspunctuations
+\let\disablecjksymbolspacing\nocompresspunctuations
+\protected\def\disablekoreanfonts{%
+  \let\XeKo@fontHG\relax
+  \let\XeKo@fontID\relax
+  \let\XeKo@fontCJ\relax
+  \let\XeKo@fontSY\relax
+  \let\XeKo@fontAA\relax
+  \let\XeKo@fontAO\relax
+  \let\XeKo@fontAC\relax
+  \let\XeKo@fontAP\relax
+  \let\XeKo@fontAM\relax
+  \let\XeKo@fontAH\relax
+  \let\XeKo@fontOP\relax
+  \let\XeKo@fontCL\relax
+  \let\XeKo@fontMD\relax
+  \let\XeKo@fontFS\relax
+  \let\XeKo@fontEX\relax
+  \let\XeKo@fontLD\relax
+  \let\XeKo@fontVC\relax
+  }
+\protected\def\disablehangulspacing{%
+  \let\XeKo@halfzero          \inhibitglue
+  \let\XeKo@halfhalf          \inhibitglue
+  \let\XeKo@halfquarter       \inhibitglue
+  \let\XeKo@quarterquarter    \inhibitglue
+  \let\XeKo@iiiquarterquarter \inhibitglue
+  \let\XeKo@latincjk          \inhibitglue
+  \let\XeKo@postmath          \inhibitglue
+  \let\XKinterhangulbreak     \inhibitglue
+  \let\XKinterhanjabreak      \inhibitglue
+  \let\XeKo@latincjk@classic  \inhibitglue
+  \let\XeKo@latincjk@modern   \inhibitglue
+  \let\XeKo@postmath@modern   \inhibitglue
+  \let\XeKo@suppress@linebreak    \relax
+  \chardef\XeKo@cjk@ignorespaces  \z@
+  \chardef\XeKo@compresspuncts    \z@
+  }
+\protected\def\disablehangulspacingandlinebreak{%
+  \let\inhibitglue            \relax
+  \chardef\XeKo@hangingpuncts \z@
+  \disablehangulspacing
+  \XeTeXlinebreaklocale""
+  }
+\protected\def\enablehangulspacingandlinebreak{%
+  \XeTeXinterchartokenstate\@ne
+  \XeTeXlinebreaklocale"ko"
+  }
+\enablehangulspacingandlinebreak
+% no longer support these two \disable...
+\let\disableautojosa\relax
+\let\disablejamoautojosa\relax
+% ulem support
+\protected\def\XeKo@UL@dotemph#1{%
+    \ifx\ \LA@space\else \UL@stop\fi
+    \leavevmode
+    \setbox\XeKo@dotemph@box\hbox{\raise\dotemphraise\hbox{\dotemphchar}}%
+    \begingroup
+    \let\XeKo@maybe@dotemph\XeKo@do@dotemph
+    \XeKo@UL@dotemph@#1 ^^^^ffff \relax
+    \endgroup
+    \ifx\ \LA@space\else \UL@start\fi
+}
+\def\XeKo@UL@dotemph@#1 {%
+  \ifx^^^^ffff#1\relax
+    \unskip\unskip\unskip
+  \else
+    \ifx\ \LA@space
+      #1\ %
+    \else
+      \UL@start
+      #1\ %
+      \UL@stop
+    \fi
+    \expandafter\XeKo@UL@dotemph@
+  \fi
+}
+\def\xetexkoulemsupport{%
+  \let\XeKo@UL@stop\UL@stop
+  \UL@hook\expandafter{\the\UL@hook
+    \let\dotemph\XeKo@UL@dotemph
+    % uline 안에서 폰트가 변경되는 경우를 대비
+    \def\UL@stop{%
+      \global\let\XeKo@UL@tmp@latinfont     \XeKo@latin@font
+      \global\let\XeKo@UL@tmp@hangulfont    \XeKo@hangul@font
+      \global\let\XeKo@UL@tmp@hanjafont     \XeKo@hanja@font
+      \global\let\XeKo@UL@tmp@rawhangulfont \XeKo@raw@hangul@font
+      \global\let\XeKo@UL@tmp@rawhanjafont  \XeKo@raw@hanja@font
+      \expandafter \XeKo@UL@stop \the\font
+      \let\XeKo@latin@font      \XeKo@UL@tmp@latinfont
+      \let\XeKo@hangul@font     \XeKo@UL@tmp@hangulfont
+      \let\XeKo@hanja@font      \XeKo@UL@tmp@hanjafont
+      \let\XeKo@raw@hangul@font \XeKo@UL@tmp@rawhangulfont
+      \let\XeKo@raw@hanja@font  \XeKo@UL@tmp@rawhanjafont
+    }%
+}}
+
+% math hangul
+\def\setmathhangulblock#1#2{%
+  \count@="#1
+  \loop
+    \Umathcode\count@ = 7 \symmathhangul\count@
+    \ifnum\count@<"#2 \advance\count@\@ne
+  \repeat
+  }
+
+%%% plain
+\ifcsname ver@xetexko.sty\endcsname \else
+  \def\verticaltypesetting{%
+    \dimen@\hsize \hsize\vsize \vsize\dimen@
+    \edef\plainoutput{\dimen@\hsize \hsize\vsize \vsize\dimen@
+      \unexpanded\expandafter{\plainoutput}}%
+    \def\pagebody{\setbox\z@\vbox to\hsize{\boxmaxdepth=\maxdepth \pagecontents}%
+      \XeKo@rotatebox\z@\box\z@}%
+    \typesetvertical
+    \let\verticaltypesetting\relax % prevent multiple running
+  }
+  \def\beginverticaltypesetting{\vfill\supereject \begingroup \verticaltypesetting}
+  \def\endverticaltypesetting{\vfill\supereject \endgroup}
+  % hangul fonts
+  \protected\def\hangulfont{%
+    \afterassignment\XeKo@hangulfont@setup\font\XeKo@hangul@font
+    }
+  \def\XeKo@hangulfont@setup{%
+    \edef\XeKo@hangul@font{%
+      \the\XeKo@hangul@font
+      \ifdefined\xetexkohu \def\noexpand\xetexkohu{\xetexkohu}\fi
+      \ifdefined\xetexkointerhchar \def\noexpand\xetexkointerhchar{\xetexkointerhchar}\fi
+      \ifdefined\xetexkocharraise \def\noexpand\xetexkocharraise{\xetexkocharraise}\fi
+      }%
+    }
+  \protected\def\sethangulfont#1{%
+    \def\@tempa{#1}%
+    \edef\@tempb{\string#1}%
+    \expandafter\afterassignment\expandafter\XeKo@sethangulfont@setup
+      \expandafter\font\csname XeKo@hangul@font@\@tempb\endcsname
+    }
+  \def\XeKo@sethangulfont@setup{%
+    \expandafter\edef\@tempa{%
+      \def\noexpand\XeKo@hangul@font{%
+        \csname XeKo@hangul@font@\@tempb\endcsname
+        \ifdefined\xetexkohu \def\noexpand\xetexkohu{\xetexkohu}\fi
+        \ifdefined\xetexkointerhchar \def\noexpand\xetexkointerhchar{\xetexkointerhchar}\fi
+        \ifdefined\xetexkocharraise \def\noexpand\xetexkocharraise{\xetexkocharraise}\fi
+        }%
+      }%
+    }
+  \protected\def\hanjafont{%
+    \afterassignment\XeKo@hanjafont@setup\font\XeKo@hanja@font
+    }
+  \def\XeKo@hanjafont@setup{%
+    \edef\XeKo@hanja@font{%
+      \the\XeKo@hanja@font
+      \ifdefined\xetexkohu \def\noexpand\xetexkohu{\xetexkohu}\fi
+      \ifdefined\xetexkointerhchar \def\noexpand\xetexkointerhchar{\xetexkointerhchar}\fi
+      \ifdefined\xetexkocharraise \def\noexpand\xetexkocharraise{\xetexkocharraise}\fi
+      }%
+    }
+  \protected\def\sethanjafont#1{%
+    \def\@tempa{#1}%
+    \edef\@tempb{\string#1}%
+    \expandafter\afterassignment\expandafter\XeKo@sethanjafont@setup
+      \expandafter\font\csname XeKo@hanja@font@\@tempb\endcsname
+    }
+  \def\XeKo@sethanjafont@setup{%
+    \expandafter\edef\@tempa{%
+      \def\noexpand\XeKo@hanja@font{%
+        \csname XeKo@hanja@font@\@tempb\endcsname
+        \ifdefined\xetexkohu \def\noexpand\xetexkohu{\xetexkohu}\fi
+        \ifdefined\xetexkointerhchar \def\noexpand\xetexkointerhchar{\xetexkointerhchar}\fi
+        \ifdefined\xetexkocharraise \def\noexpand\xetexkocharraise{\xetexkocharraise}\fi
+        }%
+      }%
+    }
+  \protected\def\hanjabyhangulfont{\let\XeKo@hanja@font\XeKo@hangul@font }
+  % math hangul
+  \protected\def\setmathhangulfonts#1#2#3{% font identifiers
+    \ifnum\Umathcodenum"AC00="AC00\relax
+      \csname newfam\endcsname\symmathhangul
+      \setmathhangulblock{AC00}{D7A3}%
+    \fi
+    \textfont\symmathhangul=#1\relax
+    \scriptfont\symmathhangul=#2\relax
+    \scriptscriptfont\symmathhangul=#3\relax
+    }
+  \protected\def\mathhangulfont{%
+    \afterassignment\xetexkosetmathhangulfonts\font\textmathhangul
+    }
+  \def\xetexkosetmathhangulfonts{%
+    \edef\@tempa{%
+      \expandafter\expandafter\expandafter\XeKo@strip@at@size@from@font
+      \expandafter\fontname\expandafter\textmathhangul\detokenize{ at }\relax
+      }%
+    \dimen@\fontdimen 6 \textmathhangul
+    \font\scriptmathhangul= \@tempa\space at .7\dimen@
+    \font\scriptscriptmathhangul = \@tempa\space at .5\dimen@
+    \setmathhangulfonts\textmathhangul\scriptmathhangul\scriptscriptmathhangul
+    }
+  \expandafter\def\expandafter\XeKo@strip@at@size@from@font
+    \expandafter#\expandafter1\detokenize{ at }#2\relax{#1}
+  % default unbatang
+  \hangulfont="[UnBatang.ttf]:mapping=tex-text;script=hang" at 10pt
+  \hanjabyhangulfont
+  \XeKocatcodeofATchar
+\endinput\fi
+
+%%% latex
+
+\def\verticaltypesetting{%
+  \ifx\@nodocument\relax % not in the preamble
+    \clearpage
+    \begingroup
+  \fi
+  \hsize\textheight \vsize\textwidth
+  \textwidth\hsize  \textheight\vsize
+  \@colroom\vsize   \@colht\vsize
+  \if@twocolumn
+    \columnwidth=.5\dimexpr\textwidth-\columnsep\relax
+    \linewidth\columnwidth \hsize\columnwidth
+  \else
+    \linewidth\hsize \columnwidth\hsize
+  \fi
+  \expandafter\def\expandafter\@outputpage\expandafter{%
+    \expandafter\XeKo@rotatebox\expandafter\@outputbox
+    \expandafter\textwidth\expandafter\textheight
+    \@outputpage
+  }%
+  \typesetvertical
+  \let\verticaltypesetting\relax % prevent multiple running
+}
+\def\endverticaltypesetting{%
+  \clearpage
+  \endgroup
+  \global\@colroom\textheight
+  \global\@colht\textheight
+  \global\vsize\textheight
+}
+
+\RequirePackage{fontspec}[2020/02/03]
+\AddToHook{rmfamily}{%
+  \let \xetexkohangulfont   \xetexkomainhangulfont
+  \let \xetexkohanguloption \xetexkomainhanguloption
+  \let \xetexkohanjafont    \xetexkomainhanjafont
+  \let \xetexkohanjaoption  \xetexkomainhanjaoption
+  }
+\AddToHook{sffamily}{%
+  \let \xetexkohangulfont   \xetexkosanshangulfont
+  \let \xetexkohanguloption \xetexkosanshanguloption
+  \let \xetexkohanjafont    \xetexkosanshanjafont
+  \let \xetexkohanjaoption  \xetexkosanshanjaoption
+  }
+\AddToHook{ttfamily}{%
+  \let \xetexkohangulfont   \xetexkomonohangulfont
+  \let \xetexkohanguloption \xetexkomonohanguloption
+  \let \xetexkohanjafont    \xetexkomonohanjafont
+  \let \xetexkohanjaoption  \xetexkomonohanjaoption
+  \latinalphs\latinparens\latinpuncts\latincolons\latinhyphens
+  \disablehangulspacing
+  }
+\AddToHook{cmd/verbatim@font/after}{%
+  \disablehangulspacingandlinebreak
+  \aftergroup\enablehangulspacingandlinebreak
+  }
+\AddToHook{normalfont}{%
+  \let \xetexkohangulfont   \xetexkodefaulthangulfont
+  \let \xetexkohanguloption \xetexkodefaulthanguloption
+  \let \xetexkohanjafont    \xetexkodefaulthanjafont
+  \let \xetexkohanjaoption  \xetexkodefaulthanjaoption
+  }
+\AddToHook{env/picture/begin}{%
+  \latinalphs\latinparens\latinpuncts\latincolons\latinhyphens
+  }
+\def\XeKo@hangul@selectfont{%
+  \ifdefined\XeKo@in@selectfont\else
+    \ifdefined\xetexkohangulfont
+      \begingroup
+      \let\XeKo@in@selectfont\empty
+      \xetexkohangulfont
+      \edef\x{\endgroup
+        \def\noexpand\XeKo@hangul@font{\the\font
+          \unexpanded\expandafter{\xetexkohanguloption}}%
+        }\x
+      \xetexkohanguloption % for 영문자-한글 interlatincjk
+    \else
+      \let\XeKo@hangul@font\XeKo@undefined
+    \fi
+  \fi
+  }
+\def\XeKo@hanja@selectfont{%
+  \ifdefined\XeKo@in@selectfont\else
+    \ifdefined\xetexkohanjafont
+      \begingroup
+      \let\XeKo@in@selectfont\empty
+      \xetexkohanjafont
+      \edef\x{\endgroup
+        \def\noexpand\XeKo@hanja@font{\the\font
+          \unexpanded\expandafter{\xetexkohanjaoption}}%
+        }\x
+      \xetexkohanjaoption
+    \else
+      \let\XeKo@hanja@font\XeKo@undefined
+    \fi
+  \fi }
+
+\ExplSyntaxOn
+\AddToHook{selectfont}
+{
+  \fontspec_if_current_script:nTF {math} {} % unless unicode-math font
+  {
+    \XeKo@hanja@selectfont
+    \XeKo@hangul@selectfont
+  }
+}
+\tl_new:N \l_xtxko_font_opts_tl
+\tl_new:N \l_xtxko_rest_opts_tl
+\keys_define:nn { xtxko-font }
+{
+  hu            .code:n = { \__xtxko_add_font_opt:Nn \xetexkohu         {#1} } ,
+  interhchar    .code:n = { \__xtxko_add_font_opt:Nn \xetexkointerhchar {#1} } ,
+  charraise     .code:n = { \__xtxko_add_font_opt:Nn \xetexkocharraise  {#1} } ,
+  InterLatinCJK .meta:n = { hu         = {#1} } ,
+  InterHangul   .meta:n = { interhchar = {#1} } ,
+  CharRaise     .meta:n = { charraise  = {#1} } ,
+  lowerexclamation    .code:n = { },
+  lowerperiod         .code:n = { },
+  lowercomma          .code:n = { },
+  lowerquestion       .code:n = { },
+  postexclamationkern .code:n = { },
+  postmathskip        .code:n = { },
+  postperiodkern      .code:n = { },
+  postcommakern       .code:n = { },
+  postquestionkern    .code:n = { },
+  preexclamationkern  .code:n = { },
+  preperiodkern       .code:n = { },
+  precommakern        .code:n = { },
+  prequestionkern     .code:n = { },
+  quoteraise          .code:n = { },
+  quotewidth          .code:n = { },
+  PunctRaise          .code:n = { },
+}
+\cs_new:Nn \__xtxko_add_font_opt:Nn
+{
+  \tl_put_right:Nn \l_xtxko_font_opts_tl { \cs_set_nopar:Npn #1 {#2} }
+}
+\cs_new:Nn \__xtxko_assign_font_opts:n
+{
+  \tl_clear:N \l_xtxko_font_opts_tl
+  \keys_set_known:nxN { xtxko-font } {#1} \l_xtxko_rest_opts_tl
+}
+\DeclareDocumentCommand \setmainhangulfont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@mainhangulfamily { Ligatures=TeX, \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkomainhangulfont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@mainhangulfamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkomainhanguloption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \rmdefault
+  {
+    \cs_set_eq:NN \xetexkohangulfont \xetexkomainhangulfont
+    \cs_set_eq:NN \xetexkohanguloption \xetexkomainhanguloption
+    \cs_set_eq:NN \xetexkodefaulthangulfont \xetexkomainhangulfont
+    \cs_set_eq:NN \xetexkodefaulthanguloption \xetexkomainhanguloption
+    \XeKo@hangul@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \setsanshangulfont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@sanshangulfamily { Ligatures=TeX, \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkosanshangulfont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@sanshangulfamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkosanshanguloption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \sfdefault
+  {
+    \cs_set_eq:NN \xetexkohangulfont \xetexkosanshangulfont
+    \cs_set_eq:NN \xetexkohanguloption \xetexkosanshanguloption
+    \cs_set_eq:NN \xetexkodefaulthangulfont \xetexkosanshangulfont
+    \cs_set_eq:NN \xetexkodefaulthanguloption \xetexkosanshanguloption
+    \XeKo@hangul@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \setmonohangulfont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@monohangulfamily { \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkomonohangulfont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@monohangulfamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkomonohanguloption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \ttdefault
+  {
+    \cs_set_eq:NN \xetexkohangulfont \xetexkomonohangulfont
+    \cs_set_eq:NN \xetexkohanguloption \xetexkomonohanguloption
+    \cs_set_eq:NN \xetexkodefaulthangulfont \xetexkomonohangulfont
+    \cs_set_eq:NN \xetexkodefaulthanguloption \xetexkomonohanguloption
+    \XeKo@hangul@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \newhangulfontfamily { m O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #2, #4 }
+  \fontspec_set_family:cnn { xetexko_user_family_ \cs_to_str:N #1 } { \l_xtxko_rest_opts_tl } { #3 }
+  \cs_set_nopar:cpn { xetexko_user_font_ \cs_to_str:N #1 }
+  {
+    \fontencoding \g_fontspec_encoding_tl
+    \exp_args:Nc \fontfamily { xetexko_user_family_ \cs_to_str:N #1 } \selectfont
+  }
+  \cs_set_nopar:cpx { xetexko_user_option_ \cs_to_str:N #1 }
+  {
+    \exp_not:o { \l_xtxko_font_opts_tl }
+  }
+  \cs_set_protected_nopar:Npn #1
+  {
+    \cs_set_eq:Nc \xetexkohangulfont   { xetexko_user_font_ \cs_to_str:N #1 }
+    \cs_set_eq:Nc \xetexkohanguloption { xetexko_user_option_ \cs_to_str:N #1 }
+    \XeKo@hangul@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \newhangulfontface { m O{} m O{} }
+{
+  \newhangulfontfamily #1 { #3 } [ BoldFont={}, ItalicFont={}, SmallCapsFont={}, #2, #4 ]
+}
+\DeclareDocumentCommand \hangulfontspec { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \xetexkohangulfontfamily { \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_nopar:Npn \xetexkohangulfont
+  {
+    \fontencoding \g_fontspec_encoding_tl
+    \fontfamily \xetexkohangulfontfamily \selectfont
+  }
+  \cs_set_nopar:Npx \xetexkohanguloption
+  {
+    \exp_not:o { \l_xtxko_font_opts_tl }
+  }
+  \XeKo@hangul@selectfont
+  \ignorespaces
+}
+\cs_set_eq:NN \adhochangulfont \hangulfontspec
+\DeclareDocumentCommand \addhangulfontfeature { m }
+{
+  \group_begin:
+  \fontseries\seriesdefault\fontshape\shapedefault \xetexkohangulfont
+  \cs_set_eq:NN \l_xtxko_font_opts_tl \xetexkohanguloption
+  \keys_set_known:nxN { xtxko-font } { #1 } \l_xtxko_rest_opts_tl
+  \addfontfeature { \l_xtxko_rest_opts_tl }
+  \use:x
+  {
+    \group_end:
+    \exp_not:N \cs_set_nopar:Npn \exp_not:N \xetexkohangulfont
+    {
+      \exp_not:N \fontencoding { \f@encoding }
+      \exp_not:N \fontfamily   { \f@family }
+      \exp_not:N \selectfont
+    }
+    \exp_not:N \cs_set_nopar:Npn \exp_not:N \xetexkohanguloption
+    {
+      \exp_not:o { \l_xtxko_font_opts_tl }
+    }
+  }
+  \XeKo@hangul@selectfont
+  \ignorespaces
+}
+\cs_set_eq:NN \addhangulfontfeatures \addhangulfontfeature
+\DeclareDocumentCommand \setmainhanjafont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@mainhanjafamily { Ligatures=TeX, \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkomainhanjafont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@mainhanjafamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkomainhanjaoption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \rmdefault
+  {
+    \cs_set_eq:NN \xetexkohanjafont \xetexkomainhanjafont
+    \cs_set_eq:NN \xetexkohanjaoption \xetexkomainhanjaoption
+    \cs_set_eq:NN \xetexkodefaulthanjafont \xetexkomainhanjafont
+    \cs_set_eq:NN \xetexkodefaulthanjaoption \xetexkomainhanjaoption
+    \XeKo@hanja@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \setsanshanjafont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@sanshanjafamily { Ligatures=TeX, \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkosanshanjafont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@sanshanjafamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkosanshanjaoption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \sfdefault
+  {
+    \cs_set_eq:NN \xetexkohanjafont \xetexkosanshanjafont
+    \cs_set_eq:NN \xetexkohanjaoption \xetexkosanshanjaoption
+    \cs_set_eq:NN \xetexkodefaulthanjafont \xetexkosanshanjafont
+    \cs_set_eq:NN \xetexkodefaulthanjaoption \xetexkosanshanjaoption
+    \XeKo@hanja@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \setmonohanjafont { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \XeKo@monohanjafamily { \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_protected_nopar:Npn \xetexkomonohanjafont
+  {
+    \fontencoding \g_fontspec_encoding_tl \fontfamily \XeKo@monohanjafamily \selectfont
+  }
+  \cs_set_eq:NN \xetexkomonohanjaoption \l_xtxko_font_opts_tl
+  \str_if_eq:eeT \familydefault \ttdefault
+  {
+    \cs_set_eq:NN \xetexkohanjafont \xetexkomonohanjafont
+    \cs_set_eq:NN \xetexkohanjaoption \xetexkomonohanjaoption
+    \cs_set_eq:NN \xetexkodefaulthanjafont \xetexkomonohanjafont
+    \cs_set_eq:NN \xetexkodefaulthanjaoption \xetexkomonohanjaoption
+    \XeKo@hanja@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \newhanjafontfamily { m O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #2, #4 }
+  \fontspec_set_family:cnn { xetexko_user_family_ \cs_to_str:N #1 } { \l_xtxko_rest_opts_tl } { #3 }
+  \cs_set_nopar:cpn { xetexko_user_font_ \cs_to_str:N #1 }
+  {
+    \fontencoding \g_fontspec_encoding_tl
+    \exp_args:Nc \fontfamily { xetexko_user_family_ \cs_to_str:N #1 } \selectfont
+  }
+  \cs_set_nopar:cpx { xetexko_user_option_ \cs_to_str:N #1 }
+  {
+    \exp_not:o { \l_xtxko_font_opts_tl }
+  }
+  \cs_set_protected_nopar:Npn #1
+  {
+    \cs_set_eq:Nc \xetexkohanjafont   { xetexko_user_font_ \cs_to_str:N #1 }
+    \cs_set_eq:Nc \xetexkohanjaoption { xetexko_user_option_ \cs_to_str:N #1 }
+    \XeKo@hanja@selectfont
+  }
+  \ignorespaces
+}
+\DeclareDocumentCommand \newhanjafontface { m O{} m O{} }
+{
+  \newhanjafontfamily #1 { #3 } [ BoldFont={}, ItalicFont={}, SmallCapsFont={}, #2, #4 ]
+}
+\DeclareDocumentCommand \hanjafontspec { O{} m O{} }
+{
+  \__xtxko_assign_font_opts:n { #1, #3 }
+  \fontspec_set_family:Nnn \xetexkohanjafontfamily { \l_xtxko_rest_opts_tl } { #2 }
+  \cs_set_nopar:Npn \xetexkohanjafont
+  {
+    \fontencoding \g_fontspec_encoding_tl
+    \fontfamily \xetexkohanjafontfamily \selectfont
+  }
+  \cs_set_nopar:Npx \xetexkohanjaoption
+  {
+    \exp_not:o { \l_xtxko_font_opts_tl }
+  }
+  \XeKo@hanja@selectfont
+  \ignorespaces
+}
+\cs_set_eq:NN \adhochanjafont \hanjafontspec
+\DeclareDocumentCommand \addhanjafontfeature { m }
+{
+  \group_begin:
+  \fontseries\seriesdefault\fontshape\shapedefault \xetexkohanjafont
+  \cs_set_eq:NN \l_xtxko_font_opts_tl \xetexkohanjaoption
+  \keys_set_known:nxN { xtxko-font } { #1 } \l_xtxko_rest_opts_tl
+  \addfontfeature { \l_xtxko_rest_opts_tl }
+  \use:x
+  {
+    \group_end:
+    \exp_not:N \cs_set_nopar:Npn \exp_not:N \xetexkohanjafont
+    {
+      \exp_not:N \fontencoding { \f@encoding }
+      \exp_not:N \fontfamily   { \f@family }
+      \exp_not:N \selectfont
+    }
+    \exp_not:N \cs_set_nopar:Npn \exp_not:N \xetexkohanjaoption
+    {
+      \exp_not:o { \l_xtxko_font_opts_tl }
+    }
+  }
+  \XeKo@hanja@selectfont
+  \ignorespaces
+}
+\cs_set_eq:NN \addhanjafontfeatures \addhanjafontfeature
+% math hangul
+\DeclareDocumentCommand \setmathhangulfont { O{} m O{} }
+{
+  \fontspec_set_family:Nnn \xetexkomathhangulfamily { #1, #3 } { #2 }
+  \DeclareSymbolFont { mathhangul }
+    \g_fontspec_encoding_tl \xetexkomathhangulfamily \seriesdefault \shapedefault
+  \int_compare:nNnT { \Umathcodenum"AC00 } = { "AC00 }
+  {
+    \setmathhangulblock{AC00}{D7A3}
+  }
+  \ignorespaces
+}
+% xetexkofontregime
+\keys_define:nn { xtxko-char }
+{
+  alphs       .code:n = \use:c { #1alphs } ,
+  parens      .code:n = \use:c { #1parens } ,
+  puncts      .code:n = \use:c { #1puncts } ,
+  colons      .code:n = \use:c { #1colons } ,
+  hyphens     .code:n = \use:c { #1hyphens } ,
+  cjksymbols  .code:n = \use:c { #1cjksymbols } ,
+  nums        .meta:n = { alphs  = {#1} },
+  quotes      .meta:n = { parens = {#1} },
+}
+\DeclareDocumentCommand \xetexkofontregime { O{} m O{} }
+{
+  \use:c { #2marks }
+  \keys_set:nn { xtxko-char } { #1, #3 }
+}
+% no longer support default hangul/hanja fontfeatures
+\DeclareDocumentCommand \defaulthangulfontfeatures { t+ o m } { }
+\cs_set_eq:NN \defaulthanjafontfeatures \defaulthangulfontfeatures
+\ExplSyntaxOff
+
+\protected\def\hanjabyhangulfont{%
+  \let\xetexkomainhanjafont      \xetexkomainhangulfont
+  \let\xetexkomainhanjaoption    \xetexkomainhanguloption
+  \let\xetexkosanshanjafont      \xetexkosanshangulfont
+  \let\xetexkosanshanjaoption    \xetexkosanshanguloption
+  \let\xetexkomonohanjafont      \xetexkomonohangulfont
+  \let\xetexkomonohanjaoption    \xetexkomonohanguloption
+  \let\xetexkodefaulthanjafont   \xetexkodefaulthangulfont
+  \let\xetexkodefaulthanjaoption \xetexkodefaulthanguloption
+  \let\xetexkohanjafont   \xetexkohangulfont
+  \let\xetexkohanjaoption \xetexkohanguloption
+  \let\XeKo@hanja@font    \XeKo@hangul@font
+  }
+
+\AtBeginDocument{%
+  \ifdefined\xetexkomainhangulfont\else
+    \begingroup\rmfamily \expandafter\endgroup
+    \iffontchar\font"AC00 \else
+      \IfFontExistsTF{UnBatang.ttf}
+      {\setmainhangulfont{UnBatang.ttf}[BoldFont=UnBatangBold.ttf,Script=Hangul,Language=Korean]}{}
+    \fi
+  \fi
+  \ifdefined\xetexkosanshangulfont\else
+    \begingroup\sffamily \expandafter\endgroup
+    \iffontchar\font"AC00 \else
+      \IfFontExistsTF{UnDotum.ttf}
+      {\setsanshangulfont{UnDotum.ttf}[BoldFont=UnDotumBold.ttf]}{}
+    \fi
+  \fi
+  \ifdefined\xetexkomonohangulfont\else
+    \begingroup\ttfamily \expandafter\endgroup
+    \iffontchar\font"AC00 \else
+      \IfFontExistsTF{UnDotum.ttf}{%
+        \ifnum 0\ifnum\strcmp{\ttdefault}{lmtt}=\z@ 1\fi
+                \ifnum\strcmp{\ttdefault}{LatinModernMono(0)}=\z@ 1\fi >\z@
+          \setmonohangulfont{UnDotum.ttf}[
+                   BoldFont=UnDotumBold.ttf,
+            UprightFeatures={SizeFeatures={{Size={-8.5},   FakeStretch=1.062},
+                                           {Size={8.5-11}, FakeStretch=1.05 },
+                                           {Size={11-},    FakeStretch=1.03 }}},
+               BoldFeatures={SizeFeatures={{Size={-},      FakeStretch=1.05 }}},
+                  WordSpace={1.66667,0,0} ]
+        \else
+          \setmonohangulfont{UnDotum.ttf}[BoldFont=UnDotumBold.ttf]
+        \fi
+      }{}
+    \fi
+  \fi
+  \ifdefined\xetexkomainhanjafont\else
+    \let\xetexkomainhanjafont      \xetexkomainhangulfont
+    \let\xetexkomainhanjaoption    \xetexkomainhanguloption
+  \fi
+  \ifdefined\xetexkosanshanjafont\else
+    \let\xetexkosanshanjafont      \xetexkosanshangulfont
+    \let\xetexkosanshanjaoption    \xetexkosanshanguloption
+  \fi
+  \ifdefined\xetexkomonohanjafont\else
+    \let\xetexkomonohanjafont      \xetexkomonohangulfont
+    \let\xetexkomonohanjaoption    \xetexkomonohanguloption
+  \fi
+  \ifdefined\xetexkodefaulthanjafont\else
+    \let\xetexkodefaulthanjafont   \xetexkodefaulthangulfont
+    \let\xetexkodefaulthanjaoption \xetexkodefaulthanguloption
+  \fi
+  \ifdefined\xetexkohanjafont\else
+    \let\xetexkohanjafont   \xetexkohangulfont
+    \let\xetexkohanjaoption \xetexkohanguloption
+  \fi
+  \ifdefined\XeKo@hanja@font\else
+    \let\XeKo@hanja@font    \XeKo@hangul@font
+  \fi
+  \@ifpackageloaded{ulem}{\xetexkoulemsupport}{}
+  \@ifpackageloaded{hyperref}{\pdfstringdefDisableCommands{%
+    \let\hangulalphs\relax
+    \let\hangulnums\relax
+    \let\hangulparens\relax
+    \let\hangulquotes\relax
+    \let\hangulpuncts\relax
+    \let\hangulmarks\relax
+    \let\hangulcolons\relax
+    \let\hangulhyphens\relax
+    \let\hangulcjksymbols\relax
+    \let\hanjaalphs\relax
+    \let\hanjanums\relax
+    \let\hanjaparens\relax
+    \let\hanjaquotes\relax
+    \let\hanjapuncts\relax
+    \let\hanjamarks\relax
+    \let\hanjacolons\relax
+    \let\hanjahyphens\relax
+    \let\hanjacjksymbols\relax
+    \let\latinalphs\relax
+    \let\latinnums\relax
+    \let\latinparens\relax
+    \let\latinquotes\relax
+    \let\latinpuncts\relax
+    \let\latinmarks\relax
+    \let\latincolons\relax
+    \let\latinhyphens\relax
+    \let\latincjksymbols\relax
+    \let\prevfontalphs\relax
+    \let\prevfontnums\relax
+    \let\prevfontparens\relax
+    \let\prevfontquotes\relax
+    \let\prevfontpuncts\relax
+    \let\prevfontmarks\relax
+    \let\prevfontcolons\relax
+    \let\prevfonthyphens\relax
+    \let\prevfontcjksymbols\relax
+    \let\hanjabyhangulfont\relax
+    \let\inhibitglue\relax
+    \let\typesetclassic\relax
+    \let\typesetmodern\relax
+    \let\hangingpunctuation\relax
+    \let\hangingpunctuations\relax
+    \let\removeclassicspaces\relax
+    \let\nocompresspunctuations\relax
+    \let\compresspunctuations\relax
+    \let\disablekoreanfonts\relax
+    \let\disablehangulspacing\relax
+    \let\disablehangulspacingandlinebreak\relax
+    \let\enablehangulspacingandlinebreak\relax
+    \let\jong\relax
+    \let\jung\relax
+    \let\rieul\relax
+    \let\dotemph\@firstofone
+    \let\addhangulfontfeature\@gobble
+    \let\addhangulfontfeatures\@gobble
+    \let\addhanjafontfeature\@gobble
+    \let\addhanjafontfeatures\@gobble
+    \def\는{는}%
+    \def\은{은}%
+    \def\을{을}%
+    \def\를{를}%
+    \def\와{와}%
+    \def\과{과}%
+    \def\가{가}%
+    \def\이{이}%
+    \def\라{라}%
+    \def\으{으}%
+    \def\로{로}%
+    \def\hellipsis{...}}}{}
+  }
+
+\newif\if@hangul
+\newif\if@hanja
+\DeclareOption{hangul}{\@hangultrue}
+\DeclareOption{hanja}{\@hangultrue\@hanjatrue}
+\DeclareOption{unfonts}{}
+\ProcessOptions\relax
+
+\RequirePackage{kolabels-utf}
+\if@hangul
+  \RequirePackage{konames-utf}
+\fi
+
+\protected\def\hellipsis{^^^^2026^^^^2026}
+
+\if@hangul
+  \linespread{1.3888}
+  \footnotesep=1.3888\footnotesep
+  \skip\footins=\glueexpr\skip\footins/72*100\relax
+  \frenchspacing
+\fi
+
+\XeKocatcodeofATchar
+\endinput

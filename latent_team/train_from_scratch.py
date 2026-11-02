@@ -32,7 +32,7 @@ import os
 import sys
 import time
 import traceback
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -65,7 +65,9 @@ from examples.train_pgct_spatial_experiments import MAPS, experiment_logging
 
 # Max-GAE modes: (donor rule, eta, scale); None = --max-gae-eta / --max-gae-scale. Same architecture as IPPO.
 MAX_MODES = {"oracle_max": ("oracle", None, None), "oracle_maxd1": ("oracle", 1.0, "raw"),
-             "all_max": ("all", None, None), "allk_max": ("allk", None, None)}
+             "all_max": ("all", None, None), "allk_max": ("allk", None, None),
+             "pgct_max": ("gate", None, None), "oracle_mature_max": ("oracle_mature", None, None)}
+AC_MAX_MODES = {"pgct_max", "oracle_mature_max"}
 SHARING_MODES = ["ippo", "pgct", "oracle", "all", "wrong", "random"] + list(MAX_MODES)
 MODES = SHARING_MODES + B.ALGORITHMS  # mappo / seps / hetdps: separate learners, same env/budget/evaluation
 # random: the trainer prepares the All peer loss; random_gated.py then replaces the donor set.
@@ -165,6 +167,8 @@ def plan(args):
         raise ValueError("A+C requires --team-reward individual, canonical bank, and IPPO/PGCT/oracle/all/wrong "
                          "or Max-GAE modes")
     max_modes = [m for m in args.modes if m in MAX_MODES]
+    if set(args.modes) & AC_MAX_MODES and not ac_v2:
+        raise ValueError("pgct_max/oracle_mature_max require --reward-probe-ac --ac-gate v2")
     if max_modes and args.team_reward != "individual":
         raise ValueError("Max-GAE modes keep individual rewards (D82); use --team-reward individual")
     init_checkpoint = getattr(args, "init_checkpoint", None)
@@ -173,6 +177,7 @@ def plan(args):
     max_scale = getattr(args, "max_gae_scale", "shrink")
     max_lambda = getattr(args, "max_gae_lambda", None)
     max_cap = getattr(args, "max_gae_cap", None)
+    min_critic_ev = getattr(args, "max_gae_min_critic_ev", None)
     if init_checkpoint is not None:
         init_checkpoint = Path(init_checkpoint).resolve()
         if not init_checkpoint.is_file():
@@ -228,12 +233,16 @@ def plan(args):
                            effective_timesteps=math.ceil(config["total_timesteps"] / config["rollout_steps"])
                            * config["rollout_steps"])
                 if ac_enabled:
-                    job["reward_probe_ac_v2" if ac_v2 else "reward_probe_ac"] = asdict(ac_config)
+                    # D102 (ii): PGCT-D2 modes compare on rollout contacts, so only the rollout-start state
+                    # (what an agent could send on such a contact) is compared, before the refit.
+                    options = replace(ac_config, contact_snapshot=True) if mode in AC_MAX_MODES else ac_config
+                    job["reward_probe_ac_v2" if ac_v2 else "reward_probe_ac"] = asdict(options)
                 if mode in MAX_MODES:
                     donors, eta, scale = MAX_MODES[mode]
                     job["max_gae"] = asdict(MG.MaxGAEConfig(
                         donors=donors, eta=max_eta if eta is None else eta, scale=scale or max_scale,
-                        gae_lambda=max_lambda, cap=max_cap, warmup_updates=warmup, seed=seed * 1000 + 17))
+                        gae_lambda=max_lambda, cap=max_cap, warmup_updates=warmup, seed=seed * 1000 + 17,
+                        min_critic_ev=min_critic_ev))
                 if mode == "random":
                     updates = job["effective_timesteps"] // config["rollout_steps"]
                     if steps_per_update != config["rollout_steps"] and not args.smoke_test:
@@ -264,7 +273,8 @@ def plan(args):
                     random_reference=str(Path(args.random_reference).resolve()) if args.random_reference else None,
                     **(dict(init_checkpoint=str(init_checkpoint)) if init_checkpoint is not None else {}),
                     **(dict(transfer_warmup_override=int(transfer_warmup)) if transfer_warmup is not None else {}),
-                    **(dict(max_gae=dict(eta=max_eta, scale=max_scale, gae_lambda=max_lambda, cap=max_cap))
+                    **(dict(max_gae=dict(eta=max_eta, scale=max_scale, gae_lambda=max_lambda, cap=max_cap,
+                                        min_critic_ev=min_critic_ev))
                        if max_modes else {}),
                     stage=args.stage_label,
                     wandb_project=args.wandb_project if args.track else None,
@@ -275,7 +285,9 @@ def plan(args):
                     smoke_test=args.smoke_test, 
                     jobs=jobs,
                     note="Same seed => same random initial weights for every mode (checked via "
-                         "initial_weights_sha256.txt). Only the critic peer-loss donor set differs.")
+                         "initial_weights_sha256.txt). " +
+                         ("Max-GAE changes actor advantages; critics retain own-return targets."
+                          if max_modes else "Only the critic peer-loss donor set differs."))
     (output / "experiment.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return output, manifest
 
@@ -341,18 +353,30 @@ def run_job(output, manifest, name, eval_seed):
                             if job["mode"] == "random" else None)
                 # Max-GAE jobs run the IPPO trainer path (no critic peer loss); max_gae.py wraps it innermost.
                 transfer_mode = "ippo" if job["mode"] in MAX_MODES else job["mode"]
-                max_gae = (lambda: MG.install(cfg, run_dir, MG.MaxGAEConfig(**job["max_gae"]))
+                max_gae = (lambda controller=None: MG.install(cfg, run_dir, MG.MaxGAEConfig(**job["max_gae"]),
+                                                              controller=controller)
                            if job.get("max_gae") else contextlib.nullcontext())
                 if job.get("reward_probe_ac_v2") is not None or job.get("reward_probe_ac") is not None:
                     v2 = job.get("reward_probe_ac_v2") is not None
                     module = AC2 if v2 else AC
                     options = (AC2.ACV2Config(**job["reward_probe_ac_v2"]) if v2
                                else AC.ACConfig(**job["reward_probe_ac"]))
-                    with module.install(cfg, run_dir, options, learn=job["mode"] == "pgct") as controller:
+                    ac_max = job["mode"] in AC_MAX_MODES
+                    if ac_max and not options.contact_snapshot:
+                        raise ValueError(f"{name}: planned before the rollout-start snapshot rule (D103); "
+                                         "re-plan this PGCT-D2 job")
+                    with module.install(cfg, run_dir, options, learn=job["mode"] == "pgct" or ac_max) as controller:
+                        # Max-GAE calls the controller once with rollout contacts before entering
+                        # matched_transfer. Here we only attach its audit fields and keep peer loss off.
+                        def max_audit(update, neighbors, active):
+                            return np.zeros_like(neighbors, dtype=np.float32), dict(
+                                **controller.last_log, ac_model="mlp_reward_event_probe_v2",
+                                ac_probe_update=controller.last_probe_update,
+                                ac_own_events=[p.events_seen for p in controller.predictors])
                         with matched_transfer(cfg, run_dir, transfer_mode, bank_path=job["canonical_bank"],
                                               warmup_updates=job["transfer_warmup_updates"],
-                                              allocation_override=controller):
-                            with max_gae():
+                                              allocation_override=max_audit if ac_max else controller):
+                            with max_gae(controller if ac_max else None):
                                 T.train(cfg)
                 else:
                     with matched_transfer(cfg, run_dir, transfer_mode, bank_path=job["canonical_bank"],
@@ -461,6 +485,9 @@ def main():
     parser.add_argument("--max-gae-lambda", type=float,
                         help="Max-GAE modes: GAE lambda for A_max (default: the trainer's lambda).")
     parser.add_argument("--max-gae-cap", type=float, help="Max-GAE modes: upper bound on the uplift b (default none).")
+    parser.add_argument("--max-gae-min-critic-ev", type=float,
+                        help="Optional donor-only explained-variance floor on its own current rollout. "
+                             "Default: disabled; no maturity threshold has been selected yet. Nonfinite EV abstains.")
     parser.add_argument("--init-checkpoint", type=Path,
                         help="Branch every mode from this training checkpoint (weights only; fresh optimizers). "
                              "Job names get _br<update>.")

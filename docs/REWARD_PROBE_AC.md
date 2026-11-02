@@ -44,6 +44,7 @@ python latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --
 - 보류: 자기 사건 20개 이상, 자기 사건에 대한 평균 예측 ≥ .3이 아니면 그 agent는 판정하지 않는다. 보상을 받아 본 적 없는 agent는 누구와도 묶이지 않는다.
 - 거리: `Σ|a−b| / Σ(|a|+|b|)`(0 = 같은 응답, 1 = 겹치지 않음), EMA β .35, 3 round 이상, `< .5`이면 같은 팀. 데이터로 고르지 않은 척도 무관 기준이다.
 - 대칭 gate다(비대칭 donor 규칙 없음). 물리 이웃만 비교하고 접촉이 끊기면 해제한다.
+- `contact_snapshot`(기본 False, D103): 켜면 rollout 시작 때 agent별 최근 사건 probe·성숙·예측기 버전을 고정하고, update에서 그 고정본으로 먼저 비교한 뒤 재학습한다. PGCT-D2 모드(`pgct_max`, `oracle_mature_max`)는 rollout 접촉으로 비교하므로 계획 단계에서 자동으로 켠다. 기존 v2 증류 모드는 그대로다.
 - 난수: 예측기 초기화·표본 추출은 별도 RNG를 쓴다. trainer 난수 흐름을 바꾸지 않으므로 첫 전이 전까지 IPPO와 같은 학습이다(테스트로 확인).
 - 기록: `update/ac_v2_*`(W&B·`metrics.jsonl`) — 성숙 agent 수, 비교·승인 쌍, gate arc, 예측기 손실, 평균 거리. `ac_v2_audit_*`는 env info의 팀 ID로 사후 집계한 같은 팀/다른 팀 승인·거리이며 gate 입력이 아니다. `transfer.jsonl`의 `ac_pairs`, checkpoint의 `reward_probe_ac_v2`(예측기 가중치·사건 버퍼·EMA).
 - 검증: `tests/test_reward_probe_ac_v2.py` 7개(대칭 변환, 같은 팀 승인·다른 팀 거부·미성숙 보류, 접촉·비활성, 전역 RNG 불변, 팀 보상 거부, 계획 opt-in, runner 연동). 실제 trainer smoke(`--smoke-test`, 64 step) 통과. 본 학습은 하지 않았다.

@@ -1,6 +1,6 @@
 # PGCT 연구 통합 기록
 
-자동 생성: 2026-11-02 16:50 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
+자동 생성: 2026-11-02 18:48 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
 
 새 세션은 **Part 1(인수인계 요약)만 먼저 읽고**, 필요할 때 아래 목차에서 해당 부분을 찾는다.
 
@@ -12,11 +12,11 @@
   - `AGENTS.md` (5 KB)
   - `CLAUDE.md` (4 KB)
 - Part 3. 현재 연구 상태
-  - `RESEARCH_STATE.md` (32 KB)
+  - `RESEARCH_STATE.md` (39 KB)
 - Part 4. 질문·결론·설계 판단
-  - `DECISIONS.md` (176 KB)
+  - `DECISIONS.md` (188 KB)
 - Part 5. 실험·평가 기록
-  - `EXPERIMENTS.md` (146 KB)
+  - `EXPERIMENTS.md` (156 KB)
 - Part 6. 분석 보고서 (output/, 작성일 순)
   - `output/gating_diagnosis/README.md` (5 KB)
   - `output/pgct_spatial_analysis/REPORT.md` (41 KB)
@@ -35,7 +35,7 @@
   - `examples/PGCT_TRANSFER_EXPERIMENTS.md` (13 KB)
   - `examples/HARD_RWARE_EXPERIMENTS.md` (9 KB)
 - Part 8. 대화 기록 원문 (Codex + Claude Code)
-  - `CONVERSATION_LOG.md` (1070 KB)
+  - `CONVERSATION_LOG.md` (1158 KB)
 - 부록. 통합 타임라인 (D=결정, E=실험, L/T=대화)
 
 ---
@@ -272,9 +272,50 @@ Codex의 지침 파일 동작은 [OpenAI 공식 AGENTS.md 문서](https://learn.
 
 # Part 3. 현재 연구 상태
 
-## 출처: `RESEARCH_STATE.md` (수정 2026-11-02 16:50)
+## 출처: `RESEARCH_STATE.md` (수정 2026-11-02 18:48)
 
 ### PGCT 현재 연구 상태
+
+#### 최신 확인 — 2026-11-02 18:45 KST, Claude Code (T172)
+
+- **실행 중**: 1단계 분기 PID 28892(`runs/maxgae_br1M_20261102_165216`, 12 job, `ippo_s1` 0.18M, 11-05 오전 무렵 종료 추정). 2단계 PID 25380(`runs/pgctd2_br1M_20261102_180212`, 사용자가 18:02 시작, `oracle_mature_max`·`pgct_max` × seed 1·3·5, 6 job, 11-04 새벽 무렵 종료 추정).
+- **2단계 초기**: 성숙 agent a2·a3·a5뿐, 뒤처진 a0·a1·a4는 미성숙. donor는 앞선 같은 팀 2 arc.
+- **IJCAI 2027(D105)**: 공식 키트 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트가 필요하다. 마감은 초록 01-04, 본문 01-11.
+
+#### 최신 확인 — 2026-11-02 KST, Claude Code (T171, 논문·발표자료 재작성)
+
+- **산출물(D104, E72)**: `paper/english/main.pdf`, `paper/korean/main.pdf`(각 8쪽), `presentation/pgct_beamer.pdf`(17장), `presentation/pgct_script_ko.md`, 참고용 `pgct_presentation.pptx`. 안내는 `PGCT_DELIVERABLES_README.md`. 원본은 `output/pgct_docs_20261102/`.
+- **주장 경계**: 핵심 기여는 잠재 팀 발견. 학습 비교는 pending. 그래프는 실제 로그 재계산값.
+- **실행 상태**: v1 `pgct_s2`는 18:01에 중단됨(KeyboardInterrupt). 1단계 분기는 진행 중.
+- **남은 일**: 분기 결과로 표·그래프·대본 갱신, IJCAI 공식 양식, 발표자 정보.
+
+#### 최신 확인 — 2026-11-02 KST, Claude Code (T169, PGCT-D2 v2 비교의 인과성 수정)
+
+- **수정(D103, E71)**: `pgct_max`·`oracle_mature_max`는 v2를 rollout 시작 스냅샷(사건 probe·성숙·예측기 버전)으로 rollout 접촉 쌍과 먼저 비교하고, 그 뒤 재학습한다(`contact_snapshot`). 기존 v2 증류 모드는 그대로다. 플래그 없는 옛 PGCT-D2 계획은 거부한다. pytest 77개 통과.
+- **남은 것**: 논문 초안의 알고리즘 단계 문구(재학습 후 비교 → 스냅샷 비교 후 재학습)와 테스트 수, 승인 유효기간, EV 필터 시 `allk` 수 맞춤, 1단계 분기 결과 확인 뒤 2단계 실행(명령은 T169 최종 답변).
+
+#### 최신 확인 — 2026-11-02 KST, Claude Code (T168, Codex PGCT-D2 구현 검토)
+
+- **판정(D102, E70)**: 배선은 맞고 실행을 막는 버그는 없다. 72개 테스트 통과, 자연 경로 smoke에서 rollout 접촉 비교 → 승인 → donor = 접촉 ∧ 승인, trainer allocation 0을 확인했다.
+- **결정 필요**: Codex가 v2 비교를 update 직전 이웃 → rollout 접촉으로 바꿨다. 재학습 뒤 비교라 접촉 뒤의 정보를 쓴다(인과성). 통신 가정 명시(i) 또는 재학습 전 비교·probe 스냅샷(ii). `pgct_max` 분기 실행 전에 정해야 한다.
+- **실행 상태**: `runs/maxgae_br1M_20261102_165216`(PID 28892)의 `ippo_s1` running. Codex 수정 전에 시작한 단일 프로세스라 영향 없음.
+
+#### 최신 확인 — 2026-11-02 KST, Codex (T167, 논문·발표자료 제작; 정확한 시각 기록하지 않음)
+
+- **산출물(D101, E69)**: `paper/english/main.{tex,pdf}`, `paper/korean/main.{tex,pdf}`(각 7쪽), 공통 수식·BibTeX·그림, `presentation/pgct_beamer.{tex,pdf}`·편집 가능한 `pgct_presentation.pptx`(17장), 슬라이드별 한국어 대본. 전체 묶음과 안내는 `PGCT_DELIVERABLES_README.md`.
+- **최종 알고리즘 일치**: 개인 보상 예측·공개 사건 probe·EMA/성숙/지속 승인·rollout 접촉·선택 Critic 가중치 접근·자기 관측열 replay·mask/shrink Max-GAE Actor·자기 return Critic. 한영 공통 수식 11개와 인용 7개·label·발표 순서 확인. 실제 최종 PGCT 장기 학습 결과는 Pending으로 남겼다.
+- **근거 재집계(읽기 전용)**: 기존 보상 발견 seed 1 약 5M 로그는 구성요소 진단으로 한정했다(같은 팀/다른 팀 allocation 5,252/352, 비중 93.72%). update 종료 접촉을 사용한 로그이므로 최종 donor 정밀도·성능으로 설명하지 않는다. 독립 PPO s1 평가 곡선만 기준선으로 사용했다. 진행 중 분기 부분 결과는 최종 비교에서 제외했다.
+- **첨부**: ICCAS PDF 16장 전체 구성/렌더링 참고. M4A는 812.9793초의 메타데이터만 확인했으며 전사·청취 분석 못 함. Multi-UAV 연구 내용·식·성능·그림은 가져오지 않았다.
+- **검증**: PDF 3개 실제 컴파일, overfull/누락 glyph 오류 없음. PPTX 렌더링·구조·배치 확인, native chart 2·table 3, 대본 notes 17개. PowerPoint 앱에서 직접 열어 검증한 것은 아니다. 공식 목표 연도 IJCAI 양식 전환은 남아 있다.
+- **범위**: 이번 turn은 문서 제작뿐이다. 연구 코드·학습 설정·기존 실험 변경 없음, 새 학습·환경 rollout·pytest 재실행 없음. E68의 기존 검증 결과를 인용했다. 커밋 없음.
+
+#### 최신 확인 — 2026-11-02 KST, Codex (T166, PGCT-D2 구현; 정확한 시각 기록하지 않음)
+
+- **구현(D100, E68)**: v2의 접촉 독립·대칭 `approved()`와 현재 `maturity()`, Max-GAE donor 규칙 `gate`·`oracle_mature`, 실행 모드 `pgct_max`·`oracle_mature_max`, 실제 donor/승인/성숙 감사 로그. 두 새 모드는 `--reward-probe-ac --ac-gate v2`가 필요하다. Max-GAE가 완료 rollout의 접촉으로 v2를 직접 활성화하고 trainer 증류 allocation은 0이다.
+- **검증**: 새 15개 + 기존 57개, 총 72개 통과. 공통 A+C IPPO s1 checkpoint(update 1000, 1,024,000 step)에서 모서리·개인·seed 1·CPU·64 step/job smoke 9 job. 승인 없음 → IPPO와 비트 동등; 테스트용 정답 승인/성숙 주입 → Oracle-max와 비트 동등; EV 필터 차단 → IPPO와 비트 동등; warm-up 차단/해제 확인. 자연스러운 온라인 승인·학습 가속의 증거는 아니다.
+- **critic EV 조건**: `--max-gae-min-critic-ev` 선택 옵션 구현, 기본 비활성. D99대로 실측 로그를 보고 임계값을 정할 일은 남아 있다. 보상 예측기 성숙과 critic 성숙을 구분한다. 보상 사건이 없는 agent 및 E65 후반 다른 팀 오승인은 미해결이다.
+- **실제 분기 진행 확인(읽기 전용)**: `runs/maxgae_br1M_20261102_165216` manifest가 있으며 IPPO s1 로그에서 6,144 step(분기 이후)을 확인했다. `job_status.json`은 running이다. CIM 프로세스 조회는 권한 제한으로 실패했으므로 PID 생존은 확정하지 않았다. 기존 실행을 중단·재시작하지 않았다.
+- **근거**: `docs/MAX_GAE.md`, `tests/test_pgct_max.py`, `output/pgct_d2_validation_20261102/README.md`, `pytest_final.xml`. trainer·`rware/`·`examples/` 소스 수정 없음. 새 본 학습 시작·커밋 없음.
 
 #### 최신 확인 — 2026-11-02 KST, Claude Code (T164, D98 필수 수정 1–4 구현)
 
@@ -534,7 +575,7 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
 
 # Part 4. 질문·결론·설계 판단
 
-## 출처: `DECISIONS.md` (수정 2026-11-02 16:50)
+## 출처: `DECISIONS.md` (수정 2026-11-02 18:48)
 
 ### PGCT 질문·결론·설계 판단
 
@@ -1981,11 +2022,76 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
 - 분기 실행 명령(사용자 실행): T164 최종 답변. T154 명령은 쓰지 않는다.
 - 검증: E67.
 
+#### D100. PGCT-D2 필수 5–8 구현: 접촉 독립 승인과 rollout 접촉으로 Max-GAE 연결 — 2026-11-02 KST, Codex (사용자 요청 T166)
+
+- 사용자 승인 범위: 실행 중인 1M 분기와 별개로 D98 필수 5–8을 구현한다. 본 학습 추가 실행·중단·재시작이나 커밋은 요청하지 않았다.
+- `ACV2Controller.approved()`는 기존 `gate`를 쓰지 않고 보존된 rounds·EMA와 현재 두 agent의 보상 예측기 성숙을 읽는다. 기본 조건 rounds ≥ 3, EMA < .5는 그대로다. 대칭 행렬이며 자기 자신은 제외하고 복사본을 반환한다. 기존 증류 모드의 접촉 마스킹은 유지했다.
+- donor 규칙: `gate` = rollout 접촉 ∧ approved; `oracle_mature` = rollout 접촉 ∧ 정답 팀 ∧ receiver와 donor의 보상 예측기 성숙. 선택 critic EV 조건은 donor 열에만 적용한다. `gate` donor 판정은 팀 라벨에 의존하지 않는다.
+- `pgct_max`·`oracle_mature_max`는 A+C v2 필수, IPPO trainer 경로, v2 learn=True, peer loss 0이다. v2 사건/성숙/거리 규칙과 D2 shrink 식은 바꾸지 않았다.
+- D98 6절의 제안된 wrapper 배치와 차이: matched_transfer가 마지막 위치에서 v2를 부르는 대신, Max-GAE가 완료 rollout의 접촉 행렬로 update 시작에 controller를 정확히 한 번 직접 호출한다. refit·비교는 기존 interval마다, 비교는 warm-up 이후다. 이로써 IPPO의 active=False 문제를 풀고 Oracle과 PGCT의 접촉 기준을 맞춘다. 현재 rollout 경험만 쓰고 PPO update 이전이므로 미래 정보는 쓰지 않는다. matched_transfer adapter는 감사 필드와 0 allocation만 반환한다.
+- critic EV 임계값은 D99에서 미결이다. 임의의 연구 기준을 강제하지 않고 `--max-gae-min-critic-ev` 선택 옵션(기본 None)을 구현했다. 활성화하면 nonfinite EV는 보류한다. 실제 임계값 선정은 분기 로그를 보고 결정한다.
+- 감사 로그: `max_gae.jsonl`의 실제 donors, 승인, 현재 보상/critic 성숙, 실제 same/cross donor arc, 전체 정답 팀 directed arc 중 승인 비율(현재 6명 3+3은 12 arc), v2 pair 근거와 probe-update 시점을 남긴다. `transfer.jsonl`의 증류 allocation=0과 D2 donor 사용을 혼동하지 않는다.
+- 1M IPPO checkpoint 분기는 actor/critic 가중치만 복사한다. 새 모드의 v2 예측기·buffer·승인 이력은 새로 시작한다. 학습 가속·보상 사건 없는 agent 구제·E65 오승인 해결을 주장하지 않는다.
+- 검증 E68: 72 tests, 실제 trainer 64 step smoke 9 job. 승인 없음/EV 차단은 IPPO와 비트 동등, 테스트 전용 정답 승인 주입은 Oracle-max와 비트 동등. 기존 실행·결과 보존.
+
+#### D101. 최종 PGCT 논문·발표 초안의 기술 정의와 실증 경계 통일 — 2026-11-02 KST, Codex (T167 사용자 요청)
+
+- 사용자 요청: 영어·한국어 전체 LaTeX 논문, Beamer 원본/PDF, 편집 가능한 PPTX, 슬라이드별 한국어 대본. ICCAS PDF와 녹음은 구성·스타일 참고만 하고 Multi-UAV 알고리즘·식·성능을 전용하지 않는다. 연구 코드/설정/학습 실행 변경 금지.
+- 모든 산출물의 PGCT는 D100의 실제 구현으로 정의했다. 발견을 핵심 기여로 두고 개인 보상 기준을 유지한다. 내부 버전명을 슬라이드 알고리즘 이름으로 사용하지 않았다. 소스 CLI 식별자는 논문 재현성 부록에서만 설명했다.
+- 수식은 `paper/method_equations.tex` 11개를 한영 원고가 그대로 호출한다. cold-start의 uplift mask뿐 아니라 advantage mask도 정의했고, shrink는 표준편차 비율에 1 상한을 둔다. Critic EV 조건은 선택·기본 비활성, cap은 기본 무한이며 성숙 Critic 자동 보장이나 성능 개선 보장은 주장하지 않는다.
+- 기존 발견 로그는 update 종료 접촉을 쓴 구성요소의 관측이다. 최종 rollout 접촉 기반 PGCT donor/학습 결과와 구분한다. 93.72%는 allocation 가중 같은 팀 비중이며 쌍 분류 정확도가 아니다. 장기 통합 PGCT·oracle 비교는 Pending으로 명시하고, 기존 독립 PPO 단일 seed의 실제 곡선만 보여 준다.
+- MAMBA는 계산 동기의 인용이며 보장을 가져오지 않는다. own-return 목표가 유지돼도 공동 gradient clipping 때문에 Critic의 수치 update가 반드시 같은 것은 아니라는 점을 설명했다. 현재 warm-up 8관측은 sliding-window 8 질의가 아니라 cold-start rollout 전체 순환 처리라는 점도 명시했다.
+- 첨부 PDF는 전체 16장 텍스트·디자인 확인. 음성은 파일과 메타데이터(약 13분33초)만 확인, 전사 도구 부재로 실제 발화·강조·설명 시간을 추정하지 않았다. 대본은 새 제안 대본이다.
+- 초안은 포터블 2단 검토 원고다. 목표 연도의 공식 IJCAI 스타일·저자 정보·분량 기준까지 충족한 투고본이라고 하지 않는다. 저자·소속은 참고자료에서 복사하지 않았다.
+- E69에 제작·검증 근거를 기록했다. 새 실험이나 연구 코드 변경은 없다.
+
+#### D102. Codex PGCT-D2 구현 검토: 배선은 맞음, v2 비교의 rollout 접촉 전환은 인과성 문제를 남김 — 2026-11-02 Claude Code (사용자 요청 T168, 사용자 결정 대기)
+
+- 확인: `approved()`·`maturity()`, donor 규칙 `gate`·`oracle_mature`, `pgct_max`·`oracle_mature_max`(IPPO 경로, peer loss 0, v2 learn=True), 선택적 critic EV floor, 감사 로그가 D98 5–8과 맞다. 기존 oracle/all/allk 동작은 같다. 72개 테스트 통과, 자연 경로 smoke 통과(E70).
+- 설계 변경(D100): v2 비교 대상이 update 직전 이웃에서 rollout 접촉으로 바뀌었다. D98은 v2 비교를 그대로 두라고 권했다.
+  - 인과성: v2 `__call__`은 재학습 뒤 비교한다. rollout 중 만났다 헤어진 쌍도 접촉 뒤 경험으로 학습한 예측기와 그 뒤의 사건 probe로 비교한다. "범위 안 교환" 모델에서는 주고받을 수 없는 정보다. D2 critic 가중치는 rollout 동안 고정이라 문제없다.
+  - E59·E60·E65의 승인 시점·오승인 수치는 update 직전 기준이라 pgct_max에 옮길 수 없다. W&B `ac_v2_*` 의미도 달라진다. D2 donor는 `max_gae_*`로 본다.
+  - 선택지: (i) 통신 가정 명시("직전 rollout에서 만난 쌍은 update 시점에 한 번 교환"), (ii) pgct_max에서 재학습 전 비교 + rollout 시작 시점 사건 probe. 논문이 제한 지역 통신을 내세우면 (ii) 권고.
+- 작은 문제: 승인 유효기간 없음(다음 비교 round까지 옛 EMA 사용), EV 필터를 켜면 `allk` 수 맞춤이 어긋남, 실제 비교 → 승인 경로의 회귀 테스트 없음.
+- 1단계 oracle 분기에는 영향 없음. 2단계 실행 전 (i)/(ii) 결정 필요.
+
+#### D103. PGCT-D2의 v2 비교를 rollout 시작 스냅샷으로: 비교 후 재학습 — 2026-11-02 Claude Code (사용자 결정 T169, D102 선택지 ii)
+
+- 사용자 결정(T169): "엄밀하게 수정(ii)".
+- 규칙(`ACV2Config.contact_snapshot`, PGCT-D2 두 모드에서 계획 단계 자동 True, 그 밖의 모드 기본 False):
+  1. rollout 시작 때 agent별 최근 사건 probe 사본, 보상 예측기 성숙, 예측기 버전을 고정한다. 예측기는 rollout 뒤에만 재학습되므로 고정 버전이 rollout 동안 쓰인 예측기다.
+  2. update에서 rollout 접촉 쌍을 고정 probe·고정 성숙·재학습 전 예측기로 먼저 비교하고, 그 뒤 재학습한다. 스냅샷과 비교 사이 재학습은 오류다.
+  3. `maturity()`·`approved()`·`oracle_mature`도 고정 성숙을 쓴다.
+  4. 이 규칙 전에 만든 PGCT-D2 계획은 실행 시 거부한다.
+- 근거: 비교에 쓰는 정보가 그 rollout의 어떤 접촉에서도 실제로 보낼 수 있었던 것만 남는다. 통신 가정은 "접촉 때 rollout 시작 상태를 교환, 계산은 update 시점"이다. donor critic 가중치는 원래 rollout 동안 고정이다.
+- 대가: 비교가 한 rollout 전 상태를 쓰므로 승인이 조금 늦어질 수 있다(크기 미측정).
+- 바꾸지 않은 것: 기존 v2 증류 모드(`pgct`)의 재학습 후 비교 순서, v2 사건·거리·EMA·문턱, D2 식, donor 규칙.
+- 후속: 논문 초안(`paper/english/main.tex:102`과 한국어판의 같은 단계)의 문구와 테스트 수 갱신.
+
+#### D104. PGCT 논문·발표자료 재작성: 잠재 팀 발견을 핵심 기여로, 근거는 실제 로그만, Beamer를 주 발표자료로 — 2026-11-02 Claude Code (사용자 요청 T171)
+
+- 요청(T171): 영어·한국어 LaTeX 논문, ICCAS 발표 구성을 참고한 Beamer, 한국어 대본, PPTX. 연구 코드·학습 설정 변경과 실험 중단·실행 금지. 작업 중 사용자 의견: Codex 논문이 부족해 보이니 직접 해야 한다. 이후 PPTX는 꼭 필요하지 않고 Beamer면 된다.
+- 결정:
+  1. Codex 초안(T167, D101)은 수식 파일·빌드 도구만 재사용하고, 논문 본문·그림·발표자료를 새로 썼다. 이유: 초록에 구현 검증(테스트 수)이 들어가 있고, 기여·동기 설명이 얇았으며, 그림이 단순 상자 나열이었고, D103(rollout 시작 스냅샷)이 빠져 있었다.
+  2. 핵심 기여는 잠재 팀 발견(Reward Probe 검정: 개인 보상 예측, 공개 사건 probe, 척도 무관 거리, 성숙·보류, 지속 승인, 접촉 시점 정보만 사용)이다. Critic 활용(선택적 팀원 Critic + 마스크·shrink Max-GAE, Actor 전용)은 발견 관계의 유용성을 검증하는 보조 메커니즘으로 쓴다. MAMBA 보장은 주장하지 않는다.
+  3. 근거는 실제 로그만 쓴다: 발견 로그(E65, seed 1, 5M, update 종료 접촉·이전 활용 규칙이라 발견 구성요소만 평가), 오프라인 재생(E59), 반사실 점검(E63), IPPO 기준선 seed 1·2. 통합 PGCT 학습 비교는 pending 칸으로 둔다.
+  4. 공통 수식 파일을 D103 표기로 고쳤다($\mathcal Q_{ij}^u$, $\widehat r^{\,u}$, $m^u$).
+  5. Beamer·대본(·PPTX)은 `output/pgct_docs_20261102/deck_spec.py` 하나에서 생성한다. 사용자 의견에 따라 Beamer가 주 발표자료이고, PPTX는 함께 생성되는 참고본으로 두며 더 다듬지 않는다.
+  6. 참고 발표자료는 구성·스타일만 따랐다. 녹음은 도구가 없어 전사하지 못했고, 발표 방식은 추측해 반영하지 않았다.
+- 남은 일: 공식 IJCAI 양식·저자 정보 적용, 분기 결과가 나오면 표·그래프·대본 갱신, 발표자 이름·소속 placeholder 교체.
+
+#### D105. 현재 논문의 IJCAI 2027 적합성 점검: 내용 초안은 가능, 형식은 공식 키트 전환 필요 — 2026-11-02 Claude Code (사용자 질문 T172)
+
+- 근거: IJCAI 2027 메인 트랙 Call for Papers(2027.ijcai.org). 본문 7쪽(그림·표 포함) + 참고문헌만 최대 2쪽, 전체 9쪽. IJCAI-27 스타일 필수(여백·글자 축소 시 심사 없이 거절). 이중 맹검. 부록은 보조 자료(PDF/ZIP, 50MB). 재현성 체크리스트 제출. 초록 2027-01-04, 본문 2027-01-11(AoE). 학회는 교토, 2027-08-07~13. 저자 키트 `FormattingGuidelines-IJCAI-27.zip`은 아직 내려받지 않았다.
+- 현재 `paper/english/main.pdf`(8쪽): 공식 스타일이 아니다(article + 임의 여백). 그림 4·5가 참고문헌 뒤 7쪽에 밀려 있고, 부록이 8쪽에 있다. 익명 저자, 감사의 글 없음, 메타데이터에 신원 정보 없음은 충족.
+- 필요한 일: 공식 키트로 전환, 그림을 본문 7쪽 안에, 부록을 보조 자료로, 재현성 체크리스트 준비. 형식보다 큰 문제는 학습 결과가 pending이라는 점이다. 결과가 들어오면 쪽수를 줄여야 하고, 환경이 하나뿐이라는 점도 심사 위험이다.
+- 실행 상태(18:45): 1단계 분기(PID 28892) `ippo_s1` 0.18M/0.5M, 12 job 중 1번째. 2단계(PID 25380, 사용자가 18:02에 시작, `runs/pgctd2_br1M_20261102_180212`, `oracle_mature_max`·`pgct_max` × seed 1·3·5, `contact_snapshot=True`) `oracle_mature_max_s1` 0.07M. 2단계 초기 66 update에서 성숙 agent는 a2·a3·a5뿐이고 donor는 같은 팀 앞선 agent 사이 2 arc다(D98 R1 예상과 일치).
+
 ---
 
 # Part 5. 실험·평가 기록
 
-## 출처: `EXPERIMENTS.md` (수정 2026-11-02 16:50)
+## 출처: `EXPERIMENTS.md` (수정 2026-11-02 18:36)
 
 ### PGCT 실험·평가 기록
 
@@ -3386,6 +3492,67 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - `--seeds 1 2` 분기 plan-only는 seed 2의 goal 배치 불일치로 거부되고, 폴더를 만들지 않았다.
 - 한계: smoke는 학습 결과가 아니다. 분기 실험 자체는 아직 실행하지 않았다.
 - 근거: D99, `docs/MAX_GAE.md`.
+
+#### E68. PGCT-D2 필수 5–8 단위·회귀·실제 trainer smoke 검증 — 2026-11-02 KST, Codex (사용자 요청 T166)
+
+- 코드: `latent_team/reward_probe_ac_v2.py`, `latent_team/max_gae.py`, `latent_team/train_from_scratch.py`; 새 테스트 `tests/test_pgct_max.py`. trainer·환경 소스 수정 없음. D100 참조.
+- 실제 수행: 새 15개 + 기존 Max-GAE/A+C/latent_team 57개 = **72 passed**(33.69초). XML `output/pgct_d2_validation_20261102/pytest_final.xml`. 첫 실행의 임시 상위 폴더 오류(17 setup errors)와 다음 실행의 테스트 fixture 오류 2개를 수정한 뒤 최종 성공했다. 학습 구현 오류로 분류하지 않는다. 첫 smoke 산출물도 보존했다.
+- 실제 trainer smoke: `b6_corner_indiv_pen005`, 개인 보상, A+C 좌표 마스킹, seed 1, CPU, 32-step rollout × 2 update = 64 step/job, 총 9 job. 초기 모델 `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt`(1,024,000 step), 새 optimizer·v2 상태. W&B off. 최종 평가는 smoke용 1 episode × 16 step이며 성능 근거가 아니다.
+- 산출물 기준 폴더 `output/pgct_d2_validation_20261102/pytest_final/test_real_trainer_closed_gate_0/`:
+  - `plan/`: IPPO, `pgct_max`, `oracle_mature_max`, `oracle_max` 4 job. v2가 실제 refit(version=2)하되 min_events=1000000으로 승인을 막는 테스트 조건에서 앞의 세 모드 최종 모든 가중치 tensor 비트 동등.
+  - `injected/`: 테스트 monkeypatch로 정답 승인·현재 성숙을 주입한 두 새 모드. 두 모드 모두 `oracle_max`와 최종 모든 tensor 비트 동등. 실제 donor와 actor 변화 있음; cross-team donor 0; 승인 범위 12/12.
+  - `filtered/`: 같은 주입에 EV floor=1e9(테스트용 값)로 두 모드의 donor 전부 차단. 둘 다 IPPO와 비트 동등.
+  - `held/`: `pgct_max`, warm-up=1. update 1 donor 0, update 2 donor 존재.
+- v2 refit 테스트 조건: interval=1, batch_size=16, train_steps=2. 연구용 기본값 변경이 아니다. 자연스러운 온라인 팀 승인을 만들거나 검증한 smoke가 아니다.
+- 합성 테스트: 접촉 상실 후 승인 보존·대칭·복사본·현재 성숙 회귀·round/거리 경계, gate 판정의 라벨 독립, contact/EV 교집합, oracle_mature의 양쪽 보상 성숙, 잘못된 입력 거부, v2 아닌 계획 거부, 자기 복제 critic의 actor/self 차이 ≤1e-6(raw/shrink).
+- 한계: 장기 학습·독립 training seed 결과 아님. D2 실제 성능·EV 임계값·보상 사건 없는 agent·E65 후반 오승인은 미결. PGCT-D2 새 본 학습 미실행, 커밋 없음. 기존 분기는 읽기만 했다.
+- 자세한 명령·근거: `output/pgct_d2_validation_20261102/README.md`, `docs/MAX_GAE.md`.
+
+#### E69. 최종 PGCT 논문·발표 제작용 기존 로그 읽기와 산출물 검증 — 2026-11-02 KST, Codex (T167, 새 학습·실험 없음)
+
+- 목적: 영어/한국어 논문과 17장 발표에 동일한 실제 근거를 넣는다. 기존 학습·평가·probe를 다시 실행하지 않았다.
+- 읽은 로그:
+  - `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1/{transfer,metrics}.jsonl`: 모서리·개인·좌표 마스킹·seed 1, 최종 5,000,192 step. same/cross directed allocation 누적 5,252/352, 비중 93.71877230549608%, 첫 cross 4,280,320 step. 그림은 100k-step 구간 평균의 실제 EMA와 보상 예측기 성숙이다. 기존 접촉/전이 규칙의 발견 구성요소 진단이며, 최종 PGCT 학습 결과로 재명명하지 않았다.
+  - `runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/metrics.jsonl`: 독립 PPO 기준선. deterministic 평가 20 episode × 500 step, seed 1. 추출한 평가점 97개, 마지막 4,966,400 step의 단일 평가 배송 25.65/ep. 과거 E61의 평균이나 최종 5회 평균과 같은 통계라고 설명하지 않는다.
+  - `runs/maxgae_br1M_20261102_165216/experiment.json` 및 상태/마지막 로그: 문서 근거를 추출할 때 독립 PPO s1이 추가 35,840 step, 나머지 계획 상태인 스냅샷. 최종 성능 비교에는 넣지 않았다.
+- 공통 초기 모델 설명: 기존 1,024,000-step 독립 PPO s1 checkpoint에서 0.5M 추가 분기, seed 1·3·5. 처음부터 독립 training seed라고 세지 않았다. 최종 PGCT, mature-oracle, count-matched 비교 결과는 대기다.
+- 실제 수행: 파일 읽기, 표/CSV/과학 그래프 생성, 새 구조도 3개 제작, LaTeX/PPTX/대본 생성, PDF 컴파일·렌더링·내용 대응 확인만 했다. `E68`의 72 tests/64-step smoke는 기존 검증 인용이며 재실행하지 않았다.
+- 산출물: `paper/english/main.{tex,pdf}`, `paper/korean/main.{tex,pdf}` 각 7쪽; `presentation/pgct_beamer.{tex,pdf}`와 `pgct_presentation.pptx` 각 17장; 한국어 대본. PPTX 본문·도식·표3·그래프2는 native, 수식만 8·10·12·13장에서 이미지. PowerPoint 앱 자체 검사는 하지 않았으며 Artifact Tool 렌더링과 OOXML 검사를 했다.
+- 검증: 한영 공통 수식 11개, 인용 7개, label 일치; 17장 제목/대본 순서 일치; PDF 3개 컴파일 성공, overfull·누락 glyph 오류 없음; PPTX 구조/geometry finding 0. 연구 코드 SHA-256는 읽기 시작과 같음.
+- 참고자료: 사용자 ICCAS PDF 전체16장 구성·스타일만 참고. 음성 M4A는 812.9793초 메타데이터만 확인, 전사/청취내용 미확인. 다른 연구 수치·식·그림을 가져오지 않았다.
+- 근거·재생성: `output/pgct_authoring_20261102/{collect_evidence.py,evidence.json,quality_report.json}`, `paper/evidence_manifest.json`, `presentation/reference_analysis_ko.md`, `PGCT_DELIVERABLES_README.md`. TeX 빌드는 Tectonic 0.17.0(XeTeX 기반). 공식 목표 연도 IJCAI 양식 적용은 별도다.
+- 연구 코드·보상·gate 기준·실험 실행 변경 없음. 새 학습·중단·재시작·커밋 없음. 문서 컴파일용 도구·캐시는 새 제작 폴더에만 저장했다.
+
+#### E70. Codex PGCT-D2 구현 재검증: 테스트 재실행과 자연 승인 경로 smoke(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T168)
+
+- pytest: `test_pgct_max.py`·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 72개 통과. 실제 trainer 테스트는 scratchpad의 긴 basetemp에서 `oracle_mature_max` job 경로가 260자를 넘어(261–262자) FileNotFoundError로 실패했고, 짧은 경로(`AppData\Local\Temp\pgt`)에서 통과했다.
+- 자연 경로 smoke: `pgct_max`, A+C IPPO s1 `checkpoint_01000.pt` 분기, seed 1, `--smoke-test`(32 step × 2 update). v2 설정은 배선 확인용으로 느슨하게 줬다(interval 1, batch 16, train_steps 2, min_events 1, min_event_response −1, event_reward .1, min_rounds 1, distance_threshold 1.0, min_probes 1). 임시 폴더는 지웠다.
+  - update 1: 성숙 1명(a2), 비교 0, donor 0.
+  - update 2: 성숙 2명(a2·a3). rollout 접촉 10쌍, update 직전 이웃 4쌍. 비교된 1쌍은 update 직전 이웃이 아니었다. 승인 arc 2, donor arc 2(다른 팀, 문턱 1.0 때문), donor = 접촉 ∧ 승인 성립, adv_shift .088.
+  - 두 update 모두 `transfer.jsonl` 실제 allocation 0.
+- 해석: rollout 접촉으로 비교하는 경로가 실제로 동작한다. 보상 사건이 없는 a0·a1·a4는 느슨한 설정에서도 성숙하지 않았다.
+- 한계: 설정이 연구 기본값이 아니고 2 update뿐이라 승인 정확도와 성능 근거가 아니다.
+
+#### E71. D103 rollout 시작 스냅샷 비교 검증: pytest와 실제 trainer 자연 승인 경로 — 2026-11-02 Claude Code, 사용자 요청(T169)
+
+- pytest: `test_pgct_max.py`(새 5개)·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 77개 통과(basetemp `AppData\Local\Temp\pgt`, 지움).
+  - 단위: 스냅샷 비교 거리가 rollout 시작 상태로 직접 계산한 값과 같고(비교 버전 (1, 1)), 비교 뒤에만 버전 2로 재학습된다. 접촉 뒤 경험과 재학습 예측기로 계산하면 다른 값이 나온다. 스냅샷 뒤 재학습은 RuntimeError.
+  - 계획: 플래그는 `pgct_max`·`oracle_mature_max`에만 True, `pgct`는 False. 플래그 없는 옛 `pgct_max` job은 `run_job`에서 거부.
+- 실제 trainer 자연 경로(`test_real_trainer_natural_approval`): A+C IPPO s1 `checkpoint_01000.pt` 분기, seed 1, `pgct_max`, `--smoke-test`(32 step × 2 update). 배선 확인용 설정: interval 1, batch 16, train_steps 2, min_events 1, min_event_response −1, event_reward .001, min_rounds 1, distance_threshold 1.0, min_probes 1.
+  - update 1: rollout 시작 시 6명 모두 미성숙, 비교 0, donor 0.
+  - update 2: rollout 시작 시 6명 성숙, 접촉 10쌍 모두 비교(거리 .31–.99), donor 20 arc = 접촉 ∧ 승인.
+  - final 상태: 비교 버전 모두 (1, 1), 예측기 버전 모두 2, `transfer.jsonl` allocation 0.
+- 한계: 연구 기본값이 아닌 배선 확인용 설정, 2 update. 승인 정확도·지연·성능 근거가 아니다.
+
+#### E72. 논문·발표자료용 근거 재계산과 문서 검증(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T171)
+
+- 근거 재계산: `output/pgct_docs_20261102/evidence_plots.py`가 원본 로그를 읽어 `evidence.json`, CSV 3개, 논문·발표 그래프를 만든다.
+  - 발견 로그 `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1`: 같은 팀 5,252 / 다른 팀 352 arc(93.72%), 첫 다른 팀 4,280,320 step, 100k 구간 51개. E65·Codex 값과 같다.
+  - IPPO 기준선 `runs/ac_20261023_185556` seed 1·2: 마지막 평가(4.97M) 25.65 / 24.05 배송/episode(20 episode × 500 step).
+- 문서 검증: 영어·한국어 논문(각 8쪽), Beamer 17장 모두 Tectonic 0.17.0으로 컴파일 오류·Overfull·누락 글자 0. PDF를 그림으로 렌더링해 전 페이지를 확인했다. `check_consistency.py`: 한영 수식·인용·라벨·참조·그림·수치 일치, Beamer·PPTX·대본 17장 제목 순서 일치. `preview_pptx.py` 근사 미리보기에서 PPTX 글자 넘침 0(PowerPoint로 직접 열어 보지는 않음).
+- 참고 자료: ICCAS PDF 16장을 렌더링해 구성 확인. M4A는 머리 정보로 812.98초만 확인, 전사 못 함.
+- 실행 상태(읽기 전용): v1 run `runs/ac_20261023_185556`의 `pgct_s2`는 `job_status.json`이 failed(KeyboardInterrupt, 2026-11-02 18:01:52)로 바뀌었다. 약 3.19M에서 사용자가 중단한 것으로 보인다(T170 뒤). 1단계 분기 `runs/maxgae_br1M_20261102_165216`는 진행 중이며(작업 중 확인 시 `ippo_s1` 0.12M), 부분 결과는 문서에 넣지 않았다.
+- 한계: 그래프는 seed 1(발견)과 seed 2개(기준선)뿐이다. 통합 PGCT 학습 결과는 없다.
 
 ---
 
@@ -5445,7 +5612,7 @@ Detour에서도 기존 정책의 즉시 성능은 크게 떨어졌다. 장애물
 
 # Part 8. 대화 기록 원문 (Codex + Claude Code)
 
-## 출처: `CONVERSATION_LOG.md` (수정 2026-11-02 16:50)
+## 출처: `CONVERSATION_LOG.md` (수정 2026-11-02 18:48)
 
 ### PGCT 대화 기록 — 과거 요약과 이후 원문
 
@@ -21290,6 +21457,1228 @@ Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Pa
 
 기록은 `DECISIONS.md` D99, `EXPERIMENTS.md` E67, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, 대화 기록 T164에 남겼습니다. 커밋은 하지 않았습니다.
 
+#### 원문 기록 T165 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+토큰을 다 써서 PGCT-D2 구현은 Codex로 할꺼야 알고있어
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 확인 turn이다. 코드·학습 변경 없음. PGCT-D2(D98 필수 5–8)는 Codex가 구현하기로 했다(사용자 결정).
+
+##### Assistant — 최종 답변
+
+알겠습니다. PGCT-D2는 Codex에서 진행하시는 것으로 기록했습니다(T165).
+
+Codex가 참고할 곳은 다음과 같습니다.
+- 구현 명세: `DECISIONS.md` D98의 필수 5–8(`approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max`, 감사 로그)과 6절 계획
+- 현재 상태: D99, E67, `docs/MAX_GAE.md`
+- 주의할 점: v2 `gate`는 update 직전 이웃이 아니면 지워지므로 donor로 그대로 쓰면 안 됩니다. IPPO 경로에서는 controller가 `active=False`로 불려 비교가 일어나지 않습니다(`exp_b_oracle_consensus.py:160`).
+
+#### 원문 기록 T166 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음)
+
+##### 사용자 — 원문
+
+현재 저장소에서 다음 자료를 확인하세요.
+
+- `CLAUDE.md`
+- `docs/SESSION_HANDOFF.md`
+- `DECISIONS.md`
+- `EXPERIMENTS.md`
+- `RESEARCH_STATE.md`
+- `CONVERSATION_LOG.md`
+- `latent_team/reward_probe_ac_v2.py`
+- `latent_team/max_gae.py`
+- `latent_team/train_from_scratch.py`
+- `latent_team/exp_b_oracle_consensus.py`
+- `examples/train_recurrent_ippo_consensus.py`
+- `docs/MAX_GAE.md`
+- 관련 실험 로그와 기존 논문 초안
+
+특히 D91\~D98, E57\~E66, T151\~T163을 확인하세요.
+
+
+
+
+
+Checkpoint에 `team_goal_positions`가 저장되어 있어(1M: `[[0,10]], [[9,10]]`, seed 1) 계획 단계에서 비교할 수 있습니다. 이제 `max_gae.py`를 고칩니다.
+
+Now the advantage blend, the explained-variance helper, and the update wiring.
+
+Now `train_from_scratch.py`: the `shrink` option and the goal-layout check for branches.
+
+Now the tests: update the fake checkpoint in the plan helper and add tests for the four fixes.
+
+19개 모두 통과했습니다. 기존 A+C·latent_team 테스트도 함께 돌립니다.
+
+기존 38개와 새 19개, 모두 57개가 통과했습니다. 이제 실제 trainer smoke(64 step)로 donor를 끈 동등성과 1M 분기 동작을 확인합니다.
+
+Three checks ran. Now comparing weights and reading the branch log rows.
+
+donor를 끈 `oracle_max` 실행은 IPPO와 최종 가중치가 비트 단위로 같았고, 짝수 seed 분기는 계획 단계에서 거부됐습니다. 이제 권고 명령(`--ac-gate v2`, seed 1·3·5)도 64 step smoke로 돌려 보겠습니다.
+
+12개 smoke job이 모두 끝났고 초기 가중치도 같습니다. 이제 문서와 연구 기록을 갱신합니다.
+
+필수 수정 1–4를 구현했습니다. trainer·`rware/`·`examples/`는 건드리지 않았습니다. 학습은 64 step smoke만 돌렸습니다.
+
+#### 바꾼 것
+
+| # | 내용                                                                                                                                                                                                       | 위치                                                                                                                                   |
+| - | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 | 분기 goal 배치 검사. `--init-checkpoint`의 `team_goal_positions`와 job 설정이 다르면 계획 단계에서 거부합니다. 폴더도 만들지 않습니다                                                                                                       | [train_from_scratch.py](https://claude.ai/epitaxy/latent_team/train_from_scratch.py) `checkpoint_goal_layout`, `check_branch_layout` |
+| 2 | `shrink` 척도: Δ에 s = min(1, std(A_self)/std(Δ))를 곱합니다. 설계식 f = V + η·s·min(b, c)에서 η·s ≤ η인 경우입니다. `relative`는 기록용으로만 남겼습니다                                                                               | [max_gae.py](https://claude.ai/epitaxy/latent_team/max_gae.py) `blended_advantages`                                                  |
+| 3 | rollout 첫 7 step(첫 reset 전)에서는 Δ = 0, 즉 actor advantage = A_self                                                                                                                                         | `blended_advantages(valid=...)`, `install.update`                                                                                    |
+| 4 | 모든 agent의 critic explained variance를 매 update 자기 rollout에서 계산해 로그로 남깁니다(`update/max_gae_critic_ev_agent_k`, `max_gae.jsonl`의 `critic_ev`). 실제 반영 비중 `max_gae_eta_eff`도 추가했습니다. donor 자격 조건으로는 아직 쓰지 않습니다 | `explained_variance`, `install.update`                                                                                               |
+
+**기본값 변경**: `--max-gae-scale`의 기본값을 `relative`에서 `shrink`로 바꿨습니다. relative로 실행한 run은 없어서 기존 결과에는 영향이 없습니다. ippo·pgct 등 기존 모드의 동작은 그대로입니다.
+
+#### 검증
+
+- **pytest**: `tests/test_max_gae.py` 19개(새 8개)와 기존 A+C·latent_team 테스트 38개, 모두 57개가 통과했습니다. 새 테스트는 다음을 확인합니다.&#x20;
+  - shrink는 raw보다 커지지 않고, 뒤처진 agent에서는 η·std(A_self)로 줄입니다.
+  - b → 0이면 shrink는 IPPO로 돌아가고, relative는 그렇지 않습니다.
+  - 가린 step은 A_self 그대로이고, 나머지 step은 바뀌지 않습니다.
+  - explained variance 계산이 맞습니다.
+  - seed 1 checkpoint에 seed 2를 주면 계획이 거부됩니다.
+- **실제 trainer smoke(64 step, scratchpad)**:&#x20;
+  - donor를 끈 `oracle_max`는 IPPO와 최종 가중치가 비트 단위로 같습니다(EV 계산을 넣은 뒤에도 같음).
+  - 1M checkpoint 분기, 32 step rollout × 2 update:&#x20;
+    - 뒤처진 a0·a1: `oracle_max`(shrink)는 η_eff .04–.08, 변화량 .41–.59였습니다. D1은 변화량 5.3–14.7이었습니다.
+    - 앞선 a2·a3: 변화량 0입니다.
+    - a5는 update 2에서 Δ가 작아 줄이지 않았고(η_eff .5), 변화량은 .35였습니다.
+  - 아래 분기 명령과 같은 형태(`--ac-gate v2`, 4 모드 × seed 1·3·5)의 12 job이 모두 끝났고, 초기 가중치가 같았습니다.
+  - CLI에서 seed 2를 주면 오류로 멈춥니다: `goal layout [[[9, 10]], [[0, 10]]] differs from the checkpoint's [[[0, 10]], [[9, 10]]]`
+- smoke의 EV는 32 step rollout이라 음수가 많습니다(−26.6–.27). 실제 판단은 1,024 step run의 값으로 합니다.
+
+#### 분기 실험 실행 명령 (T154 명령 대체, 앱 밖 PowerShell에서 사용자 실행)
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('maxgae_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes ippo oracle_max oracle_maxd1 allk_max --seeds 1 3 5 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label maxgae_branch --output-dir $run
+
+```
+
+- T154와 달라진 점: seed 1·2·3 → 1·3·5, `--ac-gate v2` 추가, D2 척도는 기본값 shrink입니다.
+- 12 job이 순차로 돌고, seed 1의 4개 모드가 먼저 끝납니다. job당 약 5.5시간, 전체 약 66시간으로 추정합니다(T154 추정).
+- 판정 규칙은 D98대로 미리 고정합니다. 뒤처진 agent a0·a1·a4의 평가 배송을 보고, 앞선 agent a2·a3·a5의 배송이 떨어지지 않는지를 안전 지표로 봅니다.
+- `max_gae_critic_ev_agent_*`를 보면 donor critic 성숙 조건을 어디에 둘지 정할 수 있습니다.
+
+#### 아직 안 한 것
+
+- PGCT-D2 단계(필수 5–8): v2 `approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max` 모드, 감사 로그.
+- donor critic 성숙 조건(EV 로그를 본 뒤 결정).
+- a0·a4처럼 보상 사건이 없는 agent를 어떻게 다룰지(연구 범위 결정).
+
+기록은 `DECISIONS.md` D99, `EXPERIMENTS.md` E67, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, 대화 기록 T164에 남겼습니다. 커밋은 하지 않았습니다.
+
+
+
+클로드를 통해 여기까지 진행됐어
+
+필수 수정 1–4를 구현했습니다: 분기 goal 배치 검사, D2 shrink 척도(기본값), 첫 7 step Δ=0, critic EV 로그. pytest 57개가 통과했고, smoke에서 IPPO와의 비트 동등성과 seed 2 거부를 확인했습니다. 분기 실험은 아직 시작하지 않았고 커밋도 하지 않았습니다.\
+\
+분기 실험이 도는 동안 PGCT-D2(필수 5–8)를 구현해줘
+
+##### Assistant — 진행 안내 (1)
+
+먼저 인수인계와 D91–D99·E57–E67·최근 대화, 현재 코드를 확인해 PGCT-D2의 필수 5–8 범위를 정리하겠습니다. 실행 중인 실험은 건드리지 않고, 구현과 테스트·smoke 검증을 진행하겠습니다.
+
+##### Assistant — 진행 안내 (2)
+
+필수 5–8은 v2 승인 API, 승인에 따른 donor 선택, `pgct_max`·`oracle_mature_max` 모드, 실제 donor 감사 로그입니다. 현재 Max-GAE는 IPPO 경로로 실행되어 v2 학습이 꺼져 있습니다. 새 모드에서만 이를 연결하고, 기존 분기 모드의 설정과 동작은 유지하겠습니다.
+
+##### Assistant — 진행 안내 (3)
+
+분기 폴더 `runs/maxgae_br1M_20261102_165216`의 로그에서 IPPO seed 1의 6,144 step 진행을 확인했습니다. 프로세스 조회는 권한 제한으로 실패했으며, 실행에는 손대지 않았습니다.
+
+새 모드의 v2 비교도 Oracle과 같은 rollout 접촉 기준으로 연결하겠습니다. critic EV 임계값은 아직 연구 판단이 남아 있어 기본으로 강제하지 않고, 선택 옵션과 로그를 추가하겠습니다.
+
+##### 사용자 — 원문 (작업 중 추가 전달)
+
+토큰을 다 써서 PGCT-D2 구현은 Codex로 할꺼야 알고있어
+
+실행됨 명령 1개
+
+알겠습니다. PGCT-D2는 Codex에서 진행하시는 것으로 기록했습니다(T165).
+
+Codex가 참고할 곳은 다음과 같습니다.
+
+- 구현 명세: `DECISIONS.md` D98의 필수 5–8(`approved()`, donor 규칙 gate, `pgct_max`·`oracle_mature_max`, 감사 로그)과 6절 계획
+- 현재 상태: D99, E67, docs/MAX_GAE.md
+- 주의할 점: v2 `gate`는 update 직전 이웃이 아니면 지워지므로 donor로 그대로 쓰면 안 됩니다. IPPO 경로에서는 controller가 `active=False`로 불려 비교가 일어나지 않습니다(`exp_b_oracle_consensus.py:160`).
+
+##### Assistant — 진행 안내 (4)
+
+확인했습니다. 말씀하신 D98·D99·E67을 기준으로 여기서 계속 구현하고 있습니다. 접촉이 끊겨도 보존되는 `approved()`와 Max-GAE의 v2 직접 호출을 추가했으며, 이제 실행 모드와 검증을 연결하겠습니다.
+
+##### Assistant — 진행 안내 (5)
+
+새 모드와 감사 로그 연결을 마쳤습니다. 지금은 접촉·성숙 조건 테스트와 실제 trainer의 64 step 동등성 검증을 돌리고 있습니다. 첫 실행은 테스트 임시 폴더의 상위 경로가 없어 일부 설정 단계에서 실패했으며, 별도 검증 폴더를 만든 뒤 다시 실행 중입니다.
+
+##### Assistant — 진행 안내 (6)
+
+승인이 닫힌 `pgct_max`와 `oracle_mature_max`는 1M checkpoint에서 각각 64 step 실행한 뒤 IPPO와 최종 가중치가 비트 단위로 같았습니다. v2 예측기가 실제로 학습된 것도 확인했습니다.
+
+현재는 정답 팀 승인을 넣은 진단 실행이 `oracle_max`와 같아지는지, EV 필터와 warm-up이 donor를 막는지도 추가로 검증하고 있습니다.
+
+##### Assistant — 진행 안내 (7)
+
+기존 57개와 새 15개, 총 72개 테스트가 모두 통과했습니다. 1M 공통 checkpoint·seed 1에서 실행한 64 step smoke에서도 정답 승인을 넣은 두 새 모드는 `oracle_max`와 비트 단위로 같았고, EV 필터로 donor를 막으면 IPPO와 같았습니다.
+
+문서와 연구 기록을 정리하고 있습니다. PGCT-D2 본 학습은 시작하지 않았으며, 검증 로그와 checkpoint는 별도 폴더에 보존했습니다.
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 사용자 요청 파일과 D91–D99/E57–E67/T151–T165 관련 내용, trainer의 관측·update·checkpoint 연결부 확인. 기존 논문은 `output/pgct_progress_paper_20261023/main.tex`의 방법·문제 설정 부분, `output/ijcai_method_paper_20261018/README.md`의 현행 원고·결과 한계 안내를 읽었다. 논문 원고 전체를 읽거나 수정·컴파일한 것은 아니다. 별도 웹 대화를 조회한 것이 아니라 사용자 붙여넣기와 로컬 대화 기록을 읽었다.
+- 구현 D100, 검증 E68. PGCT-D2 새 15개 포함 72 tests 통과. 실제 trainer seed 1, 1M 공통 checkpoint 분기, 64 step/job 9 job smoke. 본 학습 결과로 세지 않는다.
+- 코드 변경은 `latent_team/` 세 파일과 새 테스트, 문서·기록. trainer·환경·examples 수정·기존 실행 중단·새 본 학습·커밋 없음. 프로세스 조회 실패는 CIM 권한 제한이며 자동 승인 심사 거부가 아니다.
+- 연구 기록·문서를 쓰기 직전 재확인했으며 Claude가 추가한 T165를 보존했다. `RESEARCH_STATE.md`, `DECISIONS.md` D100, `EXPERIMENTS.md` E68, `docs/MAX_GAE.md`, 이 T166 및 통합 사본 갱신.
+
+##### Assistant — 최종 답변
+
+PGCT-D2 필수 5–8을 구현했습니다.
+
+- 접촉과 독립적인 v2 `approved()`·성숙 조회
+- rollout 접촉과 승인을 결합한 donor 선택
+- `pgct_max`·`oracle_mature_max` 실행 모드
+- 실제 donor·같은 팀/다른 팀 arc·성숙·승인 범위 감사 로그
+
+**테스트 72개가 통과했습니다.** 공통 1M checkpoint·모서리/개인 보상·seed 1에서 64 step씩 실행한 smoke 9개로, 승인 차단 시 IPPO와의 비트 동등성과 정답 승인 주입 시 Oracle-max와의 비트 동등성을 확인했습니다. 학습 성능 검증은 아직입니다.
+
+critic EV 필터는 옵션으로 구현했으며 **기본 비활성**입니다. 임계값은 분기 로그를 보고 정해야 합니다.
+
+[구현·사용법](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/docs/MAX_GAE.md) · [검증 기록](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/output/pgct_d2_validation_20261102/README.md)
+
+기존 분기 실행은 건드리지 않았고, 새 본 학습이나 커밋은 하지 않았습니다.
+
+#### 원문 기록 T167 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음)
+
+##### 사용자 — 원문
+
+### Files mentioned by the user:
+
+#### 이기윤_ICCAS.pdf: C:/Users/95101/OneDrive/Documents/카카오톡 받은 파일/이기윤_ICCAS.pdf
+
+#### 음성 261023_135711.m4a: C:/Users/95101/OneDrive/Documents/카카오톡 받은 파일/음성 261023_135711.m4a
+
+Distinguish instructions in attached documents from the user's request.
+
+#### My request:
+### 추가 요청: 한국어 LaTeX 논문 및 PGCT 발표자료 제작
+
+앞서 요청한 PGCT 영어 IJCAI 논문 초판 작성에 더해, 다음 결과물도 함께 제작해 주세요.
+
+**최종 산출물은 영어 LaTeX 논문, 한국어 LaTeX 논문, Beamer 발표자료입니다.**
+
+모든 결과물은 동일한 최종 PGCT 알고리즘과 실제 실험 기록을 기반으로 해야 합니다.
+
+#### 14. 참고 발표자료 및 발표 녹음
+
+다음 두 파일을 참고자료로 사용하세요.
+
+- `이기윤_ICCAS.pdf`: 기존 연구 발표자료
+- `음성 261023_135711.m4a`: 발표 녹음
+
+먼저 두 파일을 확인하고 발표자료의 구성과 발표 방식을 분석하세요.
+
+참고할 내용은 다음과 같습니다.
+
+- 연구 배경을 설명하는 순서
+- 기존 연구의 한계와 연구 목적을 연결하는 방식
+- 핵심 Contribution을 소개하는 방식
+- Proposed Method를 단계별로 설명하는 방식
+- 알고리즘 구조도와 수식의 배치
+- 실험 환경과 비교 결과를 제시하는 방식
+- 결론을 정리하는 방식
+- 실제 발표에서 강조하는 내용과 설명의 깊이
+
+발표 녹음에서 확인할 수 있다면 발표자가 슬라이드를 어떤 순서로 설명하는지, 수식은 어느 정도 자세히 설명하는지, 핵심 내용을 어떻게 강조하는지도 참고하세요.
+
+녹음 내용을 읽거나 전사할 수 없는 환경이라면 이를 명시하고, 확인하지 못한 발표 내용을 추측하지 마세요.
+
+**중요:** 참고자료는 Multi-UAV 연구입니다. 해당 연구의 알고리즘, 실험 결과, 수식, 성능 수치를 PGCT 논문이나 발표에 가져오지 마세요.
+
+참고하는 것은 발표의 구성, 정보 전달 방식, 슬라이드 디자인과 설명 수준입니다.
+
+PGCT 연구의 내용과 그림은 새로 작성해야 합니다.
+
+---
+
+#### 15. 한국어 LaTeX 논문
+
+영어 논문과 별도로 **한국어 LaTeX 논문 전체 초안**도 작성해 주세요.
+
+단순한 요약본이 아니라 영어 논문과 동일한 기술 내용을 포함하는 완전한 논문이어야 합니다.
+
+다음 원칙을 적용하세요.
+
+1. 영어 논문과 한국어 논문의 섹션 구성은 최대한 일치시킵니다.
+2. 모든 핵심 수식과 알고리즘 정의를 동일하게 유지합니다.
+3. 실험 설정, 결과, 수치, 인용문헌도 동일하게 유지합니다.
+4. 영어 논문을 기계적으로 직역하지 말고 자연스러운 한국어 학술 문체를 사용합니다.
+5. 불필요하게 긴 문장과 어려운 한자어를 피합니다.
+6. Actor, Critic, Reward Probe, GAE, PPO 등 중요한 기술 용어는 일관되게 사용합니다.
+7. 영어와 한국어 사이에 주장이나 결과가 달라지지 않도록 검토합니다.
+
+한국어 논문은 다음 목적을 가집니다.
+
+- 연구 내용을 정확히 이해하기 위한 개인 검토용
+- 지도교수님과 논의하기 위한 자료
+- 수식과 알고리즘의 논리적 흐름을 점검하기 위한 자료
+- 영어 논문을 수정할 때 참고할 원본
+
+따라서 영어 논문보다 과도하게 축약하지 마세요.
+
+한국어 LaTeX는 `kotex` 등 적절한 패키지를 사용하고, 가능하면 XeLaTeX 또는 LuaLaTeX로 컴파일 가능하도록 구성하세요.
+
+영어와 한국어 논문은 공통된 BibTeX 참고문헌을 사용해도 됩니다.
+
+---
+
+#### 16. Beamer 발표자료
+
+첨부된 `이기윤_ICCAS.pdf`의 발표 구성과 시각적 스타일을 참고하여 **PGCT 연구 발표용 Beamer 슬라이드**를 작성해 주세요.
+
+발표자료는 논문 내용을 단순히 슬라이드에 복사한 형태가 아니어야 합니다.
+
+연구 배경부터 알고리즘, 실험, 결론까지 자연스럽게 이어지는 발표로 구성하세요.
+
+##### 발표자료 구성
+
+다음 구성을 기본으로 합니다.
+
+1. Title
+2. Outline
+3. Introduction — Research Background
+4. Introduction — Problem Definition
+5. Introduction — Related Work
+6. Introduction — Research Goal and Contributions
+7. Proposed Method — Overall PGCT Architecture
+8. Proposed Method — Individual Reward Prediction
+9. Proposed Method — Reward Probe Construction
+10. Proposed Method — Reward Response Distance and Team Discovery
+11. Proposed Method — Selective Peer Critic Access
+12. Proposed Method — Max-GAE Advantage Estimation
+13. Proposed Method — Actor and Critic Updates
+14. Simulation Results — Experimental Setup
+15. Simulation Results — Team Discovery Performance
+16. Simulation Results — Learning Performance
+17. Conclusion
+
+이 순서는 기본안이며, 실제 내용과 발표 흐름에 맞춰 일부 조정해도 됩니다.
+
+약 15~18장 내외로 구성하되 슬라이드 수를 맞추기 위해 불필요한 내용을 추가하지 마세요.
+
+##### 발표자료 디자인
+
+- 16:9 비율을 사용합니다.
+- 첨부 ICCAS 발표자료처럼 밝고 깔끔한 학술 발표 스타일을 사용합니다.
+- 슬라이드 제목은 명확하게 작성합니다.
+- 문장보다 핵심 문구, 수식, 그림을 중심으로 구성합니다.
+- 한 슬라이드에 너무 많은 내용을 넣지 않습니다.
+- 수식은 실제 발표에서 설명할 핵심 수식만 포함합니다.
+- 전체 알고리즘을 보여주는 구조도를 제작합니다.
+- Reward Probe를 통한 팀 판별 과정을 시각화합니다.
+- Critic 선택 및 Max-GAE 계산 과정을 그림으로 설명합니다.
+- 실험 비교는 실제 로그에 근거한 표와 그래프를 사용합니다.
+- 표와 그래프의 축, 범례, 글자 크기를 읽기 쉽게 만듭니다.
+
+다음 그림은 특히 신경 써서 제작하세요.
+
+**Figure 1. Overall PGCT Architecture**
+
+Independent Learning → Individual Reward Prediction → Reward Probe → Latent Team Discovery → Peer Critic Selection → Advantage Estimation → PPO Update
+
+**Figure 2. Reward-Based Team Discovery**
+
+서로 다른 에이전트가 공통 probe에 대해 예상 보상을 계산하고, 응답 차이를 바탕으로 같은 팀인지 판단하는 과정입니다.
+
+**Figure 3. Selective Peer Critic Learning**
+
+승인된 팀원의 Critic으로 자신의 관측 이력을 평가하고, 개인 Critic과의 가치 차이를 Actor Advantage에 반영하는 과정을 설명합니다.
+
+그림에는 실제 코드에서 사용하지 않는 정보 교환이나 중앙집중식 학습 과정을 넣지 마세요.
+
+##### 슬라이드 언어
+
+발표 슬라이드는 첨부한 ICCAS 자료처럼 **간단한 영어**로 작성해 주세요.
+
+- 짧은 문장
+- 핵심 용어 중심
+- 복잡한 영어 문법 최소화
+- 지나치게 어려운 단어 지양
+- 자연스러운 학술 발표 표현 사용
+
+수식과 알고리즘은 정확하게 유지하세요.
+
+별도의 **한국어 발표 대본**도 작성해 주세요.
+
+발표 대본은 슬라이드별로 구분하고, 단순한 번역이 아니라 실제 발표자가 말하는 자연스러운 한국어로 작성합니다.
+
+특히 수식이 등장하는 슬라이드에서는 수식의 모든 기호를 읽기보다 해당 수식이 무엇을 의미하는지 설명하도록 작성하세요.
+
+---
+
+#### 17. PPTX 파일도 별도로 생성
+
+Beamer `.tex`만 만들지 말고 실제 PowerPoint에서 열 수 있는 `.pptx` 파일도 생성해 주세요.
+
+Beamer와 PowerPoint는 별도의 형식이라는 점을 고려하세요.
+
+다음 결과물을 모두 생성합니다.
+
+- Beamer `.tex` 원본
+- 컴파일된 Beamer `.pdf`
+- PowerPoint `.pptx`
+
+PowerPoint 파일은 Beamer 슬라이드와 내용, 순서, 디자인이 최대한 일치해야 합니다.
+
+가능하면 `python-pptx` 또는 `PptxGenJS`를 사용하여 텍스트, 도형, 표 등을 수정할 수 있는 PPTX로 작성하세요.
+
+PDF 페이지를 이미지로만 삽입한 PPTX는 편집성이 떨어지므로 가능하면 피하세요.
+
+수식이나 복잡한 도식 등 일부 요소를 이미지로 처리해야 한다면 해당 부분을 구분해 주세요.
+
+PPTX 생성 도구가 없다면 임의의 확장자 변경으로 PPTX를 만든 것처럼 처리하지 말고, Beamer PDF를 우선 완성하고 PPTX 생성 제한을 보고하세요.
+
+---
+
+#### 18. 논문과 발표자료의 일관성
+
+네 가지 결과물은 동일한 연구를 설명해야 합니다.
+
+- 영어 논문
+- 한국어 논문
+- Beamer 발표자료
+- PPTX 발표자료
+
+다음 사항을 반드시 일치시키세요.
+
+1. 최종 알고리즘 구성
+2. Reward Predictor 정의
+3. Reward Probe의 거리와 승인 규칙
+4. Donor 선택 조건
+5. Max-GAE의 수식과 설정
+6. 실험 환경 및 baseline
+7. 실제 실험 결과
+8. 연구 기여와 한계
+
+논문에서 사용하지 않은 새로운 알고리즘이나 가정을 발표자료에 추가하지 마세요.
+
+또한 이전 PGCT 버전의 개발 과정을 발표자료에 포함하지 마세요.
+
+v1, v2, D1, D2 같은 내부 버전 명칭 대신 최종 알고리즘 PGCT의 구성요소로 설명하세요.
+
+아직 완료되지 않은 실험의 결과를 만들어서는 안 됩니다.
+
+진행 중인 실험은 결과 슬라이드에 명확한 placeholder를 두고, 실제 결과가 확보되면 교체할 수 있도록 구성하세요.
+
+---
+
+#### 19. 폴더 구성 및 최종 산출물
+
+다음과 같이 정리해 주세요.
+
+```text
+paper/
+├── english/
+│   └── main.tex
+├── korean/
+│   └── main.tex
+├── references.bib
+├── figures/
+│
+presentation/
+├── pgct_beamer.tex
+├── pgct_beamer.pdf
+├── pgct_presentation.pptx
+├── pgct_script_ko.md
+└── figures/
+```
+
+논문과 발표자료에서 공통으로 사용할 수 있는 그림은 재사용해도 됩니다.
+
+컴파일된 영어 논문 PDF와 한국어 논문 PDF도 생성할 수 있으면 함께 제공하세요.
+
+최종적으로 다음 항목을 검토하세요.
+
+- 영어 논문과 한국어 논문의 내용이 같은가?
+- LaTeX 컴파일 오류가 없는가?
+- 그림과 표가 잘리지 않는가?
+- Beamer와 PPTX의 슬라이드 순서가 같은가?
+- PPTX에서 글자나 수식이 겹치지 않는가?
+- 발표 대본이 슬라이드의 실제 내용과 일치하는가?
+- 실험 결과를 임의로 만들어 넣지 않았는가?
+- 논문과 발표 모두 잠재 팀 발견을 핵심 기여로 유지하는가?
+
+이번 작업에서는 연구 코드와 학습 설정을 변경하지 마세요.
+
+기존 실험도 중단하거나 새로 실행하지 마세요.
+
+**목표는 PGCT의 영어·한국어 논문 초판과, 이를 바탕으로 한 실제 연구 발표자료를 함께 완성하는 것입니다.**
+
+##### Assistant — 진행 안내 (1)
+
+첨부 PDF와 녹음을 먼저 확인해 발표 구성과 설명 방식을 살펴보겠습니다. 이어서 최종 PGCT 코드와 실제 실험 기록을 대조해 영어·한국어 논문, Beamer, 편집 가능한 PPTX, 한국어 발표 대본을 같은 내용으로 제작하겠습니다. 연구 코드와 학습 설정·실행은 변경하지 않겠습니다.
+
+##### Assistant — 진행 안내 (2)
+
+PDF와 발표자료 제작 스킬을 적용하겠습니다. 현재 최종 PGCT는 구현 검증까지 마쳤고 통합 알고리즘의 장기 학습 결과는 아직 없으므로, 자료에서도 확인된 팀 발견 결과와 미완료 성능 실험을 분명히 구분하겠습니다.
+
+##### Assistant — 진행 안내 (3)
+
+참고 PDF는 16장으로, 배경·관련 연구·기여를 짧게 제시한 뒤 전체 구조도에서 구성요소별 설명으로 들어가고, 실험과 결론으로 마무리합니다. 흰 배경, 파란 제목, 핵심 수식과 도식 중심의 구성을 참고하겠습니다.
+
+녹음 파일은 약 13분 33초이며 파일 메타데이터까지 확인했습니다. 현재 환경에는 음성 전사 도구가 없어 실제 발화·강조 방식은 확인할 수 없습니다. 이 부분은 추측하지 않고, 한국어 대본은 PGCT 내용에 맞춰 새로 작성하겠습니다.
+
+##### Assistant — 진행 안내 (4)
+
+기존 로그에서 보상 기반 팀 발견 구성요소의 실제 수치를 다시 집계했습니다. 약 5M step·seed 1 기록의 같은 팀/다른 팀 전이 arc 누적은 5,252/352이며, 이는 최종 PGCT의 학습 성능 결과로 사용하지 않겠습니다. 최종 알고리즘의 성능 비교에는 결과 대기 영역을 두고, 확인된 IPPO 기준 곡선만 표시하겠습니다.
+
+한국어를 포함한 LaTeX 컴파일 시험도 성공했습니다. 영어·한국어 논문은 공통 수식과 참고문헌을 사용해 내용 차이를 줄이고 있습니다.
+
+##### Assistant — 진행 안내 (5)
+
+영어·한국어 논문 전체 초안과 17장 발표자료, 슬라이드별 한국어 대본을 작성했습니다. 두 논문은 PDF 컴파일에 성공했으며, 현재 표·그림·긴 경로의 배치와 인용 표시를 점검하고 있습니다. PPTX의 본문·도식·표·그래프는 편집 가능하게 만들었고, 복잡한 수식만 이미지 조각으로 처리했습니다.
+
+##### Assistant — 진행 안내 (6)
+
+세 PDF의 컴파일을 완료했고, PPTX도 렌더링해 확인하고 있습니다. PPTX 구조·배치 검사에서는 17장, 편집 가능한 그래프 2개와 표 3개가 확인됐고 잘림·제목 넘침 항목은 없었습니다. 두 논문은 각각 7쪽입니다.
+
+마지막으로 수식·승인 규칙·실험 조건의 한영 일치, Beamer와 PPTX의 순서, 발표 대본의 대응을 확인한 뒤 전체 묶음과 함께 전달하겠습니다.
+
+##### Assistant — 진행 안내 (7)
+
+내용 일치와 배치 점검을 마쳤습니다. 현재 자료는 공식 투고본이 아닌 검토용 초안이며, 최종 PGCT 성능 결과는 대기 상태로 표시했습니다. LaTeX 원본·공통 문헌·그림·PPTX·한국어 대본을 한 ZIP으로 묶고, 작업 기록을 갱신하고 있습니다.
+
+##### 수행 기록 — 원문 대화와 별도
+
+- `pdf`와 `presentations` 스킬을 읽고 사용했다. 사용자의 python-pptx/PptxGenJS 선호에 따라 PPTX는 python-pptx로 작성하고 Artifact Tool로 렌더링·OOXML 검사했다. 과학 그래프는 matplotlib, 사용자가 요청한 도식은 TikZ·네이티브 PPTX 개체로 작성했다.
+- 첨부 PDF는 16장 전체 텍스트 추출·렌더링으로 구성과 디자인을 확인했다. 음성은 파일/컨테이너 메타데이터(812.9793초)만 확인했다. 전사·청취·발화 복원은 하지 않았다. 다른 연구의 식·알고리즘·그림·실험 수치는 전용하지 않았다.
+- 최종 코드와 D98–D100/E62–E68 및 기존 연구 기록, 실제 discovery/IPPO/진행 중 분기 로그를 읽었다. 예전 논문 서지 자료도 참고하고 PPO/GAE/MAMBA/SEAC/SePS 원문·공식 서지를 확인했다. 근거 파일과 해시는 `paper/evidence_manifest.json`에 있다.
+- 결과물은 한영 논문 각각 7쪽, Beamer/PPTX 각각 17장, 한국어 대본과 새 구조도 3개다. 수식 11개·인용7개·label은 한영 동일, 발표/대본은 공통 slides.json에서 만들었다. 그림·표·슬라이드 렌더링을 확인하고 오류를 수정했다. PDF 3개 실제 컴파일 성공, overfull/누락 glyph 없음. PPTX native chart2/table3, notes17, geometry/structure finding0. Microsoft PowerPoint 앱에서 직접 검증한 것은 아니다.
+- 첫 TeX 그림 줄바꿈 오류, 수식 이미지 parser의 mathcal 표기, strict PPTX importer의 signed axis ID, 누락 TeX 글꼴, 패키지 ZIP의 pptx 확장자 누락을 고쳐 최종 산출물·묶음을 검증했다. 이들은 문서 제작 문제이며 연구 코드/알고리즘 수정이 아니다.
+- 영어·한국어는 포터블 2단 검토 초안이며, 목표 연도 공식 IJCAI 양식·분량 충족은 아직 별도 작업이다. 최종 통합 PGCT의 장기 성능은 Pending, E68의 기존72 tests/64step smoke만 구현 근거로 인용했고 재실행하지 않았다.
+- 문서 제작 중 연구 코드·학습 설정·실행 상태를 변경하지 않았으며 새 학습·환경 rollout·pytest·중단·재시작·커밋 없음. 새 TeX 실행 파일/캐시만 프로젝트 제작 폴더에 받았다. 연구 코드 해시 불변을 확인했다.
+- `DECISIONS.md` D101, `EXPERIMENTS.md` E69, `RESEARCH_STATE.md`, 이 T167과 통합 사본을 갱신했다. 접근하지 못한 이전 영어 논문 지시나 웹 대화를 복원했다고 쓰지 않았다.
+
+##### Assistant — 최종 답변
+
+완성했습니다. 영어·한국어 논문은 각각 **7쪽**, 발표자료는 **17장**입니다.
+
+[전체 묶음 ZIP](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/PGCT_paper_presentation_20261102.zip) — LaTeX 원본·공통 문헌·그림·대본 포함
+
+영어 논문 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/paper/english/main.pdf" purpose="output"}
+
+한국어 논문 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/paper/korean/main.pdf" purpose="output"}
+
+Beamer 발표 PDF
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_beamer.pdf" purpose="output"}
+
+편집 가능한 PowerPoint
+
+:codex-file-citation{path="C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_presentation.pptx" purpose="output"}
+
+[한국어 발표 대본](C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/presentation/pgct_script_ko.md)
+
+최종 PGCT 성능은 **Pending**으로 표시했습니다. 녹음은 전사하지 못했으며, 발표 방식을 추측하지 않았습니다. 논문은 검토용 2단 초안으로 공식 IJCAI 양식 적용은 남아 있습니다.
+
+연구 코드·학습 설정·실험 실행은 변경하지 않았습니다.
+
+#### 원문 기록 T168 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+Codex로 구현된 PGCT-D2 구현 제대로 됐는지 확인해줘
+
+##### 수행 기록 — 원문 대화와 별도
+
+- Codex 구현(D100, E68, T166) 검토. 읽은 코드: `git diff`의 `latent_team/reward_probe_ac_v2.py`·`max_gae.py`·`train_from_scratch.py`, `tests/test_pgct_max.py`.
+- pytest: `test_pgct_max.py`·`test_max_gae.py`·`test_latent_team.py`·`test_reward_probe_ac.py`·`test_reward_probe_ac_v2.py` 72개 통과. 실제 trainer 테스트는 scratchpad의 긴 경로에서 Windows 260자 한도로 실패했고, `C:\Users\95101\AppData\Local\Temp\pgt`에서 통과했다(코드 문제 아님). 임시 폴더는 지웠다.
+- 자연 경로 smoke 1 job(64 step, 1M 분기, `pgct_max`, 느슨한 v2 설정, `Temp\pgt2`, 지움). 결과는 E70.
+- 실행 중인 분기(`runs/maxgae_br1M_20261102_165216`, PID 28892)는 상태만 읽었다. 중단·재시작 없음.
+- 코드 수정·커밋 없음. 기록: D102, E70, `RESEARCH_STATE.md`, 이 T168, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+Codex 변경은 세 파일(v2 `approved()`·`maturity()`, `max_gae.py`의 `gate`·`oracle_mature`, `train_from_scratch.py`의 두 모드)입니다. 핵심 설계 변경이 하나 보입니다. v2 비교 자체를 update 직전 이웃이 아니라 rollout 접촉으로 하도록 바꿨습니다. 테스트 파일과 검증 산출물을 읽겠습니다.
+
+테스트는 승인 없음(성숙 차단)과 정답 승인 주입(monkeypatch)만 실제 trainer로 확인합니다. v2가 rollout 접촉으로 실제 비교하고 승인해서 donor가 생기는 자연 경로는 끝까지 검증되지 않았습니다. 먼저 전체 테스트를 돌리고, 실행 중이라는 분기 실험의 상태를 읽기 전용으로 확인하겠습니다.
+
+한 테스트가 실패했습니다. 원인을 보겠습니다.
+
+실패 원인은 코드가 아니라 경로 길이입니다. 제 scratchpad 경로가 길어서 `oracle_mature_max` job 파일 경로가 Windows 한도(260자)를 넘었습니다(약 261자). 더 짧은 경로로 다시 돌립니다.
+
+여전히 같은 경로 길이 문제입니다(파일 이름이 더 길어 262자). 시스템 임시 폴더의 짧은 경로(`C:\Users\95101\AppData\Local\Temp\pgt`)에서 다시 돌리고, 끝나면 지우겠습니다.
+
+실제 trainer 테스트도 짧은 경로에서는 통과합니다(전체 72개 통과). 이제 테스트가 다루지 않은 자연 경로를 확인합니다. v2 설정을 느슨하게 줘서(사건 기준 .1, 성숙 1개, round 1, 문턱 1.0) 실제 비교 → 승인 → donor가 생기는지, 그리고 비교 대상이 rollout 접촉인지 64 step smoke로 보겠습니다.
+
+자연 경로도 동작합니다. update 2에서 rollout 중에만 만난 쌍(update 직전에는 이웃 아님)이 실제로 비교됐고, donor = 접촉 ∧ 승인이 정확히 성립했으며, trainer allocation은 0이었습니다. 문턱을 1.0으로 풀었기 때문에 다른 팀 쌍이 승인된 것은 예상대로입니다. 임시 폴더를 지우고 기록 번호를 확인하겠습니다.
+
+##### Assistant — 최종 답변
+
+결론부터 말씀드리면, **배선은 제대로 됐고 실행을 막는 버그는 없습니다.** 다만 Codex가 설계 하나를 바꿨습니다. v2의 비교 대상을 "update 직전 이웃"에서 "rollout 중 접촉"으로 바꿨는데, 이 때문에 통신 모델의 인과성 문제가 생깁니다. 그 밖에 작은 문제가 몇 개 있습니다. 코드는 고치지 않았습니다.
+
+#### 재현해서 확인한 것
+
+- **테스트**: Codex가 적은 72개가 모두 통과했습니다.
+  - 실제 trainer 테스트 하나는 처음에 실패했습니다. 제 임시 경로가 길어 `oracle_mature_max` job의 파일 경로가 Windows 260자 한도를 넘었기 때문입니다(261–262자). 짧은 경로에서는 통과했습니다. 코드 문제는 아닙니다. `runs/` 아래 실제 run 경로는 약 200자라 괜찮습니다.
+- **자연 경로 smoke(제가 추가, 64 step, 1M 분기)**: Codex 테스트는 "승인 없음"(min_events 100만)과 "정답 승인 주입"(monkeypatch)만 다룹니다. 그래서 v2를 느슨하게 설정해(사건 기준 .1, 성숙 1개, round 1, 문턱 1.0) 실제 비교 → 승인 → donor 경로를 돌려 봤습니다.
+  - update 2에서 rollout 접촉 10쌍, update 직전 이웃 4쌍이었습니다. 비교된 1쌍은 update 직전 이웃이 아니었습니다. 즉 rollout 접촉으로 비교하는 것이 맞게 동작합니다.
+  - donor = 접촉 ∧ 승인이 정확히 성립했고, trainer allocation은 0이었습니다(증류 없음).
+  - 문턱을 1.0으로 풀어서 다른 팀 쌍이 승인됐습니다. 배선 확인용 설정이라 예상된 결과입니다.
+- **기존 모드 영향**: oracle/all/allk는 구조만 정리됐고 결과는 같습니다. EV 계산 위치를 앞당긴 것도 순수 계산이라 영향이 없습니다.
+- **실행 중인 분기**: `runs/maxgae_br1M_20261102_165216`, PID 28892(16:52 시작), 현재 `ippo_s1` running입니다. Codex의 수정(16:57–17:05)보다 먼저 코드를 불러와 한 프로세스에서 순차로 돌기 때문에 영향이 없습니다.
+
+#### 설계 대비 점검
+
+| 항목 | 구현 | 판정 |
+|---|---|---|
+| 지속 승인 | `approved()`: round ≥ 3 ∧ EMA < .5 ∧ 현재 두 agent 성숙, 대칭, 접촉과 무관, 복사본 반환 ([reward_probe_ac_v2.py:313](latent_team/reward_probe_ac_v2.py:313)) | 맞음 |
+| donor 규칙 | `gate` = 접촉 ∧ 승인(∧ 선택적 critic EV). 팀 라벨을 쓰지 않음 ([max_gae.py:98](latent_team/max_gae.py:98)) | 맞음 |
+| 대조군 | `oracle_mature` = 접촉 ∧ 같은 팀 ∧ 두 agent r̂ 성숙 | 맞음 |
+| 모드 | `pgct_max`·`oracle_mature_max`: IPPO 경로, peer loss 0, v2 learn=True, `--ac-gate v2` 필수 ([train_from_scratch.py:70](latent_team/train_from_scratch.py:70)) | 맞음 |
+| controller 활성화 | Max-GAE가 update마다 한 번 직접 호출, warm-up 뒤 비교 ([max_gae.py:281](latent_team/max_gae.py:281)) | 맞음, 단 아래 1번 |
+| critic 성숙 | `--max-gae-min-critic-ev` 옵션, 기본 꺼짐(임계값 미정) | 계획대로 |
+| 감사 로그 | 승인 arc, 같은 팀·다른 팀, 승인 범위(12 arc 중), `ac_pairs` | 맞음 |
+| D2 식 | shrink·가림 그대로 | 맞음 |
+
+#### 문제점
+
+**1. (중요) v2 비교를 rollout 접촉으로 바꾼 설계 변경**
+
+D98에서 저는 "승인 학습은 v2 그대로(update 직전 비교)"를 권했습니다. Codex는 D100에 이유(Oracle과 기준 일치, IPPO 경로의 `active=False` 해결)를 적고 바꿨습니다. 기준을 맞춘 점은 장점이지만 세 가지가 따라옵니다.
+
+- **인과성**: v2 `__call__`은 먼저 예측기를 다시 학습하고([reward_probe_ac_v2.py:244](latent_team/reward_probe_ac_v2.py:244)) 그다음 비교합니다. 그래서 rollout 중간에 만났다가 헤어진 쌍도, 헤어진 뒤의 경험까지 학습한 예측기와 그 뒤에 생긴 사건 probe로 비교합니다. "통신 범위 안에서만 주고받는다"는 모델이라면 실제로는 주고받을 수 없는 정보입니다. smoke에서도 update 직전에 이웃이 아닌 쌍이 비교됐습니다. D2의 critic 가중치는 rollout 동안 고정이라 문제가 없습니다. 문제는 v2 비교뿐입니다.
+- **기존 수치의 이전 불가**: E59·E60·E65의 승인 시점과 오승인 수치는 update 직전 기준입니다. pgct_max에 그대로 옮길 수 없습니다. 비교 빈도가 늘어 다른 팀 쌍도 더 자주 비교됩니다.
+- **로그 의미 변화**: W&B `update/ac_v2_*`의 비교 대상 집합이 v2 PGCT run과 다릅니다. `ac_v2_gate_arcs`는 D2 donor가 아니라 옛 증류 gate입니다. D2는 `max_gae_*`를 봐야 합니다.
+
+선택지는 둘입니다.
+- (i) 코드는 그대로 두고, 논문에 "직전 rollout에서 만난 쌍은 update 시점에 한 번 교환한다(지연 메시지)"는 통신 가정을 명시합니다.
+- (ii) 엄밀하게 고칩니다. pgct_max에서는 재학습 전에 비교하고, probe는 rollout 시작 시점까지의 사건으로 제한합니다. 그러면 접촉 시점에 실제로 있던 예측기와 사건만 씁니다.
+
+논문이 "제한된 지역 통신"을 내세운다면 (ii)를 권합니다. 수정 범위는 v2 비교 순서와 probe 스냅샷 정도로 작습니다.
+
+**2. (작음) 승인에 유효기간이 없습니다.** 예전 EMA로 승인된 쌍은 다음 비교 round(5 update마다)까지 그 승인으로 donor가 됩니다. E65 같은 후반 거리 감소와 겹치면 반영이 늦어집니다.
+
+**3. (작음, 옵션을 켤 때만) `allk` 수 맞춤이 EV 필터 전 기준입니다.** `--max-gae-min-critic-ev`를 켜면 oracle과 donor 수가 어긋날 수 있습니다.
+
+**4. (테스트 공백) 실제 비교 → 승인 → donor 경로의 회귀 테스트가 없습니다.** 제 smoke로 동작은 확인했지만, 느슨한 설정의 smoke를 테스트로 고정해 두는 편이 좋습니다.
+
+#### 그대로 남는 연구상 한계 (Codex도 명시)
+
+- a0·a4처럼 보상 사건이 없는 agent는 `pgct_max`·`oracle_mature_max`에서 receiver가 될 수 없습니다.
+- 분기에서는 v2가 새로 시작하므로 승인이 늦게 생깁니다.
+- donor critic EV 임계값은 아직 정하지 않았습니다.
+
+**권고**: 분기 2단계(`pgct_max`, `oracle_mature_max`)를 실행하기 전에 1번을 결정해야 합니다. 1단계(지금 돌고 있는 oracle 분기)에는 영향이 없습니다.
+
+기록은 `DECISIONS.md` D102, `EXPERIMENTS.md` E70, `RESEARCH_STATE.md`, 대화 기록 T168에 남겼습니다. 코드 수정·커밋은 하지 않았습니다.
+
+#### 원문 기록 T169 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+엄밀하게 수정(ii)
+
+##### 수행 기록 — 원문 대화와 별도
+
+- T168 다음 단계 버튼(D102의 선택지 ii)이다.
+- 코드 변경: `latent_team/reward_probe_ac_v2.py`(`contact_snapshot`, `snapshot()`, `compare_neighbors()`, 비교 후 재학습 순서, 고정 성숙, 재학습 감지 오류, install의 rollout 시작 스냅샷), `latent_team/train_from_scratch.py`(PGCT-D2 두 모드에 플래그 자동 설정, 옛 계획 거부), `tests/test_pgct_max.py`(새 테스트 5개), `docs/MAX_GAE.md`, `docs/REWARD_PROBE_AC.md`. trainer·`rware/`·`examples/`와 기존 모드는 바꾸지 않았다.
+- 검증: pytest 77개 통과(`AppData\Local\Temp\pgt`를 basetemp로 쓰고 지움). 실제 trainer 자연 경로 테스트 포함.
+- 진행 안내 일부를 영어로 보냈다(아래 원문 그대로).
+- 논문 초안(`paper/`)은 고치지 않았다. 학습 시작·중단·커밋 없음.
+- 기록: D103, E71, `RESEARCH_STATE.md`, 이 T169, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+(ii)로 고치겠습니다. 방식은 "rollout 시작 때 각 agent가 보낼 수 있는 것(예측기·최근 사건 probe·성숙 여부)을 고정하고, 그 rollout에서 만난 쌍만 그 고정본으로 비교한 뒤 재학습"입니다. 기존 v2 증류 모드는 그대로 둡니다.
+
+현재 v2 controller는 재학습 → 성숙 판정 → 비교 순서입니다. 설정 플래그 `contact_snapshot`(기본 False)을 추가해, 켜져 있을 때만 rollout 시작 스냅샷으로 비교한 뒤 재학습하도록 고치겠습니다.
+
+Now the rollout-start hook in `install` and the `approved()` docstring.
+
+Old `pgct_max` manifests made before this change would silently run the old comparison order, so I'll refuse those in `run_job`.
+
+No existing PGCT-D2 runs, so nothing is affected by the refusal. Now the tests: snapshot causality (unit), the refit guard, plan wiring, refusal of old plans, and the natural approval path on the real trainer (the gap I flagged).
+
+One fix before running: with the new order, maturity at update 2 comes from the rollout-2 start (only rollout-1 events), so in a 2-update smoke only one agent may be mature. I'll lower the test's event threshold so several agents mature from positive shaping rewards.
+
+77개(기존 72 + 새 5) 모두 통과했습니다. 자연 경로 테스트의 실제 수치를 읽어 보고하고, 임시 폴더를 지우겠습니다.
+
+Now the docs. Let me find the PGCT-D2 section Codex added to `docs/MAX_GAE.md`.
+
+Codex가 만든 논문 초안(D101)이 v2 비교 순서를 어떻게 서술하는지 확인하겠습니다.
+
+논문 초안 영어판 102행 등은 "재학습 후 비교"(이전 순서)로 적혀 있습니다. 이번에는 고치지 않고 답변에 남기겠습니다. 이제 연구 기록과 대화 기록을 작성합니다.
+
+##### Assistant — 최종 답변
+
+(ii)로 수정했습니다. trainer·`rware/`·`examples/`는 그대로이고, 기존 v2 증류 모드(`pgct`)의 동작도 바뀌지 않았습니다.
+
+#### 바꾼 것
+
+| 내용 | 위치 |
+|---|---|
+| `ACV2Config.contact_snapshot` 추가(기본 False). `pgct_max`·`oracle_mature_max`는 계획 단계에서 자동으로 True가 됩니다 | [reward_probe_ac_v2.py](latent_team/reward_probe_ac_v2.py), [train_from_scratch.py](latent_team/train_from_scratch.py) `plan` |
+| rollout 시작 때 `snapshot()`: agent별 최근 사건 probe 사본, 보상 예측기 성숙, 예측기 버전을 고정합니다 | `ACV2Controller.snapshot`, `install.collect` |
+| update에서는 접촉 쌍을 고정본(probe·성숙)과 아직 재학습하지 않은 예측기로 **먼저 비교하고, 그 뒤 재학습**합니다. 스냅샷과 비교 사이에 재학습이 끼면 오류로 멈춥니다 | `ACV2Controller.__call__`, `compare` |
+| `maturity()`, 이를 쓰는 `approved()`, `oracle_mature`도 고정된 성숙을 씁니다 | `ACV2Controller.maturity` |
+| 이 규칙 이전에 만든 PGCT-D2 계획은 실행 시 거부합니다("re-plan"). `runs/`에 PGCT-D2 run이 없어서 영향받는 것은 없습니다 | `run_job` |
+
+예측기는 rollout이 끝난 뒤에만 재학습되므로, 고정된 버전이 곧 rollout 동안 쓰인 예측기입니다. 즉 비교에는 그 rollout의 어떤 접촉에서도 실제로 보낼 수 있었던 정보만 들어갑니다. donor critic 가중치는 원래 rollout 동안 고정이라 바꾸지 않았습니다.
+
+#### 검증
+
+- **pytest 77개 통과**(기존 72 + 새 5). 새 테스트는 다음을 확인합니다.
+  - 스냅샷 비교 거리가 rollout 시작 상태로 직접 계산한 값과 같고, 기존 순서였다면 다른 값이 나옵니다.
+  - 스냅샷 뒤 재학습이 끼면 거부합니다.
+  - 계획 단계 플래그가 PGCT-D2 두 모드에만 켜집니다(`pgct`는 False).
+  - 플래그 없는 옛 계획은 거부합니다.
+  - 실제 trainer에서 비교 → 승인 → donor 자연 경로가 동작합니다(D102에서 지적한 테스트 공백).
+- **자연 경로 수치**(실제 trainer, 1M 분기, 64 step, 배선 확인용 느슨한 설정):
+  - update 1: rollout 시작 시 6명 모두 미성숙이라 비교 0.
+  - update 2: rollout 시작 시 6명 성숙, 접촉 10쌍 모두 비교(거리 .31–.99), donor 20 arc = 접촉 ∧ 승인.
+  - 비교에 쓴 예측기는 버전 1(rollout 동안 쓰인 것)이고, 그 뒤 버전 2로 재학습됐습니다. trainer allocation은 0입니다.
+- 실제 trainer 테스트는 짧은 `--basetemp`가 필요합니다. `oracle_mature_max` job 경로가 깊은 임시 폴더에서 260자를 넘습니다.
+
+#### 영향과 남은 일
+
+- 비교에 한 rollout 전의 예측기와 사건을 쓰므로, 승인이 기존 순서보다 조금 늦게 생길 수 있습니다. smoke로는 그 크기를 잴 수 없습니다.
+- 지금 돌고 있는 1단계 oracle 분기에는 영향이 없습니다. oracle 계열 모드는 v2를 쓰지 않고, 프로세스도 이전에 불러온 코드로 돌고 있습니다.
+- Codex 논문 초안의 알고리즘 단계([paper/english/main.tex:102](paper/english/main.tex:102)와 한국어판의 같은 단계)는 "재학습 후 비교"로 적혀 있고, 테스트 수도 72개로 되어 있습니다. 다음에 논문을 고칠 때 "rollout 시작 스냅샷으로 비교한 뒤 재학습"으로 바꿔야 합니다. 이번에는 고치지 않았습니다.
+- D102의 작은 문제 두 가지(승인 유효기간 없음, EV 필터를 켤 때 `allk` 수 맞춤 어긋남)는 그대로입니다.
+
+#### 2단계 실행 명령 (1단계 결과가 긍정일 때, 앱 밖 PowerShell에서 사용자 실행, 새 폴더)
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'; $run = Join-Path 'runs' ('pgctd2_br1M_' + (Get-Date -Format 'yyyyMMdd_HHmmss')); & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --env-variant b6_corner_indiv_pen005 --reward-probe-ac --ac-gate v2 --team-reward individual --modes oracle_mature_max pgct_max --seeds 1 3 5 --timesteps 500000 --transfer-warmup 0 --init-checkpoint runs/ac_20261023_185556/b6_corner_indiv_pen005_ac_ippo_s1/checkpoint_01000.pt --track --stage-label pgctd2_branch --output-dir $run
+```
+
+6 job이고, job당 약 5.5시간으로 추정합니다. v2 학습이 더해져 조금 더 느릴 수 있습니다.
+
+기록은 `DECISIONS.md` D103, `EXPERIMENTS.md` E71, `RESEARCH_STATE.md`, `docs/MAX_GAE.md`, `docs/REWARD_PROBE_AC.md`, 대화 기록 T169에 남겼습니다. 커밋은 하지 않았습니다.
+
+#### 원문 기록 T170 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+지금 돌아가고 있는 코드가 2개인데 꺼도 돼?
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 질문 turn이다. 학습 프로세스 2개(PID 18880, 28892)의 명령줄·자식 프로세스와 각 job의 job_status.json·metrics.jsonl 마지막 줄을 읽기 전용으로 확인했다(11-02 17:59).
+- 아무 프로세스도 끄지 않았다. 코드 변경·커밋 없음.
+
+##### Assistant — 진행 안내
+
+두 프로세스가 무엇을 돌리고 있는지 읽기 전용으로 확인하겠습니다. 끄지는 않습니다.
+
+##### Assistant — 최종 답변
+
+둘 다 끄는 것은 권하지 않습니다. **PID 18880은 꺼도 되고, 끄는 편을 권합니다. PID 28892는 끄면 안 됩니다.** 저는 아무것도 끄지 않았습니다.
+
+#### 지금 도는 두 프로세스 (11-02 17:59 기준)
+
+| PID | 시작 | 무엇 | 진행 |
+|---|---|---|---|
+| 18880 | 10-23 18:55 | A+C **v1** 본 학습 `runs/ac_20261023_185556`(8 job 순차, 5M) | 8개 중 5개 complete. 지금 `pgct_s2`가 3.19M/5M. 그다음 `oracle_s2`, `all_s2`가 남음 |
+| 28892 | 11-02 16:52 | **1단계 분기** `runs/maxgae_br1M_20261102_165216`(12 job, 0.5M) | 첫 job `ippo_s1`이 0.10M/0.5M |
+
+#### PID 18880(v1 run): 꺼도 됩니다
+
+- **남은 비용이 큽니다.** 약 11.8M step이 남았습니다(pgct_s2 나머지 1.8M + oracle_s2 5M + all_s2 5M). 지금 속도(약 26 step/s)로 5일 정도이고, 그동안 분기 실험과 GPU를 나눠 둘 다 느려집니다.
+- **지금 돌고 있는 job(pgct_s2)은 가치가 낮습니다.** v1 gate는 사실상 닫혀 있어 v1 PGCT가 IPPO와 거의 같습니다(E56·E57; s1은 5M 동안 전이 48 arc, 첫 전이는 2.8M). 연구 방향도 v2 + D2로 옮겼습니다.
+- **잃는 것은 하나입니다.** "critic 증류는 IPPO보다 빠르지 않다"(E61)의 두 번째 seed(`oracle_s2`, `all_s2`)입니다. 논문에서 증류를 버린 근거로 seed 2가 필요하면 나중에 따로 돌릴 수 있습니다. 두 job은 아직 시작 전이라 폴더가 없으니 덮어쓸 위험도 없습니다.
+  ```powershell
+  & 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team/train_from_scratch.py --plan runs/ac_20261023_185556 --run-job b6_corner_indiv_pen005_ac_oracle_s2
+  ```
+- 끈 뒤에도 `pgct_s2`의 3.19M까지 로그와 checkpoint는 남습니다. 다만 `job_status.json`은 계속 "running"으로 남으니, 끈 시각을 알려 주시면 기록에 "중단"으로 남기겠습니다.
+
+#### PID 28892(1단계 분기): 끄면 안 됩니다
+
+- 지금 연구의 중심 실험입니다(IPPO / Oracle-max D2 / D1 / allk, seed 1·3·5).
+- 수정 1–4가 반영된 코드로 시작했습니다. 그 뒤 바뀐 Codex 구현과 D103 수정은 이 모드들의 동작을 바꾸지 않으므로 결과는 유효합니다.
+- 이어 학습 기능이 없어서, 끄면 처음부터 다시 돌려야 합니다.
+
+#### 18880 끄는 방법 (앱 밖 PowerShell)
+
+python만 끄면 W&B가 crashed로 바뀌지 않으므로, 자식 `wandb-core`(현재 PID 33904)와 그 하위 프로세스까지 함께 끕니다(E24).
+
+먼저 끌 대상을 확인합니다.
+
+```powershell
+$ids = @(18880); $i = 0; while ($i -lt $ids.Count) { $ids += @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($ids[$i])" | ForEach-Object ProcessId); $i++ }; $ids
+```
+
+목록에 28892나 28716(분기 쪽 wandb)이 없고 18880과 그 자식만 있으면, 같은 창에서 이어서 실행합니다.
+
+```powershell
+$ids | Sort-Object -Descending | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }
+```
+
+대화는 T170으로 기록했습니다.
+
+#### 원문 기록 T171 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문 (1)
+
+추가 요청: 한국어 LaTeX 논문 및 PGCT 발표자료 제작
+앞서 요청한 PGCT 영어 IJCAI 논문 초판 작성에 더해, 다음 결과물도 함께 제작해 주세요.
+최종 산출물은 영어 LaTeX 논문, 한국어 LaTeX 논문, Beamer 발표자료입니다.
+모든 결과물은 동일한 최종 PGCT 알고리즘과 실제 실험 기록을 기반으로 해야 합니다.
+14. 참고 발표자료 및 발표 녹음
+다음 두 파일을 참고자료로 사용하세요.
+
+* `이기윤_ICCAS.pdf`: 기존 연구 발표자료
+* `음성 261023_135711.m4a`: 발표 녹음
+
+먼저 두 파일을 확인하고 발표자료의 구성과 발표 방식을 분석하세요.
+참고할 내용은 다음과 같습니다.
+
+* 연구 배경을 설명하는 순서
+* 기존 연구의 한계와 연구 목적을 연결하는 방식
+* 핵심 Contribution을 소개하는 방식
+* Proposed Method를 단계별로 설명하는 방식
+* 알고리즘 구조도와 수식의 배치
+* 실험 환경과 비교 결과를 제시하는 방식
+* 결론을 정리하는 방식
+* 실제 발표에서 강조하는 내용과 설명의 깊이
+
+발표 녹음에서 확인할 수 있다면 발표자가 슬라이드를 어떤 순서로 설명하는지, 수식은 어느 정도 자세히 설명하는지, 핵심 내용을 어떻게 강조하는지도 참고하세요.
+녹음 내용을 읽거나 전사할 수 없는 환경이라면 이를 명시하고, 확인하지 못한 발표 내용을 추측하지 마세요.
+중요: 참고자료는 Multi-UAV 연구입니다. 해당 연구의 알고리즘, 실험 결과, 수식, 성능 수치를 PGCT 논문이나 발표에 가져오지 마세요.
+참고하는 것은 발표의 구성, 정보 전달 방식, 슬라이드 디자인과 설명 수준입니다.
+PGCT 연구의 내용과 그림은 새로 작성해야 합니다.
+15. 한국어 LaTeX 논문
+영어 논문과 별도로 한국어 LaTeX 논문 전체 초안도 작성해 주세요.
+단순한 요약본이 아니라 영어 논문과 동일한 기술 내용을 포함하는 완전한 논문이어야 합니다.
+다음 원칙을 적용하세요.
+
+1. 영어 논문과 한국어 논문의 섹션 구성은 최대한 일치시킵니다.
+2. 모든 핵심 수식과 알고리즘 정의를 동일하게 유지합니다.
+3. 실험 설정, 결과, 수치, 인용문헌도 동일하게 유지합니다.
+4. 영어 논문을 기계적으로 직역하지 말고 자연스러운 한국어 학술 문체를 사용합니다.
+5. 불필요하게 긴 문장과 어려운 한자어를 피합니다.
+6. Actor, Critic, Reward Probe, GAE, PPO 등 중요한 기술 용어는 일관되게 사용합니다.
+7. 영어와 한국어 사이에 주장이나 결과가 달라지지 않도록 검토합니다.
+
+한국어 논문은 다음 목적을 가집니다.
+
+* 연구 내용을 정확히 이해하기 위한 개인 검토용
+* 지도교수님과 논의하기 위한 자료
+* 수식과 알고리즘의 논리적 흐름을 점검하기 위한 자료
+* 영어 논문을 수정할 때 참고할 원본
+
+따라서 영어 논문보다 과도하게 축약하지 마세요.
+한국어 LaTeX는 `kotex` 등 적절한 패키지를 사용하고, 가능하면 XeLaTeX 또는 LuaLaTeX로 컴파일 가능하도록 구성하세요.
+영어와 한국어 논문은 공통된 BibTeX 참고문헌을 사용해도 됩니다.
+16. Beamer 발표자료
+첨부된 `이기윤_ICCAS.pdf`의 발표 구성과 시각적 스타일을 참고하여 PGCT 연구 발표용 Beamer 슬라이드를 작성해 주세요.
+발표자료는 논문 내용을 단순히 슬라이드에 복사한 형태가 아니어야 합니다.
+연구 배경부터 알고리즘, 실험, 결론까지 자연스럽게 이어지는 발표로 구성하세요.
+발표자료 구성
+다음 구성을 기본으로 합니다.
+
+1. Title
+2. Outline
+3. Introduction — Research Background
+4. Introduction — Problem Definition
+5. Introduction — Related Work
+6. Introduction — Research Goal and Contributions
+7. Proposed Method — Overall PGCT Architecture
+8. Proposed Method — Individual Reward Prediction
+9. Proposed Method — Reward Probe Construction
+10. Proposed Method — Reward Response Distance and Team Discovery
+11. Proposed Method — Selective Peer Critic Access
+12. Proposed Method — Max-GAE Advantage Estimation
+13. Proposed Method — Actor and Critic Updates
+14. Simulation Results — Experimental Setup
+15. Simulation Results — Team Discovery Performance
+16. Simulation Results — Learning Performance
+17. Conclusion
+
+이 순서는 기본안이며, 실제 내용과 발표 흐름에 맞춰 일부 조정해도 됩니다.
+약 15~18장 내외로 구성하되 슬라이드 수를 맞추기 위해 불필요한 내용을 추가하지 마세요.
+발표자료 디자인
+
+* 16:9 비율을 사용합니다.
+* 첨부 ICCAS 발표자료처럼 밝고 깔끔한 학술 발표 스타일을 사용합니다.
+* 슬라이드 제목은 명확하게 작성합니다.
+* 문장보다 핵심 문구, 수식, 그림을 중심으로 구성합니다.
+* 한 슬라이드에 너무 많은 내용을 넣지 않습니다.
+* 수식은 실제 발표에서 설명할 핵심 수식만 포함합니다.
+* 전체 알고리즘을 보여주는 구조도를 제작합니다.
+* Reward Probe를 통한 팀 판별 과정을 시각화합니다.
+* Critic 선택 및 Max-GAE 계산 과정을 그림으로 설명합니다.
+* 실험 비교는 실제 로그에 근거한 표와 그래프를 사용합니다.
+* 표와 그래프의 축, 범례, 글자 크기를 읽기 쉽게 만듭니다.
+
+다음 그림은 특히 신경 써서 제작하세요.
+Figure 1. Overall PGCT Architecture
+Independent Learning → Individual Reward Prediction → Reward Probe → Latent Team Discovery → Peer Critic Selection → Advantage Estimation → PPO Update
+Figure 2. Reward-Based Team Discovery
+서로 다른 에이전트가 공통 probe에 대해 예상 보상을 계산하고, 응답 차이를 바탕으로 같은 팀인지 판단하는 과정입니다.
+Figure 3. Selective Peer Critic Learning
+승인된 팀원의 Critic으로 자신의 관측 이력을 평가하고, 개인 Critic과의 가치 차이를 Actor Advantage에 반영하는 과정을 설명합니다.
+그림에는 실제 코드에서 사용하지 않는 정보 교환이나 중앙집중식 학습 과정을 넣지 마세요.
+슬라이드 언어
+발표 슬라이드는 첨부한 ICCAS 자료처럼 간단한 영어로 작성해 주세요.
+
+* 짧은 문장
+* 핵심 용어 중심
+* 복잡한 영어 문법 최소화
+* 지나치게 어려운 단어 지양
+* 자연스러운 학술 발표 표현 사용
+
+수식과 알고리즘은 정확하게 유지하세요.
+별도의 한국어 발표 대본도 작성해 주세요.
+발표 대본은 슬라이드별로 구분하고, 단순한 번역이 아니라 실제 발표자가 말하는 자연스러운 한국어로 작성합니다.
+특히 수식이 등장하는 슬라이드에서는 수식의 모든 기호를 읽기보다 해당 수식이 무엇을 의미하는지 설명하도록 작성하세요.
+17. PPTX 파일도 별도로 생성
+Beamer `.tex`만 만들지 말고 실제 PowerPoint에서 열 수 있는 `.pptx` 파일도 생성해 주세요.
+Beamer와 PowerPoint는 별도의 형식이라는 점을 고려하세요.
+다음 결과물을 모두 생성합니다.
+
+* Beamer `.tex` 원본
+* 컴파일된 Beamer `.pdf`
+* PowerPoint `.pptx`
+
+PowerPoint 파일은 Beamer 슬라이드와 내용, 순서, 디자인이 최대한 일치해야 합니다.
+가능하면 `python-pptx` 또는 `PptxGenJS`를 사용하여 텍스트, 도형, 표 등을 수정할 수 있는 PPTX로 작성하세요.
+PDF 페이지를 이미지로만 삽입한 PPTX는 편집성이 떨어지므로 가능하면 피하세요.
+수식이나 복잡한 도식 등 일부 요소를 이미지로 처리해야 한다면 해당 부분을 구분해 주세요.
+PPTX 생성 도구가 없다면 임의의 확장자 변경으로 PPTX를 만든 것처럼 처리하지 말고, Beamer PDF를 우선 완성하고 PPTX 생성 제한을 보고하세요.
+18. 논문과 발표자료의 일관성
+네 가지 결과물은 동일한 연구를 설명해야 합니다.
+
+* 영어 논문
+* 한국어 논문
+* Beamer 발표자료
+* PPTX 발표자료
+
+다음 사항을 반드시 일치시키세요.
+
+1. 최종 알고리즘 구성
+2. Reward Predictor 정의
+3. Reward Probe의 거리와 승인 규칙
+4. Donor 선택 조건
+5. Max-GAE의 수식과 설정
+6. 실험 환경 및 baseline
+7. 실제 실험 결과
+8. 연구 기여와 한계
+
+논문에서 사용하지 않은 새로운 알고리즘이나 가정을 발표자료에 추가하지 마세요.
+또한 이전 PGCT 버전의 개발 과정을 발표자료에 포함하지 마세요.
+v1, v2, D1, D2 같은 내부 버전 명칭 대신 최종 알고리즘 PGCT의 구성요소로 설명하세요.
+아직 완료되지 않은 실험의 결과를 만들어서는 안 됩니다.
+진행 중인 실험은 결과 슬라이드에 명확한 placeholder를 두고, 실제 결과가 확보되면 교체할 수 있도록 구성하세요.
+19. 폴더 구성 및 최종 산출물
+다음과 같이 정리해 주세요.
+
+```
+paper/
+├── english/
+│   └── main.tex
+├── korean/
+│   └── main.tex
+├── references.bib
+├── figures/
+│
+presentation/
+├── pgct_beamer.tex
+├── pgct_beamer.pdf
+├── pgct_presentation.pptx
+├── pgct_script_ko.md
+└── figures/
+```
+
+논문과 발표자료에서 공통으로 사용할 수 있는 그림은 재사용해도 됩니다.
+컴파일된 영어 논문 PDF와 한국어 논문 PDF도 생성할 수 있으면 함께 제공하세요.
+최종적으로 다음 항목을 검토하세요.
+
+* 영어 논문과 한국어 논문의 내용이 같은가?
+* LaTeX 컴파일 오류가 없는가?
+* 그림과 표가 잘리지 않는가?
+* Beamer와 PPTX의 슬라이드 순서가 같은가?
+* PPTX에서 글자나 수식이 겹치지 않는가?
+* 발표 대본이 슬라이드의 실제 내용과 일치하는가?
+* 실험 결과를 임의로 만들어 넣지 않았는가?
+* 논문과 발표 모두 잠재 팀 발견을 핵심 기여로 유지하는가?
+
+이번 작업에서는 연구 코드와 학습 설정을 변경하지 마세요.
+기존 실험도 중단하거나 새로 실행하지 마세요.
+목표는 PGCT의 영어·한국어 논문 초판과, 이를 바탕으로 한 실제 연구 발표자료를 함께 완성하는 것입니다.
+@"C:\Users\95101\OneDrive\Documents\카카오톡 받은 파일\이기윤_ICCAS.pdf" @"C:\Users\95101\OneDrive\Documents\카카오톡 받은 파일\음성 261023_135711.m4a"
+
+##### 사용자 — 원문 (2, 작업 중)
+
+혹시 말하는데 codex 얘들 논문 제대로 못만드는거 같은데 직접 해야된다?
+
+##### 사용자 — 원문 (3, 작업 중)
+
+꼭 PPTX로 만들 필요까진 없어 그냥 Beamer로 만들어주면 돼
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 첨부: `이기윤_ICCAS.pdf` 16장 전체를 Codex 런타임의 poppler로 렌더링해 확인. `음성 261023_135711.m4a`는 M4A 머리 정보로 812.98초만 확인(전사 도구 없음).
+- Codex 초안(T167)을 렌더링해 점검한 뒤, 수식 파일·Tectonic 빌드 도구만 재사용하고 논문 본문·그림·발표자료를 새로 썼다.
+- 새 파일: `paper/figures/{pgct_style,fig_architecture,fig_discovery,fig_critic}.tex`, `paper/figures/{discovery_log,baseline_ippo}.pdf`, `presentation/figures/{discovery_ema,discovery_alloc,baseline_ippo}.*`, `presentation/figures/eq_*.png`, `output/pgct_docs_20261102/{evidence_plots,deck_spec,build_deck,render_deck_equations,preview_pptx,check_consistency}.py`와 CSV·`evidence.json`.
+- 고친 파일: `paper/english/main.tex`, `paper/korean/main.tex`(전면 재작성), `paper/method_equations.tex`(D103 표기, η 0.5 표기), `paper/references.bib`(6편 추가), `presentation/pgct_beamer.tex`·`pgct_presentation.pptx`·`pgct_script_ko.md`(생성), `PGCT_DELIVERABLES_README.md`(재작성). Codex의 이전 그림·스크립트 파일은 지우지 않았다.
+- 검증: 세 문서 컴파일 오류·Overfull·누락 글자 0, 전 페이지 렌더링 확인, 한영·슬라이드 일관성 자동 점검 통과, PPTX 근사 미리보기 글자 넘침 0(PowerPoint로 열어 보지는 않음).
+- 연구 코드·학습 설정 변경, 실험 중단·실행, 커밋 없음. 실행 상태는 읽기만 했다(v1 `pgct_s2` 18:01 KeyboardInterrupt 기록 확인, 분기 1단계 진행 중).
+- 진행 안내 상당수를 영어로 보냈다(아래 원문 그대로).
+- 기록: `DECISIONS.md` D104, `EXPERIMENTS.md` E72, `RESEARCH_STATE.md`, 이 T171, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+PDF 렌더링 도구가 없어 다른 방법을 찾겠습니다. 이 PC의 도구(LaTeX, PDF 라이브러리, python-pptx, 음성 도구)와 Codex가 만든 기존 산출물을 함께 확인합니다.
+
+Codex가 이미 같은 요구의 산출물(영어·한국어 논문, Beamer 17장, PPTX, 대본, 참고자료 분석)을 만들어 두었습니다. 처음부터 다시 만들기보다 이를 기준으로 요구사항·최종 알고리즘(D103 반영 여부)·실험 기록과 대조해 고치는 쪽으로 진행하겠습니다. Codex가 쓴 빌드 도구(Tectonic, PPTX 생성 Python)가 이 PC에서 쓸 수 있는지 확인합니다.
+
+Tectonic 0.17.0과 python-pptx가 든 Python(Codex 런타임)을 쓸 수 있습니다. PDF를 그림으로 렌더링할 도구가 있는지 찾아보겠습니다.
+
+Codex 런타임에 poppler(`pdftoppm`)가 있습니다. 참고 PDF를 이미지로 렌더링해 구성을 직접 보겠습니다.
+
+참고 PDF 16장을 렌더링했습니다. 한 장씩 보기 전에 전체 구성을 한눈에 보도록 접촉 시트로 묶겠습니다.
+
+참고 발표의 구성과 스타일을 확인했습니다. 흰 배경에 파란 제목, 파란 삼각형 bullet, 핵심어 색 강조(빨간 "Research gap"), 왼쪽 bullet·오른쪽 그림 배치, 밑줄 괄호로 항 이름을 단 수식 순서였습니다. 녹음은 이 PC에 ffmpeg·전사 도구가 없어 들을 수 없습니다. 이제 Codex가 만든 Beamer를 렌더링해 상태를 보겠습니다.
+
+Codex Beamer는 내용 순서는 맞지만, 참고 자료에 비해 시각 자료가 약합니다. 구조도·팀 판별·Critic 선택 그림이 모두 단순한 상자 나열이고, 앞쪽 슬라이드 다수가 빈 공간이 큰 글머리표뿐입니다. 또 D103(rollout 시작 스냅샷 비교)이 반영되지 않았습니다. 제작 파이프라인 구조를 보고 어디를 고칠지 정하겠습니다.
+
+Codex 논문은 수식과 범위 설명은 정확한 편입니다. 하지만 논문으로는 약한 점이 있습니다. 초록에 테스트 개수 같은 구현 검증이 들어가 있고, 기여 목록과 동기 설명이 얇으며, 본문에 내부 파일 경로가 섞여 있습니다. 또 D103 비교 순서가 반영되지 않았습니다. 그래서 수식 파일은 유지·보완하고, 그림 3개는 새로 그리고, 논문 본문과 발표자료는 다시 쓰겠습니다. 먼저 그림에 쓸 실제 로그 데이터를 확인합니다.
+
+분기 실험은 아직 첫 job(`ippo_s1`, 0.12M)이 진행 중이라 결과 슬라이드는 placeholder로 둡니다. v1 run의 `pgct_s2`는 "failed"로 바뀌어 있어, 사용자가 끈 것으로 보고 기록에 남기겠습니다. 이제 원본 로그에서 그래프 데이터를 직접 다시 계산합니다.
+
+원본 로그에서 다시 계산한 값이 기존 기록(E65)과 Codex 수치와 일치합니다: 같은 팀 5,252 / 다른 팀 352 arc(93.72%), 첫 다른 팀 4,280,320 step. IPPO 기준선 마지막 평가는 seed 1 25.65, seed 2 24.05입니다. 이제 공통 TikZ 그림 3개를 새로 그리겠습니다. 먼저 참고문헌 파일을 확인합니다.
+
+Three layout problems show up. Figure 1's stage boxes are too narrow, so the text wraps. In Figure 2 the probe-set frame covers the probe cards. In Figure 3 the donor-set box overlaps the peer Critic box. I'll fix all three.
+
+Figures are readable now. One fix remains: in Figure 3 the uplift formula breaks across lines, so I'll widen that box.
+
+Figures are done. Now I'll update the shared equation file for the D103 rule (rollout-start snapshot) before writing the papers.
+
+그림 3개와 공통 수식 갱신을 마쳤습니다. 지금은 영어 논문 본문을 새로 쓰고 있습니다. 이어서 한국어 논문, Beamer, 대본, PPTX를 만듭니다.
+
+Before compiling I'll check two numbers I used against the records: the abstained pairs in the offline replay (E59), and the E63 counterfactual setup.
+
+The English paper compiles (8 pages). One overfull box remains around line 120–128. I'll render the pages to check layout.
+
+Two layout problems: the "One update" box runs into the right margin, and the legend in Figure 4(a) covers the curves. I'll fix both.
+
+Now the Korean paper. I'll reuse the font setup from Codex's Korean preamble, which compiled.
+
+두 논문 모두 오류·overfull·누락 글자 없이 8쪽으로 컴파일됩니다. 한국어 논문 렌더링을 확인합니다.
+
+Both papers render cleanly in the Korean and English versions. Next is the presentation. Beamer, PPTX and the Korean script will be generated from one shared slide spec, so their content and order stay identical. I'll write that spec first.
+
+Now the equation images for the PowerPoint (matplotlib mathtext, from the same spec).
+
+Equation images are ready. Codex's PPTX builder includes a fix for chart axis IDs that strict PowerPoint importers need, so I'll check it before writing the builder.
+
+I'll generate the Beamer deck and the PPTX from one shared geometry, so both use the same positions on a 13.33×7.5-inch canvas. For the PPTX, the three TikZ figures are redrawn as native shapes, which needs their exact TikZ bounding boxes. I'll measure those first.
+
+The bounding boxes are in hand. Now I'll write the deck builder. It emits the Beamer `.tex`, the PPTX and the Korean script from the spec.
+
+네, 지금 제가 직접 하고 있습니다. Codex 초안은 수식 파일과 빌드 도구(Tectonic)만 재사용했고, 논문 본문은 영어·한국어 모두 새로 썼습니다. Codex 초안의 문제는 이랬습니다.
+
+- 초록과 본문에 "72개 테스트 통과" 같은 구현 검증이 들어가 있었습니다. 논문 기여로 쓸 내용이 아닙니다.
+- 기여 목록과 동기 설명(왜 정책 유사도가 아니라 보상 응답인가)이 얇았습니다.
+- 그림 3개가 단순한 상자 나열이었습니다.
+- D103(rollout 시작 스냅샷 비교)이 빠져 있었습니다.
+
+지금까지 새로 만든 것:
+- 영어·한국어 논문 전체(각 8쪽, 컴파일 오류·overfull 0)
+- 공통 TikZ 그림 3개(구조도, Reward Probe 팀 판별, Critic 선택·Max-GAE)
+- 원본 로그에서 다시 계산한 실험 그래프
+
+지금은 Beamer, PPTX, 대본을 하나의 원본에서 같은 배치로 생성하는 중입니다. 계속 진행하겠습니다.
+
+Beamer 17장이 컴파일됐습니다. 렌더링해서 배치를 확인하겠습니다.
+
+Beamer 글자가 2.5배 크게 나왔습니다. 글꼴 크기 환산에 2.54를 잘못 곱했기 때문입니다(위치는 cm, 글꼴은 비율로만 바꿔야 함). 선 굵기도 같은 실수가 있습니다. 또 `▶` 같은 기호가 Arial에 없어 빈 상자로 보입니다. 세 가지를 고쳐서 다시 만듭니다.
+
+Most slides are fine now. Two issues remain. Equations on slides 8, 11 and 13 run past the left edge, because I sized them by height. Figure 2 on slide 10 is taller than planned and overlaps the equation, because Beamer's 11pt base font enlarges the TikZ text. I'll switch equations to width-based sizing and set Beamer's base font to 10pt to match the papers.
+
+Beamer now has no clipping or overlap, apart from two small label overlaps in Figure 2: "same probes" overlaps the probe-set frame, and the bottom labels touch. I'll remove the redundant "same probes" label, then rebuild everything.
+
+Both papers and the 17-slide Beamer deck compile with no overfull boxes and no missing glyphs. This PC has no PowerPoint renderer such as LibreOffice. To check the PPTX for overlapping text and equations, I'll write a simple PIL renderer that draws its shapes, text, images, tables and chart lines.
+
+PPTX preview has a few problems: some boxes in Figures 2–3 overflow, `▶` and `⇒` aren't in Arial, and figure text uses `A^PGCT`-style caret notation that reads poorly. Let me check the other two contact sheets before fixing everything together.
+
+PPTX preview looks right overall. I'll apply the remaining fixes together:
+- Bullet glyph: use `►`, which Arial has.
+- Replace `⇒` with `→`.
+- Rewrite the PPTX figure text in plain words instead of caret notation like `A^PGCT`.
+- Shrink figure text where it overflows.
+- Tighten the line-count estimate so bullet spacing is even.
+
+Only one tiny overflow is left: the "left–right mirrors of both" card, by 0.04 in. I'll shorten that label in both the TikZ figure and the PPTX, then recompile everything.
+
+Beamer (top) and PPTX (bottom) now match. One spot on the Beamer slide 10, below the dashed box, may have overlapping text, so I'll zoom in on it.
+
+The arrow from the probe set to the response panel points backwards, and the two boxes touch even though the coordinates leave a 1.35 cm gap. I'll read the figure source to find out why.
+
+Found it. In Beamer the figure is drawn as a nested `tikzpicture` inside an overlay node, and it inherits that node's options (`anchor=north west`, `inner sep=0pt`). Inner nodes without an explicit anchor are therefore offset by half their width. The paper versions are unaffected. I'll reset those two options in Beamer right before the figure is inserted.
+
+The nested-figure problem is fixed, and all three method figures in Beamer now match the papers. Last, I'll check automatically that the English and Korean papers use the same numbers, equations, citations and labels.
+
+알겠습니다. 발표자료는 Beamer를 기준으로 하겠습니다. PPTX는 같은 원본에서 이미 함께 생성돼 있으니 지우지 않고 참고용으로 두되, 더 다듬지는 않겠습니다.
+
+방금 일관성 점검 결과도 정상입니다. 영어·한국어 논문의 수식·인용·라벨·그림·수치가 같습니다(한국어에만 있는 `1.08`은 줄 간격 설정값입니다). 슬라이드 17장의 제목 순서도 Beamer와 대본이 같습니다. 녹음 파일 길이만 확인한 뒤 기록과 안내 문서를 정리하겠습니다.
+
+Now the deliverables guide. I'll rewrite it to describe the current files, and mark which Codex-era files are superseded.
+
+Now the research records and the conversation log.
+
+##### Assistant — 최종 답변
+
+논문 2편과 Beamer 발표자료를 완성했습니다. Codex 초안은 수식 파일과 빌드 도구만 재사용했고, 논문 본문·그림·발표자료는 새로 썼습니다. 연구 코드와 학습 설정은 바꾸지 않았고, 실험도 중단하거나 새로 돌리지 않았습니다.
+
+#### 결과물
+
+| 파일 | 내용 |
+|---|---|
+| [paper/english/main.pdf](paper/english/main.pdf) | 영어 논문, 8쪽(참고문헌·부록 포함) |
+| [paper/korean/main.pdf](paper/korean/main.pdf) | 한국어 논문, 8쪽. 같은 절 구성·수식·수치·인용 |
+| [presentation/pgct_beamer.pdf](presentation/pgct_beamer.pdf) | 16:9 영어 Beamer 17장 |
+| [presentation/pgct_script_ko.md](presentation/pgct_script_ko.md) | 슬라이드별 한국어 대본 |
+| [PGCT_DELIVERABLES_README.md](PGCT_DELIVERABLES_README.md) | 파일 안내, 재생성 방법, 검증, 주장 경계 |
+
+PPTX(`presentation/pgct_presentation.pptx`)는 말씀하시기 전에 이미 같은 원본에서 생성돼 있어 지우지 않고 참고본으로 두었습니다. 더 다듬지는 않았습니다.
+
+#### Codex 초안에서 바뀐 점
+
+- **논문 구성**:
+  - 초록에서 구현 검증(테스트 수)을 뺐습니다.
+  - 서론에 Q1(발견)·Q2(활용)와 기여 4개를 명시했습니다.
+  - "정책 유사도가 아니라 보상 응답인 이유"를 동기로 설명했습니다.
+  - 관련 연구를 13편으로 늘렸습니다(FDMARL, GPI, MAPPO, IPPO, ad hoc 팀워크 추가).
+- **최종 알고리즘 반영**: rollout 시작 스냅샷으로 비교한 뒤 재학습하는 규칙(D103)을 수식($\mathcal Q_{ij}^u$, $\widehat r^{\,u}$)과 절차에 넣었습니다. v1·v2·D1·D2 같은 내부 이름은 쓰지 않았습니다.
+- **그림 3개 새로 작성**(논문·Beamer 공용 TikZ):
+  - 그림 1: 7단계 구조도. 발견과 활용 두 영역으로 나누고, 접촉 때만 주고받는 정보를 함께 표시했습니다.
+  - 그림 2: 두 에이전트가 공통 probe에 답하고, 같은 팀은 응답이 겹치고 다른 팀은 대칭 probe에서 엇갈리는 과정입니다. 막대는 설명용이라고 명시했습니다.
+  - 그림 3: 승인된 팀원 Critic이 내 이력을 평가하고, 상승분이 Actor advantage에만 들어가며, Critic은 자기 return만 학습하는 과정입니다.
+  - 그림에는 코드에 없는 정보 교환이나 중앙 학습을 넣지 않았습니다.
+- **실험 근거**: 그래프는 원본 로그에서 다시 계산했습니다(Codex 수치와 일치).
+  - 발견: 0.1–0.25M에 같은 팀 거리 0.25 대 다른 팀 0.99. 팀원 접근 93.7%(5,252 / 352 arc). 첫 다른 팀 승인 4.28M.
+  - 오프라인 재생(E59): 판정한 10쌍 모두 정답.
+  - 반사실 점검(E63)은 "팀 관계가 팀원 가치에 왜 중요한가"라는 절로 넣었습니다.
+  - IPPO 기준선은 seed 1·2를 썼습니다(5M에서 25.7 / 24.1 배송).
+  - 통합 PGCT 학습 비교는 표에 *pending* 칸으로만 두었습니다.
+
+#### 참고 자료 분석
+
+- **ICCAS PDF(16장)**: 그림으로 렌더링해서 전체를 봤습니다. 따른 것은 다음과 같습니다.
+  - 흰 배경, 파란 "Section: Topic" 제목, 파란 삼각형 글머리표, 핵심어 색 강조(한계와 핵심 메시지는 빨강)
+  - 왼쪽 글머리표·오른쪽 그림 배치
+  - Approach/Strength/Limitation 관련 연구 표와 빨간 Research gap
+  - 목표·핵심 아이디어·기여 번호 순서
+  - 전체 구조도 → 구성요소별 슬라이드 → 실험(설정 → 결과) → 결론(Summary, Main contribution, Validation, Future work)
+  - Multi-UAV 알고리즘·식·그림·수치는 하나도 가져오지 않았습니다.
+- **녹음(m4a)**: 파일 머리에서 길이(812.98초)만 확인했습니다. 이 PC에는 ffmpeg나 음성 전사 도구가 없어 듣거나 전사하지 못했습니다. 그래서 발표자의 설명 순서, 강조, 수식 설명 깊이는 반영하지 않았습니다. 대본은 새로 쓴 제안 대본입니다.
+
+#### 검토 항목
+
+| 항목 | 결과 |
+|---|---|
+| 영어·한국어 내용이 같은가 | 자동 점검: 수식·인용·라벨·참조·그림 파일·본문 수치가 같음 |
+| LaTeX 컴파일 오류 | 세 문서 모두 오류·Overfull box·누락 글자 0 |
+| 그림·표 잘림 | 전 페이지와 전 슬라이드를 그림으로 렌더링해 확인. 잘림·겹침 없음 |
+| Beamer와 대본 순서 | 같은 원본에서 생성. 17장 제목 순서 일치 |
+| 결과를 만들어 넣지 않았는가 | 학습 비교는 pending. 진행 중인 분기의 부분 곡선은 넣지 않음 |
+| 잠재 팀 발견이 핵심 기여인가 | 초록·서론·결론·발표 모두 발견을 중심에 두고, Critic 활용은 검증 수단으로 설명 |
+
+#### 남은 것
+
+- 공식 IJCAI 양식은 아직 적용하지 않았습니다. 지금은 2단 작업 초안입니다. 저자 정보도 아직 없고, 발표 표지의 `[Presenter] · [Affiliation]`은 바꿔 넣어야 합니다.
+- 분기 실험이 끝나면 논문 표 2, 슬라이드 16의 표, 대본 16번을 실제 결과로 채워야 합니다.
+- 문구를 고칠 때 Beamer `.tex`는 생성 파일이므로 `output/pgct_docs_20261102/deck_spec.py`를 고친 뒤 `build_deck.py`를 다시 돌립니다.
+- 프로젝트 루트의 `PGCT_paper_presentation_20261102.zip`은 Codex의 이전 묶음이라 새 파일이 들어 있지 않습니다. 공유할 때는 위 파일을 쓰세요.
+- 실행 상태(읽기 전용 확인): v1 run의 `pgct_s2`는 18:01에 중단된 것으로 기록됐습니다(KeyboardInterrupt). 1단계 분기는 계속 진행 중입니다.
+
+기록은 `DECISIONS.md` D104, `EXPERIMENTS.md` E72, `RESEARCH_STATE.md`, 대화 기록 T171에 남겼습니다. 커밋은 하지 않았습니다.
+
+#### 원문 기록 T172 — 2026-11-02 KST, Claude Code
+
+##### 사용자 — 원문
+
+지금 돌아가는 실험들 설명해주고,
+현재 작성된 논문은 IJCAI 2027을 잘 따르고 있는지 확인
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 실행 중인 학습 프로세스 명령줄, 각 job의 `job_status.json`·`metrics.jsonl` 마지막 줄, 2단계 `experiment.json`·`max_gae.jsonl`을 읽기 전용으로 확인했다(18:45).
+- 웹 검색: IJCAI 2027 메인 트랙 Call for Papers와 저자 키트 페이지를 읽었다. 키트 zip은 내려받지 않았다.
+- `paper/english/main.pdf`, `paper/korean/main.pdf`의 쪽별 절 위치와 메타데이터를 pypdf·pdfinfo로 확인했다.
+- 코드·학습·논문 파일 변경 없음, 커밋 없음. 진행 안내 일부를 영어로 보냈다.
+- 기록: `DECISIONS.md` D105, `RESEARCH_STATE.md`, 이 T172, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+Two experiments are running. I'll read the early logs of the second run, which the user started at 18:02, to confirm its settings and approval progress so far.
+
+Stage 2 already shows what D98 R1 predicted. At 66 updates, only a2, a3 and a5 are mature, the three agents that were already delivering. The lagging a0, a1 and a4 are still immature. Donors are therefore used only among already-delivering agents (2 arcs, same team). Now I'll look up the IJCAI 2027 submission rules.
+
+The official IJCAI 2027 main-track call is up. It requires a 7-page body plus up to 2 pages of references only, the IJCAI-27 style, and double-blind submission, and appendices go into supplementary material. To check the current paper against this, I'll find on which pages its references and appendix start, and inspect the PDF metadata.
+
+The two experiments are explained, and I've finished checking the paper against the official IJCAI 2027 call. I'll record this in the notes and the log.
+
+##### Assistant — 최종 답변
+
+#### 1. 지금 돌아가는 실험 (11-02 18:45 기준, 읽기 전용 확인)
+
+두 실험 모두 같은 출발점에서 갈라집니다. 출발점은 A+C 독립 PPO seed 1의 1.024M checkpoint(모서리 목적지, 개인 보상, 좌표 마스킹)입니다. 각 job은 0.5M step을 더 학습하고, seed는 goal 배치가 같은 1·3·5만 씁니다.
+
+| | 1단계: 정답 팀으로 Q2 검증 | 2단계: 발견한 팀으로 같은 효과가 나는가 |
+|---|---|---|
+| PID / 시작 | 28892 / 16:52 | 25380 / 18:02 |
+| 폴더 | `runs/maxgae_br1M_20261102_165216` | `runs/pgctd2_br1M_20261102_180212` |
+| 모드 | `ippo`(계속 학습), `oracle_max`(D2 shrink, η .5), `oracle_maxd1`(D1), `allk_max`(같은 수의 무작위 donor) | `oracle_mature_max`(정답 팀이지만 보상 예측기가 성숙한 에이전트만), `pgct_max`(최종 PGCT) |
+| job 수 | 4 모드 × 3 seed = 12 | 2 모드 × 3 seed = 6 |
+| 진행 | 1/12번째 `ippo_s1` 0.18M | 1/6번째 `oracle_mature_max_s1` 0.07M |
+| 속도·종료 추정 | 약 26 step/s, job당 약 5.3시간, 11-05 오전 무렵 | 약 26 step/s, 11-04 새벽 무렵 |
+
+- 두 실험이 GPU를 함께 쓰지만, 2단계를 시작한 뒤에도 1단계 속도는 줄지 않았습니다(26 → 27 step/s).
+- 2단계 설정이 맞는지 `experiment.json`으로 확인했습니다. 6 job 모두 rollout 시작 스냅샷 비교(`contact_snapshot=True`)와 shrink 척도를 씁니다.
+- v1 run의 `pgct_s2`는 18:01에 중단됐고(KeyboardInterrupt), 그 뒤에 2단계가 시작됐습니다.
+
+**2단계 초기 관찰(66 update, 약 0.07M)**: 보상 예측기가 성숙한 에이전트는 a2·a3·a5뿐입니다. 이미 배송하던 앞선 에이전트들입니다. 뒤처진 a0·a1·a4는 아직 미성숙이라, donor는 앞선 같은 팀 에이전트 사이의 2 arc만 생겼습니다. D98에서 예상한 대로입니다. 이 상태가 계속되면 2단계는 "뒤처진 에이전트를 돕는가"보다 "앞선 에이전트를 해치지 않는가"와 승인 동작을 주로 보여 주게 됩니다. 뒤처진 에이전트에 대한 효과는 1단계의 `oracle_max` 대 `ippo` 비교에서 봐야 합니다. 다만 아직 초반이라, 뒤처진 에이전트가 배송을 시작하면 바뀔 수 있습니다.
+
+#### 2. 현재 논문은 IJCAI 2027을 따르는가
+
+**결론: 내용 초안으로는 쓸 수 있지만, 지금 형식 그대로는 제출 규정을 만족하지 않습니다.** 공식 메인 트랙 Call for Papers와 대조한 결과입니다.
+
+| 규정 (IJCAI 2027 메인 트랙) | 현재 논문 (`paper/english/main.pdf`) | 판정 |
+|---|---|---|
+| IJCAI-27 스타일 필수, 여백·글자 크기 축소 시 심사 없이 거절 | `article` + 임의 여백(0.75in)과 Times New Roman(XeLaTeX)으로 비슷하게 맞춘 것 | **불충족**: 공식 키트(`FormattingGuidelines-IJCAI-27.zip`)로 옮겨야 함 |
+| 본문 7쪽(그림·표 포함) + 참고문헌만 최대 2쪽, 전체 9쪽 이내 | 본문이 6쪽에서 끝나지만 그림 4·5가 참고문헌 뒤인 7쪽에 밀려 있음 | **불충족**: 그림이 본문 안에 들어가야 함. 공식 스타일에서 쪽수 다시 확인 필요 |
+| 부록은 본문 PDF가 아니라 보조 자료(PDF/ZIP, 50MB 이하) | 참고문헌 뒤 8쪽에 부록 | **불충족**: 보조 자료로 옮겨야 함 |
+| 이중 맹검: 저자·소속·감사의 글 없음, PDF 메타데이터에 신원 정보 없음 | 저자 "Anonymous submission", 감사의 글 없음, 메타데이터에 제목·저자 없음 | 충족 |
+| 보조 자료·코드도 익명화(경로·URL 포함) | 부록에 `runs/...` 폴더 경로가 있음(신원 정보는 아님) | 보조 자료로 옮길 때 정리 권장 |
+| 재현성 체크리스트는 제출 시 작성 | 미작성 | 제출 전 준비 필요 |
+| LLM 사용: 저자가 모든 내용에 책임, 방법론에 쓴 LLM 출력은 논문에 기술 | 방법론에는 LLM을 쓰지 않음. 글쓰기 보조에 대해서는 저자가 직접 검토해야 함 | 주의 |
+| 용지·단 | US Letter, 2단, 10pt | 형식은 맞지만 공식 스타일 적용이 전제 |
+
+형식 외에 더 중요한 문제가 있습니다.
+
+1. **결과가 비어 있습니다.** 학습 성능 표가 pending이면 메인 트랙 심사를 통과하기 어렵습니다. 마감은 초록 2027-01-04, 본문 2027-01-11(AoE)로 약 9주 남았습니다. 분기 결과(이번 주)에 더해, 독립 seed 3개 이상으로 처음부터 학습한 비교가 필요할 가능성이 큽니다. 5M job이 하나에 약 2일 걸리므로, 분기 결과를 보고 바로 시작해야 일정이 맞습니다.
+2. **결과가 들어오면 7쪽을 넘기 쉽습니다.** 지금도 본문과 그림을 합치면 거의 7쪽입니다. 결과 표와 그래프가 늘어나는 만큼 Properties 절이나 반사실 점검 절을 줄여야 합니다.
+3. **환경이 하나입니다.** 심사에서 일반성을 물을 가능성이 큽니다. 인접 목적지 배치처럼 이미 있는 변형을 추가 근거나 음성 사례로 쓰는 방안을 검토할 만합니다.
+
+공식 키트 zip은 아직 내려받지 않았습니다. 그래서 2027 스타일 파일의 세부(사용 엔진, 참고문헌 스타일, 익명 저자 블록 형식)는 확인하지 못했습니다. 내려받아 옮기면 위 표의 "불충족" 세 항목을 바로 고치고 실제 쪽수를 확인할 수 있습니다.
+
+출처:
+- [IJCAI 2027 Call for papers (Main Track)](https://2027.ijcai.org/ijcai-2027-call-for-papers-main-track/)
+- [IJCAI Authors Kit](https://www.ijcai.org/authors_kit)
+- [WikiCFP: IJCAI](http://www.wikicfp.com/cfp/program?id=1567)
+
+기록은 `DECISIONS.md` D105, `RESEARCH_STATE.md`, 대화 기록 T172에 남겼습니다. 코드·학습·논문 파일은 바꾸지 않았습니다.
+
 ---
 
 # 부록. 통합 타임라인
@@ -21628,10 +23017,21 @@ DECISIONS·EXPERIMENTS·CONVERSATION_LOG의 항목 제목을 날짜순으로 모
 | 2026-11-02 | Claude Code | DECISIONS.md | D97. 희소 보상에서 보상 기반 식별: 가능하지만 "보상 사건을 겪은 뒤부터" — 2026-11-02 Claude Code (사용자 질문 T155에 대한 답, E65 근거) |
 | 2026-11-02 | Claude Code | DECISIONS.md | D98. PGCT-D2 통합 전 코드 검토: PGCT-D2 미구현, D2 `relative` 척도 결함, 분기 seed 2 goal 반전, 성숙 조건과 뒤처진 agent의 충돌 — 2026-11-0 |
 | 2026-11-02 | Claude Code | DECISIONS.md | D99. D98 필수 수정 1–4 구현: D2 기본 척도는 shrink, 분기는 checkpoint와 같은 goal 배치만 허용 — 2026-11-02 Claude Code (사용자 요청 T164) |
+| 2026-11-02 | Codex | DECISIONS.md | D100. PGCT-D2 필수 5–8 구현: 접촉 독립 승인과 rollout 접촉으로 Max-GAE 연결 — 2026-11-02 KST, Codex (사용자 요청 T166) |
+| 2026-11-02 | Codex | DECISIONS.md | D101. 최종 PGCT 논문·발표 초안의 기술 정의와 실증 경계 통일 — 2026-11-02 KST, Codex (T167 사용자 요청) |
+| 2026-11-02 | Codex | DECISIONS.md | D102. Codex PGCT-D2 구현 검토: 배선은 맞음, v2 비교의 rollout 접촉 전환은 인과성 문제를 남김 — 2026-11-02 Claude Code (사용자 요청 T168, 사용자 |
+| 2026-11-02 | Claude Code | DECISIONS.md | D103. PGCT-D2의 v2 비교를 rollout 시작 스냅샷으로: 비교 후 재학습 — 2026-11-02 Claude Code (사용자 결정 T169, D102 선택지 ii) |
+| 2026-11-02 | Claude Code | DECISIONS.md | D104. PGCT 논문·발표자료 재작성: 잠재 팀 발견을 핵심 기여로, 근거는 실제 로그만, Beamer를 주 발표자료로 — 2026-11-02 Claude Code (사용자 요청 T171) |
+| 2026-11-02 | Claude Code | DECISIONS.md | D105. 현재 논문의 IJCAI 2027 적합성 점검: 내용 초안은 가능, 형식은 공식 키트 전환 필요 — 2026-11-02 Claude Code (사용자 질문 T172) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E64. Max-GAE(D) 구현, smoke·동등성 검증, 1M 분기 규모 측정 — 2026-11-02 Claude Code, 사용자 요청(T154) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E65. A+C r̂와 희소 보상: 보상 밀도, v2 사건 누적·성숙·거리 시간표(학습 로그 읽기 전용) — 2026-11-02 Claude Code, 사용자 질문(T155) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E66. PGCT-D2 검토용 점검: Max-GAE 척도·가림의 합성 수치, 1M 무렵 agent별 보상 사건(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T163) |
 | 2026-11-02 | Claude Code | EXPERIMENTS.md | E67. D98 필수 수정 1–4 검증: pytest와 실제 trainer smoke(64 step) — 2026-11-02 Claude Code, 사용자 요청(T164) |
+| 2026-11-02 | Codex | EXPERIMENTS.md | E68. PGCT-D2 필수 5–8 단위·회귀·실제 trainer smoke 검증 — 2026-11-02 KST, Codex (사용자 요청 T166) |
+| 2026-11-02 | Codex | EXPERIMENTS.md | E69. 최종 PGCT 논문·발표 제작용 기존 로그 읽기와 산출물 검증 — 2026-11-02 KST, Codex (T167, 새 학습·실험 없음) |
+| 2026-11-02 | Codex | EXPERIMENTS.md | E70. Codex PGCT-D2 구현 재검증: 테스트 재실행과 자연 승인 경로 smoke(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T168) |
+| 2026-11-02 | Claude Code | EXPERIMENTS.md | E71. D103 rollout 시작 스냅샷 비교 검증: pytest와 실제 trainer 자연 승인 경로 — 2026-11-02 Claude Code, 사용자 요청(T169) |
+| 2026-11-02 | Claude Code | EXPERIMENTS.md | E72. 논문·발표자료용 근거 재계산과 문서 검증(학습 없음) — 2026-11-02 Claude Code, 사용자 요청(T171) |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T150 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T151 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T152 — 2026-11-02 KST, Claude Code |
@@ -21647,3 +23047,11 @@ DECISIONS·EXPERIMENTS·CONVERSATION_LOG의 항목 제목을 날짜순으로 모
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T162 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T163 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T164 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T165 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Codex | CONVERSATION_LOG.md | 원문 기록 T166 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음) |
+| 2026-11-02 | Codex | CONVERSATION_LOG.md | 원문 기록 T167 — 2026-11-02 KST, Codex (정확한 시각 기록하지 않음) |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T168 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T169 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T170 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T171 — 2026-11-02 KST, Claude Code |
+| 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T172 — 2026-11-02 KST, Claude Code |

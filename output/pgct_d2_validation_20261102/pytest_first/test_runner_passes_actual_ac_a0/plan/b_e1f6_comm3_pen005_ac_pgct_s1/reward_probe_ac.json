@@ -1,0 +1,22 @@
+{
+  "config": {
+    "radius": 2,
+    "max_entries": 4096,
+    "max_queries": 64,
+    "min_samples": 8,
+    "min_episodes": 3,
+    "min_queries": 4,
+    "max_std": 0.1,
+    "max_stderr": 0.04,
+    "distance_threshold": 0.12,
+    "min_signal": 0.2,
+    "ema_beta": 0.35,
+    "min_rounds": 8,
+    "interval": 5
+  },
+  "learning": true,
+  "reward": "individual",
+  "coordinates": "masked",
+  "predictor": "empirical_conditional_mean",
+  "unsupported": "abstain"
+}
