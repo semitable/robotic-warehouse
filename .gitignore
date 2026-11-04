@@ -250,6 +250,7 @@ $RECYCLE.BIN/
 wandb/
 runs/
 *.wandb
+wandb_data/
 
 # Training checkpoints
 *.pt

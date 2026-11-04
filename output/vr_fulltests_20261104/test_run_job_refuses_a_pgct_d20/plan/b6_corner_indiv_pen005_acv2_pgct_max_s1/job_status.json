@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "error": "ValueError('b6_corner_indiv_pen005_acv2_pgct_max_s1: planned before the rollout-start snapshot rule (D103); re-plan this PGCT-D2 job')",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\RWARE\\MARL_RWARE\\third_party\\robotic-warehouse\\latent_team\\train_from_scratch.py\", line 383, in run_job\n    raise ValueError(f\"{name}: planned before the rollout-start snapshot rule (D103); \"\nValueError: b6_corner_indiv_pen005_acv2_pgct_max_s1: planned before the rollout-start snapshot rule (D103); re-plan this PGCT-D2 job\n",
+  "updated": "2026-11-04T14:40:56+09:00"
+}

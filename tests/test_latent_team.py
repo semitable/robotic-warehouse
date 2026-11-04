@@ -329,7 +329,10 @@ def test_env_candidates_plan(tmp_path):
               "a_e1f4_team": (4, 5, (10, 11)), "b_e1f6_comm3": (6, 5, (10, 11)), "c_e1f6_wide_comm3": (6, 5, (16, 11)),
               "a_e1f4_team_nopen": (4, 5, (10, 11)), "b_e1f6_comm3_nopen": (6, 5, (10, 11)),
               "b_e1f6_comm3_pen005": (6, 5, (10, 11)), "b6_corner_indiv_pen005": (6, 5, (10, 11)),
-              "b6_adjacent_team_pen005": (6, 5, (10, 11)), "b6_adjacent_indiv_pen005": (6, 5, (10, 11))}
+              "b6_adjacent_team_pen005": (6, 5, (10, 11)), "b6_adjacent_indiv_pen005": (6, 5, (10, 11)),
+              "b6_corner_indiv_comm5_pen005": (6, 5, (10, 11)),
+              "b6_wide_corner_indiv_comm5_pen005": (6, 5, (16, 11)),
+              "b6_corner_indiv_comm5_req2_pen005": (6, 5, (10, 11))}
     comm = {"b_e1f6_comm3": 3, "c_e1f6_wide_comm3": 3, "c3_wide_s3_team": 3, "b_e1f6_comm3_nopen": 3,
             "b_e1f6_comm3_pen005": 3, "b6_corner_indiv_pen005": 3, "b6_adjacent_team_pen005": 3,
             "b6_adjacent_indiv_pen005": 3}

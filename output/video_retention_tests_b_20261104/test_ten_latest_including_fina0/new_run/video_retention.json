@@ -1,0 +1,49 @@
+{
+  "keep_last": 10,
+  "upload_policy": "tail_at_finish",
+  "wandb_local_dir": "C:\\RWARE\\MARL_RWARE\\third_party\\robotic-warehouse\\output\\video_retention_tests_b_20261104\\test_ten_latest_including_fina0\\wb",
+  "upload_status": "logged",
+  "error": null,
+  "videos": [
+    {
+      "file": "eval_00005.mp4",
+      "env_steps": 50
+    },
+    {
+      "file": "eval_00006.mp4",
+      "env_steps": 60
+    },
+    {
+      "file": "eval_00007.mp4",
+      "env_steps": 70
+    },
+    {
+      "file": "eval_00008.mp4",
+      "env_steps": 80
+    },
+    {
+      "file": "eval_00009.mp4",
+      "env_steps": 90
+    },
+    {
+      "file": "eval_00010.mp4",
+      "env_steps": 100
+    },
+    {
+      "file": "eval_00011.mp4",
+      "env_steps": 110
+    },
+    {
+      "file": "eval_00012.mp4",
+      "env_steps": 120
+    },
+    {
+      "file": "eval_00013.mp4",
+      "env_steps": 130
+    },
+    {
+      "file": "final.mp4",
+      "env_steps": 130
+    }
+  ]
+}

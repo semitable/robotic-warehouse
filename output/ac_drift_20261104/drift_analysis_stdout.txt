@@ -1,0 +1,116 @@
+=== checkpoint 1000 (1.02M steps)
+events seen: a0 59, a1 1217, a2 11, a3 82, a4 31, a5 256
+recent 32 own events (Delivery/Return/Other): a0 D29/R3/O0, a1 D26/R6/O0, a2 D10/R1/O0, a3 D30/R2/O0, a4 D28/R3/O0, a5 D31/R1/O0
+EMA same-team max 0.19; cross-team (0,1) 0.96, (0,3) 0.99, (0,5) 1.00, (1,2) 0.00, (1,4) 0.99, (2,3) 0.00, (2,5) 0.00, (3,4) 1.00, (4,5) 1.00
+  (0,1) distance 0.93; shared mass 0.07 from: peer:return:mirror n=6 p=0.32 q=0.51; own:return:orig n=3 p=1.00 q=0.43; peer:return:orig n=6 p=0.11 q=0.89
+  (0,3) distance 1.00; shared mass 0.00 from: peer:return:orig n=2 p=0.05 q=0.99; own:return:orig n=3 p=1.00 q=0.01; own:return:mirror n=3 p=0.04 q=0.31
+  (0,5) distance 1.00; shared mass 0.00 from: own:return:mirror n=3 p=0.04 q=0.52; own:return:orig n=3 p=1.00 q=0.00; peer:delivery:orig n=31 p=-0.00 q=0.93
+  (1,2) distance 0.99; shared mass 0.01 from: peer:delivery:orig n=10 p=0.00 q=1.00; own:delivery:mirror n=26 p=-0.00 q=0.49; own:return:orig n=6 p=0.89 q=0.00
+  (1,4) distance 0.99; shared mass 0.01 from: peer:return:orig n=3 p=0.13 q=1.00; peer:delivery:orig n=28 p=0.00 q=1.00; own:delivery:mirror n=26 p=-0.00 q=0.41
+  (2,3) distance 1.00; shared mass 0.00 from: peer:delivery:orig n=30 p=0.00 q=1.01; own:return:orig n=1 p=1.00 q=0.02; peer:return:mirror n=2 p=0.06 q=0.01
+  (2,5) distance 1.00; shared mass 0.00 from: peer:delivery:orig n=31 p=0.00 q=0.93; own:delivery:mirror n=10 p=0.00 q=0.90; own:return:mirror n=1 p=0.01 q=0.48
+  (3,4) distance 1.00; shared mass 0.00 from: own:return:mirror n=2 p=0.01 q=0.16; own:delivery:mirror n=30 p=-0.00 q=0.49; peer:return:orig n=3 p=0.01 q=1.00
+  (4,5) distance 1.00; shared mass 0.00 from: peer:delivery:orig n=31 p=0.00 q=0.93; own:delivery:mirror n=28 p=0.00 q=0.81; peer:delivery:mirror n=31 p=0.76 q=-0.00
+
+=== checkpoint 2000 (2.05M steps)
+events seen: a0 60, a1 5306, a2 4303, a3 2895, a4 46, a5 3020
+recent 32 own events (Delivery/Return/Other): a0 D29/R3/O0, a1 D25/R7/O0, a2 D22/R10/O0, a3 D22/R10/O0, a4 D30/R2/O0, a5 D26/R6/O0
+EMA same-team max 0.14; cross-team (0,1) 0.94, (0,3) 0.96, (0,5) 0.95, (1,2) 0.80, (1,4) 0.98, (2,3) 0.77, (2,5) 0.80, (3,4) 0.99, (4,5) 0.97
+  (0,1) distance 0.95; shared mass 0.05 from: own:return:orig n=3 p=1.00 q=0.70; peer:return:mirror n=7 p=0.13 q=0.51; peer:return:orig n=7 p=0.01 q=0.93
+  (0,3) distance 0.95; shared mass 0.05 from: own:return:orig n=3 p=1.00 q=0.63; peer:return:mirror n=10 p=0.11 q=0.62; peer:return:orig n=10 p=0.02 q=0.92
+  (0,5) distance 0.95; shared mass 0.05 from: own:return:orig n=3 p=1.00 q=0.77; peer:return:mirror n=6 p=0.12 q=0.86; own:delivery:orig n=29 p=1.00 q=0.00
+  (1,2) distance 0.75; shared mass 0.25 from: peer:return:orig n=10 p=0.61 q=0.76; peer:return:mirror n=10 p=0.64 q=0.57; own:return:mirror n=7 p=0.51 q=0.50
+  (1,4) distance 0.98; shared mass 0.02 from: peer:return:orig n=2 p=0.34 q=0.96; own:return:mirror n=7 p=0.51 q=0.02; own:return:orig n=7 p=0.93 q=0.01
+  (2,3) distance 0.71; shared mass 0.29 from: own:return:orig n=10 p=0.76 q=0.69; own:return:mirror n=10 p=0.57 q=0.82; peer:return:orig n=10 p=0.47 q=0.92
+  (2,5) distance 0.78; shared mass 0.22 from: own:return:orig n=10 p=0.76 q=0.88; own:return:mirror n=10 p=0.57 q=0.89; peer:return:orig n=6 p=0.21 q=0.96
+  (3,4) distance 0.98; shared mass 0.02 from: peer:return:orig n=2 p=0.28 q=0.96; own:return:mirror n=10 p=0.62 q=0.03; own:return:orig n=10 p=0.92 q=0.02
+  (4,5) distance 0.97; shared mass 0.03 from: own:return:orig n=2 p=0.96 q=0.58; peer:return:mirror n=6 p=0.08 q=0.86; peer:return:orig n=6 p=0.01 q=0.96
+
+=== checkpoint 3000 (3.07M steps)
+events seen: a0 62, a1 11485, a2 12958, a3 7788, a4 469, a5 7680
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D21/R11/O0, a2 D21/R11/O0, a3 D22/R10/O0, a4 D29/R3/O0, a5 D20/R12/O0
+EMA same-team max 0.18; cross-team (0,1) 0.93, (0,3) 0.95, (0,5) 0.94, (1,2) 0.64, (1,4) 0.93, (2,3) 0.69, (2,5) 0.64, (3,4) 0.95, (4,5) 0.94
+  (0,1) distance 0.94; shared mass 0.06 from: own:return:orig n=2 p=0.99 q=0.89; peer:return:mirror n=11 p=0.12 q=0.78; peer:return:orig n=11 p=0.07 q=0.86
+  (0,3) distance 0.95; shared mass 0.05 from: own:return:orig n=2 p=0.99 q=0.80; peer:return:orig n=10 p=0.06 q=0.87; peer:return:mirror n=10 p=0.06 q=0.86
+  (0,5) distance 0.96; shared mass 0.04 from: own:return:orig n=2 p=0.99 q=0.98; peer:return:mirror n=12 p=0.02 q=0.75; own:delivery:orig n=30 p=1.00 q=0.00
+  (1,2) distance 0.62; shared mass 0.38 from: peer:return:mirror n=11 p=0.85 q=0.82; own:return:orig n=11 p=0.86 q=0.65; peer:return:orig n=11 p=0.67 q=0.77
+  (1,4) distance 0.95; shared mass 0.05 from: peer:return:orig n=3 p=0.65 q=0.64; own:return:mirror n=11 p=0.78 q=0.08; own:return:orig n=11 p=0.86 q=0.03
+  (2,3) distance 0.63; shared mass 0.37 from: own:return:mirror n=11 p=0.82 q=0.77; own:return:orig n=11 p=0.77 q=0.81; peer:return:orig n=10 p=0.72 q=0.87
+  (2,5) distance 0.58; shared mass 0.42 from: peer:return:orig n=12 p=0.73 q=0.93; own:return:mirror n=11 p=0.82 q=0.85; own:return:orig n=11 p=0.77 q=0.83
+  (3,4) distance 0.96; shared mass 0.04 from: peer:return:orig n=3 p=0.87 q=0.64; own:return:mirror n=10 p=0.86 q=0.04; own:return:orig n=10 p=0.87 q=0.02
+  (4,5) distance 0.95; shared mass 0.05 from: own:return:orig n=3 p=0.64 q=0.52; peer:return:mirror n=12 p=0.19 q=0.75; own:delivery:orig n=29 p=0.97 q=0.00
+
+=== checkpoint 3500 (3.58M steps)
+events seen: a0 63, a1 16152, a2 17759, a3 11149, a4 1960, a5 11029
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D18/R14/O0, a2 D21/R11/O0, a3 D17/R15/O0, a4 D25/R7/O0, a5 D21/R11/O0
+EMA same-team max 0.16; cross-team (0,1) 0.91, (0,3) 0.93, (0,5) 0.93, (1,2) 0.58, (1,4) 0.79, (2,3) 0.61, (2,5) 0.58, (3,4) 0.82, (4,5) 0.80
+  (0,1) distance 0.91; shared mass 0.09 from: peer:return:orig n=14 p=0.16 q=0.90; own:return:orig n=2 p=1.00 q=0.91; peer:return:mirror n=14 p=0.09 q=0.76
+  (0,3) distance 0.91; shared mass 0.09 from: own:return:orig n=2 p=1.00 q=1.00; peer:return:mirror n=15 p=0.12 q=0.85; peer:return:orig n=15 p=0.12 q=0.90
+  (0,5) distance 0.95; shared mass 0.05 from: own:return:orig n=2 p=1.00 q=0.95; peer:return:mirror n=11 p=0.04 q=0.95; peer:return:orig n=11 p=0.02 q=0.89
+  (1,2) distance 0.59; shared mass 0.41 from: own:return:orig n=14 p=0.90 q=0.66; own:return:mirror n=14 p=0.76 q=0.71; peer:return:orig n=11 p=0.72 q=0.78
+  (1,4) distance 0.74; shared mass 0.26 from: own:return:orig n=14 p=0.90 q=0.43; own:return:mirror n=14 p=0.76 q=0.44; peer:return:orig n=7 p=0.73 q=0.67
+  (2,3) distance 0.55; shared mass 0.45 from: peer:return:mirror n=15 p=0.72 q=0.85; peer:return:orig n=15 p=0.65 q=0.90; own:return:orig n=11 p=0.78 q=0.95
+  (2,5) distance 0.63; shared mass 0.37 from: own:return:orig n=11 p=0.78 q=0.85; peer:return:mirror n=11 p=0.71 q=0.95; peer:return:orig n=11 p=0.64 q=0.89
+  (3,4) distance 0.77; shared mass 0.23 from: own:return:mirror n=15 p=0.85 q=0.31; peer:return:orig n=7 p=0.82 q=0.67; own:return:orig n=15 p=0.90 q=0.23
+  (4,5) distance 0.84; shared mass 0.16 from: own:return:orig n=7 p=0.67 q=0.90; own:return:mirror n=7 p=0.44 q=0.88; peer:return:orig n=11 p=0.15 q=0.89
+
+=== checkpoint 4000 (4.10M steps)
+events seen: a0 64, a1 21790, a2 23427, a3 15553, a4 4155, a5 15128
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D17/R15/O0, a2 D19/R13/O0, a3 D19/R13/O0, a4 D25/R7/O0, a5 D19/R13/O0
+EMA same-team max 0.17; cross-team (0,1) 0.92, (0,3) 0.92, (0,5) 0.93, (1,2) 0.52, (1,4) 0.69, (2,3) 0.51, (2,5) 0.55, (3,4) 0.69, (4,5) 0.68
+  (0,1) distance 0.92; shared mass 0.08 from: own:return:orig n=2 p=1.00 q=0.95; peer:return:mirror n=15 p=0.11 q=0.78; peer:return:orig n=15 p=0.08 q=0.87
+  (0,3) distance 0.90; shared mass 0.10 from: peer:return:orig n=13 p=0.17 q=0.86; peer:return:mirror n=13 p=0.17 q=0.83; own:return:orig n=2 p=1.00 q=0.93
+  (0,5) distance 0.95; shared mass 0.05 from: own:return:orig n=2 p=1.00 q=0.96; peer:return:mirror n=13 p=0.04 q=0.72; peer:return:orig n=13 p=0.02 q=0.93
+  (1,2) distance 0.53; shared mass 0.47 from: own:return:orig n=15 p=0.87 q=0.81; peer:return:orig n=13 p=0.82 q=0.86; own:return:mirror n=15 p=0.78 q=0.70
+  (1,4) distance 0.68; shared mass 0.32 from: own:return:orig n=15 p=0.87 q=0.49; own:return:mirror n=15 p=0.78 q=0.53; peer:return:orig n=7 p=0.77 q=0.87
+  (2,3) distance 0.53; shared mass 0.47 from: own:return:mirror n=13 p=0.74 q=0.86; peer:return:orig n=13 p=0.81 q=0.86; peer:return:mirror n=13 p=0.78 q=0.83
+  (2,5) distance 0.56; shared mass 0.44 from: peer:return:orig n=13 p=0.80 q=0.93; own:return:orig n=13 p=0.86 q=0.76; own:return:mirror n=13 p=0.74 q=0.70
+  (3,4) distance 0.69; shared mass 0.31 from: own:return:mirror n=13 p=0.83 q=0.59; own:return:orig n=13 p=0.86 q=0.43; peer:return:mirror n=7 p=0.86 q=0.77
+  (4,5) distance 0.66; shared mass 0.34 from: peer:return:orig n=13 p=0.62 q=0.93; peer:return:mirror n=13 p=0.66 q=0.72; own:return:orig n=7 p=0.87 q=0.81
+
+=== checkpoint 4250 (4.35M steps)
+events seen: a0 64, a1 25113, a2 26617, a3 18058, a4 5466, a5 17512
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D18/R14/O0, a2 D17/R15/O0, a3 D19/R13/O0, a4 D23/R9/O0, a5 D17/R15/O0
+EMA same-team max 0.21; cross-team (0,1) 0.91, (0,3) 0.92, (0,5) 0.93, (1,2) 0.48, (1,4) 0.68, (2,3) 0.50, (2,5) 0.49, (3,4) 0.69, (4,5) 0.67
+  (0,1) distance 0.95; shared mass 0.05 from: own:return:orig n=2 p=1.00 q=0.90; peer:return:orig n=14 p=0.06 q=0.94; peer:return:mirror n=14 p=0.02 q=0.88
+  (0,3) distance 0.92; shared mass 0.08 from: peer:return:orig n=13 p=0.19 q=0.95; own:return:orig n=2 p=1.00 q=0.97; peer:return:mirror n=13 p=0.05 q=0.75
+  (0,5) distance 0.92; shared mass 0.08 from: own:return:orig n=2 p=1.00 q=0.96; peer:return:orig n=15 p=0.11 q=0.95; peer:return:mirror n=15 p=0.07 q=0.93
+  (1,2) distance 0.46; shared mass 0.54 from: peer:return:orig n=15 p=0.91 q=0.94; peer:return:mirror n=15 p=0.81 q=0.86; own:return:orig n=14 p=0.94 q=0.82
+  (1,4) distance 0.64; shared mass 0.36 from: own:return:orig n=14 p=0.94 q=0.60; own:return:mirror n=14 p=0.88 q=0.45; peer:return:orig n=9 p=0.84 q=0.77
+  (2,3) distance 0.48; shared mass 0.52 from: own:return:orig n=15 p=0.94 q=0.89; peer:return:orig n=13 p=0.88 q=0.95; own:return:mirror n=15 p=0.86 q=0.82
+  (2,5) distance 0.40; shared mass 0.60 from: own:return:orig n=15 p=0.94 q=0.94; peer:return:orig n=15 p=0.93 q=0.95; own:return:mirror n=15 p=0.86 q=0.91
+  (3,4) distance 0.66; shared mass 0.34 from: peer:return:orig n=9 p=0.92 q=0.77; own:return:mirror n=13 p=0.75 q=0.56; own:return:orig n=13 p=0.95 q=0.47
+  (4,5) distance 0.64; shared mass 0.36 from: peer:return:orig n=15 p=0.55 q=0.95; own:return:orig n=9 p=0.77 q=0.93; peer:return:mirror n=15 p=0.47 q=0.93
+
+=== checkpoint 4500 (4.61M steps)
+events seen: a0 64, a1 28835, a2 30282, a3 20724, a4 6981, a5 20159
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D16/R16/O0, a2 D17/R15/O0, a3 D18/R14/O0, a4 D23/R9/O0, a5 D20/R12/O0
+EMA same-team max 0.19; cross-team (0,1) 0.89, (0,3) 0.92, (0,5) 0.92, (1,2) 0.47, (1,4) 0.60, (2,3) 0.49, (2,5) 0.45, (3,4) 0.66, (4,5) 0.58
+  (0,1) distance 0.92; shared mass 0.08 from: peer:return:mirror n=16 p=0.16 q=0.81; own:return:orig n=2 p=0.99 q=0.90; peer:return:orig n=16 p=0.02 q=0.86
+  (0,3) distance 0.89; shared mass 0.11 from: peer:return:orig n=14 p=0.17 q=0.87; peer:return:mirror n=14 p=0.13 q=0.72; own:return:orig n=2 p=0.99 q=0.95
+  (0,5) distance 0.91; shared mass 0.09 from: peer:return:orig n=12 p=0.18 q=0.94; own:return:orig n=2 p=0.99 q=0.94; peer:return:mirror n=12 p=0.14 q=0.93
+  (1,2) distance 0.43; shared mass 0.57 from: own:return:orig n=16 p=0.86 q=0.88; peer:return:orig n=15 p=0.83 q=0.91; peer:return:mirror n=15 p=0.81 q=0.93
+  (1,4) distance 0.62; shared mass 0.38 from: own:return:mirror n=16 p=0.81 q=0.61; own:return:orig n=16 p=0.86 q=0.49; peer:return:orig n=9 p=0.87 q=0.81
+  (2,3) distance 0.47; shared mass 0.53 from: own:return:orig n=15 p=0.91 q=0.79; own:return:mirror n=15 p=0.93 q=0.77; peer:return:orig n=14 p=0.85 q=0.87
+  (2,5) distance 0.45; shared mass 0.55 from: own:return:mirror n=15 p=0.93 q=0.92; own:return:orig n=15 p=0.91 q=0.88; peer:return:mirror n=12 p=0.95 q=0.93
+  (3,4) distance 0.62; shared mass 0.38 from: own:return:orig n=14 p=0.87 q=0.64; own:return:mirror n=14 p=0.72 q=0.64; peer:return:orig n=9 p=0.79 q=0.81
+  (4,5) distance 0.62; shared mass 0.38 from: peer:return:orig n=12 p=0.75 q=0.94; peer:return:mirror n=12 p=0.69 q=0.93; own:return:orig n=9 p=0.81 q=0.92
+
+=== checkpoint 4750 (4.86M steps)
+events seen: a0 64, a1 32624, a2 34367, a3 23845, a4 8916, a5 23092
+recent 32 own events (Delivery/Return/Other): a0 D30/R2/O0, a1 D17/R15/O0, a2 D19/R13/O0, a3 D18/R14/O0, a4 D22/R10/O0, a5 D18/R14/O0
+EMA same-team max 0.20; cross-team (0,1) 0.91, (0,3) 0.90, (0,5) 0.91, (1,2) 0.46, (1,4) 0.59, (2,3) 0.44, (2,5) 0.45, (3,4) 0.62, (4,5) 0.62
+  (0,1) distance 0.91; shared mass 0.09 from: peer:return:mirror n=15 p=0.18 q=0.73; own:return:orig n=2 p=1.00 q=0.89; peer:return:orig n=15 p=0.07 q=0.84
+  (0,3) distance 0.89; shared mass 0.11 from: peer:return:orig n=14 p=0.22 q=0.93; peer:return:mirror n=14 p=0.13 q=0.82; own:return:orig n=2 p=1.00 q=0.90
+  (0,5) distance 0.91; shared mass 0.09 from: own:return:orig n=2 p=1.00 q=0.97; peer:return:orig n=14 p=0.12 q=0.96; peer:return:mirror n=14 p=0.11 q=0.92
+  (1,2) distance 0.49; shared mass 0.51 from: own:return:orig n=15 p=0.84 q=0.78; peer:return:orig n=13 p=0.84 q=0.92; own:return:mirror n=15 p=0.73 q=0.86
+  (1,4) distance 0.61; shared mass 0.39 from: own:return:mirror n=15 p=0.73 q=0.70; own:return:orig n=15 p=0.84 q=0.57; peer:return:orig n=10 p=0.73 q=0.78
+  (2,3) distance 0.47; shared mass 0.53 from: peer:return:orig n=14 p=0.90 q=0.93; own:return:orig n=13 p=0.92 q=0.94; peer:return:mirror n=14 p=0.85 q=0.82
+  (2,5) distance 0.47; shared mass 0.53 from: peer:return:orig n=14 p=0.84 q=0.96; own:return:orig n=13 p=0.92 q=0.92; peer:return:mirror n=14 p=0.80 q=0.92
+  (3,4) distance 0.61; shared mass 0.39 from: own:return:orig n=14 p=0.93 q=0.64; peer:return:orig n=10 p=0.93 q=0.78; own:return:mirror n=14 p=0.82 q=0.54
+  (4,5) distance 0.60; shared mass 0.40 from: peer:return:orig n=14 p=0.62 q=0.96; peer:return:mirror n=14 p=0.55 q=0.92; own:return:orig n=10 p=0.78 q=0.94
+
+=== different-team access arcs by pair (directed arcs counted)
+  (1, 2): 120 arcs, first 4.28M, last 4.97M
+  (2, 3): 118 arcs, first 4.33M, last 4.98M
+  (2, 5): 114 arcs, first 4.35M, last 4.99M

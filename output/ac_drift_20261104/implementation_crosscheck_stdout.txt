@@ -1,0 +1,3 @@
+mirror False: 299 mature pairs over 25 checkpoints; implemented action_max same-team max 0.281, different-team min 0.975
+mirror True: 299 mature pairs over 25 checkpoints; implemented action_max same-team max 0.328, different-team min 0.970
+max |implemented - offline| over all distances: 0.00e+00

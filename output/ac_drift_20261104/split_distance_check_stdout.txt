@@ -1,0 +1,8 @@
+1.02M  pooled: same max 0.22, cross min 0.93 (0, 1) | per-action max: same max 0.98, cross min 1.00
+2.05M  pooled: same max 0.16, cross min 0.71 (2, 3) | per-action max: same max 0.77, cross min 0.99
+3.07M  pooled: same max 0.18, cross min 0.58 (2, 5) | per-action max: same max 0.79, cross min 0.99
+3.58M  pooled: same max 0.15, cross min 0.55 (2, 3) | per-action max: same max 0.68, cross min 0.98
+4.10M  pooled: same max 0.17, cross min 0.53 (1, 2) | per-action max: same max 0.71, cross min 0.99
+4.35M  pooled: same max 0.23, cross min 0.40 (2, 5) | per-action max: same max 0.71, cross min 0.98
+4.61M  pooled: same max 0.20, cross min 0.43 (1, 2) | per-action max: same max 0.65, cross min 0.98
+4.86M  pooled: same max 0.17, cross min 0.47 (2, 3) | per-action max: same max 0.66, cross min 0.98

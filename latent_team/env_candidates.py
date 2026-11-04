@@ -30,6 +30,14 @@ only the goal layout and the reward mode change.  b_e1f6_comm3_pen005 is the cor
 Adjacent goals are (width/2 - 1, bottom) and (width/2, bottom), i.e. E1's (4, 10) / (5, 10); like the
 corners they swap sides on even seeds.
 
+Contact range 5 (D110 / T178): the paper's default r_c equals the sensor range (5); range 3 above was an
+arbitrary choice.  Only communication_range changes (contact graph for the A+C gate and Max-GAE peers);
+observations, rewards and dynamics are those of b6_corner_indiv_pen005.
+  b6_corner_indiv_comm5_pen005   b6_corner_indiv_pen005 with communication range 5
+Slightly harder variants of it (T179/T180, user: raise the difficulty a little; one change each):
+  b6_wide_corner_indiv_comm5_pen005   shelf_columns 5 -> 11 x 16 map, goals at the two far bottom corners
+  b6_corner_indiv_comm5_req2_pen005   2 requested shelves per team instead of 3 (request_queue_size 4)
+
 Earlier candidates (E40, kept for the record; superseded by D63):
   c1_e1f_team      = a_e1f4_team
   c2_e1f8_team     wider map (11 x 16), 8 agents / 2 teams, 4 requests/team
@@ -54,6 +62,10 @@ CONFIG = {
     "b6_corner_indiv_pen005": dict(agent_count=6),
     "b6_adjacent_team_pen005": dict(agent_count=6),
     "b6_adjacent_indiv_pen005": dict(agent_count=6),
+    "b6_corner_indiv_comm5_pen005": dict(agent_count=6),
+    "b6_wide_corner_indiv_comm5_pen005": dict(agent_count=6),
+    # the trainer raises requests to >= agents per team unless auto-scaling is off (2 < 3 is intended here)
+    "b6_corner_indiv_comm5_req2_pen005": dict(agent_count=6, auto_scale_request_queue=False),
     "c1_e1f_team": dict(),
     "c2_e1f8_team": dict(agent_count=8),
     "c3_wide_s3_team": dict(sensor_range=3),
@@ -72,6 +84,10 @@ CANDIDATES = {
     "b6_corner_indiv_pen005": dict(SIX, communication_range=3, **SMALL_PICKUP_PENALTY),
     "b6_adjacent_team_pen005": dict(SIX, communication_range=3, **SMALL_PICKUP_PENALTY),
     "b6_adjacent_indiv_pen005": dict(SIX, communication_range=3, **SMALL_PICKUP_PENALTY),
+    "b6_corner_indiv_comm5_pen005": dict(SIX, communication_range=5, **SMALL_PICKUP_PENALTY),
+    "b6_wide_corner_indiv_comm5_pen005": dict(SIX, shelf_columns=5, communication_range=5, **SMALL_PICKUP_PENALTY),
+    "b6_corner_indiv_comm5_req2_pen005": dict(SIX, communication_range=5, **SMALL_PICKUP_PENALTY,
+                                              request_queue_size=4, request_queue_size_per_team=[2, 2]),
     "c1_e1f_team": dict(),
     "c2_e1f8_team": dict(n_agents=8, shelf_columns=5, request_queue_size=8, request_queue_size_per_team=[4, 4]),
     "c3_wide_s3_team": dict(shelf_columns=5, shelf_rows=2, sensor_range=3, communication_range=3),
@@ -81,6 +97,9 @@ LAYOUT = {
     "b6_corner_indiv_pen005": dict(goals="corner", reward="individual"),
     "b6_adjacent_team_pen005": dict(goals="adjacent", reward="team"),
     "b6_adjacent_indiv_pen005": dict(goals="adjacent", reward="individual"),
+    "b6_corner_indiv_comm5_pen005": dict(goals="corner", reward="individual"),
+    "b6_wide_corner_indiv_comm5_pen005": dict(goals="corner", reward="individual"),
+    "b6_corner_indiv_comm5_req2_pen005": dict(goals="corner", reward="individual"),
 }
 
 

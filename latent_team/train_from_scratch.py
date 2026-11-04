@@ -49,6 +49,7 @@ try:
     from . import reward_probe_ac as AC
     from . import reward_probe_ac_v2 as AC2
     from . import max_gae as MG
+    from . import video_retention as VR
 except ImportError:
     import common as C
     from exp_b_oracle_consensus import matched_transfer, transfer_summary
@@ -59,6 +60,7 @@ except ImportError:
     import reward_probe_ac as AC
     import reward_probe_ac_v2 as AC2
     import max_gae as MG
+    import video_retention as VR
 
 from examples import train_recurrent_ippo_consensus as T
 from examples.train_pgct_spatial_experiments import MAPS, experiment_logging
@@ -157,11 +159,19 @@ def plan(args):
     args.probe_bank = getattr(args, "probe_bank", "canonical")
     args.team_reward = getattr(args, "team_reward", "individual")
     args.random_reference = getattr(args, "random_reference", None)
+    video_keep_last = getattr(args, "video_keep_last", 0)
+    if video_keep_last < 0 or (video_keep_last and not args.save_video):
+        raise ValueError("--video-keep-last must be nonnegative and needs --save-video when positive")
     ac_enabled = getattr(args, "reward_probe_ac", False)
     ac_v2 = ac_enabled and getattr(args, "ac_gate", "v1") == "v2"  # gate v2: reward_probe_ac_v2.py
     ac_config = ((AC2.ACV2Config if ac_v2 else AC.ACConfig)(
         **(json.loads(Path(args.ac_config).read_text(encoding="utf-8")) if getattr(args, "ac_config", None) else {}))
         if ac_enabled else None)
+    ac_distance = getattr(args, "ac_distance", None)  # D108: gate v2 distance; None keeps the config value
+    if ac_distance is not None:
+        if not ac_v2:
+            raise ValueError("--ac-distance requires --reward-probe-ac --ac-gate v2")
+        ac_config = replace(ac_config, distance_mode=ac_distance)
     if ac_enabled and (args.team_reward != "individual" or args.probe_bank != "canonical"
                        or not set(args.modes) <= {"ippo", "pgct", "oracle", "all", "wrong", *MAX_MODES}):
         raise ValueError("A+C requires --team-reward individual, canonical bank, and IPPO/PGCT/oracle/all/wrong "
@@ -210,6 +220,8 @@ def plan(args):
             label = args.env_variant if args.env_variant != "e1" else map_name
             if ac_enabled:
                 label += "_acv2" if ac_v2 else "_ac"
+                if ac_v2 and ac_config.distance_mode != "pooled":
+                    label += "_amax"  # D108 action_max distance; pooled runs keep their names
             if args.team_reward != "individual":
                 label += f"_{args.team_reward}rew"
             if init_checkpoint is not None:
@@ -232,6 +244,8 @@ def plan(args):
                            transfer_warmup_updates=warmup,
                            effective_timesteps=math.ceil(config["total_timesteps"] / config["rollout_steps"])
                            * config["rollout_steps"])
+                if video_keep_last:
+                    job["video_keep_last"] = video_keep_last if config["save_eval_video"] else 0
                 if ac_enabled:
                     # D102 (ii): PGCT-D2 modes compare on rollout contacts, so only the rollout-start state
                     # (what an agent could send on such a contact) is compared, before the refit.
@@ -283,6 +297,8 @@ def plan(args):
                     reference_experiment=str(args.reference_experiment.resolve()), 
                     eval_seed=args.eval_seed,
                     smoke_test=args.smoke_test, 
+                    **(dict(video_keep_last=video_keep_last, video_upload_policy="tail_at_finish")
+                       if video_keep_last else {}),
                     jobs=jobs,
                     note="Same seed => same random initial weights for every mode (checked via "
                          "initial_weights_sha256.txt). " +
@@ -343,7 +359,8 @@ def run_job(output, manifest, name, eval_seed):
         return run
     T.init_wandb = init_wandb
     try:
-        with EC.agent_count_support(cfg.agent_count), experiment_logging(cfg, run_dir, eval_seed):
+        with VR.install(T, cfg, run_dir, job.get("video_keep_last", 0)), \
+                EC.agent_count_support(cfg.agent_count), experiment_logging(cfg, run_dir, eval_seed):
             job_status(run_dir, status="running")
             if job["mode"] in B.ALGORITHMS:
                 with B.install(cfg, job["mode"], run_dir):
@@ -473,6 +490,10 @@ def main():
                              "predictor on own reward-event probes (reward_probe_ac_v2.py, job names *_acv2_*).")
     parser.add_argument("--ac-config", type=Path,
                         help="Optional JSON overrides for reward_probe_ac.ACConfig (v1) or ACV2Config (v2).")
+    parser.add_argument("--ac-distance", choices=["pooled", "action_max"],
+                        help="Gate v2 response distance (D108). pooled: original sum over all probes; action_max: "
+                             "maximum over public actions both agents have >= min_probes own events in "
+                             "(job names *_acv2_amax_*). Default: the --ac-config value, else pooled.")
     parser.add_argument("--random-reference", type=Path,
                         help="PGCT transfer.jsonl whose per-update arc counts the random mode reproduces.")
     parser.add_argument("--max-gae-eta", type=float, default=.5,
@@ -511,6 +532,10 @@ def main():
     parser.add_argument("--wandb-mode", choices=["online", "offline"], default="online")
     parser.add_argument("--stage-label", default="single", help="Recorded in W&B tags/config and the plan.")
     parser.add_argument("--save-video", action="store_true")
+    parser.add_argument("--video-keep-last", type=int, default=0,
+                        help="With --save-video: keep only the latest N eval videos per job (including final); "
+                             "upload that tail to W&B at finish using a short local W&B path. "
+                             "0 preserves the old unlimited behavior.")
     parser.add_argument("--smoke-test", action="store_true")
     args = parser.parse_args()
     os.environ.setdefault("WANDB_DISABLE_GIT", "true")

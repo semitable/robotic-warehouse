@@ -13,6 +13,11 @@ team-discriminating event. v2 keeps the v1 information rules and changes the mod
 - Distance: sum|a-b| / sum(|a|+|b|) over the probes (0 = same responses, 1 = disjoint); EMA over
   rounds; same team if below .5, i.e. most of the response mass is shared. Scale-free; not fitted
   to any run.
+- distance_mode="action_max" (D108, opt-in): the pooled distance is the response-mass weighted mean of
+  the distances within each public action of the probe events, so an event kind every team is paid for
+  (shelf returns) dilutes the kind on which teams differ (deliveries). action_max takes the maximum over
+  the actions in which BOTH agents have at least min_probes own probe events; equal reward functions
+  agree in every action. No such action -> no comparison in that round.
 Team labels never enter a decision. The install() logger audits same/cross decisions afterwards
 from the environment info, for W&B only. Private RNGs leave the trainer's random stream untouched.
 """
@@ -36,6 +41,7 @@ EGO = 6          # public ego: carrying, up, down, left, right, highway
 N_ACTIONS = 5    # NOOP, FORWARD, LEFT, RIGHT, TOGGLE_LOAD
 LEFT, RIGHT = 2, 3
 DIR_LEFT, DIR_RIGHT = 7, 8  # public channel positions of the visible agents' left/right heading
+DISTANCE_MODES = ("pooled", "action_max")
 
 
 @dataclass(frozen=True)
@@ -62,8 +68,12 @@ class ACV2Config:
     # D102 (ii): compare only what each agent held at the rollout start (predictor, recent own event views,
     # maturity), i.e. what it could send on a contact during that rollout; refit after the comparison.
     contact_snapshot: bool = False
+    # D108: "pooled" (default, original) or "action_max" (max over public-action strata both agents experienced)
+    distance_mode: str = "pooled"
 
     def __post_init__(self):
+        if self.distance_mode not in DISTANCE_MODES:
+            raise ValueError(f"distance_mode must be one of {DISTANCE_MODES}")
         counts = (self.radius, self.buffer_size, self.event_buffer_size, self.hidden, self.train_steps,
                   self.batch_size, self.min_events, self.probes_per_agent, self.min_probes, self.min_rounds,
                   self.interval)
@@ -200,6 +210,24 @@ def response_distance(a, b):
     return float(np.sum(np.abs(a - b)) / mass) if mass > 1e-8 else None
 
 
+def action_max_distance(p, q, actions, own_i, own_j, min_count):
+    """D108: largest response distance among the public actions of the probes in which BOTH agents have at
+    least min_count own probe events (own_i/own_j: actions of each agent's own, unmirrored probe events).
+
+    The pooled distance equals sum_g w_g d_g with w_g the response mass of action g, so it never exceeds this
+    maximum. Returns (distance, action) or (None, None) when no action qualifies."""
+    p, q, actions = np.asarray(p, dtype=np.float64), np.asarray(q, dtype=np.float64), np.asarray(actions)
+    own_i, own_j = np.asarray(own_i), np.asarray(own_j)
+    best = (None, None)
+    for g in np.unique(actions):
+        if min(np.count_nonzero(own_i == g), np.count_nonzero(own_j == g)) < min_count:
+            continue
+        d = response_distance(p[actions == g], q[actions == g])
+        if d is not None and (best[0] is None or d > best[0]):
+            best = (d, int(g))
+    return best
+
+
 class ACV2Controller:
     """Pairwise probe exchange across the supplied physical links; same call protocol as v1."""
     def __init__(self, n_agents, config=None):
@@ -237,11 +265,12 @@ class ACV2Controller:
         for i, predictor in enumerate(self.predictors):
             predictor.learn(before[i], int(actions[i]), after[i], float(rewards[i]))
 
+    def own_probes(self, k):
+        """Agent k's own recent event views (frozen at the rollout start with contact_snapshot)."""
+        return self.frozen["probes"][k] if self.config.contact_snapshot else self.predictors[k].event_probes()
+
     def probes(self, i, j):
-        if self.config.contact_snapshot:
-            parts = [self.frozen["probes"][i], self.frozen["probes"][j]]
-        else:
-            parts = [self.predictors[i].event_probes(), self.predictors[j].event_probes()]
+        parts = [self.own_probes(i), self.own_probes(j)]
         b, a, f = (np.concatenate(x) for x in zip(*parts))
         if self.config.mirror and len(b):
             r = self.config.radius
@@ -273,6 +302,8 @@ class ACV2Controller:
                 ac_v2_pairs_compared=float(sum(d["distance"] is not None for d in details)),
                 ac_v2_pairs_accepted=float(sum(d["accepted"] for d in details)),
                 ac_v2_own_events_mean=float(np.mean([p.events_seen for p in self.predictors])),
+                **(dict(ac_v2_pairs_no_common_action=float(sum(d["reason"] == "no_common_action" for d in details)))
+                   if self.config.distance_mode == "action_max" else {}),
                 **(dict(ac_v2_predictor_loss=float(np.mean(done))) if done else {}),
                 **({"ac_v2_distance_mean": float(np.mean([d["distance_ema"] for d in details
                                                           if d["distance_ema"] is not None]))}
@@ -311,7 +342,15 @@ class ACV2Controller:
             return row
         p, q = self.predictors[i].predict(b, a, f), self.predictors[j].predict(b, a, f)
         distance = response_distance(p, q)
-        versions = (self.predictors[i].version, self.predictors[j].version)
+        row.update(pooled_distance=distance, stratum=None)
+        if self.config.distance_mode == "action_max":
+            distance, row["stratum"] = action_max_distance(p, q, a, self.own_probes(i)[1], self.own_probes(j)[1],
+                                                           self.config.min_probes)
+            if distance is None:
+                row["reason"] = "no_common_action"
+                self.gate[i, j] = self.gate[j, i] = False
+                return row
+        versions =(self.predictors[i].version, self.predictors[j].version)
         if distance is not None and versions != self.last_versions.get((i, j)):
             # A round counts only after both predictors were refitted on new own experience.
             self.ema[i, j] = distance if not self.rounds[i, j] else (
