@@ -1,6 +1,6 @@
 # PGCT 연구 통합 기록
 
-자동 생성: 2026-11-02 19:05 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
+자동 생성: 2026-11-04 14:44 대한민국 표준시 — `python research_archive/build_archive.py`. 원본 파일은 수정하지 않았고, 이 파일은 원본을 순서대로 합친 사본이다. 원본이 갱신되면 이 파일은 낡으므로 다시 생성한다. 편집은 원본에 한다.
 
 새 세션은 **Part 1(인수인계 요약)만 먼저 읽고**, 필요할 때 아래 목차에서 해당 부분을 찾는다.
 
@@ -12,11 +12,11 @@
   - `AGENTS.md` (5 KB)
   - `CLAUDE.md` (4 KB)
 - Part 3. 현재 연구 상태
-  - `RESEARCH_STATE.md` (39 KB)
+  - `RESEARCH_STATE.md` (46 KB)
 - Part 4. 질문·결론·설계 판단
-  - `DECISIONS.md` (190 KB)
+  - `DECISIONS.md` (205 KB)
 - Part 5. 실험·평가 기록
-  - `EXPERIMENTS.md` (156 KB)
+  - `EXPERIMENTS.md` (171 KB)
 - Part 6. 분석 보고서 (output/, 작성일 순)
   - `output/gating_diagnosis/README.md` (5 KB)
   - `output/pgct_spatial_analysis/REPORT.md` (41 KB)
@@ -26,7 +26,7 @@
   - `output/ijcai_review_20261015/REPORT.md` (36 KB)
   - `output/env_view_20261015/probes/README.md` (2 KB)
 - Part 7. 실행기·구현 문서
-  - `latent_team/README.md` (30 KB)
+  - `latent_team/README.md` (31 KB)
   - `latent_team/BASELINES.md` (8 KB)
   - `examples/README.md` (5 KB)
   - `examples/EX5_PGCT.md` (5 KB)
@@ -35,7 +35,7 @@
   - `examples/PGCT_TRANSFER_EXPERIMENTS.md` (13 KB)
   - `examples/HARD_RWARE_EXPERIMENTS.md` (9 KB)
 - Part 8. 대화 기록 원문 (Codex + Claude Code)
-  - `CONVERSATION_LOG.md` (1167 KB)
+  - `CONVERSATION_LOG.md` (1242 KB)
 - 부록. 통합 타임라인 (D=결정, E=실험, L/T=대화)
 
 ---
@@ -272,9 +272,72 @@ Codex의 지침 파일 동작은 [OpenAI 공식 AGENTS.md 문서](https://learn.
 
 # Part 3. 현재 연구 상태
 
-## 출처: `RESEARCH_STATE.md` (수정 2026-11-02 19:05)
+## 출처: `RESEARCH_STATE.md` (수정 2026-11-04 14:44)
 
 ### PGCT 현재 연구 상태
+
+#### 최신 확인 — 2026-11-04 14:42 KST, Codex (T187, 새 프로젝트 재실행 준비 완료)
+
+- **사용자 요청 반영(D117, E81)**: rware-main-amax-v2, 기존 넓은 지도·4 mode×seed1–3·10M. job별 최근 영상10개(final 포함), 로컬 순환 보존·W&B 종료 시 tail 업로드·수치 실시간. 짧은 W&B 경로로 D116 장애 해결.
+- **검증**: 전체271 테스트, 12 job plan-only, 실제 IPPO s1 384-step offline 영상 검증 완료(로컬10·W&B media10·최장177자). 본 학습 미시작. 실행: latent_team/run_main_amax_v2.ps1(사용자 직접).
+- **기존 실행 상태**: 14:42 상태 파일 기준 이전 main_amax 12개 중11 failed·1 running. 실제 본 학습은 중단/재시작하지 않았다.
+- 근거: output/video_retention_20261104/REPORT.md. 강제 종료 시 W&B 영상 업로드 불가할 수 있음.
+
+#### 최신 확인 — 2026-11-04 14:31 KST, Codex (T186, 51,200 step 종료 원인)
+
+- **장애(D116, E80)**: 넓은 지도 10M 실행의 첫 평가(51,200 step)에서 W&B 미디어 목적지 길이 262–268자로 파일 이동 실패. LongPathsEnabled=0. 짧은 경로 성공·260자 일반 경로 FileNotFoundError·확장 경로 성공을 격리 검증했다.
+- **실제 상태**: pgct_max s1–3·ippo s1–3·oracle_max s1–2 총 8개 failed at 51,200. oracle_max s3와 allk_max s1–3은 43,008–47,104 step에서 로그 증가 확인. 이전 T185의 전부 정상 실행 중 기록은 과거 스냅샷이다.
+- **복구 제안**: 짧고 새 -Name(예 amax2) 또는 짧은 별도 W&B 경로. 실패 job의 .pt 없음(첫 checkpoint 256,000). ResumePlan은 실패 job 복구가 아니다. 학습 코드·프로세스 변경 없음.
+- 근거: output/wandb_path_diagnosis_20261104/REPORT.md.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T185, 10M 유지·수렴 시 중단)
+
+- **운영(D115)**: 본 실험 10M 유지, 5–9M에서 `main_check.py` 수렴 판정 → 사용자가 해당 PID 중단. 기존 지도도 5M에 수렴하지 않았다(E79).
+- **주의**: queue는 VS Code 터미널(PID 7124)에서 실행 중. 12 job이 모두 시작될 때까지 닫지 말 것. 끊기면 `run_queue.ps1 -ResumePlan`.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T184, 넓은 지도 5M 충분성)
+
+- **판단(D114, E78)**: 넓은 지도는 5M 안에 다 익히기 어렵다고 보고 현재 10M 유지를 권했다(5M은 중간 판정점). 사용자 결정 대기.
+
+#### 최신 확인 — 2026-11-04 12:18 KST, Claude Code (T183, 본 실험 시작 점검)
+
+- **본 실험 진행 중**: `runs/main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005`(사용자가 11:59 시작, queue 4개 동시). pgct_max s1·s2·s3(PID 37720·28732·10936), ippo s1(PID 31872) 각 약 0.02M, 17–19 step/s, 오류 없음, W&B 온라인. 처음부터·넓은 지도·action_max·mirror 없음·영상 확인. 1단계 분기 PID 28892는 종료됨(maxgae_br1M의 `ippo_s5`는 미완료).
+- **주의**: plan의 total_timesteps가 10M(effective 10,000,384). 총 step 의존 schedule이 없어 5M 판정은 가능하나 소요 약 2배(12 job 약 20일). 의도 여부를 사용자에게 확인 중.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T181, 넓은 지도 확정)
+
+- **본 실험 환경(D113)**: `b6_wide_corner_indiv_comm5_pen005`. 사용자가 PID 28892 중단 후 앱 밖에서 `run_queue.ps1`로 시작 예정. 1.3M에서 `main_check.py`로 점검, 성숙 agent 2명 미만이면 요청 2개로 전환.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T180, 처음부터·난이도 상향·W&B 영상)
+
+- **결정 대기**: 난이도 후보 넓은 지도(`b6_wide_corner_indiv_comm5_pen005`, 권장, 1.3M 안전 조건) 또는 요청 2개(`b6_corner_indiv_comm5_req2_pen005`). D112, E77.
+- **실행**: 사용자가 1단계 분기(PID 28892) 중단 후 앱 밖에서 `run_queue.ps1 ... --save-video`로 본 실험 시작 예정. 본 실험 미시작.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T178, 본 실험 준비 완료)
+
+- **준비(D111, E76)**: r_c=5 후보 `b6_corner_indiv_comm5_pen005`, `latent_team/acv2_nomirror.json`, `run_queue.ps1 -ExtraPlanArgs -ModeMajor`, `latent_team/main_check.py`. smoke 15 job·테스트 258개 통과. 기존 IPPO는 초기 가중치가 달라 재사용하지 않는다.
+- **다음**: 11-05 새벽 1단계 종료 → seed 3개 비교로 Q2 mode 확정 → 사용자가 앱 밖에서 본 실험 시작(4개 동시, 약 11일) → 약 1.3M에서 `main_check.py` 점검.
+
+#### 최신 확인 — 2026-11-04 11:16 KST, Claude Code (T177, 본 실험 설계 제안)
+
+- **제안(D110, 승인 전)**: 11-05 새벽 1단계 결과로 Q2 mode 확정 → r_c=5 환경 후보·mirror 끄는 설정·smoke test 준비 → 처음부터 5M 본 실험(pgct_max·ippo·oracle_max·allk_max × seed 1–3, action_max, mirror 없음, r_c=5), 1.3M 중단 점검. 2개 병렬 약 13일.
+- **실행 중**: 1단계 분기 PID 28892(`ippo_s5`), 11-05 새벽 종료 추정.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T176, action_max gate 구현)
+
+- **구현(D109)**: gate v2에 `distance_mode="action_max"` 옵션과 `--ac-distance` 플래그를 넣었다. 기본값은 pooled. 테스트 255개 통과, 저장 checkpoint 대조에서 오프라인 분석과 차이 0(E75).
+- **다음(승인 필요)**: r_c=5 환경 후보 추가, action_max·mirror 없음 5M 학습, 논문 방법 절 수정. 1단계 분기(PID 28892)는 계속 실행 중.
+
+#### 최신 확인 — 2026-11-04 KST, Claude Code (T175, gate 오승인 해결안)
+
+- **제안(D108, 승인 대기)**: gate 거리를 공개 행동별로 나눠 최댓값으로 판정하고, 두 agent 모두 그 행동의 자기 사건이 n_min=8개 이상인 행동만 비교한다. 오프라인(E74) 25개 checkpoint에서 임계값 .5 그대로 같은 팀 최대 .28, 다른 팀 최소 .98.
+- **다음 단계(승인 필요)**: `reward_probe_ac_v2.py` 옵션 구현과 테스트, 새 5M 학습, 논문 거리 정의·식별 조건 수정.
+
+#### 최신 확인 — 2026-11-04 10:42 KST, Claude Code (T174, 다른 팀 거리 하락 원인)
+
+- **실행 중**: 1단계 분기 PID 28892 8/12 완료, `ippo_s5` 진행 중, 11-05 새벽 무렵 종료 추정. 2단계 6/6 완료. 중간 결과로는 어느 mode도 뒤처진 agent를 분명히 돕지 않는다(E73).
+- **gate 정밀도 문제(D107)**: v2 gate의 다른 팀 거리는 공통 반납 사건이 probe에서 늘며 희석되어 내려가고, 4.28M 이후 agent 2와 1·3·5 pair가 승인됐다(352 arc, 4M 이후 24%). mirror 제거로는 해결되지 않는다. 행동별 최대 거리는 후보일 뿐 구현하지 않았다.
+- **논문**: 사용자 수정본(r_c, M 제거)에 저자명이 있어 익명화 필요.
 
 #### 최신 확인 — 2026-11-02 KST, Claude Code (T173, IJCAI-27 형식 전환)
 
@@ -580,7 +643,7 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
 
 # Part 4. 질문·결론·설계 판단
 
-## 출처: `DECISIONS.md` (수정 2026-11-02 19:05)
+## 출처: `DECISIONS.md` (수정 2026-11-04 14:44)
 
 ### PGCT 질문·결론·설계 판단
 
@@ -2102,11 +2165,104 @@ E2의 완료 로그 3,907 update에서 최대 연결 성분 크기 3이 661회(�
   4. 한국어 논문은 검토용 2단 형식을 유지하고 초록·알고리즘 1·부록 제목을 영어판과 맞췄다.
 - 남은 일: 재현성 체크리스트, Overleaf 최종 빌드, 결과 약 1.4쪽 채우기.
 
+#### D107. v2 gate의 다른 팀 거리 하락은 공통 반납 사건의 희석 때문이다, 4M 이후 다른 팀 승인은 agent 2 pair — 2026-11-04 Claude Code (사용자 질문 T174)
+
+- 질문: 논문 그림(모서리·개인, seed 1, 5M)에서 different-team 응답 거리 EMA가 갈수록 떨어지고, 4M 이후 다른 팀 누적 승인이 소폭 오른 이유.
+- 관측(E73): 사건(r>=0.5)은 배송(팀별 goal)과 반납(자기 팀이 배송한 선반을 저장 칸에 내려놓음, 개인 보상에서도 반납자에게 약 1.0)이다. public view에는 goal 채널·선반 소속이 없어 반납 장면은 두 팀이 같고, 양 팀 예측기 모두 반납 probe에 0.8–0.95로 응답한다. 최근 32개 사건 중 반납 수는 1.02M 1–6에서 4.35M 13–15(활발한 agent 1·2·3·5)로 늘었다. 거리는 모든 probe를 합친 비율이라 공통 반납 응답이 분모만 키워 배송 불일치를 희석한다. (2,5) 거리 1.00→.78→.58→.40(1.02/2.05/3.07/4.35M).
+- 승인: 다른 팀 arc는 (1,2) 120(첫 4.28M), (2,3) 118(4.33M), (2,5) 114(4.35M) 총 352개뿐이고 모두 agent 2(사건 최다, 최근 사건의 약 40–47%가 반납)가 낀다. 전체 5,604 arc 중 6.3%, 4M 이후로는 24%.
+- 해석: 예측기 오류가 아니라 두 팀 보상 규칙이 실제로 공유하는 부분을 평균형 거리가 그대로 반영한 것이다. 팀 정의(보상 함수가 같음)를 판정하려면 한 곳이라도 다르면 막는 최대값형 검정이 맞고, 평균은 약한 검정이다. mirror를 빼도 추세는 같다(4.35M (2,5) .40→.39). r_c=5로 바꾸면 접촉이 잦아져 다른 팀 arc가 늘 수 있다(가설, 미검증).
+- 대응 후보(구현하지 않음, 사용자 결정 필요): 공개 행동별 거리의 최대값. 3.5M 이후 같은 팀 최대 .65–.71, 다른 팀 최소 .98로 갈리지만 1M에서는 같은 팀 최대 .98이라 0.5 임계값을 그대로 쓸 수 없다. 새 임계값·그룹 최소 크기가 필요하고, 이 run 하나로 정하면 과적합 위험이 있다.
+- 사용자 수정 논문(T174 첨부)의 `\author{HwanRyul Lee}`는 IJCAI 이중 맹검 위반이라 제출 전 익명으로 되돌려야 한다고 알렸다.
+
+#### D108. gate 거리 수정 제안: 공개 행동별 거리의 최댓값(두 agent 모두 그 행동의 자기 사건 n_min=8개 이상) — 2026-11-04 Claude Code (사용자 질문 T175, 구현 전·승인 대기)
+
+- 질문: D107의 다른 팀 오승인(공통 반납 사건의 희석)을 어떻게 해결하나.
+- 진단: 합산 거리 d = Σ|p−q|/Σ(|p|+|q|)는 행동별 거리 d_g의 응답 질량 가중평균(Σ_g w_g d_g)이다. 공유 행동(반납)의 w가 커지면 팀을 가르는 행동(배송, d≈1)이 묻힌다. 배송·반납이 반반이면 합산 거리는 약 0.4로 0.5 아래다. 즉 현재 gate에는 "팀을 가르는 사건이 probe의 대부분"이라는 숨은 가정이 있다.
+- 제안: d* = max_{g∈E_ij} d_g, E_ij = 두 agent 모두 최근 probe에 그 공개 행동의 자기 사건이 n_min(기존 `min_probes`=8)개 이상인 행동. E_ij가 비면 그 round는 비교하지 않는다(미성숙과 같은 처리). 임계값 .5, EMA, 최소 round는 그대로.
+- 근거: 팀 정의(보상 함수가 같음)를 판정하려면 모든 층에서 일치해야 하므로 최댓값형 검정이 맞다(평균 ≤ 최대). 경험 조건은 반납 경험이 없는 예측기(agent 0)가 낯선 장면에서 같은 팀을 막는 것을 방지한다. 오프라인(E74)에서 mirror 없이 같은 팀 최대 .28, 다른 팀 최소 .98(mirror 있으면 .33/.97)로 25개 checkpoint 모두 분리. 조건 없는 행동별 최대(같은 팀 .96)와 경험 4개(.86)는 실패.
+- 기각한 대안: 임계값만 낮추기(여유 .1, 반납 비중에 따라 이동), mirror 제거(효과 없음, D107), 반납 사건 제외(공유 사건을 미리 알아야 함), 이웃 불일치 가중(다른 팀이 함께 있어야 작동).
+- 한계: checkpoint 스냅샷이며 EMA 궤적이 아니다. 5M run 1개와 같은 가중치에서 갈라진 0.5M 분기 3개(모두 홀수 seed, r_c=3, 모서리·개인)뿐이다. 8은 데이터를 본 뒤 기존 값을 재사용한 것이다. 새 식별 조건은 "두 agent가 모두 8개 이상 경험한 행동 하나 이상에서 보상이 달라야 한다"이며, 팀 사건과 공유 사건이 같은 행동으로 일어나는 환경에서는 더 잘게 나눠야 한다(예: 행동 × 운반 여부).
+- 상태: 제안만 했다. 코드 변경·새 학습은 사용자 승인 대기.
+
+#### D109. D108 행동별 최대 거리를 gate v2 옵션으로 구현(기본값 pooled 유지) — 2026-11-04 Claude Code (사용자 승인 T176 "구현 진행")
+
+- 결정: `ACV2Config.distance_mode`("pooled" 기본, "action_max")와 `action_max_distance()`를 `latent_team/reward_probe_ac_v2.py`에 추가했다. action_max는 두 agent 모두 최근 own probe에 그 공개 행동이 `min_probes`(8)개 이상인 행동들의 거리 중 최댓값으로 판정한다. 그런 행동이 없으면 그 round는 비교하지 않는다(`no_common_action`, EMA·round 불변, gate 닫힘). contact_snapshot이면 rollout 시작 시점에 고정한 probe로 센다. 로그 행에 `pooled_distance`, `stratum`, 지표 `ac_v2_pairs_no_common_action`.
+- 실행: `train_from_scratch.py --ac-distance {pooled,action_max}`(v2 gate 전용, 켜면 job 이름 `_acv2_amax_`). `--ac-config` JSON으로도 지정 가능.
+- 유지: 임계값 .5, EMA .35, 최소 round 3, n_min 8. 필드가 없는 옛 설정은 pooled로 읽힌다. trainer·환경 코드 변경 없음.
+- 남은 일: r_c=5 환경 후보 추가(현재 `b6_corner_indiv_pen005`는 통신 3 고정), 새 5M 학습(승인 필요), 논문 거리 정의·식별 조건 수정.
+
+#### D110. 본 실험 설계 제안: 처음부터 5M, action_max gate, r_c=5, mirror 없음 — 2026-11-04 Claude Code (사용자 질문 T177, 제안·승인 전)
+
+- 판단: 팀 발견(Q1)은 D108·D109로 본 실험 준비가 됐다. critic 활용(Q2)은 분기 중간 결과에서 oracle 팀도 IPPO를 넘는 신호가 없어(oracle_max 5.9/6.0, IPPO 6.6/5.6, pgct_max 6.0/5.7/5.9 배송/episode, 1.02M에서 0.5M 분기), 1단계 seed 5 결과(11-05 새벽)로 mode를 확정한다. oracle_max가 IPPO를 못 넘으면 Q2는 "pgct_max ≈ oracle_max"로 잡는 것을 권했다.
+- 선행(학습 아님, 승인 필요): r_c=5 환경 후보 추가(기존 후보 유지), mirror 끄는 `--ac-config` JSON, 본 설정 그대로의 짧은 smoke test.
+- 별도 pilot 대신 본 실험 약 1.3M 시점 중단 점검: 오류·처리 속도(job당 25 step/s 이상), 성숙 agent 4명 이상, 같은 팀 승인 1개 이상, 다른 팀 승인 0(또는 극소수), `no_common_action`이 대부분이 아님. 실패 시 pgct_max job만 사용자가 중단.
+- 제안 격자: 모서리·개인·6 agent·감점 .005·r_c=5, 처음부터 5M, v2 gate `--ac-distance action_max`, mirror 없음, mode pgct_max·ippo·oracle_max·allk_max(선택 oracle_mature_max), seed 1·2·3, 평가 20×500 결정적, 마지막 3회 평균, 5M 판정. Q1 지표: 승인 arc 정밀도, 같은 팀 접촉·성숙 pair 재현율, 첫 승인 시점, pooled 거리 오프라인 비교. Q2: 전체·뒤처진 agent 배송, pgct_max − oracle_max.
+- 계산: 측정 처리 속도는 단독 약 32 step/s, 2개 병렬 job당 25–26 step/s(합계 약 52). 12 job(60M step)은 2개 병렬 약 13일, 15 job 약 16일. 3–4개 병렬은 미측정. pgct_max·ippo를 실행 순서 앞에 둔다. 기존 IPPO 5M(r_c=3) 재사용은 관측이 r_c와 무관함을 코드로 확인한 경우에만.
+- 선택 후속: 인접 goal × 개인 보상 칸(식별 조건 일반성).
+
+#### D111. 본 실험 실행 준비: r_c=5 후보, mirror 끄는 설정, queue 옵션, 점검 스크립트, IPPO 재사용 안 함 — 2026-11-04 Claude Code (사용자 승인 T178 "준비 진행")
+
+- 환경: `latent_team/env_candidates.py`에 `b6_corner_indiv_comm5_pen005`(= `b6_corner_indiv_pen005`에서 communication_range만 5) 추가. 이름은 `_indiv_`·`_pen005` 규칙을 지킨다. 기존 후보 불변.
+- gate 설정: `latent_team/acv2_nomirror.json`(`{"mirror": false}`), 거리는 `--ac-distance action_max`.
+- 실행기: `latent_team/run_queue.ps1`에 `-ExtraPlanArgs`(plan 인자 전달)와 `-ModeMajor`(-Modes 순서로 시작) 추가. 기본 동작 불변.
+- 점검: `latent_team/main_check.py`(읽기 전용). pgct_max에 D110 중단 기준을 적용하고, 같은/다른 팀 승인 arc, 첫 같은 팀 승인, `no_common_action` 비율, 속도를 출력한다. 속도 하한 기본 14 step/s(4개 동시 실행 측정 약 16).
+- IPPO 재사용 안 함: IPPO 관측·보상은 r_c와 무관하지만(E76), 기존 IPPO 5M(r_c=3, v1)의 초기 가중치 해시가 새 설정과 달라(s1 `d3b0…` vs `caae…`, s2 `ee82…` vs `30e4…`) 같은 seed·같은 초기 가중치 비교가 깨진다.
+- 권장 실행: 1단계 분기 종료와 Q2 mode 확정 뒤, 앱 밖 PowerShell에서 `run_queue.ps1 -Candidates b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo,oracle_max,allk_max -Seeds 1,2,3 -TotalTimesteps 5000000 -MaxConcurrent 4 -ModeMajor -Track -ExtraPlanArgs (gate 옵션)`. 4개 동시 실행은 job당 약 16 step/s(합계 약 64)로 2개(합계 약 52)보다 처리량이 크다. 12 job 약 11일, 15 job 약 14–15일 추정.
+- 상태: 준비만 했다. 본 실험은 시작하지 않았다(사용자가 실행).
+
+#### D112. 본 실험 방향 수정: 처음부터, 난이도 상향 후보 2개, W&B 영상, 1단계 분기 중단은 사용자 실행 — 2026-11-04 Claude Code (사용자 요청 T180)
+
+- 사용자 요청: 지금 실험은 적당히 끊고 바로 진행, 처음부터 학습, 환경 난이도는 살짝 높임, agent별 학습 속도와 영상을 W&B로 확인(PGCT에서 먼저 배운 agent가 있을 때 나머지의 학습 속도를 IPPO와 비교).
+- 후보(`env_candidates.py`, 각각 한 가지만 변경, r_c=5 기준): `b6_wide_corner_indiv_comm5_pen005`(shelf_columns 5, 11×16, goal (0,10)/(15,10)), `b6_corner_indiv_comm5_req2_pen005`(팀당 요청 2, trainer 자동 상향을 끄려고 `auto_scale_request_queue=False`).
+- 무작위 정책 비교(E77): 자기 팀 요청 pickup/agent·episode 기준 .88, 넓은 지도 .26(−70%), 요청 2개 .78(−12%).
+- 의견: 요청 2개는 '살짝'이지만 팀원 경쟁을 키워 보상을 못 받는 agent(미성숙 → pgct_max 승인 불가)를 늘릴 수 있다. 넓은 지도는 '먼저 배운 agent가 팀원 학습을 앞당기는가'에 더 맞지만 '살짝'이 아니다. 넓은 지도에 1.3M 점검(성숙 agent 2명 미만이면 중단 후 요청 2개로 전환)을 권했다. 선택은 사용자에게 맡김.
+- W&B: `--save-video`로 W&B 영상(5 평가마다), 로컬 mp4(평가마다 약 0.9MB). agent별 학습 속도는 기존 `train/agent_k_delivery_count` 등(1부터)과 Max-GAE `max_gae_*_agent_k`(0부터)로 이미 기록된다.
+- 1단계 분기(PID 28892) 중단은 사용자가 앱 밖에서 하도록 명령만 안내했다. Claude Code는 중단하지 않았다.
+
+#### D113. 본 실험 환경은 넓은 지도로 확정 — 2026-11-04 Claude Code (사용자 결정 T181 "넓은 지도")
+
+- `b6_wide_corner_indiv_comm5_pen005`(11×16, 개인 보상, 6 agent, 감점 .005, r_c 5), 처음부터 5M, v2 gate action_max·mirror 없음, mode pgct_max·ippo·oracle_max·allk_max × seed 1–3, `--save-video`, `run_queue.ps1 -MaxConcurrent 4 -ModeMajor`.
+- 안전 조건: 약 1.3M에서 pgct_max 성숙 agent가 2명 미만이면 중단하고 `b6_corner_indiv_comm5_req2_pen005`로 전환(D112).
+- 1단계 분기 중단과 본 실험 시작은 사용자가 앱 밖에서 한다. 이 시점까지 시작하지 않았다.
+
+#### D114. 넓은 지도 본 실험은 10M 유지 권장(5M은 중간 판정점) — 2026-11-04 Claude Code (사용자 질문 T184, 제안)
+
+- 근거(E78): 기존 지도도 5M에 20/ep 도달이 4.3–4.5M로 빠듯했고, 넓은 지도 초반 배송은 1/2.5–1/3이다. 5M 안에 대부분의 agent가 안정적으로 배송하기는 어렵다고 본다.
+- 총 step 의존 schedule이 없어 10M run의 5M 시점을 그대로 판정할 수 있다(T183). 12 job 종료 약 11-24.
+- 점검: 1.3M(성숙 agent 2명 미만이면 요청 2개로 전환, D113), 2M(평가 배송 시작 여부).
+- 상태: 제안. 10M 유지 여부는 사용자 결정 대기.
+
+#### D115. 10M 예산 유지, 5–9M 수렴 시 사용자가 중단 — 2026-11-04 Claude Code (사용자 결정 T185)
+
+- 사용자 결정: 10M 그대로 두되 5·6·7·8·9M에서 어느 정도 수렴하면 거기서 멈춘다.
+- 수렴 규칙(`latent_team/main_check.py`의 `convergence`): 시점 M에서 결정적 평가 구간 B=(M−.5M, M]와 A=(M−1M, M−.5M]의 평균 비교. 팀 배송/ep 변화 ≤ max(5%·B, .5)이고 모든 agent 배송/ep 변화 ≤ .3이면 수렴. 구간당 평가 5개 이상, M을 지난 평가가 있어야 판정.
+- 중단은 사용자가 한다(자동화는 판정·보고까지). 스크립트는 수렴했는데 실행 중인 job과 PID를 출력한다. 멈추면 queue가 다음 job을 시작한다.
+- 비교 원칙(권장): 주 비교는 공통 5M과 수렴(또는 10M) 최종값. 일찍 멈춘 job은 이후 평탄하다고 가정하므로 기준을 논문에 명시한다.
+- 정정: T178/T181의 "queue 창은 4개 시작 뒤 닫아도 된다"는 틀렸다. 12개가 모두 시작될 때까지 queue 창(현재 VS Code 터미널 PID 7124)을 유지해야 한다. 끊기면 `run_queue.ps1 -ResumePlan`으로 재개.
+
+
+#### D116. 51,200 step 공통 종료 원인: W&B 영상 경로 길이 제한 — 2026-11-04 Codex (T186, 분석 요청)
+
+- 관측·결론: 넓은 지도 10M 실행의 첫 평가(51,200 step)에서 W&B 미디어 목적지 길이 262–268자로 파일 이동 실패. LongPathsEnabled=0. 짧은 경로 성공·260자 일반 경로 FileNotFoundError·확장 경로 성공을 격리 검증했다.
+- 제안만 함: 새 실행의 짧은 -Name 또는 짧은 별도 W&B 디렉터리. 학습 코드 변경·중지·재시작은 승인/수행하지 않았다.
+- 복구 한계: 실패 8개는 첫 checkpoint 256,000 step 이전이라 .pt가 없으며 ResumePlan은 기존 폴더를 건너뛴다.
+- 이전 검증 한계 정정: E77의 영상 검증은 짧은 임시 경로라 실제 main 경로의 제한을 검출하지 못했다.
+- 근거: output/wandb_path_diagnosis_20261104/REPORT.md, diagnosis.json, path_probe.json.
+
+
+#### D117. 새 프로젝트 10M 재실행·job별 영상 최근 10개 보존 — 2026-11-04 Codex (T187, 사용자 요청)
+
+- 사용자 지시: 기존 rware-from-scratch가 아닌 새 프로젝트, 동일 10M, 각 학습 마지막 영상 10개만 보존. 후속 답변으로 프로젝트명 rware-main-amax-v2 확정.
+- 구현: 새 run_main_amax_v2.ps1, --video-keep-last 10, 로컬 rolling 10개(final 포함), W&B는 종료 시 tail 10개만 기록·수치는 실시간. W&B 저장을 짧은 wandb_data/<고유 ID>로 분리해 D116 장애 해결. 기존 실험 파일에는 소급 적용하지 않는다.
+- 영상 업로드 시점(종료 시)은 구현 판단이며 진행 안내와 최종 답변에 명시했다. 강제 종료는 업로드를 보장하지 않음.
+- 기존 4 mode × seed 1–3, 넓은 지도·action_max·mirror 없음·10M 유지. 본 학습은 사용자가 실행한다.
+- trainer·알고리즘·환경·probe·gate 임계값 변경 없음. 근거: output/video_retention_20261104/REPORT.md, E81.
+
 ---
 
 # Part 5. 실험·평가 기록
 
-## 출처: `EXPERIMENTS.md` (수정 2026-11-02 18:36)
+## 출처: `EXPERIMENTS.md` (수정 2026-11-04 14:44)
 
 ### PGCT 실험·평가 기록
 
@@ -3569,6 +3725,93 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - 실행 상태(읽기 전용): v1 run `runs/ac_20261023_185556`의 `pgct_s2`는 `job_status.json`이 failed(KeyboardInterrupt, 2026-11-02 18:01:52)로 바뀌었다. 약 3.19M에서 사용자가 중단한 것으로 보인다(T170 뒤). 1단계 분기 `runs/maxgae_br1M_20261102_165216`는 진행 중이며(작업 중 확인 시 `ippo_s1` 0.12M), 부분 결과는 문서에 넣지 않았다.
 - 한계: 그래프는 seed 1(발견)과 seed 2개(기준선)뿐이다. 통합 PGCT 학습 결과는 없다.
 
+#### E73. v2 gate 다른 팀 거리 하락·후반 승인 원인 분석과 분기 실험 중간 현황(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T174)
+
+- 대상: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1`(모서리·개인, seed 1, 5M, v2 reward probe gate, update 끝 접촉, mirror 사용, 통신 3). 팀 {0,2,4} vs {1,3,5}.
+- 방법(읽기 전용): `output/ac_drift_20261104/drift_analysis.py`가 checkpoint 1000·2000·3000·3500·4000·4250·4500·4750(1.02–4.86M)의 저장 예측기·사건 버퍼로 probe(최근 32개 + mirror)를 다시 만들고, 거리를 소유자·사건 종류(배송=FORWARD 사건, 반납=운반 1→0인 TOGGLE 사건)·원본/mirror로 나눴다. `transfer.jsonl`의 실제 allocation으로 다른 팀 arc를 셌다. `split_distance_check.py`는 공개 행동별 거리 최대값(그룹 4개 이상), `no_mirror_check.py`는 mirror 없는 거리를 같은 예측기로 계산했다. 출력은 각 `*_stdout.txt`.
+- 결과:
+  - 최근 32개 중 반납: 1.02M 1–6, 2.05M 6–10, 3.07M 10–12, 4.35M 13–15(agent 1·2·3·5). agent 0은 사건 64개·반납 2개, agent 4는 반납 7–10개.
+  - 다른 팀 거리 (1,2)/(2,3)/(2,5): 1.02M .99/1.00/1.00, 2.05M .75/.71/.78, 3.07M .62/.63/.58, 4.10M .53/.53/.56, 4.35M .46/.48/.40, 4.86M .49/.47/.47. agent 0 pair .89–.95, agent 4 pair .60–.70. 같은 팀 최대 .15–.23.
+  - 공유 비중(1−거리) (2,5): .00→.22→.42→.60(1.02/2.05/3.07/4.35M). 상위 기여는 모두 반납 probe(원본·mirror).
+  - EMA (1,2)/(2,3)/(2,5): 4.10M .52/.51/.55, 4.35M .48/.50/.49, 4.61M .47/.49/.45.
+  - 다른 팀 arc: (1,2) 120 첫 4.28M, (2,3) 118 첫 4.33M, (2,5) 114 첫 4.35M, 합계 352. 같은 팀 5,252(4M 이후 1,126).
+  - mirror 없음: 다른 팀 거리 거의 같음(4.35M (2,5) .40→.39), 2M 이후 같은 팀 최대 .09–.15(mirror 있을 때 .15–.23).
+  - 공개 행동별 최대: 같은 팀 최대 / 다른 팀 최소 = 1.02M .98/1.00, 2.05M .77/.99, 3.07M .79/.99, 3.58M 이후 .65–.71/.98–.99.
+- 분기 실험 현황(2026-11-04 10:42 KST): 모두 v1 A+C IPPO s1 checkpoint_01000(1.02M) 가중치에서 0.5M(500,736 step). 1단계 `runs/maxgae_br1M_20261102_165216`(PID 28892) 8/12 완료, `ippo_s5` 59,392 step, 남은 4 job은 11-05 새벽 무렵 종료 추정. 2단계 `runs/pgctd2_br1M_20261102_180212` 6/6 완료. 결정적 평가 20 episode × 500 step 마지막 3회 평균 배송/episode: ippo 6.6/5.6, allk_max 6.5/6.4, oracle_max 5.9/6.0, oracle_maxd1 6.1/6.0(s1/s3), oracle_mature_max 6.3/6.7/6.9, pgct_max 6.0/5.7/5.9(s1/s3/s5). agent 0은 모두 0, agent 1·4는 0–0.75. per-agent 지표 `eval/agent_k_delivery_count`는 20 episode 합계(합을 20으로 나누면 `eval/deliveries`와 일치).
+- 한계: seed 1 run 하나. 예측기는 checkpoint 시점 고정이며 오프라인 재계산이다. 사건 종류 분류는 행동·운반 비트 기준의 근사다. mirror 없는 거리와 행동별 최대는 gate를 다시 돌린 결과가 아니다. 분기 결과는 seed 2–3개의 중간값이다.
+
+#### E74. 행동별 최대 거리 gate 후보의 오프라인 검증(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T175)
+
+- 스크립트: `output/ac_drift_20261104/stratified_gate_check.py`, 출력 `stratified_gate_check_stdout.txt`.
+- 데이터: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1` checkpoint 19개(0.26–4.86M), `runs/pgctd2_br1M_20261102_180212/*_pgct_max_s{1,3,5}`의 checkpoint_00250·final(각 0.26M·0.50M, 1.02M IPPO s1 가중치에서 분기, 예측기는 분기 안에서 새로 학습). 팀은 agent 번호 % 2(`_balanced_assignments`).
+- 방법: 저장 예측기·사건 버퍼로 gate와 같은 probe(각 agent 최근 32개, mirror 있음/없음)를 만들고, gate 성숙 조건(사건 20개 이상, 자기 사건 평균 예측 .3 이상)을 먼저 적용했다. 합산 거리, 행동별 최대(그룹 4개 이상), 경험 조건 m=2·4·8(두 agent 모두 그 행동의 자기 사건 m개 이상)을 비교했다.
+- 결과(25개 checkpoint 전체, 같은 팀 최대 / 다른 팀 최소):
+  - mirror 없음: 합산 .28 / .39, 행동별 최대 .96 / .98, m2 .96 / .98, m4 .86 / .98, **m8 .28 / .98**.
+  - mirror 있음: 합산 .29 / .40, 행동별 최대 .95 / .97, m4 .80 / .97, **m8 .33 / .97**.
+  - m8에서도 모든 성숙 pair가 비교 가능한 행동을 하나 이상 가졌다(비교 pair 수가 합산과 같음).
+- 한계: checkpoint 스냅샷, EMA·접촉·round 미재현. seed 1 5M 하나와 같은 출발점의 짧은 분기. 홀수 seed·r_c=3·모서리·개인만.
+
+#### E75. action_max gate 구현 검증: 단위 테스트, 전체 테스트, 저장 checkpoint 대조(학습 없음) — 2026-11-04 Claude Code, 사용자 승인(T176)
+
+- 단위 테스트 `tests/test_gate_action_max.py` 7개 통과: 가중평균 항등식과 최댓값, 경험 조건, 반납 공유 합성 예제(pooled는 다른 팀 승인, action_max는 거절·같은 팀 승인; contact_snapshot 켬/끔), 공통 행동 없음 처리, 기본값·옛 설정·잘못된 mode, 실행 계획 이름·기록·v1 거부.
+- 전체 `tests/` 255개 통과(`--basetemp C:/Users/95101/AppData/Local/Temp/pgt_all`, `-p no:cacheprovider`).
+- 대조 `output/ac_drift_20261104/implementation_crosscheck.py`(출력 `implementation_crosscheck_stdout.txt`): E74와 같은 25개 checkpoint의 예측기·사건 버퍼를 새 `ACV2Controller`에 복원하고 `compare()`로 성숙 pair 299개를 계산했다. 오프라인 m8 결과와 거리 차이 0, 선택 행동 동일, 성숙 판정 동일. 같은 팀 최대 / 다른 팀 최소: mirror 없음 .281 / .975, mirror 있음 .328 / .970.
+- 한계: 실제 학습 중 EMA·접촉 궤적은 확인하지 않았다. E74의 데이터 범위 한계가 그대로 적용된다.
+
+#### E76. 본 실험 준비 검증: r_c=5 후보, 실제 trainer action_max, CLI smoke, 5M plan, 처리 속도(학습 결과 아님) — 2026-11-04 Claude Code, 사용자 승인(T178)
+
+- 테스트: `tests/test_comm5_candidate.py` 2개(plan 설정 차이가 communication_range뿐, IPPO 300 step 같은 행동에서 r_c 3·5의 관측·보상 비트 동일·접촉 수만 증가), `tests/test_gate_action_max.py::test_real_trainer_action_max_on_comm5`(1M checkpoint 분기, 허용적 gate 값으로 배선만 확인: action_max 비교 발생, donor = 접촉 ∩ 승인, checkpoint에 action_max·mirror 없음·contact_snapshot·r_c 5 기록), `test_env_candidates_plan`에 새 후보 추가. 전체 `tests/` 258개 통과.
+- CLI smoke(`--smoke-test`, 처음부터, `C:/Users/95101/AppData/Local/Temp/pgsmoke_main`, 프로젝트 밖): `--env-variant b6_corner_indiv_comm5_pen005 --reward-probe-ac --ac-gate v2 --ac-distance action_max --ac-config latent_team/acv2_nomirror.json`, mode pgct_max·ippo·oracle_max·allk_max·oracle_mature_max × seed 1·2·3, 15 job 모두 complete. 모두 r_c 5, seed 2 goal 좌우 반전, gate job은 action_max·mirror 없음·contact_snapshot, seed별 초기 가중치 동일(s1 `caae…`, s2 `30e4…`, s3 `8acd…`).
+- 5M plan-only(임시 폴더): job당 5,000,192 step, 평가 50 update마다 20 episode, Max-GAE donor 보류 100 update. queue plan-only `runs/plancheck_main_amax_20261104_b6_corner_indiv_comm5_pen005`(계획·bank만): `-ModeMajor` 순서 pgct_max s1–3 → ippo → oracle_max → allk_max.
+- 처리 속도(checkpoint 파일 시각): 단독 약 32 step/s, 2개 동시 job당 25–26, 4개 동시(10-22 queue, IPPO) job당 약 16.
+- `latent_team/main_check.py`를 2단계 분기에 시험 적용: pgct_max s1·s3·s5 같은 팀 승인 arc 1,920·1,350·1,510, 다른 팀 0, 첫 같은 팀 승인 0.02–0.03M.
+- 한계: smoke는 학습 결과가 아니다. 4개 동시 속도는 IPPO job 기준이며 gate job은 더 느릴 수 있다.
+
+#### E77. 난이도 후보 무작위 정책 비교, 후보 smoke, W&B 영상 확인(학습 결과 아님) — 2026-11-04 Claude Code, 사용자 요청(T180)
+
+- 무작위 정책(`output/difficulty_20261104/difficulty_random.py`, 유효 행동 균등, 20 episode × 500 step, seed 1 배치, reset seed 8,200,001부터, 출력 `stdout.txt`·`results.json`): agent·episode당 자기 팀 요청 pickup / 보상 사건(r≥.5) / 선반–goal 평균 거리. 기준 .883 / .025 / 10.0, 넓은 지도 .258 / 0 / 13.0, 요청 2개(실제 [2,2] 확인) .775 / .025 / 10.0. 사건 수는 적어 잡음이 크다.
+- 첫 smoke에서 요청 2개 후보가 trainer의 자동 상향으로 [3,3]이 되는 문제를 발견해 `CONFIG`에 `auto_scale_request_queue=False`를 넣었다. 재 smoke에서 [2,2].
+- smoke(`--smoke-test`, 임시 폴더): 두 후보 × pgct_max·ippo·oracle_max·allk_max × seed 1·2 모두 complete. 넓은 지도 goal (0,10)/(15,10), seed 2 반전.
+- 영상: smoke는 영상을 끈다(`train_from_scratch.py` smoke 설정). 1 update 일반 실행(`--save-video --track --wandb-mode offline`, 임시 폴더, 약 4.7분)에서 로컬 `videos/final.mp4`(약 0.88MB)와 W&B media 영상 생성. 5M plan에는 save_eval_video·wandb_log_eval_video True, wandb_video_interval 5, eval_interval 50.
+- 테스트: `tests/test_comm5_candidate.py::test_harder_variants_change_one_thing_each` 추가, 전체 259개 통과. 중간 한 번 `tests/test_env.py::test_inactivity_1` 실패, 단독 3회·전체 재실행 통과(수정하지 않은 환경 테스트, 불안정으로 판단).
+- 한계: 무작위 정책은 학습 가능성을 말하지 않는다. 넓은 지도의 5M 학습 가능성은 미확인.
+
+#### E78. 기존 지도 학습 이정표와 넓은 지도 초반 비교(읽기 전용) — 2026-11-04 Claude Code, 사용자 질문(T184)
+
+- 스크립트 `output/difficulty_20261104/learning_milestones.py`, 출력 `learning_milestones_stdout.txt`.
+- 기존 지도(11×10, 모서리·개인, 처음부터 5M, 결정적 평가 20 ep): 평가 배송/ep 0.5·5·10·20 첫 도달 — IPPO s1 0.72/1.28/2.51/4.25M, IPPO s2 0.82/1.43/2.46/4.40M, PGCT v2 s1 0.77/1.38/2.46/4.51M. 5M 시점 25.6/24.1/19.8, agent별(≥0.5/ep) 학습 시작 0.77–2.97M, 각 run 6명 중 5명.
+- 학습 초반(0.026M까지) train 배송/ep: 기존 지도 .48–.57, 넓은 지도 본 실험(`runs/main_amax_20261104_115922_*`) .14–.30.
+- 해석(가정): 단순 비례로 2.5–3.5배 늦으면 넓은 지도 배송 시작 약 2–3M, 5/ep 약 3.5–5M, 10/ep 약 6–9M. 비례 가정은 검증되지 않았다.
+
+#### E79. 수렴 판정·queue 재개 옵션 검증과 기존 지도 5M 수렴 여부(학습 없음) — 2026-11-04 Claude Code, 사용자 결정(T185)
+
+- `tests/test_main_check.py` 4개(평탄 수렴·상승 미수렴, 늦게 배우는 agent 1명이면 미수렴, 시점 미도달·평가 부족이면 판정 없음, 작은 잡음은 수렴). 전체 263개 통과.
+- 같은 규칙을 기존 지도 5M run에 적용(시점 2·3·4·4.95M): IPPO s1 4.95M 19.8→21.8, IPPO s2 18.2→21.6, PGCT v2 s1 16.2→19.9(배송/ep, A→B), agent 최대 변화 .59–1.09. 어느 시점도 수렴 아님.
+- `run_queue.ps1 -ResumePlan`(기존 plan 재사용, 기존 PID 기록 유지)을 `-PlanOnly`로만 확인: 계획을 다시 만들지 않고 12 job을 mode 순서로 인식. 확인용 로그는 지웠다.
+- 현재 본 실험 queue는 VS Code 터미널(PID 7124) 안에서 실행 중이며 4 job(부모 PID 7124)이 돌고 있다.
+
+
+#### E80. 51,200 step 종료 원인 조사·격리 경로 저장 검증(학습 없음) — 2026-11-04 Codex (T186)
+
+- 대상 plan: runs/main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005. 처음부터·넓은 지도·개인 보상·r_c=5·action_max·mirror 없음·10M·W&B online·영상 저장.
+- 14:31 KST 관측: pgct_max s1–3, ippo s1–3, oracle_max s1–2 failed at 51,200. oracle_max s3 47,104, allk_max s1/s2/s3 45,056/44,032/43,008; 상태 running 및 metrics 증가 확인(CIM 조회는 접근 제한).
+- 결과: 넓은 지도 10M 실행의 첫 평가(51,200 step)에서 W&B 미디어 목적지 길이 262–268자로 파일 이동 실패. LongPathsEnabled=0. 짧은 경로 성공·260자 일반 경로 FileNotFoundError·확장 경로 성공을 격리 검증했다. 로컬 eval_00050.mp4는 저장됨. 예외 위치는 trainer log_to_wandb → W&B Video.bind_to_run → shutil.move/open(dst).
+- 실제 수행: 기존 로그·manifest·설치 SDK 열람, 레지스트리 조회, 별도 output 폴더의 표준 라이브러리 파일 저장 검증. W&B Video 추가 재현은 의존성 로딩 중 결과 없이 진단 프로세스만 중단. 장기 학습·새 평가 실행 없음.
+- 코드 관측: --save-video이면 첫 평가부터 eval_video가 생겨 wandb_video_interval=5와 무관하게 업로드 경로가 호출된다(trainer 5192, 5228–5233).
+- 한계: 현재 프로세스에 수정 주입 안 함. 새 경로에서의 실제 W&B 영상 업로드·학습 재실행 검증은 안 함.
+- 근거: output/wandb_path_diagnosis_20261104/REPORT.md, diagnose.py, diagnosis.json, path_probe.py, path_probe.json; 각 job_status.json·metrics.jsonl·err.log.
+
+
+#### E81. 새 프로젝트·영상 10개 보존 실행기 검증(본 학습 아님) — 2026-11-04 Codex (T187)
+
+- 실제 수행: 관련 23개 및 전체 tests/ 271개 통과(53.15초), PowerShell AST 구문 검사, 새 launcher -PlanOnly로 12 job 계획 생성.
+- plan: runs/verify_am2_1104_b6_wide_corner_indiv_comm5_pen005/experiment.json. 프로젝트 rware-main-amax-v2, 요청 10M(실제 rollout 정렬 10,000,384), keep_last 10, 넓은 지도·개인·r_c5·action_max·mirror False, pgct_max/ippo/oracle_max/allk_max × s1–3 확인. 계획만이며 본 학습 미실행.
+- 실제 영상 smoke: output/video_retention_20261104/main_amax_20261104_144148_b6_wide_corner_indiv_comm5_pen005/b6_wide_corner_indiv_comm5_pen005_ippo_s1/final.pt. 처음부터 IPPO s1·CPU·넓은 지도, 32×12=384 step, 결정적 평가 1ep×2step, W&B offline. 13개 영상 생성 후 로컬10·W&B offline media10개, final 포함, 최장 W&B 경로177자, complete. 성능 결과/독립 seed 실험으로 세지 않는다.
+- 처음 sandbox 시도는 W&B backend 시작에 진전이 없어 해당 검증 프로세스만 중단. 새 폴더에서 sandbox 밖 offline 검증 완료. 실제 본 실험 프로세스 조작 없음.
+- 새 파일: latent_team/video_retention.py, run_main_amax_v2.ps1, tests/test_video_retention.py. 수정: train_from_scratch.py 옵션·설치 연결, README, .gitignore.
+- 한계: 온라인 업로드·본 학습 미실행. 종료 시 영상 업로드하며 강제 종료 시 로컬 파일만 남을 수 있음. 기존 결과 삭제 없음; 새 run의 오래된 영상만 사용자 지시대로 순환 삭제.
+- 근거: output/video_retention_20261104/REPORT.md, offline_result.json, verify_offline.py; 새 plan manifest.
+
 ---
 
 # Part 6. 분석 보고서 (output/, 작성일 순)
@@ -4648,7 +4891,7 @@ MAPPO/SePS/HetDPS는 현재 smoke를 마친 이식 구현이며 완료된 성능
 
 # Part 7. 실행기·구현 문서
 
-## 출처: `latent_team/README.md` (수정 2026-10-23 18:48)
+## 출처: `latent_team/README.md` (수정 2026-11-04 14:39)
 
 ### 잠재 팀 추론 + 팀 내부 critic consensus 검증 (latent_team)
 
@@ -4963,6 +5206,22 @@ E1-F에서 팀별 목표가 실제로 다를 때 행동·probe·critic 전이가
 - 감시·판정·보고 `latent_team/pilot_verdict.py`: plan의 job이 모두 complete가 될 때까지 기다린 뒤 다섯 기준(T104 숫자, 4번은 마지막 0.1M 배송 20건 미만이면 보류)을 판정한다. 결과는 `output/pilot_verdicts/<plan>/verdict.{json,md}`에 쓴다. 학습은 시작하지 않는다.
   - `python latent_team/pilot_verdict.py --plan runs/pilot_20261022_112521_b_e1f6_comm3_pen005 --spam-reference runs/pilot_20261021_133652_b_e1f6_comm3_nopen --compare runs/pilot_20261019_180044_b_e1f6_comm3 runs/pilot_20261021_133652_b_e1f6_comm3_nopen`
 - 비교 대상은 기존 `runs/pilot_20261019_180044_*`의 같은 seed 첫 1M이다. 학습률 일정이 없어 같은 step에서 바로 비교할 수 있다.
+
+#### 10M 재실행·최근 영상 10개 보존 (2026-11-04)
+
+앱 밖 PowerShell에서 `./latent_team/run_main_amax_v2.ps1` 실행. 넓은 지도·개인 보상·r_c=5,
+PGCT/ IPPO/ Oracle/ AllK Max-GAE × seed 1–3, action_max·mirror 없음, 10M, 최대 4개 동시 실행이다.
+W&B 프로젝트는 `rware-main-amax-v2`다. `-PlanOnly`를 주면 학습을 시작하지 않는다.
+
+- 새 옵션 `train_from_scratch.py --save-video --video-keep-last 10`은 **job별 최근 10개**만
+  `videos/`에 보존한다. `final.mp4`도 10개에 포함한다. 기존 실험에는 소급 적용하지 않는다.
+- 수치 지표는 W&B에 실시간으로 기록한다. 영상은 학습 종료 시 남아 있는 최대 10개만
+  `eval/tail_01`–`eval/tail_10`으로 한 번 업로드한다. 학습 중 영상은 로컬 `videos/`에서 확인한다.
+- 정상 종료와 Python 예외/Ctrl+C 시 업로드를 시도한다. `Stop-Process`, 창 강제 종료, 시스템 종료는
+  업로드를 보장할 수 없다. 이때도 저장된 로컬 최근 10개는 남는다.
+- W&B 로컬 데이터는 `wandb_data/<고유 ID>/`로 분리하여 긴 실험 폴더명에 따른 Windows 경로
+  제한을 피한다. 실제 경로와 영상 목록·업로드 상태는 job의 `video_retention.json`에 기록한다.
+- 이 옵션을 생략하면 기존 동작을 유지한다. trainer·PPO·환경·gate는 바꾸지 않는다.
 
 #### 아직 하지 않은 것
 
@@ -5627,7 +5886,7 @@ Detour에서도 기존 정책의 즉시 성능은 크게 떨어졌다. 장애물
 
 # Part 8. 대화 기록 원문 (Codex + Claude Code)
 
-## 출처: `CONVERSATION_LOG.md` (수정 2026-11-02 19:05)
+## 출처: `CONVERSATION_LOG.md` (수정 2026-11-04 14:44)
 
 ### PGCT 대화 기록 — 과거 요약과 이후 원문
 
@@ -22800,6 +23059,1092 @@ The flat Overleaf package also compiles to 7 pages. Last, I'll update the guide 
 
 기록은 `DECISIONS.md` D106, `RESEARCH_STATE.md`, `PGCT_DELIVERABLES_README.md`, 대화 기록 T173에 남겼습니다. 실행 중인 학습은 건드리지 않았고, 커밋은 하지 않았습니다.
 
+#### 원문 기록 T174 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+@"C:\Users\95101\OneDrive\Desktop\제출 논문\paper\english\main.pdf"
+논문을 여러 사유로 이처럼 바꿨어
+접촉(통신) 거리 3은 내가 넣은게 아닌 임의의 값이기 때문에 바꿨고
+M도 너무 과한 가정인거 같아 지웠어.
+
+현재 실험 현황 알려주고, 실험 그래프를 보니까
+Response distance에서 different team이 갈수록 떨어지던데 그 이유를 찾아줘 더해서 cumulative approved도 4M 이후로 different team에서 소폭 상향했어 그 이유도
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 첨부: 사용자 수정 논문 폴더 `C:\Users\95101\OneDrive\Desktop\제출 논문\paper\`의 `english/main.tex`를 프로젝트 사본과 비교했고 `figures/discovery.png`를 확인했다. 수정 논문 파일은 고치지 않았다.
+- 분석(읽기 전용, 학습 없음): `output/ac_drift_20261104/{drift_analysis.py,split_distance_check.py,no_mirror_check.py}`와 각 stdout. 분기 실험 상태·평가 지표 집계. 보상 코드 `rware/multi_team_warehouse.py`의 `_reward_shelf_return` 확인.
+- 실행 중인 학습(PID 28892)은 건드리지 않았다. 학습 코드·gate 설정 변경 없음. 커밋 없음.
+- 대화가 길어져 중간에 맥락 요약이 일어났다. 요약 전에 보낸 진행 안내 중 일부는 원문을 확인할 수 없어 `대화 요약`으로 표시했다. 진행 안내 대부분을 영어로 보냈다.
+- 기록: `DECISIONS.md` D107, `EXPERIMENTS.md` E73, `RESEARCH_STATE.md`, 이 T174, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+The user's folder includes the `.tex` source, so I'll compare it with the project copy to see exactly what changed.
+
+[대화 요약 — 원문 일부 확인 불가] 수정본이 이미 여러 지적을 반영했음을 확인했고, `\author{HwanRyul Lee}`가 이중 맹검에 걸리는 심각한 문제라고 알린 뒤 실험 현황 확인으로 넘어간다고 안내했다(영어).
+
+[대화 요약 — 원문 일부 확인 불가] 2단계(PGCT 분기) 6 job이 모두 끝났고 1단계는 12 job 중 8개가 끝났다고 알리고, 저장된 checkpoint 내부를 먼저 확인하겠다고 안내했다(영어).
+
+[대화 요약 — 원문 일부 확인 불가] 4.6M에서 0.5 아래로 내려간 다른 팀 EMA가 모두 agent 2가 낀 pair라고 알리고, checkpoint별 거리를 probe 종류별로 나누겠다고 안내했다(영어).
+
+The cause is clear. I'll check the early checkpoints (1–3M) in the same output to see how the trend developed.
+
+[대화 요약 — 원문 일부 확인 불가] 추세가 뚜렷하다고 알리고, 보고 전에 읽기 전용 점검 두 가지를 하겠다고 안내했다(영어).
+
+Each row's job name came out empty because of Windows path separators, so I'll print the per-agent results again with the names. Note: the per-agent values are totals over 20 evaluation episodes.
+
+Branch results have been re-sorted by job name (per-agent values are now per episode). I'll check that the figure you looked at uses the same data, then write the answer.
+
+Checked the reward code: a shelf-return reward goes to the agent that returns a shelf its own team delivered. One more quick offline check: does the trend still appear without mirrors (M), now removed from the paper?
+
+Without mirrors, the different-team distance follows the same trend (4.35M: (2,5) 0.40 → 0.39), so removing M does not fix the problem. Next I'll update the records and then answer.
+
+Now saving the records (D107, E73, research state, and the T174 conversation log). Then I'll give the final answer.
+
+##### Assistant — 최종 답변
+
+세 질문의 답을 먼저 정리합니다.
+- **different-team 거리가 떨어진 이유**: 학습이 진행될수록 probe 중 **선반 반납 사건**의 비율이 커졌습니다. 반납은 두 팀 모두 보상받는 공통 사건이라, 섞어서 계산하는 거리에서 배송 사건의 차이를 희석합니다.
+- **4M 이후 다른 팀 승인이 늘어난 이유**: 가장 활발한 agent 2와 다른 팀 1·3·5 사이의 EMA가 4.28–4.35M에 0.5 아래로 내려갔기 때문입니다.
+- **수정 논문의 저자명**: 그 전에 고칠 것이 하나 있습니다. 수정 논문에 `\author{HwanRyul Lee}`가 들어 있습니다. IJCAI는 이중 맹검이라 이대로 내면 desk reject 사유입니다. 제출본은 "Anonymous Submission"으로 되돌려야 합니다.
+
+#### 1. 실험 현황 (2026-11-04 10:42 KST 확인)
+
+모든 분기는 v1 A+C IPPO s1의 1.02M checkpoint에서 가중치만 가져와 **0.5M step 추가 학습**합니다. 설정은 모서리 goal, 개인 보상, 6 agent입니다.
+
+| 실험 | 상태 |
+|---|---|
+| 1단계 `runs/maxgae_br1M_20261102_165216` (PID 28892) | 12 job 중 8개 완료(ippo·allk_max·oracle_max·oracle_maxd1 × seed 1·3). `ippo_s5`가 59,392 step 진행 중. job당 약 4.5시간이 걸려 남은 4개는 **11-05 새벽 4–5시 무렵** 끝날 것으로 추정 |
+| 2단계 `runs/pgctd2_br1M_20261102_180212` | 6/6 완료(oracle_mature_max·pgct_max × seed 1·3·5). 프로세스 종료 |
+| v1 `pgct_s2` | 3.19M에서 failed(KeyboardInterrupt) 상태 그대로 |
+
+중간 결과는 결정적 평가 20 episode × 500 step의 마지막 3회 평균, 단위는 episode당 배송 수입니다.
+
+| mode | s1 | s3 | s5 |
+|---|---|---|---|
+| ippo | 6.6 | 5.6 | 진행 중 |
+| allk_max | 6.5 | 6.4 | 대기 |
+| oracle_max | 5.9 | 6.0 | 대기 |
+| oracle_maxd1 | 6.1 | 6.0 | 대기 |
+| oracle_mature_max | 6.3 | 6.7 | 6.9 |
+| pgct_max | 6.0 | 5.7 | 5.9 |
+
+- 뒤처진 agent 0은 모든 job에서 0입니다. agent 1과 4는 job마다 0–0.75로 들쭉날쭉합니다.
+- IPPO 두 seed끼리도 1.0 차이가 납니다. 현재로서는 어느 mode도 뒤처진 agent를 분명히 돕는다고 말할 수 없습니다.
+- 1단계 s5가 끝나야 seed 3개 비교가 가능합니다.
+
+#### 2. different-team 응답 거리가 갈수록 떨어진 이유
+
+**근거.** 그래프의 run(`runs/acv2_s1_20261029_084340`, 모서리·개인, seed 1, 5M, 팀 {0,2,4} vs {1,3,5})에서 checkpoint 8개(1.02M–4.86M)를 읽었습니다. 저장된 보상 예측기와 사건 버퍼로 probe를 똑같이 다시 만들고(최근 32개 + mirror), 거리를 사건 종류별로 나눴습니다. 학습은 하지 않았습니다.
+
+**원인.** 사건(r ≥ 0.5)은 두 종류입니다.
+- **배송**: 팀마다 goal이 달라 두 팀 예측기의 응답이 다릅니다. 이것이 팀을 구별하는 신호입니다.
+- **반납**: 자기 팀이 배송한 선반을 저장 칸에 내려놓으면 개인 보상으로 약 1.0을 받습니다(`rware/multi_team_warehouse.py`의 `_reward_shelf_return`). public view에는 goal 채널도, 선반이 어느 팀 것인지도 없습니다. 그래서 반납 장면은 두 팀에게 똑같이 보이고, 양쪽 예측기 모두 높게(0.8–0.95) 응답합니다. 예측기의 오류가 아니라, 두 팀 보상 규칙이 실제로 공유하는 부분입니다.
+
+학습이 진행되며 배송 뒤 반납까지 마치게 되자, 최근 32개 사건 중 반납 수가 늘었습니다.
+
+| 시점 | 최근 32개 중 반납 | (1,2) 거리 | (2,3) 거리 | (2,5) 거리 | 공유 비중 (2,5) |
+|---|---|---|---|---|---|
+| 1.02M | 1–6 | 0.99 | 1.00 | 1.00 | 0.00 |
+| 2.05M | 6–10 (활발한 agent 1·2·3·5) | 0.75 | 0.71 | 0.78 | 0.22 |
+| 3.07M | 10–12 | 0.62 | 0.63 | 0.58 | 0.42 |
+| 4.35M | 13–15 | 0.46 | 0.48 | 0.40 | 0.60 |
+
+거리 Σ|p−q| / Σ(|p|+|q|)는 모든 probe를 합쳐 계산합니다. 두 팀이 모두 높게 답하는 반납 probe는 분모만 키우고 분자는 거의 키우지 않습니다. 그래서 배송 probe에서의 큰 불일치가 점점 희석됩니다. 같은 팀은 두 종류 모두에서 일치하므로 0.1–0.2에 머뭅니다.
+
+**평균 곡선이 0.6 근처에서 멈춘 이유.** 평균은 pair마다 사정이 다릅니다.
+- agent 0은 사건이 64개뿐이고 최근 32개 중 반납이 2개입니다. agent 0이 낀 pair는 0.89–0.95로 남습니다.
+- agent 4는 반납 경험이 적어 다른 agent의 반납 probe에 0.45–0.65만 응답합니다. agent 4가 낀 pair는 0.6–0.7입니다.
+- 활발한 agent끼리의 pair (1,2)·(2,3)·(2,5)만 0.45 근처까지 내려갔습니다.
+
+**mirror(M)와의 관계.** 같은 예측기로 mirror를 빼고 다시 계산해도 추세가 같습니다. 예를 들어 4.35M (2,5)는 0.40에서 0.39가 됩니다. 반납의 mirror도 반납이라 사건 구성 비율이 바뀌지 않기 때문입니다. **M을 지워도 이 문제는 해결되지 않습니다.** 2M 이후 같은 팀 최대 거리는 mirror 없이 0.09–0.15로 오히려 더 좁아졌습니다(mirror 있을 때 0.15–0.23).
+
+#### 3. 4M 이후 different-team 승인이 소폭 늘어난 이유
+
+승인 조건은 EMA < 0.5, 비교 3회 이상, 양쪽 성숙, 그리고 update 시점의 접촉입니다. 다른 팀 승인은 세 pair에서만 나왔고, **모두 agent 2가 끼어 있습니다.**
+
+| pair | EMA (4.10M → 4.35M → 4.61M) | 다른 팀 접근 arc | 첫 승인 |
+|---|---|---|---|
+| (1,2) | 0.52 → 0.48 → 0.47 | 120 | 4.28M |
+| (2,3) | 0.51 → 0.50 → 0.49 | 118 | 4.33M |
+| (2,5) | 0.55 → 0.49 → 0.45 | 114 | 4.35M |
+
+- agent 2는 사건이 가장 많고(4.86M까지 34,367개), 최근 사건의 약 40–47%가 반납입니다. 그래서 다른 팀 1·3·5와의 거리가 가장 먼저 0.5를 넘어 내려갔습니다.
+- EMA가 0.45–0.50 사이를 오르내리고 접촉도 필요하기 때문에, 승인이 끊겼다 이어졌다 합니다. 그래서 누적 곡선에서는 소폭 상승으로 보입니다.
+- 비중으로는 작지 않습니다.
+  - 전체 접근 arc 5,604개 중 다른 팀은 352개(6.3%)입니다.
+  - 4M 이후만 보면 같은 팀 1,126개, 다른 팀 352개로 **24%**가 다른 팀입니다.
+
+#### 4. 해석과 대응 후보 (구현하지 않음)
+
+- **정밀도 실패는 논문에 정직하게 보고해야 합니다.** 지금 gate는 "보상 함수가 전반적으로 비슷한가"를 평균으로 잽니다. 그런데 팀의 정의는 "보상 함수가 같다"입니다. 같음을 판정하려면 한 곳이라도 다르면 막는 최대값형 검정이 맞고, 평균은 약한 검정입니다. 이 점이 이론적으로도 대응의 근거가 됩니다.
+- **후보 (가): 공개 행동별로 거리를 나눈 뒤 최대값 쓰기.** 오프라인으로 확인한 결과는 이렇습니다.
+  - 3.5M 이후에는 같은 팀 최대 0.65–0.71, 다른 팀 최소 0.98로 갈립니다.
+  - 그러나 1M에서는 같은 팀 최대도 0.98입니다. 행동별 probe가 적으면 불안정하기 때문입니다.
+  - 따라서 0.5 임계값은 그대로 쓸 수 없습니다. 새 임계값과 그룹 최소 크기가 필요합니다.
+  - 이 run 하나로 정하면 과적합 위험이 있습니다. 다른 seed에서 확인해야 합니다.
+- **r_c=5로 바꿀 때.** 접촉이 잦아져 EMA가 0.5 아래인 동안 다른 팀 arc가 더 많아질 수 있습니다. 가설이며 확인하지 않았습니다.
+- **수정 논문의 실험 설정.** 실제 run은 r_c=3과 mirror를 썼습니다. 수정본에 "r_c=5·mirror 없는 run은 예정"이라고 적어 두신 것은 맞습니다. 다만 그 run은 아직 없습니다.
+
+#### 남긴 것
+
+- 분석 스크립트와 출력: `output/ac_drift_20261104/`
+  - `drift_analysis.py`
+  - `split_distance_check.py`
+  - `no_mirror_check.py`
+  - 각 `*_stdout.txt`
+- 기록: `DECISIONS.md` D107, `EXPERIMENTS.md` E73, `RESEARCH_STATE.md`, 대화 기록 T174
+
+학습 코드·gate 설정·실행 중인 학습은 건드리지 않았고, 커밋하지 않았습니다.
+
+#### 원문 기록 T175 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+그래서 그 실패를 어떻게 해결하면 되는거야
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 분석(읽기 전용, 학습 없음): `output/ac_drift_20261104/stratified_gate_check.py`와 stdout. 팀 배정 코드(`rware/multi_team_warehouse.py`의 `_balanced_assignments`) 확인.
+- 코드·gate 설정·실행 중인 학습 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D108, `EXPERIMENTS.md` E74, `RESEARCH_STATE.md`, 이 T175, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+Teams are fixed by agent number parity ({0,2,4} vs {1,3,5}), so branch runs use the same split. Now I'll test candidate fixes offline against the saved predictors.
+
+Offline check done. Comparing per action and keeping only actions both agents have experienced at least 8 times separates teams at every point with the 0.5 threshold unchanged. Now saving the records, then the answer.
+
+##### Assistant — 최종 답변
+
+**권하는 방법: 거리를 공개 행동별로 따로 계산하고, 그중 최댓값으로 판정합니다.** 다만 두 agent가 모두 그 행동으로 보상받은 자기 사건이 8개 이상 있는 행동만 비교합니다. 저장된 예측기로 오프라인 검증한 결과, 임계값 0.5를 그대로 둬도 모든 시점에서 같은 팀과 다른 팀이 완전히 갈렸습니다. gate 코드에는 아직 넣지 않았습니다.
+
+#### 왜 이 방법인가
+
+현재 거리는 사실 **행동별 거리의 가중평균**입니다.
+
+d = Σ|p−q| / Σ(|p|+|q|) = Σ_g w_g · d_g
+
+여기서 w_g는 행동 g의 probe가 분모에서 차지하는 응답 비중입니다.
+
+- 두 팀이 함께 보상받는 반납(TOGGLE)의 비중 w가 커지면, 배송(FORWARD)에서 나오는 큰 차이(d ≈ 1)가 평균에 묻힙니다.
+- 즉 지금 gate에는 "팀을 가르는 사건이 probe의 대부분을 차지한다"는 숨은 가정이 있었고, 학습 후반에 그 가정이 깨졌습니다.
+- 배송과 반납이 반반이면 합산 거리는 약 0.4까지 내려갑니다. 반납은 배송 뒤에만 일어나므로 이것이 사실상의 바닥이고, 0.5 임계값보다 낮습니다.
+- 팀의 정의는 "보상 함수가 같다"입니다. 보상 함수가 같다면 모든 행동에서 응답이 일치해야 합니다. 따라서 한 행동이라도 다르면 승인을 막는 **최댓값이 맞는 검정**입니다. 평균은 항상 최댓값 이하입니다.
+- 이 수정은 방법을 덧붙이는 것이 아니라 **가정 하나를 없애는 것**이어서, "불필요한 가정을 줄이라"는 방향과도 맞습니다.
+
+**경험 조건이 필요한 이유.** 조건이 없으면 같은 팀이 막힙니다.
+- agent 0은 반납 경험이 2개뿐입니다. 그래서 같은 팀 agent 2의 반납 probe에 낮게 응답합니다.
+- 그 결과 반납 행동의 거리가 높게 나와 같은 팀 pair가 거절됩니다.
+- 그래서 두 agent 모두 그 행동의 자기 사건이 8개 이상일 때만 그 행동을 비교합니다. 8은 기존 gate의 `min_probes`(n_min = 8)를 그대로 쓴 값이라, 새 하이퍼파라미터가 생기지 않습니다.
+
+#### 오프라인 검증
+
+**대상 (학습 없음)**
+- v2 발견 run(모서리, 개인 보상, seed 1, 5M)의 checkpoint 19개
+- PGCT-D2 분기 `pgct_max` seed 1·3·5(1.02M IPPO에서 0.5M, 예측기는 분기 안에서 새로 학습)의 checkpoint 6개
+
+**방법**
+- 저장된 예측기와 사건 버퍼로 gate와 같은 probe(최근 32개)를 다시 만들었습니다.
+- gate의 성숙 조건을 먼저 적용했습니다.
+
+아래 표는 mirror 없이 계산한 값입니다(수정 논문의 설정). mirror를 넣어도 결론은 같습니다.
+
+| 방식 | 같은 팀 최대 | 다른 팀 최소 | 0.5로 갈리나 |
+|---|---|---|---|
+| 현재(합산 평균) | 0.28 | 0.39 (4.35M) | 4.1M 이후 실패 |
+| 행동별 최대, 경험 조건 없음 | 0.96 | 0.98 | 실패(같은 팀이 막힘) |
+| 행동별 최대, 경험 4개 이상 | 0.86 | 0.98 | 실패 |
+| **행동별 최대, 경험 8개 이상** | **0.28** | **0.98** | **모든 시점 성공** |
+
+- 경험 8개 조건으로도 비교할 행동이 없어진 성숙 pair는 하나도 없었습니다. 그래서 같은 팀의 비교 기회도 줄지 않습니다.
+- mirror를 넣으면 같은 팀 최대 0.33, 다른 팀 최소 0.97입니다.
+
+#### 한계
+
+1. **스냅샷 비교입니다.** checkpoint(250 update 간격) 시점의 거리이며, 5 update마다 갱신되는 실제 EMA 궤적은 아닙니다. 다만 0.28과 0.98의 간격이 커서 EMA 때문에 결론이 뒤집힐 여지는 작습니다.
+2. **데이터 범위가 좁습니다.** 5M run 1개와, 같은 IPPO s1 가중치에서 갈라진 0.5M 분기 3개뿐입니다. 모두 홀수 seed(같은 goal 배치), r_c=3, 모서리·개인 보상입니다. 인접 goal, 짝수 seed, r_c=5에서는 확인하지 않았습니다.
+3. **8은 이 데이터를 본 뒤에 고른 값입니다.** 기존 n_min을 재사용했지만, 다른 run에서 다시 확인해야 합니다.
+4. **식별 조건이 바뀝니다.** 새 조건은 "두 팀의 보상이, 두 agent가 모두 8개 이상 경험한 행동 중 적어도 하나에서 달라야 한다"입니다.
+   - RWARE에서는 배송이 FORWARD, 반납이 TOGGLE이라 행동으로 나뉩니다.
+   - 팀을 가르는 사건과 공유 사건이 같은 행동으로 일어나는 환경에서는 행동 안에서 다시 희석됩니다. 그때는 행동 × 운반 여부처럼 더 잘게 나눠야 합니다.
+5. **공유 행동만 비교되면 잘못 승인될 수 있습니다.** 한쪽 agent의 최근 사건에 팀을 가르는 행동이 8개 미만이면 그렇게 됩니다. 이번 데이터에서는 그런 다른 팀 pair가 없었습니다.
+
+#### 검토했지만 권하지 않는 방법
+
+- **임계값만 낮추기(예: 0.3).** 같은 팀 최대 0.28, 다른 팀 최소 0.39라 여유가 0.1뿐입니다. 이 값은 반납 비중에 따라 계속 움직여서 환경마다 다시 맞춰야 합니다.
+- **mirror 제거.** 효과가 없습니다(직전 확인).
+- **반납 사건을 probe에서 빼기.** 어떤 사건이 두 팀에 공유되는지 미리 알아야 합니다. 환경 지식을 가정하게 되어 심사에서 공격받습니다.
+- **이웃 간 불일치로 probe에 가중치 주기.** 서로 다른 팀이 이웃에 함께 있을 때만 작동합니다.
+
+#### 다음 단계 (승인 필요)
+
+1. `latent_team/reward_probe_ac_v2.py`에 옵션으로 구현합니다. 기본값은 지금 방식 그대로 둡니다.
+2. 단위 테스트를 붙입니다. 합산 거리 ≤ 행동별 최대, 공유 행동 희석 예제, 경험 조건을 확인합니다.
+3. 새 5M 학습(r_c=5, mirror 없음 포함)은 따로 승인을 받아 시작합니다.
+4. 논문의 거리 정의와 식별 조건을 바꾸고, 현재 run의 후반 오승인을 이 수정의 동기로 씁니다.
+
+검증 스크립트는 `output/ac_drift_20261104/stratified_gate_check.py`, 출력은 `stratified_gate_check_stdout.txt`에 있습니다. 기록은 `DECISIONS.md` D108, `EXPERIMENTS.md` E74, `RESEARCH_STATE.md`, 대화 기록 T175에 남겼습니다. 코드와 실행 중인 학습은 건드리지 않았고, 커밋하지 않았습니다.
+
+#### 원문 기록 T176 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+구현 진행
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 사용자가 T175의 "이 방식을 gate 옵션으로 구현하고 테스트할까요?"에 "구현 진행"으로 답했다. 새 학습 시작 승인은 아니다.
+- 코드 변경: `latent_team/reward_probe_ac_v2.py`(distance_mode·action_max_distance·compare 경로·로그), `latent_team/train_from_scratch.py`(`--ac-distance`, job 이름 `_amax`), 새 테스트 `tests/test_gate_action_max.py`, 대조 스크립트 `output/ac_drift_20261104/implementation_crosscheck.py`. trainer·환경·examples 변경 없음.
+- 검증: 새 테스트 7개, 전체 255개 통과, checkpoint 대조 차이 0.
+- 실행 중인 학습(PID 28892)은 건드리지 않았다. 새 학습 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D109, `EXPERIMENTS.md` E75, `RESEARCH_STATE.md`, 이 T176, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+The gate option is in (default unchanged). Next I'll add one log metric, wire up the run settings, and write tests.
+
+Adding the CLI flag and job-name tag. Under the existing flag, JSON overrides were already possible; this makes runs explicit and distinguishable by name.
+
+All 7 new tests pass, including that the pooled distance accepts the other team when returns are shared and action_max rejects it. Now the full test suite to check nothing else broke.
+
+The full suite passes (255). Next I'll run the implemented code on the saved checkpoints and confirm it reproduces the offline check numbers.
+
+The implemented code reproduces the offline analysis exactly (difference 0, same strata) on all 299 mature pairs. Next I'll check how the r_c=5 and no-mirror settings would be passed to a future run.
+
+Implementation and verification are done. Next I'll save the records (D109, E75, research state, T176) and then answer.
+
+##### Assistant — 최종 답변
+
+gate에 행동별 최대 거리를 **옵션으로 넣었습니다**. 기본값은 기존 방식 그대로라서, 옵션을 켤 때만 새 거리로 판정합니다. 새 학습은 시작하지 않았습니다.
+
+#### 바뀐 것
+
+| 파일 | 내용 |
+|---|---|
+| `latent_team/reward_probe_ac_v2.py` | 판정 거리를 고르는 설정 `distance_mode`를 추가하고, 행동별 최대 거리 함수와 그 판정 경로를 넣음 |
+| `latent_team/train_from_scratch.py` | `--ac-distance {pooled,action_max}` 플래그(v2 gate 전용)를 추가. 켜면 job 이름에 `_amax`가 붙음 |
+| `tests/test_gate_action_max.py` | 새 테스트 7개 |
+
+**`reward_probe_ac_v2.py`에서 달라지는 동작**
+- `distance_mode`는 기본값 `"pooled"`이고, `"action_max"`로 바꿀 수 있습니다.
+- 두 agent가 모두 8개 이상 경험한 공개 행동이 하나도 없으면, 그 round는 비교하지 않습니다(`no_common_action`). 이때 EMA와 round 수는 그대로 두고 gate는 닫습니다.
+- 로그 행에 `pooled_distance`(기존 거리)와 `stratum`(최댓값을 낸 행동)이 추가되고, 지표 `ac_v2_pairs_no_common_action`이 생깁니다.
+- `contact_snapshot`이 켜져 있으면 경험 수도 rollout 시작 때 고정한 probe로 셉니다.
+
+**바꾸지 않은 것**
+- 경험 기준 8은 기존 `min_probes` 값을 그대로 씁니다. 새 하이퍼파라미터는 없습니다.
+- 임계값 0.5, EMA β 0.35, 최소 round 3도 그대로입니다.
+- 이 필드가 없는 옛 checkpoint와 plan의 설정도 그대로 읽히며, pooled로 동작합니다.
+
+#### 검증
+
+**새 테스트 7개 (모두 통과)**
+1. 합산 거리가 행동별 거리의 가중평균과 같고, action_max가 그중 최댓값인지 수식으로 확인
+2. 경험 조건: 한쪽 agent의 배송이 2개뿐이면 배송 행동은 비교하지 않고, 공통 행동이 없으면 거리를 내지 않음
+3. 두 팀이 반납을 함께 보상받는 합성 예제
+   - pooled는 다른 팀을 승인합니다. D107에서 본 실패를 재현한 것입니다.
+   - action_max는 다른 팀을 거절하고 같은 팀은 승인합니다.
+   - `contact_snapshot`을 켠 경우와 끈 경우 모두 확인했습니다.
+4. 공통 행동이 없는 pair는 비교하지 않고 EMA도 갱신하지 않음
+5. 기본값이 pooled이고, 옛 설정이 읽히며, 잘못된 mode는 거부됨
+6. 실행 계획 확인
+   - `--ac-distance action_max`를 주면 job 이름이 `_acv2_amax_`가 되고 설정에 기록됩니다.
+   - v1 gate와 함께 쓰면 오류가 납니다.
+
+**전체 테스트**: 255개 모두 통과했습니다.
+
+**저장 checkpoint 대조**: 25개 checkpoint의 성숙 pair 299개를 trainer가 쓰는 `ACV2Controller.compare` 경로로 다시 계산했습니다. 오프라인 분석과 차이는 0이고, 최댓값을 낸 행동도 같았습니다.
+
+| 설정 | 같은 팀 최대 | 다른 팀 최소 |
+|---|---|---|
+| mirror 없음 | 0.281 | 0.975 |
+| mirror 있음 | 0.328 | 0.970 |
+
+#### 새 학습에 쓰려면 (승인 필요, 시작하지 않음)
+
+- **action_max 켜기**: `--reward-probe-ac --ac-gate v2 --ac-distance action_max`
+- **mirror 끄기**: `--ac-config`에 `{"mirror": false}`를 담은 JSON을 줍니다.
+- **r_c = 5**: 지금은 실행 옵션이 없습니다.
+  - `b6_corner_indiv_pen005`는 `latent_team/env_candidates.py`에서 통신 거리가 3으로 고정되어 있습니다.
+  - 기존 후보는 그대로 두고, r_c = 5인 환경 후보를 새로 추가해야 합니다.
+
+#### 아직 확인하지 않은 것
+
+- 실제 학습 중의 EMA·접촉 궤적에서 어떻게 동작하는지는 보지 않았습니다. 확인한 것은 checkpoint 스냅샷과 합성 예제뿐입니다.
+- 논문 방법 절의 거리 정의와 식별 조건은 아직 바꾸지 않았습니다.
+
+대조 스크립트는 `output/ac_drift_20261104/implementation_crosscheck.py`, 출력은 `implementation_crosscheck_stdout.txt`에 있습니다. 기록은 `DECISIONS.md` D109, `EXPERIMENTS.md` E75, `RESEARCH_STATE.md`, 대화 기록 T176에 남겼습니다. 실행 중인 학습(PID 28892)은 건드리지 않았고, 커밋하지 않았습니다.
+
+#### 원문 기록 T177 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+다음 실험은 뭘 하면 될까?
+이제 본 실험으로 넘어가도 될꺼 같은데
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: 분기·5M run의 job 상태와 checkpoint 파일 시각으로 처리 속도 추정, CPU 20개·GPU 사용률 확인. 학습·코드 변경 없음. 커밋 없음.
+- 본 실험 설계는 제안이며 승인되지 않았다. 새 학습을 시작하지 않았다.
+- 기록: `DECISIONS.md` D110, `RESEARCH_STATE.md`, 이 T177, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+본 실험 설계를 정리했습니다. 처리 속도는 2개 병렬 기준 job당 약 25–26 step/s로 확인했습니다. 이제 기록을 남기고 답하겠습니다.
+
+##### Assistant — 최종 답변
+
+**거의 넘어가도 됩니다.** 팀 발견(Q1) 쪽은 gate 수정으로 준비가 끝났습니다. 다만 본 실험은 사실상 한 번만 돌릴 수 있는 규모라서, 걸기 전에 세 가지를 먼저 정해야 합니다.
+
+#### 걸기 전에 정할 것
+
+**1. critic 활용(Q2)에 넣을 mode — 내일 새벽 결과로 결정합니다.**
+- 지금까지의 분기 결과(1.02M에서 0.5M 추가 학습, episode당 배송)에서는 oracle 팀을 줘도 IPPO보다 낫다는 신호가 없습니다.
+  - oracle_max: 5.9 / 6.0
+  - IPPO: 6.6 / 5.6
+  - pgct_max: 6.0 / 5.7 / 5.9
+- 1단계의 seed 5가 11-05 새벽에 끝나면 seed 3개로 다시 봅니다.
+- 그때도 oracle_max가 IPPO를 못 넘으면, 본 실험의 Q2는 "PGCT가 IPPO를 이긴다"가 아니라 **"발견한 팀이 oracle 팀만큼 쓸 만하다(pgct_max ≈ oracle_max)"**로 잡는 것이 현실적입니다. 논문의 중심은 어차피 팀 발견입니다.
+
+**2. 실행 준비 (학습 아님, 승인 필요)**
+- **r_c = 5 환경 후보 추가.** 지금 `b6_corner_indiv_pen005`는 통신 거리 3으로 고정되어 있습니다. 기존 후보는 그대로 두고 새 후보를 만듭니다.
+- **mirror 끄는 설정 JSON**을 만듭니다.
+- **smoke test.** 본 실험과 똑같은 설정(action_max, mirror 없음, r_c = 5, contact_snapshot)으로 실제 trainer를 수천 step만 돌려, 끝까지 오류 없이 도는지 봅니다.
+
+**3. 별도 pilot은 권하지 않습니다.**
+- action_max가 고치려는 문제는 4M 이후에 나타나서, 1M pilot으로는 확인되지 않습니다. 결과 판정도 5M에서 하기로 했습니다(D78).
+- 대신 본 실험을 바로 걸고, **약 1.3M 시점에 중단 기준을 점검**합니다. 지난 run에서 6명이 모두 성숙한 시점이 1.3M이었습니다.
+
+| 점검 항목 | 기준 |
+|---|---|
+| 오류·처리 속도 | 오류가 없고, job당 25 step/s 이상 |
+| 성숙한 agent 수 | 4명 이상 |
+| 같은 팀 승인 | 1개 이상 |
+| 다른 팀 승인 | 0개(또는 극소수) |
+| 비교 못 한 pair(`no_common_action`) | 대부분이면 안 됨 |
+
+기준을 못 넘으면 pgct_max job만 멈춥니다. 멈추는 것은 사용자가 직접 합니다.
+
+#### 권하는 본 실험
+
+| 항목 | 값 |
+|---|---|
+| 환경 | 모서리 goal, 개인 보상, 6 agent(3+3), 감점 .005, r_c = 5 |
+| 학습 | 처음부터(분기 아님), 5M, 판정은 5M에서 |
+| gate | v2 + `--ac-distance action_max`, mirror 없음, contact_snapshot(Max-GAE mode에서 자동) |
+| mode | **pgct_max, ippo, oracle_max, allk_max** (선택: oracle_mature_max) |
+| seed | 1, 2, 3 (seed 2는 goal 좌우가 바뀌어 배치 강건성도 봄) |
+| 평가 | 결정적 정책 20 episode × 500 step, 마지막 3회 평균 |
+
+각 mode가 답하는 질문은 이렇습니다.
+- **pgct_max**: 우리 방법입니다. 팀 발견(Q1)의 근거도 이 run에서 나옵니다.
+- **oracle_max**: 정답 팀을 줬을 때입니다. 발견이 완벽할 때의 상한입니다.
+- **allk_max**: 팀 구분 없이 이웃 전부를 씁니다. 발견이 필요한지를 보여 줍니다.
+- **ippo**: 공유 없는 기준선입니다.
+- **oracle_mature_max**(선택): 정답 팀을 주되 성숙한 agent끼리만 씁니다. 식별 오류와 성숙 지연을 나눠 볼 수 있습니다.
+
+**결과로 볼 것**
+- **Q1(팀 발견)**
+  - 정밀도: 승인된 arc 중 같은 팀 비율
+  - 재현율: 접촉·성숙한 같은 팀 pair 중 승인된 비율
+  - 첫 승인 시점
+  - 기존 pooled 거리와의 비교: 같은 checkpoint로 오프라인 재계산하면 되므로 추가 학습이 필요 없습니다.
+- **Q2(critic 활용)**: 전체 배송, 뒤처진 agent의 배송, pgct_max와 oracle_max의 차이
+
+#### 계산 시간 (냉정한 추정)
+
+- 지금까지 측정한 처리 속도
+  - 혼자 돌릴 때 job당 약 32 step/s
+  - 2개 병렬일 때 job당 약 25–26 step/s(합계 약 52 step/s)
+- 4 mode × 3 seed = 12 job, 총 60M step입니다. 2개 병렬이면 **약 13일**, 5번째 mode까지 넣으면 약 16일입니다.
+- 3–4개 병렬은 측정한 적이 없습니다. CPU는 20개라 더 빨라질 수는 있습니다.
+- 11-06–07에 시작하면 11-20 전후에 끝납니다. 초록 마감(01-04)까지 집필에 약 6주가 남습니다. **다시 돌릴 여유는 사실상 한 번뿐**입니다.
+- 실행 순서는 **pgct_max와 ippo를 앞에** 둡니다. 중간에 시간이 모자라도 핵심 결과는 남습니다.
+- 시간을 줄일 방법이 하나 있습니다. IPPO는 통신을 쓰지 않으므로 r_c와 무관할 수 있습니다. 그렇다면 기존 IPPO 5M(s1·s2, r_c = 3)을 재사용해 약 4일을 아낄 수 있습니다. 다만 관측이 정말 r_c와 무관한지 코드로 확인한 뒤에만 써야 합니다.
+
+#### 그 다음 (선택)
+
+**인접 goal × 개인 보상 칸**입니다. 두 팀의 goal이 붙어 있어도 보상 probe가 팀을 가르는지 보는, 식별 조건의 일반성 시험입니다. 본 실험이 끝나고 시간이 남을 때 합니다.
+
+**한 줄 정리**: 내일 새벽 1단계 결과를 본 뒤 Q2 mode를 확정하고, 오늘·내일 r_c = 5 후보와 smoke test를 준비해서, 11-06–07에 본 실험을 거는 순서를 권합니다.
+
+기록은 `DECISIONS.md` D110(제안, 승인 전), `RESEARCH_STATE.md`, 대화 기록 T177에 남겼습니다. 실행 중인 학습은 건드리지 않았습니다.
+
+#### 원문 기록 T178 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+준비 진행
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 사용자가 T177의 "r_c=5 후보 추가와 smoke test 준비를 진행할까요?"에 "준비 진행"으로 답했다. 본 실험 시작 승인은 아니다.
+- 코드 변경: `latent_team/env_candidates.py`(새 후보), `latent_team/acv2_nomirror.json`(새 파일), `latent_team/run_queue.ps1`(`-ExtraPlanArgs`, `-ModeMajor`), `latent_team/main_check.py`(새 파일), `tests/test_comm5_candidate.py`(새 파일), `tests/test_gate_action_max.py`(실제 trainer 테스트), `tests/test_latent_team.py`(새 후보 추가). trainer·환경·examples 변경 없음.
+- 실행: smoke 15 job(임시 폴더, 프로젝트 밖), plan-only 2회(임시 폴더, `runs/plancheck_main_amax_20261104_b6_corner_indiv_comm5_pen005`), 테스트 258개. 본 실험·장기 학습 없음. 실행 중인 학습(PID 28892)은 건드리지 않았다. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D111, `EXPERIMENTS.md` E76, `RESEARCH_STATE.md`, 이 T178, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+Coordinates are masked the same way in v1 and v2, and r_c only affects the contact graph, not observations. Now adding the r_c=5 environment candidate.
+
+Only naming fields differ (job names, save path, tags). I'll fix the test to compare after normalizing names.
+
+Now adding a test that runs the real trainer with action_max and r_c=5, then running the smoke test in the exact main-experiment form.
+
+The real-trainer test passes (action_max comparisons happen, donors = contact ∩ approval, r_c=5 and mirror-off recorded in the checkpoint). Next, the CLI smoke test from scratch with 5 modes × seeds 1·2·3.
+
+All 15 smoke jobs completed. Each has r_c=5, goal sides swap on seed 2, and modes within a seed share the same initial weights. I'll also check the actual 5M plan settings (warm-up, etc.) with plan-only.
+
+The existing queue script (`run_queue.ps1`) cannot pass the gate options (`--reward-probe-ac`, `--ac-distance`, etc.), so I'll add a pass-through parameter. First, I'll check the per-job speed when it ran 4 jobs at once.
+
+With 4 at once, per-job speed was 16 step/s (≈64 total), more total throughput than 2 at once (≈52). Now I'll check whether the existing IPPO 5M runs (r_c=3) started from the same initial weights as the new setup.
+
+The initial-weight hashes of the existing IPPO runs differ from the new setup (s1: d3b0… vs caae…). Reusing them would break the "same seed = same initial weights" comparison, so I advise **not reusing** them. Now adding the gate-option pass-through and mode-priority ordering to the queue script.
+
+Mode-priority ordering works (pgct_max s1–3 → ippo → oracle_max → allk_max). Next I'll run the full test suite and prepare a read-only script for the 1.3M check.
+
+The script works. I'll switch it to read the mode from the plan instead of the job name, and print arc counts as integers.
+
+The check script works. Now the full test suite.
+
+Everything is ready, and the full suite passes (258). Next I'll save the records (D111, E76, research state, T178) and then answer.
+
+##### Assistant — 최종 답변
+
+본 실험을 걸 준비가 끝났습니다. 학습은 시작하지 않았고, smoke test까지 통과했습니다.
+
+#### 만든 것
+
+| 파일 | 내용 |
+|---|---|
+| `latent_team/env_candidates.py` | 새 환경 후보 `b6_corner_indiv_comm5_pen005` 추가. 기존 `b6_corner_indiv_pen005`에서 통신 거리만 3 → 5. 기존 후보는 그대로 |
+| `latent_team/acv2_nomirror.json` | mirror를 끄는 gate 설정 `{"mirror": false}` |
+| `latent_team/run_queue.ps1` | `-ExtraPlanArgs`(gate 옵션 전달)와 `-ModeMajor`(mode 순서대로 실행) 추가. 안 쓰면 기존 동작 그대로 |
+| `latent_team/main_check.py` | 1.3M 중단 점검용 읽기 전용 스크립트 |
+| `tests/test_comm5_candidate.py` 외 | 새 테스트 3개, 기존 후보 테스트에 새 후보 추가 |
+
+#### 확인한 것
+
+**r_c = 5 후보**
+- 설정을 비교하면 통신 거리만 다르고 나머지는 같습니다. seed 2에서 goal 좌우가 바뀌는 것도 기존과 같습니다.
+- IPPO로 같은 행동을 300 step 넣었을 때 관측과 보상이 r_c = 3과 비트 단위로 같았습니다. 달라지는 것은 접촉 수뿐이고, r_c = 5가 더 많습니다.
+
+**실제 trainer 테스트**
+- 통신 거리 5, mirror 없음, action_max 설정으로 실제 trainer를 돌렸습니다.
+- 행동별 비교가 실제로 일어났고, donor가 정확히 "접촉 ∩ 승인"이었습니다.
+- 설정이 checkpoint에 기록되는 것도 확인했습니다.
+
+**CLI smoke test**: 본 실험과 같은 명령 형태로, 처음부터, 5 mode × seed 1·2·3 = 15 job을 돌렸습니다.
+- 15개 모두 완료됐습니다.
+- 모든 job에서 통신 거리가 5였습니다.
+- gate job에는 action_max, mirror 없음, contact_snapshot이 기록됐습니다.
+- seed가 같으면 mode가 달라도 초기 가중치가 같았습니다.
+
+**5M plan 확인**
+- job당 5,000,192 step입니다.
+- 평가는 50 update마다 20 episode입니다.
+- Max-GAE donor는 처음 100 update 동안 보류됩니다.
+- queue에서 `-ModeMajor`를 주면 pgct_max s1–3 → ippo → oracle_max → allk_max 순으로 시작합니다.
+
+**전체 테스트**: 258개 모두 통과했습니다.
+
+#### 하나 바뀐 판단: 기존 IPPO 재사용 불가
+
+IPPO는 r_c와 무관한 것이 맞습니다. 그런데 기존 IPPO 5M run(r_c = 3)은 초기 가중치 해시가 새 설정과 다릅니다(s1 기준 `d3b0…` vs `caae…`). 본 실험은 같은 seed면 모든 mode가 같은 초기 가중치에서 출발하는 비교라서, 재사용하면 이 조건이 깨집니다. **IPPO도 새로 돌려야 합니다.**
+
+#### 계산 시간 (다시 추정)
+
+- 4개를 동시에 돌렸을 때 job당 약 16 step/s였습니다(합계 약 64). 2개 동시(합계 약 52)보다 전체 처리량이 큽니다.
+- 그래서 **`-MaxConcurrent 4`**를 권합니다.
+- 이 속도면 job 하나에 약 3.6일이 걸립니다.
+  - 12 job: 약 11일
+  - oracle_mature_max를 넣은 15 job: 약 14–15일
+- gate job은 조금 더 느릴 수 있습니다.
+- 1.3M 점검은 시작 후 약 하루 뒤입니다.
+
+#### 실행 방법 (1단계가 끝난 뒤, 앱 밖 PowerShell에서)
+
+1단계 분기(PID 28892)는 11-05 새벽에 끝납니다. 그 결과로 Q2 mode를 정한 뒤 거는 것을 권합니다. oracle_mature_max를 넣기로 하면 `-Modes` 끝에 추가합니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_queue.ps1 -Candidates b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo,oracle_max,allk_max -Seeds 1,2,3 -TotalTimesteps 5000000 -MaxConcurrent 4 -ModeMajor -Track -Name ("main_amax_" + (Get-Date -Format 'yyyyMMdd_HHmmss')) -ExtraPlanArgs @('--reward-probe-ac','--ac-gate','v2','--ac-distance','action_max','--ac-config','latent_team/acv2_nomirror.json','--team-reward','individual')
+```
+
+1.3M 점검은 이렇게 합니다. 폴더 이름은 실행 시각에 따라 달라집니다.
+
+```powershell
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team\main_check.py runs\main_amax_<시각>_b6_corner_indiv_comm5_pen005
+```
+
+pgct_max 줄이 `OK`면 계속 둡니다. `CHECK: ...`가 나오면 그 job만 멈출지 판단하시면 됩니다.
+
+#### 남은 일
+
+- 내일 새벽 1단계가 끝나면 seed 3개로 결과를 비교하고, Q2 mode를 확정합니다.
+- queue 확인용 plan 폴더 `runs/plancheck_main_amax_20261104_b6_corner_indiv_comm5_pen005`가 하나 생겼습니다. 계획과 bank만 있고 학습은 없습니다. smoke 결과는 프로젝트 밖 임시 폴더에 두었습니다.
+
+기록은 `DECISIONS.md` D111, `EXPERIMENTS.md` E76, `RESEARCH_STATE.md`, 대화 기록 T178에 남겼습니다. 실행 중인 학습은 건드리지 않았고, 커밋하지 않았습니다.
+
+#### 원문 기록 T179 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+알겠어
+근데 Q2 mode가 정확히 뭘 말하는거야?
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 설명만 했다. 코드·학습·연구 결정 변경 없음. 커밋 없음. 진행 안내 없음.
+
+##### Assistant — 최종 답변
+
+"Q2 mode"는 제가 줄여 쓴 말입니다. **본 실험에서 critic 활용 질문(Q2)에 답하려고 함께 돌릴 비교 조건(mode)의 목록**을 뜻합니다. 정식 용어는 아닙니다.
+
+#### Q1과 Q2
+
+- **Q1(팀 발견)**: 팀 라벨 없이 각자의 보상 경험만으로 같은 팀을 찾는가?
+  - 근거는 pgct_max run의 gate 기록(승인 정밀도, 재현율, 첫 승인 시점)에서 나옵니다. 그래서 pgct_max 하나만 있어도 답할 수 있습니다.
+- **Q2(critic 활용)**: 찾은 팀원의 critic을 쓰면 학습에 도움이 되는가?
+  - 이 질문은 비교 대상이 있어야 답할 수 있습니다. 그래서 mode 여러 개를 함께 돌립니다.
+
+#### 각 mode가 Q2에서 맡는 역할
+
+모든 mode는 actor가 자기 보상으로 학습한다는 점이 같습니다. 다른 것은 **누구의 critic을 Max-GAE로 참고하느냐**뿐입니다.
+
+| mode | 참고하는 critic | Q2에서의 역할 |
+|---|---|---|
+| ippo | 없음(자기 critic만) | 기준선 |
+| pgct_max | gate가 승인한 이웃 | 우리 방법 |
+| oracle_max | 정답 팀원(접촉 중인) | 발견이 완벽할 때의 상한 |
+| allk_max | 팀 구분 없이 접촉 중인 모두 | "팀을 가릴 필요가 있나"에 대한 대조군 |
+| oracle_mature_max | 정답 팀원 중 보상 예측기가 성숙한 agent | pgct_max와 같은 성숙 조건을 건 oracle. pgct_max와의 차이는 식별 오류 때문, oracle_max와의 차이는 성숙 대기 때문이라고 나눠 볼 수 있음 |
+| (oracle_maxd1) | 정답 팀원, η = 1 | 분기 실험에만 쓴 강도 ablation. 본 실험에서는 뺌 |
+
+#### 내일 정할 것
+
+1단계 분기 결과(seed 3개)를 보고 아래 두 가지를 정합니다.
+
+1. **oracle_mature_max를 넣을지**
+   - 넣으면 15 job, 약 14–15일이 걸립니다.
+   - 빼면 12 job, 약 11일이 걸립니다.
+2. **Q2를 어떻게 주장할지**
+   - **oracle_max가 IPPO보다 확실히 나을 때**: "PGCT가 IPPO보다 낫고 oracle에 가깝다"로 갑니다.
+   - **oracle_max도 IPPO와 비슷할 때**: 정답 팀을 줘도 critic 활용 자체의 이득이 작다는 뜻입니다. 이때는 "발견한 팀이 정답 팀만큼 쓸 만하다(pgct_max ≈ oracle_max)"와 "아무나 쓰는 것(allk_max)보다는 낫거나 같다" 정도로 주장을 낮춥니다.
+   - 어느 쪽이든 mode 구성 자체는 거의 같습니다. 바뀌는 것은 주장의 강도와 oracle_mature_max를 넣을지 정도입니다.
+
+지금까지 분기 결과에서는 oracle_max(5.9 / 6.0)와 IPPO(6.6 / 5.6)의 차이가 seed 간 차이보다 작았습니다. 그래서 두 번째 경우일 가능성을 염두에 두고 있습니다.
+
+#### 원문 기록 T180 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+솔직히 환경 난이도의 문제도 있다고 보거든?
+지금 실험은 적당히 끊고, 바로 진행해도 될꺼 같아
+아예 처음부터 학습하는걸로 하고, 환경 난이도는 살짝 높여서 진행하는게 좋아보여
+그리고, 각 에이전트의 학습 속도와 영상도 wandb로 볼수 있어야돼
+특히 각 에이전트의 학습 속도를 보면 PGCT에서 먼저 학습한 에이전트가 있을때 다른 에이전트의 학습속도를 ippo와 비교해 볼수 있으니까
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 코드 변경: `latent_team/env_candidates.py`(후보 2개), `tests/test_latent_team.py`·`tests/test_comm5_candidate.py`(테스트), 새 `output/difficulty_20261104/difficulty_random.py`. trainer·환경·examples 변경 없음.
+- 실행: 무작위 정책 비교, smoke(임시 폴더), 1 update 영상 확인 실행(임시 폴더, W&B offline), plan-only, 테스트. 본 실험·장기 학습 없음. 1단계 분기(PID 28892)는 중단하지 않고 명령만 안내했다. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D112, `EXPERIMENTS.md` E77, `RESEARCH_STATE.md`, 이 T180, 통합 사본 재생성.
+
+##### Assistant — 진행 안내
+
+Per-agent delivery and return counts already go to W&B for both training and evaluation, and videos can be turned on with an existing option. Now I'm checking past results to choose how to raise the difficulty.
+
+There are no prior learning results for a harder environment. To show how much harder each option is in numbers, I'll compare candidates under a random policy, reusing the earlier request-sweep script.
+
+I'll add two harder-environment candidates (wider map, fewer requests), then compare how often a random policy experiences reward events in each.
+
+Measured: the wider map has early own-request pickups 3.4× lower and zero reward events under the random policy, so it is not "slightly" harder. Fewer requests (2 per team) is only about 12% lower. Next I'll test, in a smoke run, whether evaluation videos reach W&B.
+
+Smoke mode turns video off on purpose, so no video was made. I'll check with a short normal-mode run (1 update) instead.
+
+Videos work too: a local mp4 of about 0.9 MB, and the same video in W&B media. Next I'll check that the trainer runs on the wider map (pgct_max, smoke).
+
+Problem found: in the req2 candidate the per-team request count still comes out as 3, so my setting is being overwritten somewhere. The req2 random-policy numbers are therefore also wrong. Investigating.
+
+The trainer automatically raises the request count to at least the team size (3), unless that option is turned off. I'll turn the auto-adjust off for the req2 candidate only in its training settings, then re-check the measurement and the smoke run.
+
+Fixed: req2 now actually uses 2 requests per team in the trainer. I'll add one check to the tests and run the full suite.
+
+An unrelated environment test (`test_env.py::test_inactivity_1`) failed. Rerunning it alone to see whether it's flaky.
+
+It passes 3 times out of 3 when run alone. I'll run the full suite once more to confirm.
+
+259 tests pass. I'll check that the video option is recorded in the 5M plan and whether the Max-GAE per-agent metrics also go to W&B.
+
+Videos are recorded in the plan (W&B every 5 evaluations), and the Max-GAE per-agent metrics also go to W&B together with the update metrics. Now saving the records and writing the answer.
+
+##### Assistant — 최종 답변
+
+말씀하신 네 가지를 준비했습니다. 처음부터 학습, 난이도 상향, W&B 영상, agent별 학습 속도입니다. 다만 **난이도를 어느 쪽으로 올릴지 하나만** 정해 주셔야 합니다. 학습은 시작하지 않았고, 지금 돌아가는 실험도 끄지 않았습니다.
+
+#### 1. 난이도: 후보 두 개를 만들고 재 봤습니다
+
+r_c = 5 환경을 기준으로, 한 가지씩만 바꾼 후보 두 개를 만들었습니다. 무작위 정책으로 20 episode × 500 step을 돌려, 아직 학습하지 않은 agent가 보상을 얼마나 자주 만나는지 쟀습니다.
+
+| 후보 | 바꾼 것 | 자기 팀 요청 선반 pickup / agent·episode | 보상 사건(r ≥ .5) | 선반–goal 평균 거리 |
+|---|---|---|---|---|
+| 기준 `b6_corner_indiv_comm5_pen005` | – | 0.88 | 0.025 | 10 |
+| **넓은 지도** `b6_wide_corner_indiv_comm5_pen005` | 선반 열 3 → 5 (11×10 → 11×16) | 0.26 (−70%) | 0 | 13 |
+| **요청 2개** `b6_corner_indiv_comm5_req2_pen005` | 팀당 요청 선반 3 → 2 | 0.78 (−12%) | 0.025 | 10 |
+
+**두 후보의 차이**
+- **요청 2개**는 말 그대로 "살짝" 어려워집니다. 다만 3명이 선반 2개를 놓고 경쟁하게 됩니다.
+  - 그러면 보상을 한 번도 못 받는 agent가 늘어날 가능성이 큽니다. 지금도 agent 0이 그렇습니다.
+  - 이런 agent는 보상 예측기가 성숙하지 않아 pgct_max에서 승인을 받을 수 없습니다. 즉 **우리 방법이 구조적으로 도울 수 없는 agent가 늘어납니다.**
+- **넓은 지도**는 탐색 자체가 어려워집니다. 이것이 말씀하신 장면에 더 가깝습니다. 먼저 배운 agent의 critic이 아직 서툰 팀원의 학습을 앞당기는지 보는 장면입니다.
+  - 다만 "살짝"이 아닙니다. 초기 pickup이 3.4배 줄고, 무작위 정책으로는 보상 사건이 한 번도 없었습니다. 5M 안에 충분히 배우지 못할 위험이 있습니다.
+
+**제 의견**: 연구 목적에는 **넓은 지도**가 맞습니다. 대신 1.3M 점검에서 성숙한 agent가 2명 미만이면, 멈추고 요청 2개로 바꾸는 조건을 걸고 가는 것을 권합니다. 이 경우 손해는 약 하루입니다.
+
+참고로 요청 2개 후보에는 문제가 하나 있어 고쳤습니다. trainer가 요청 수를 팀 인원(3) 이상으로 자동으로 올려서, 처음에는 설정이 무시됐습니다. 이 후보에서만 자동 조정을 끄도록 했고, 실제로 [2, 2]가 적용되는 것을 확인했습니다.
+
+#### 2. 처음부터 학습
+
+이미 그렇게 짜여 있습니다. 모든 job이 무작위 초기 가중치에서 시작하고, seed가 같으면 mode가 달라도 같은 초기 가중치를 씁니다.
+
+#### 3. W&B 영상
+
+- `--save-video`를 켜면 됩니다. 실행 명령에 넣어 두었습니다.
+- W&B에는 5번 평가마다(약 0.26M step마다) 평가 episode 영상이 올라갑니다. job당 약 20개입니다.
+- 로컬에는 평가 때마다 mp4가 저장됩니다. 하나에 약 0.9MB이고, job당 약 100개입니다.
+- 1 update짜리 실제 실행으로 로컬 mp4와 W&B 영상이 모두 생기는 것을 확인했습니다. smoke 모드는 영상을 일부러 끕니다.
+
+#### 4. agent별 학습 속도
+
+추가 구현 없이 이미 W&B에 agent별로 기록되고 있습니다.
+
+| 지표 | 뜻 |
+|---|---|
+| `train/agent_k_delivery_count`, `train/agent_k_return_count` | 학습 중 agent별 배송·반납 수 → 학습 속도 곡선 |
+| `eval/agent_k_delivery_count` | 평가 20 episode 합계 |
+| `update/agent_k/positive_reward_density` | 양의 보상을 받은 비율 |
+| `max_gae_critic_ev_agent_k`, `max_gae_reward_mature_agent_k` | agent별 critic 설명력, 보상 예측기 성숙 여부 |
+
+- **번호에 주의하세요.** 앞의 세 지표는 1부터(`agent_1`–`agent_6`), Max-GAE 지표는 0부터(`agent_0`–`agent_5`) 셉니다.
+- 같은 seed의 pgct_max와 ippo에서 같은 agent의 `train/agent_k_delivery_count` 곡선을 겹쳐 보면, 말씀하신 비교가 됩니다. 먼저 배운 agent가 있을 때 나머지 agent가 IPPO보다 빨리 배우는지 볼 수 있습니다.
+- 끝난 뒤에는 "agent별로 처음 배송 X회에 도달한 시점"을 표로 뽑는 분석 스크립트를 만들면 논문에 바로 쓸 수 있습니다.
+
+#### 5. 지금 돌아가는 실험 끄기
+
+1단계 분기는 PID 28892이고, `ippo_s5`가 0.20M까지 진행됐습니다. 이미 끝난 8개 job의 결과는 남습니다. 끄시려면 앱 밖 PowerShell에서 실행하세요. `ippo_s5`는 상태 파일에 "running"으로 남지만, 미완료 job으로 보면 됩니다.
+
+```powershell
+Stop-Process -Id 28892
+```
+
+#### 6. 실행 명령 (후보를 고른 뒤, 앱 밖 PowerShell에서)
+
+`-Candidates`에 고른 후보 이름을 넣습니다. 아래는 넓은 지도 기준입니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_queue.ps1 -Candidates b6_wide_corner_indiv_comm5_pen005 -Modes pgct_max,ippo,oracle_max,allk_max -Seeds 1,2,3 -TotalTimesteps 5000000 -MaxConcurrent 4 -ModeMajor -Track -Name ("main_amax_" + (Get-Date -Format 'yyyyMMdd_HHmmss')) -ExtraPlanArgs @('--reward-probe-ac','--ac-gate','v2','--ac-distance','action_max','--ac-config','latent_team/acv2_nomirror.json','--team-reward','individual','--save-video')
+```
+
+1.3M 점검은 `python latent_team\main_check.py runs\main_amax_<시각>_<후보>`로 합니다. 넓은 지도는 env가 커서 job당 속도가 16 step/s보다 느릴 수 있습니다.
+
+#### 검증
+
+- 두 후보 모두 4 mode × seed 1·2 smoke가 끝까지 돌았습니다.
+- 넓은 지도의 goal은 (0,10)/(15,10)이고, seed 2에서 좌우가 바뀝니다.
+- 전체 테스트 259개가 통과했습니다.
+- 한 번은 `tests/test_env.py::test_inactivity_1`이 실패했습니다. 혼자 3번 다시 돌렸을 때와 전체를 다시 돌렸을 때는 모두 통과했습니다. 수정하지 않은 환경 테스트라 불안정한 테스트로 보입니다.
+
+기록은 `DECISIONS.md` D112, `EXPERIMENTS.md` E77, `RESEARCH_STATE.md`, 대화 기록 T180에 남겼습니다. 커밋하지 않았습니다.
+
+#### 원문 기록 T181 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+넓은 지도
+
+##### 수행 기록 — 원문 대화와 별도
+
+- T180의 난이도 후보 질문에 대한 답. 기록만 갱신했다(D113, RESEARCH_STATE). 코드·학습 변경 없음, 본 실험 미시작, PID 28892 미중단. 커밋 없음. 진행 안내 없음.
+
+##### Assistant — 최종 답변
+
+넓은 지도(`b6_wide_corner_indiv_comm5_pen005`)로 확정하고 기록했습니다. 앱 밖 PowerShell에서 아래 순서로 진행하시면 됩니다.
+
+**1. 1단계 분기 끄기**
+
+```powershell
+Stop-Process -Id 28892
+```
+
+**2. 본 실험 시작** (4 mode × seed 1·2·3, 5M, 4개 동시 실행, W&B 영상 포함)
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_queue.ps1 -Candidates b6_wide_corner_indiv_comm5_pen005 -Modes pgct_max,ippo,oracle_max,allk_max -Seeds 1,2,3 -TotalTimesteps 5000000 -MaxConcurrent 4 -ModeMajor -Track -Name ("main_amax_" + (Get-Date -Format 'yyyyMMdd_HHmmss')) -ExtraPlanArgs @('--reward-probe-ac','--ac-gate','v2','--ac-distance','action_max','--ac-config','latent_team/acv2_nomirror.json','--team-reward','individual','--save-video')
+```
+
+- 처음 4개는 pgct_max s1·s2·s3와 ippo s1입니다.
+- queue 창은 4개가 모두 시작된 뒤에는 닫아도 됩니다.
+
+**3. 약 1.3M 시점 점검** (시작 후 하루 남짓)
+
+```powershell
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team\main_check.py runs\main_amax_<시각>_b6_wide_corner_indiv_comm5_pen005
+```
+
+- pgct_max에서 **성숙한 agent가 2명 미만**이면, 넓은 지도가 너무 어려운 것입니다. 멈추고 요청 2개 후보로 바꾸기로 한 조건입니다.
+- 다른 팀 승인이 생기면 그 자체로 확인할 문제입니다.
+- 점검 결과를 붙여 주시면 판정을 도와드리겠습니다.
+
+**학습 속도 비교 (W&B)**: 같은 seed의 pgct_max와 ippo에서 `train/agent_k_delivery_count`를 agent별로 겹쳐 보시면 됩니다.
+
+기록은 `DECISIONS.md` D113, `RESEARCH_STATE.md`, 대화 기록 T181에 남겼습니다.
+
+#### 원문 기록 T182 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+혹시해서 묻는데 이거 기존 모델 가져온게 아니라 아예 처음부터 하는거 맞지?
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 넓은 지도 5M plan-only 결과(임시 폴더)의 초기화 항목을 읽어 확인했다. 변경 없음. 진행 안내 없음.
+
+##### Assistant — 최종 답변
+
+네, 처음부터 학습합니다. 기존 모델은 가져오지 않습니다.
+
+- 실행 명령에 `--init-checkpoint`가 없습니다. 이전 분기 실험과 다른 점이 바로 이것입니다.
+- 넓은 지도 5M 계획을 미리 만들어 보니 `initialization`이 `random (no checkpoint, no curriculum)`이었습니다. 모든 job의 `init_checkpoint`도 비어 있었습니다. 즉 checkpoint도, 커리큘럼도 없이 무작위 가중치에서 시작합니다.
+- seed가 같으면 mode가 달라도 같은 무작위 초기 가중치를 씁니다. 그래서 pgct_max와 ippo를 같은 출발점에서 비교할 수 있습니다.
+- 실행 후에는 run 폴더의 `experiment.json`에서 같은 `initialization` 줄로 다시 확인하실 수 있습니다.
+
+#### 원문 기록 T183 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+실험 정상적으로 진행중인지 점검
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 점검: queue 로그, 프로세스, `experiment.json`, `main_check.py`, 오류 로그, W&B 로그. 학습을 멈추거나 바꾸지 않았다. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `RESEARCH_STATE.md`, 이 T183.
+
+##### Assistant — 진행 안내
+
+The queue started 4 jobs at 11:59–12:00 (pgct_max s1·s2·s3, ippo s1), and all 4 processes are alive. Next I'll check settings, progress, errors and speed.
+
+The settings are as intended: start from scratch, wide map, r_c 5, action_max, mirror off, video and W&B on. But **total steps are recorded as 10M, not 5M**. Checking where that came from.
+
+There is no learning-rate or entropy schedule tied to total steps, so the first 5M of a 10M run is identical to a 5M run. The cost is that the run takes twice as long. Next I'll check whether W&B upload is working.
+
+W&B is syncing normally (e.g. the pgct_max_s1 run `v4huteyz`). There are no errors in the error logs, only warnings. Saving the records and reporting.
+
+##### Assistant — 최종 답변
+
+본 실험은 정상적으로 돌고 있습니다. 다만 **총 학습량이 5M이 아니라 10M으로 잡혀 있어서**, 이 부분은 의도하신 건지 확인이 필요합니다.
+
+#### 점검 결과 (11-04 12:18 KST, 시작 후 약 20분)
+
+| 항목 | 상태 |
+|---|---|
+| 실행 폴더 | `runs/main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005` |
+| 프로세스 | 4개 실행 중: pgct_max s1·s2·s3, ippo s1 (11:59–12:00 시작). 1단계 분기(PID 28892)는 꺼져 있음 |
+| 진행 | 각 약 0.02M step, job당 17–19 step/s |
+| 오류 | 4개 job의 오류 로그에 경고만 있고 오류·traceback 없음 |
+| 초기화 | `random (no checkpoint, no curriculum)`, init checkpoint 없음 → 처음부터 학습 |
+| 환경 | 넓은 지도(선반 열 5, goal (0,10)/(15,10)), 개인 보상, r_c 5 |
+| gate | action_max, mirror 없음, contact_snapshot 켜짐, Max-GAE donor = gate |
+| W&B | 4개 run 모두 온라인 동기화 중 (예: pgct_max_s1 → `runs/v4huteyz`), 영상 기록 켜짐 |
+| gate 점검 | 아직 성숙한 agent 0명. 0.02M이라 정상이고, 판정은 약 1.3M에서 |
+
+#### 확인이 필요한 것: 총 step이 10M
+
+plan에 `total_timesteps = 10,000,000`이 기록되어 있습니다. queue 실행 때 10M이 넘어간 것으로 보입니다.
+
+- **결과는 오염되지 않습니다.** 학습률이나 entropy가 총 step에 따라 바뀌는 schedule이 없습니다. 그래서 10M run의 앞 5M은 5M run과 똑같고, 5M 판정은 5M 근처 평가와 checkpoint로 그대로 할 수 있습니다.
+- **달라지는 것은 시간입니다.** 지금 속도면 job 하나가 5M에 약 3.3일, 10M에 약 6.6일 걸립니다.
+  - 10M 그대로: 12 job이 끝나는 데 약 20일(11-24 무렵)
+  - 5M: 약 10일
+- **넓은 지도는 어려워서 5M으로 부족할 수 있습니다.** 그렇다면 10M이 오히려 나을 수도 있습니다.
+- **5M으로 줄이려면 지금이 가장 쌉니다.** 잃는 것은 약 20분입니다.
+  - 앱 밖에서 queue 창과 4개 프로세스(PID 37720, 28732, 10936, 31872)를 끄고, `-TotalTimesteps 5000000`으로 새 이름의 run을 다시 걸면 됩니다.
+  - 기존 폴더는 덮어쓰지 않고 남습니다.
+
+어느 쪽이든 1.3M 점검(내일 오후 무렵, 약 20시간 뒤)은 같은 방식으로 합니다.
+
+#### 원문 기록 T184 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+5M안에 현재 맵을 다 할수있나?
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 분석: 기존 5M run 3개의 학습 이정표, 본 실험 4개 job의 초반 train 배송. 새 스크립트 `output/difficulty_20261104/learning_milestones.py`. 학습 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `EXPERIMENTS.md` E78, `DECISIONS.md` D114, `RESEARCH_STATE.md`, 이 T184.
+
+##### Assistant — 진행 안내
+
+Early in training, the wide map has about 1/2.5–1/3 the per-episode deliveries of the base map (0.14–0.30 vs 0.48–0.57), close to the earlier random-policy estimate. Now saving the records and answering.
+
+##### Assistant — 최종 답변
+
+**5M 안에 넓은 지도를 다 익히기는 어렵다고 봅니다.** 배송을 시작하는 것까지는 될 가능성이 높습니다. 하지만 기존 지도처럼 대부분의 agent가 안정적으로 배송하는 수준까지는 5M이 모자랄 공산이 큽니다. 그래서 **지금 걸린 10M을 그대로 두는 쪽**을 권합니다.
+
+#### 근거 1: 기존 지도(11×10)는 5M에 어디까지 갔나
+
+처음부터 학습한 5M run 3개를 봤습니다. 모서리 goal, 개인 보상, 결정적 평가 20 episode 기준입니다.
+
+| run | 배송 0.5/ep 도달 | 5/ep | 10/ep | 20/ep | 5M 시점 배송/ep | 배운 agent(≥0.5/ep) |
+|---|---|---|---|---|---|---|
+| IPPO s1 | 0.72M | 1.28M | 2.51M | 4.25M | 25.6 | 5/6 |
+| IPPO s2 | 0.82M | 1.43M | 2.46M | 4.40M | 24.1 | 5/6 |
+| PGCT(v2) s1 | 0.77M | 1.38M | 2.46M | 4.51M | 19.8 | 5/6 |
+
+- 기존 지도에서도 5M은 거의 빠듯하게 맞는 예산이었습니다. 20/ep에 도달한 것이 4.3–4.5M입니다.
+- agent별로 배우기 시작한 시점은 0.77–2.97M로 흩어져 있습니다. 한 명은 5M까지 끝내 배우지 못했습니다.
+
+#### 근거 2: 넓은 지도는 처음부터 얼마나 느린가
+
+- **학습 초반 실측(0.026M까지)**: 학습 중 episode당 배송이 기존 지도 0.48–0.57, 넓은 지도 0.14–0.30입니다. 약 1/2.5–1/3 수준입니다.
+- **무작위 정책 비교(앞서 잰 값)**: 자기 팀 요청 선반을 집는 횟수가 1/3.4였습니다. 초반 실측과 대체로 맞습니다.
+- 선반–goal 평균 거리도 10에서 13으로 30% 깁니다. 그래서 다 배워도 episode당 최대 배송 수 자체가 기존 지도보다 낮을 것입니다.
+
+#### 추정 (거친 가정)
+
+학습 시점이 단순히 2.5–3.5배 늦어진다고 가정하면 이렇습니다.
+
+| 기준 | 기존 지도 | 넓은 지도 추정 |
+|---|---|---|
+| 배송 시작(0.5/ep) | 약 0.8M | 약 2–3M |
+| 5/ep | 약 1.4M | 약 3.5–5M |
+| 10/ep | 약 2.5M | 약 6–9M |
+
+이 계산은 단순 비례 가정입니다. 실제로는 첫 성공 뒤 빠르게 늘 수도 있고 더 늦어질 수도 있습니다. 정확한 판단은 1–2M 시점의 실제 곡선으로 하는 것이 맞습니다.
+
+#### 연구 목적과의 관계
+
+- 보시려는 장면은 "먼저 배운 agent가 있을 때 나머지가 IPPO보다 빨리 배우는가"입니다. 이를 보려면 **누군가 배운 뒤 나머지가 아직 못 배운 구간**이 충분히 길어야 합니다.
+- 넓은 지도에서 그 구간은 대략 2M 이후입니다. 5M에서 끊으면 그 구간을 짧게만 보게 됩니다.
+- 팀 발견도 영향을 받습니다. 보상 예측기가 성숙하려면 자기 보상 사건이 20개 이상 필요한데, 사건이 1/3로 줄면 성숙도 늦어집니다.
+
+#### 권하는 운영
+
+- **10M 그대로 둡니다.**
+  - 총 step에 따라 바뀌는 schedule이 없어서, 5M 시점 결과도 똑같이 따로 판정할 수 있습니다. 논문에는 5M과 10M을 함께 보고할 수 있습니다.
+  - 12 job이 끝나는 시점은 약 11-24입니다(4개 동시 실행, job당 약 6.6일). 마감(01-04)까지 집필 기간은 남습니다.
+- **1.3M 점검 기준은 그대로 둡니다.** 기준 지도에서는 0.3M 무렵 5명이 성숙했습니다. 넓은 지도라도 1.3M에 성숙한 agent가 2명 미만이면 그때는 정말 너무 어려운 것으로 보고 요청 2개로 전환합니다.
+- **2M 무렵 한 번 더 봅니다.** 평가 배송이 시작됐는지 확인합니다. 이 지점이 위 추정이 맞는지 처음으로 확인되는 시점입니다.
+
+기록은 `EXPERIMENTS.md` E78, `DECISIONS.md` D114(제안), `RESEARCH_STATE.md`, 대화 기록 T184에 남겼습니다. 학습은 건드리지 않았습니다.
+
+#### 원문 기록 T185 — 2026-11-04 KST, Claude Code
+
+##### 사용자 — 원문
+
+10M 그대로 하되 5, 6, 7, 8, 9M에서 어느정도 학습이 수렴하면 거기서 멈추는걸로
+
+##### 수행 기록 — 원문 대화와 별도
+
+- 코드 변경: `latent_team/main_check.py`(수렴 판정·PID 출력), `latent_team/run_queue.ps1`(`-ResumePlan`, `-Candidates` 선택화), 새 `tests/test_main_check.py`. trainer·환경 변경 없음.
+- 실행 중인 학습은 멈추거나 바꾸지 않았다. 중단은 사용자가 한다(프로젝트 규칙). 커밋 없음. 진행 안내를 영어로 보냈다.
+- 이전 안내 정정: queue 창은 12개가 모두 시작될 때까지 유지해야 한다.
+- 기록: `DECISIONS.md` D115, `EXPERIMENTS.md` E79, `RESEARCH_STATE.md`, 이 T185.
+
+##### Assistant — 진행 안내
+
+The training processes' parent is a **VS Code terminal (PID 7124)**, and the queue loop is still waiting in it to start the remaining 8 jobs. If that terminal or VS Code is closed, the rest will not start. I'll make sure this is in the answer, and add a way to restart the queue from the existing plan. Next, the convergence check.
+
+The convergence check is in. I'll test it on synthetic data and the past 5M runs, then add a restart-from-existing-plan option to the queue script.
+
+The synthetic data ended before 5M, so no verdict was given. That is intended: the check waits until the milestone has been passed. I'll extend the test data's end point.
+
+Next, adding a resume-from-existing-plan option (`-ResumePlan`) to the queue script.
+
+The resume option works too: it recognizes the existing plan without re-planning. I'll run the full test suite and then save the records.
+
+##### Assistant — 최종 답변
+
+10M은 그대로 두고, 5·6·7·8·9M마다 수렴했는지 판정하는 기능을 점검 스크립트에 넣었습니다. 다만 **멈추는 것은 직접 하셔야 합니다.** 프로젝트 규칙상 자동화는 감시·판정·보고까지만 하기 때문에, 스크립트는 "이 job은 수렴했으니 멈춰도 된다"와 그 PID만 알려 줍니다.
+
+#### 수렴 판정 기준
+
+각 시점 M마다 결정적 평가(20 episode)를 두 구간으로 나눠 비교합니다.
+- 구간 A: M−1M ~ M−0.5M
+- 구간 B: M−0.5M ~ M
+
+아래 두 조건을 **모두** 만족하면 "수렴"입니다.
+1. **팀 전체 배송 수**: episode당 변화가 max(구간 B 값의 5%, 0.5) 이하
+2. **agent 6명 각각의 배송 수**: episode당 변화가 0.3 이하
+   - 늦게 배우기 시작하는 agent가 있으면 수렴으로 보지 않습니다. 보시려는 "나머지 agent의 학습 속도"를 놓치지 않기 위한 조건입니다.
+
+평가가 구간마다 5개 이상 있어야 판정하고, M을 지난 평가가 나온 뒤에 판정합니다.
+
+#### 사용법
+
+```powershell
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team\main_check.py runs\main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005
+```
+
+- job마다 각 시점의 판정이 `5M: team 15.2 -> 15.6/ep, largest agent change 0.12 (agent_3) -> converged` 같은 형식으로 나옵니다.
+- 마지막에는 "수렴했는데 아직 돌고 있는 job"과 그 PID가 나옵니다. `Stop-Process -Id <PID>`로 멈추시면 됩니다.
+- 하나를 멈추면 queue가 다음 job을 자동으로 시작합니다.
+- 마지막 checkpoint는 최대 0.26M 전 것이 남습니다(250 update마다 저장).
+
+#### 미리 알아 두실 점
+
+**1. 기존 지도도 5M에 수렴하지 않았습니다.**
+같은 기준을 기존 지도의 5M run 3개에 적용해 봤습니다. 4.95M에서도 0.5M마다 episode당 2–3.7개씩 늘고 있어서, 어느 시점에도 수렴 판정이 나오지 않았습니다. 넓은 지도는 7–10M까지 갈 가능성이 높습니다.
+
+**2. 비교는 같은 step에서 해야 공정합니다.**
+job마다 멈추는 시점이 다를 수 있습니다. 그래서 논문의 주 비교는 다음 두 가지로 하는 것을 권합니다.
+- **5M**: 모든 job이 도달하는 공통 시점
+- **수렴(또는 10M) 시점의 최종값**
+
+수렴해서 일찍 멈춘 job은 그 뒤로 평탄하다고 가정하는 것이므로, 논문에 그 기준을 명시해야 합니다.
+
+**3. queue 창은 12개가 모두 시작될 때까지 닫으면 안 됩니다.**
+앞서 "4개가 시작되면 창을 닫아도 된다"고 안내드렸는데, **틀린 안내였습니다.** 죄송합니다.
+- queue는 자리가 날 때마다 나머지 8개를 시작하는데, 지금 그 queue는 **VS Code 터미널(PID 7124)** 안에서 돌고 있습니다.
+- 마지막 4개가 시작되기까지 1–2주가 걸릴 수 있습니다. 그동안 VS Code나 그 터미널을 닫으면 나머지 job이 시작되지 않습니다.
+- 혹시 닫혔다면, 기존 계획을 그대로 이어서 시작하는 옵션을 만들어 두었습니다. 별도 PowerShell 창에서 아래를 실행하세요. 이미 시작된 job은 건너뛰고, 기존 PID 기록도 유지합니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_queue.ps1 -ResumePlan runs\main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005 -Name main_amax_20261104_115922 -Modes pgct_max,ippo,oracle_max,allk_max -MaxConcurrent 4 -ModeMajor
+```
+
+#### 검증
+
+- 수렴 규칙 테스트 4개를 추가했습니다(평탄/상승, 늦게 배우는 agent, 시점 미도달·평가 부족, 작은 잡음).
+- 전체 테스트 263개가 통과했습니다.
+- `-ResumePlan`은 실제로 job을 시작하지 않는 계획 확인 모드로만 확인했습니다. 기존 계획을 다시 만들지 않고 12개 job을 인식했습니다.
+- 실행 중인 학습은 건드리지 않았습니다.
+
+기록은 `DECISIONS.md` D115, `EXPERIMENTS.md` E79, `RESEARCH_STATE.md`, 대화 기록 T185에 남겼습니다. 커밋하지 않았습니다.
+
+
+#### 원문 기록 T186 — 2026-11-04 KST, Codex (정확한 발화 시각은 기록하지 않음)
+
+##### 사용자 — 원문
+
+PS C:\RWARE\MARL_RWARE\third_party\robotic-warehouse> Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+>> .\latent_team\run_queue.ps1 -Candidates b6_wide_corner_indiv_comm5_pen005 -Modes pgct_max,ippo,oracle_max,allk_max -Seeds 1,2,3 -TotalTimesteps 10000000 -MaxConcurrent 4 -ModeMajor -Track -Name ("main_amax_" + (Get-Date -Format 'yyyyMMdd_HHmmss')) -ExtraPlanArgs @('--reward-probe-ac','--ac-gate','v2','--ac-distance','action_max','--ac-config','latent_team/acv2_nomirror.json','--team-reward','individual','--save-video')
+
+51200에서 모든 학습이 끊기는데 이유 분석좀
+
+##### Assistant — 진행 안내
+
+51,200 step에서 종료되는 원인을 실행 로그와 큐 설정에서 확인하겠습니다. 먼저 인수인계와 연구 기록을 읽고, 해당 실행의 오류·종료 조건을 추적하겠습니다.
+
+##### Assistant — 진행 안내
+
+종료된 로그에서 공통 오류를 찾았습니다. 51,200 step의 첫 평가에서 W&B 영상을 저장하다 `FileNotFoundError`가 발생했습니다. 저장 경로 길이 문제인지 확인하고, 나머지 job도 같은 상태인지 확인하겠습니다.
+
+##### Assistant — 진행 안내
+
+실패한 8개 job은 모두 첫 평가의 W&B 영상 저장에서 종료됐습니다. 저장 경로가 262~268자로 Windows 기본 경로 제한을 넘고, 이 PC는 긴 경로 지원이 꺼져 있습니다. 나머지 4개는 아직 51,200 step 전까지 로그가 갱신되고 있습니다. 학습 없이 작은 영상으로 같은 오류를 재현해 원인을 확정하겠습니다.
+
+##### Assistant — 진행 안내
+
+경로 길이 문제를 재현했습니다. 같은 Python에서 짧은 경로에는 저장됐지만, 260자 경로에서는 로그와 같은 `FileNotFoundError`가 났고 긴 경로용 표기를 쓰면 저장됐습니다. 분석 결과와 재실행 시 주의점을 기록하겠습니다. 실패한 job은 첫 체크포인트 저장 시점인 256,000 step 전에 종료되어 이어 학습할 체크포인트가 없습니다.
+
+##### 수행 기록 — 대화 원문과 별도
+
+- 세션 제공 AGENTS.md 전체 및 HANDOFF.md, docs/SESSION_HANDOFF.md, RESEARCH_STATE.md 전체(초기 출력 일부 생략), DECISIONS.md·EXPERIMENTS.md·CONVERSATION_LOG.md의 최근 부분을 읽었다. 실제 분석 범위는 REPORT.md 참조.
+- 별도 output에 진단 스크립트·근거 생성, D116/E80/연구 상태 및 이 기록 갱신. 학습 코드 변경·학습 시작·중단·재시작·커밋 없음.
+- 진행 안내에서는 작은 영상 재현을 예고했으나 실제 완료 검증은 일반 파일 경로 저장이다. 추가 영상 API 검증은 결과 없이 진단 프로세스만 중단했다.
+
+##### Assistant — 최종 답변
+
+원인은 **W&B 영상 저장 경로가 Windows 경로 길이 제한을 넘는 것**입니다.
+
+- 첫 평가가 `1,024 step × 50 update = 51,200 step`에 실행됩니다.
+- 로컬 영상 저장은 성공하지만, W&B 폴더로 영상을 옮길 때 `FileNotFoundError`가 발생하며 학습이 종료됩니다.
+- 실제 목적지 길이는 **IPPO 262자, PGCT 266자, Oracle 268자**입니다. 이 PC는 긴 경로 지원이 꺼져 있습니다. 같은 Python에서 260자 경로의 저장 실패도 재현했습니다. [Windows 공식 설명](https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation)
+
+**11월 4일 14:31 KST 확인:** 해당 넓은 지도 실행에서 PGCT seed 1–3, IPPO seed 1–3, Oracle seed 1–2가 모두 같은 오류로 종료됐습니다. 나머지 4개는 당시 43,008–47,104 step까지 진행 중이어서 같은 오류가 예상됩니다.
+
+해결은 **새 실행에서 `-Name 'amax2'`처럼 폴더 이름을 짧게 지정하는 것**입니다. 나머지 조건과 영상 옵션은 유지할 수 있습니다. 근본적으로는 W&B 저장 경로를 짧은 별도 폴더로 분리하는 수정이 좋습니다.
+
+주의할 점은 다음과 같습니다.
+
+- 실패한 8개는 첫 체크포인트 저장 시점인 **256,000 step 이전**에 종료되어 이어 학습할 체크포인트가 없습니다.
+- `-ResumePlan`은 기존 폴더를 건너뛰므로 실패한 job을 다시 학습시키지 않습니다.
+- 이전 영상 검증은 짧은 임시 경로에서 수행되어 이번 문제를 잡지 못했습니다.
+
+상세 근거는 [분석 보고서](/C:/RWARE/MARL_RWARE/third_party/robotic-warehouse/output/wandb_path_diagnosis_20261104/REPORT.md)에 남겼습니다. 학습 코드 변경이나 학습 중단·재시작은 하지 않았습니다.
+
+
+#### 원문 기록 T187 — 2026-11-04 KST, Codex (개별 발화의 정확한 시각은 기록하지 않음)
+
+##### 사용자 — 원문
+
+실험을 다시 돌릴꺼거든?
+근데 rware-from-scratch wandb 프로젝트 말고 새 프로젝트에다 할꺼고
+똑같이 10M으로 하고,
+모든 영상을 저장하면 너무 많으니까 각 학습마다 마지막 10개만 냅둬줘
+
+##### Assistant — 진행 안내
+
+새 W&B 프로젝트를 지정하고 10M 설정을 유지하면서, 각 학습의 평가 영상은 최근 10개만 남기도록 실행기를 수정하겠습니다. 기존 결과는 보존하고, 재실행 명령까지 준비하겠습니다.
+
+##### Assistant — 질문 도구 표시 원문
+
+새 W&B 프로젝트 이름은 무엇으로 할까요? 답이 없으면 `rware-main-amax-v2`로 준비하겠습니다.
+
+선택지: rware-main-amax-v2
+
+##### 사용자 — 질문 답변 원문
+
+rware-main-amax-v2
+
+##### Assistant — 진행 안내
+
+프로젝트는 `rware-main-amax-v2`로 설정하겠습니다. 로컬에는 학습 중에도 최근 영상 10개만 유지하고, W&B에는 종료할 때 남은 10개만 업로드하도록 하겠습니다. W&B 저장 경로도 짧게 분리해 앞서 발생한 경로 길이 오류를 함께 해결하겠습니다.
+
+##### Assistant — 진행 안내
+
+최근 10개 영상만 남기는 처리를 추가했습니다. 수치 지표는 계속 W&B에 실시간으로 기록하고, 영상은 종료 시 한 번만 올리도록 분리했습니다. 이제 정상 종료·예외 종료에서 10개 제한이 지켜지는지, 긴 실험 폴더 이름에서도 W&B 저장이 되는지 검증하겠습니다.
+
+##### Assistant — 진행 안내
+
+새 프로젝트·10M·12개 job·영상 10개 보존 설정이 계획에 정확히 들어가는 것을 확인했고, 관련 테스트 23개가 통과했습니다. 실제 영상 인코딩과 W&B 저장은 별도의 짧은 오프라인 실행으로 확인 중입니다. 본 실험은 시작하지 않았습니다.
+
+##### Assistant — 진행 안내
+
+전체 테스트 271개가 통과했습니다. 실제 IPPO 짧은 검증에서도 영상 13개를 생성한 뒤 마지막 10개만 남았고, W&B 오프라인 기록에도 동일한 10개만 저장됐습니다. W&B 영상 경로는 최장 177자로 확인됐습니다. 재실행은 준비된 스크립트 한 줄로 시작할 수 있습니다.
+
+##### 수행 기록 — 대화 원문과 별도
+
+구현·검증 범위는 D117/E81와 output/video_retention_20261104/REPORT.md. 본 학습 미실행, 기존 결과 보존, 커밋 없음. 온라인 W&B 업로드를 검증했다고 주장하지 않음. 실제 읽은 SDK 원문·로컬 코드 및 생성 자료 경로는 보고서 참조.
+
+##### Assistant — 최종 답변
+
+반영했습니다.
+
+- **W&B 프로젝트:** `rware-main-amax-v2`
+- **학습:** 기존 4개 모드 × seed 1·2·3, 각각 **10M**
+- **영상:** 각 학습마다 **최근 10개만 보존**하며, 최종 영상도 포함합니다.
+- W&B 저장 경로를 짧게 분리해 이전 경로 길이 오류를 해결했습니다.
+
+앱 밖 PowerShell에서 실행하시면 됩니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1
+```
+
+수치 지표는 실시간으로 기록하고, **W&B 영상은 종료 시 마지막 10개만 업로드**합니다. 학습 중 영상은 로컬 `videos` 폴더에서 확인할 수 있습니다. 강제 종료하면 W&B 업로드가 생략될 수 있습니다.
+
+전체 테스트 **271개**와 실제 영상 보존 검증을 통과했습니다. 본 실험은 아직 시작하지 않았습니다.
+
 ---
 
 # 부록. 통합 타임라인
@@ -23178,3 +24523,37 @@ DECISIONS·EXPERIMENTS·CONVERSATION_LOG의 항목 제목을 날짜순으로 모
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T171 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T172 — 2026-11-02 KST, Claude Code |
 | 2026-11-02 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T173 — 2026-11-02 KST, Claude Code |
+| 2026-11-04 | Claude Code | DECISIONS.md | D107. v2 gate의 다른 팀 거리 하락은 공통 반납 사건의 희석 때문이다, 4M 이후 다른 팀 승인은 agent 2 pair — 2026-11-04 Claude Code (사용자 질문 T17 |
+| 2026-11-04 | Claude Code | DECISIONS.md | D108. gate 거리 수정 제안: 공개 행동별 거리의 최댓값(두 agent 모두 그 행동의 자기 사건 n_min=8개 이상) — 2026-11-04 Claude Code (사용자 질문 T175, |
+| 2026-11-04 | Claude Code | DECISIONS.md | D109. D108 행동별 최대 거리를 gate v2 옵션으로 구현(기본값 pooled 유지) — 2026-11-04 Claude Code (사용자 승인 T176 "구현 진행") |
+| 2026-11-04 | Claude Code | DECISIONS.md | D110. 본 실험 설계 제안: 처음부터 5M, action_max gate, r_c=5, mirror 없음 — 2026-11-04 Claude Code (사용자 질문 T177, 제안·승인 전) |
+| 2026-11-04 | Claude Code | DECISIONS.md | D111. 본 실험 실행 준비: r_c=5 후보, mirror 끄는 설정, queue 옵션, 점검 스크립트, IPPO 재사용 안 함 — 2026-11-04 Claude Code (사용자 승인 T17 |
+| 2026-11-04 | Claude Code | DECISIONS.md | D112. 본 실험 방향 수정: 처음부터, 난이도 상향 후보 2개, W&B 영상, 1단계 분기 중단은 사용자 실행 — 2026-11-04 Claude Code (사용자 요청 T180) |
+| 2026-11-04 | Claude Code | DECISIONS.md | D113. 본 실험 환경은 넓은 지도로 확정 — 2026-11-04 Claude Code (사용자 결정 T181 "넓은 지도") |
+| 2026-11-04 | Claude Code | DECISIONS.md | D114. 넓은 지도 본 실험은 10M 유지 권장(5M은 중간 판정점) — 2026-11-04 Claude Code (사용자 질문 T184, 제안) |
+| 2026-11-04 | Claude Code | DECISIONS.md | D115. 10M 예산 유지, 5–9M 수렴 시 사용자가 중단 — 2026-11-04 Claude Code (사용자 결정 T185) |
+| 2026-11-04 | Codex | DECISIONS.md | D116. 51,200 step 공통 종료 원인: W&B 영상 경로 길이 제한 — 2026-11-04 Codex (T186, 분석 요청) |
+| 2026-11-04 | Codex | DECISIONS.md | D117. 새 프로젝트 10M 재실행·job별 영상 최근 10개 보존 — 2026-11-04 Codex (T187, 사용자 요청) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E73. v2 gate 다른 팀 거리 하락·후반 승인 원인 분석과 분기 실험 중간 현황(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T174) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E74. 행동별 최대 거리 gate 후보의 오프라인 검증(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T175) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E75. action_max gate 구현 검증: 단위 테스트, 전체 테스트, 저장 checkpoint 대조(학습 없음) — 2026-11-04 Claude Code, 사용자 승인(T176) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E76. 본 실험 준비 검증: r_c=5 후보, 실제 trainer action_max, CLI smoke, 5M plan, 처리 속도(학습 결과 아님) — 2026-11-04 Claude Code |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E77. 난이도 후보 무작위 정책 비교, 후보 smoke, W&B 영상 확인(학습 결과 아님) — 2026-11-04 Claude Code, 사용자 요청(T180) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E78. 기존 지도 학습 이정표와 넓은 지도 초반 비교(읽기 전용) — 2026-11-04 Claude Code, 사용자 질문(T184) |
+| 2026-11-04 | Claude Code | EXPERIMENTS.md | E79. 수렴 판정·queue 재개 옵션 검증과 기존 지도 5M 수렴 여부(학습 없음) — 2026-11-04 Claude Code, 사용자 결정(T185) |
+| 2026-11-04 | Codex | EXPERIMENTS.md | E80. 51,200 step 종료 원인 조사·격리 경로 저장 검증(학습 없음) — 2026-11-04 Codex (T186) |
+| 2026-11-04 | Codex | EXPERIMENTS.md | E81. 새 프로젝트·영상 10개 보존 실행기 검증(본 학습 아님) — 2026-11-04 Codex (T187) |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T174 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T175 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T176 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T177 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T178 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T179 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T180 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T181 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T182 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T183 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T184 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Claude Code | CONVERSATION_LOG.md | 원문 기록 T185 — 2026-11-04 KST, Claude Code |
+| 2026-11-04 | Codex | CONVERSATION_LOG.md | 원문 기록 T186 — 2026-11-04 KST, Codex (정확한 발화 시각은 기록하지 않음) |
+| 2026-11-04 | Codex | CONVERSATION_LOG.md | 원문 기록 T187 — 2026-11-04 KST, Codex (개별 발화의 정확한 시각은 기록하지 않음) |

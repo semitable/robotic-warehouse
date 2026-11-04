@@ -1458,3 +1458,90 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - 참고 자료: ICCAS PDF 16장을 렌더링해 구성 확인. M4A는 머리 정보로 812.98초만 확인, 전사 못 함.
 - 실행 상태(읽기 전용): v1 run `runs/ac_20261023_185556`의 `pgct_s2`는 `job_status.json`이 failed(KeyboardInterrupt, 2026-11-02 18:01:52)로 바뀌었다. 약 3.19M에서 사용자가 중단한 것으로 보인다(T170 뒤). 1단계 분기 `runs/maxgae_br1M_20261102_165216`는 진행 중이며(작업 중 확인 시 `ippo_s1` 0.12M), 부분 결과는 문서에 넣지 않았다.
 - 한계: 그래프는 seed 1(발견)과 seed 2개(기준선)뿐이다. 통합 PGCT 학습 결과는 없다.
+
+## E73. v2 gate 다른 팀 거리 하락·후반 승인 원인 분석과 분기 실험 중간 현황(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T174)
+
+- 대상: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1`(모서리·개인, seed 1, 5M, v2 reward probe gate, update 끝 접촉, mirror 사용, 통신 3). 팀 {0,2,4} vs {1,3,5}.
+- 방법(읽기 전용): `output/ac_drift_20261104/drift_analysis.py`가 checkpoint 1000·2000·3000·3500·4000·4250·4500·4750(1.02–4.86M)의 저장 예측기·사건 버퍼로 probe(최근 32개 + mirror)를 다시 만들고, 거리를 소유자·사건 종류(배송=FORWARD 사건, 반납=운반 1→0인 TOGGLE 사건)·원본/mirror로 나눴다. `transfer.jsonl`의 실제 allocation으로 다른 팀 arc를 셌다. `split_distance_check.py`는 공개 행동별 거리 최대값(그룹 4개 이상), `no_mirror_check.py`는 mirror 없는 거리를 같은 예측기로 계산했다. 출력은 각 `*_stdout.txt`.
+- 결과:
+  - 최근 32개 중 반납: 1.02M 1–6, 2.05M 6–10, 3.07M 10–12, 4.35M 13–15(agent 1·2·3·5). agent 0은 사건 64개·반납 2개, agent 4는 반납 7–10개.
+  - 다른 팀 거리 (1,2)/(2,3)/(2,5): 1.02M .99/1.00/1.00, 2.05M .75/.71/.78, 3.07M .62/.63/.58, 4.10M .53/.53/.56, 4.35M .46/.48/.40, 4.86M .49/.47/.47. agent 0 pair .89–.95, agent 4 pair .60–.70. 같은 팀 최대 .15–.23.
+  - 공유 비중(1−거리) (2,5): .00→.22→.42→.60(1.02/2.05/3.07/4.35M). 상위 기여는 모두 반납 probe(원본·mirror).
+  - EMA (1,2)/(2,3)/(2,5): 4.10M .52/.51/.55, 4.35M .48/.50/.49, 4.61M .47/.49/.45.
+  - 다른 팀 arc: (1,2) 120 첫 4.28M, (2,3) 118 첫 4.33M, (2,5) 114 첫 4.35M, 합계 352. 같은 팀 5,252(4M 이후 1,126).
+  - mirror 없음: 다른 팀 거리 거의 같음(4.35M (2,5) .40→.39), 2M 이후 같은 팀 최대 .09–.15(mirror 있을 때 .15–.23).
+  - 공개 행동별 최대: 같은 팀 최대 / 다른 팀 최소 = 1.02M .98/1.00, 2.05M .77/.99, 3.07M .79/.99, 3.58M 이후 .65–.71/.98–.99.
+- 분기 실험 현황(2026-11-04 10:42 KST): 모두 v1 A+C IPPO s1 checkpoint_01000(1.02M) 가중치에서 0.5M(500,736 step). 1단계 `runs/maxgae_br1M_20261102_165216`(PID 28892) 8/12 완료, `ippo_s5` 59,392 step, 남은 4 job은 11-05 새벽 무렵 종료 추정. 2단계 `runs/pgctd2_br1M_20261102_180212` 6/6 완료. 결정적 평가 20 episode × 500 step 마지막 3회 평균 배송/episode: ippo 6.6/5.6, allk_max 6.5/6.4, oracle_max 5.9/6.0, oracle_maxd1 6.1/6.0(s1/s3), oracle_mature_max 6.3/6.7/6.9, pgct_max 6.0/5.7/5.9(s1/s3/s5). agent 0은 모두 0, agent 1·4는 0–0.75. per-agent 지표 `eval/agent_k_delivery_count`는 20 episode 합계(합을 20으로 나누면 `eval/deliveries`와 일치).
+- 한계: seed 1 run 하나. 예측기는 checkpoint 시점 고정이며 오프라인 재계산이다. 사건 종류 분류는 행동·운반 비트 기준의 근사다. mirror 없는 거리와 행동별 최대는 gate를 다시 돌린 결과가 아니다. 분기 결과는 seed 2–3개의 중간값이다.
+
+## E74. 행동별 최대 거리 gate 후보의 오프라인 검증(학습 없음) — 2026-11-04 Claude Code, 사용자 질문(T175)
+
+- 스크립트: `output/ac_drift_20261104/stratified_gate_check.py`, 출력 `stratified_gate_check_stdout.txt`.
+- 데이터: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1` checkpoint 19개(0.26–4.86M), `runs/pgctd2_br1M_20261102_180212/*_pgct_max_s{1,3,5}`의 checkpoint_00250·final(각 0.26M·0.50M, 1.02M IPPO s1 가중치에서 분기, 예측기는 분기 안에서 새로 학습). 팀은 agent 번호 % 2(`_balanced_assignments`).
+- 방법: 저장 예측기·사건 버퍼로 gate와 같은 probe(각 agent 최근 32개, mirror 있음/없음)를 만들고, gate 성숙 조건(사건 20개 이상, 자기 사건 평균 예측 .3 이상)을 먼저 적용했다. 합산 거리, 행동별 최대(그룹 4개 이상), 경험 조건 m=2·4·8(두 agent 모두 그 행동의 자기 사건 m개 이상)을 비교했다.
+- 결과(25개 checkpoint 전체, 같은 팀 최대 / 다른 팀 최소):
+  - mirror 없음: 합산 .28 / .39, 행동별 최대 .96 / .98, m2 .96 / .98, m4 .86 / .98, **m8 .28 / .98**.
+  - mirror 있음: 합산 .29 / .40, 행동별 최대 .95 / .97, m4 .80 / .97, **m8 .33 / .97**.
+  - m8에서도 모든 성숙 pair가 비교 가능한 행동을 하나 이상 가졌다(비교 pair 수가 합산과 같음).
+- 한계: checkpoint 스냅샷, EMA·접촉·round 미재현. seed 1 5M 하나와 같은 출발점의 짧은 분기. 홀수 seed·r_c=3·모서리·개인만.
+
+## E75. action_max gate 구현 검증: 단위 테스트, 전체 테스트, 저장 checkpoint 대조(학습 없음) — 2026-11-04 Claude Code, 사용자 승인(T176)
+
+- 단위 테스트 `tests/test_gate_action_max.py` 7개 통과: 가중평균 항등식과 최댓값, 경험 조건, 반납 공유 합성 예제(pooled는 다른 팀 승인, action_max는 거절·같은 팀 승인; contact_snapshot 켬/끔), 공통 행동 없음 처리, 기본값·옛 설정·잘못된 mode, 실행 계획 이름·기록·v1 거부.
+- 전체 `tests/` 255개 통과(`--basetemp C:/Users/95101/AppData/Local/Temp/pgt_all`, `-p no:cacheprovider`).
+- 대조 `output/ac_drift_20261104/implementation_crosscheck.py`(출력 `implementation_crosscheck_stdout.txt`): E74와 같은 25개 checkpoint의 예측기·사건 버퍼를 새 `ACV2Controller`에 복원하고 `compare()`로 성숙 pair 299개를 계산했다. 오프라인 m8 결과와 거리 차이 0, 선택 행동 동일, 성숙 판정 동일. 같은 팀 최대 / 다른 팀 최소: mirror 없음 .281 / .975, mirror 있음 .328 / .970.
+- 한계: 실제 학습 중 EMA·접촉 궤적은 확인하지 않았다. E74의 데이터 범위 한계가 그대로 적용된다.
+
+## E76. 본 실험 준비 검증: r_c=5 후보, 실제 trainer action_max, CLI smoke, 5M plan, 처리 속도(학습 결과 아님) — 2026-11-04 Claude Code, 사용자 승인(T178)
+
+- 테스트: `tests/test_comm5_candidate.py` 2개(plan 설정 차이가 communication_range뿐, IPPO 300 step 같은 행동에서 r_c 3·5의 관측·보상 비트 동일·접촉 수만 증가), `tests/test_gate_action_max.py::test_real_trainer_action_max_on_comm5`(1M checkpoint 분기, 허용적 gate 값으로 배선만 확인: action_max 비교 발생, donor = 접촉 ∩ 승인, checkpoint에 action_max·mirror 없음·contact_snapshot·r_c 5 기록), `test_env_candidates_plan`에 새 후보 추가. 전체 `tests/` 258개 통과.
+- CLI smoke(`--smoke-test`, 처음부터, `C:/Users/95101/AppData/Local/Temp/pgsmoke_main`, 프로젝트 밖): `--env-variant b6_corner_indiv_comm5_pen005 --reward-probe-ac --ac-gate v2 --ac-distance action_max --ac-config latent_team/acv2_nomirror.json`, mode pgct_max·ippo·oracle_max·allk_max·oracle_mature_max × seed 1·2·3, 15 job 모두 complete. 모두 r_c 5, seed 2 goal 좌우 반전, gate job은 action_max·mirror 없음·contact_snapshot, seed별 초기 가중치 동일(s1 `caae…`, s2 `30e4…`, s3 `8acd…`).
+- 5M plan-only(임시 폴더): job당 5,000,192 step, 평가 50 update마다 20 episode, Max-GAE donor 보류 100 update. queue plan-only `runs/plancheck_main_amax_20261104_b6_corner_indiv_comm5_pen005`(계획·bank만): `-ModeMajor` 순서 pgct_max s1–3 → ippo → oracle_max → allk_max.
+- 처리 속도(checkpoint 파일 시각): 단독 약 32 step/s, 2개 동시 job당 25–26, 4개 동시(10-22 queue, IPPO) job당 약 16.
+- `latent_team/main_check.py`를 2단계 분기에 시험 적용: pgct_max s1·s3·s5 같은 팀 승인 arc 1,920·1,350·1,510, 다른 팀 0, 첫 같은 팀 승인 0.02–0.03M.
+- 한계: smoke는 학습 결과가 아니다. 4개 동시 속도는 IPPO job 기준이며 gate job은 더 느릴 수 있다.
+
+## E77. 난이도 후보 무작위 정책 비교, 후보 smoke, W&B 영상 확인(학습 결과 아님) — 2026-11-04 Claude Code, 사용자 요청(T180)
+
+- 무작위 정책(`output/difficulty_20261104/difficulty_random.py`, 유효 행동 균등, 20 episode × 500 step, seed 1 배치, reset seed 8,200,001부터, 출력 `stdout.txt`·`results.json`): agent·episode당 자기 팀 요청 pickup / 보상 사건(r≥.5) / 선반–goal 평균 거리. 기준 .883 / .025 / 10.0, 넓은 지도 .258 / 0 / 13.0, 요청 2개(실제 [2,2] 확인) .775 / .025 / 10.0. 사건 수는 적어 잡음이 크다.
+- 첫 smoke에서 요청 2개 후보가 trainer의 자동 상향으로 [3,3]이 되는 문제를 발견해 `CONFIG`에 `auto_scale_request_queue=False`를 넣었다. 재 smoke에서 [2,2].
+- smoke(`--smoke-test`, 임시 폴더): 두 후보 × pgct_max·ippo·oracle_max·allk_max × seed 1·2 모두 complete. 넓은 지도 goal (0,10)/(15,10), seed 2 반전.
+- 영상: smoke는 영상을 끈다(`train_from_scratch.py` smoke 설정). 1 update 일반 실행(`--save-video --track --wandb-mode offline`, 임시 폴더, 약 4.7분)에서 로컬 `videos/final.mp4`(약 0.88MB)와 W&B media 영상 생성. 5M plan에는 save_eval_video·wandb_log_eval_video True, wandb_video_interval 5, eval_interval 50.
+- 테스트: `tests/test_comm5_candidate.py::test_harder_variants_change_one_thing_each` 추가, 전체 259개 통과. 중간 한 번 `tests/test_env.py::test_inactivity_1` 실패, 단독 3회·전체 재실행 통과(수정하지 않은 환경 테스트, 불안정으로 판단).
+- 한계: 무작위 정책은 학습 가능성을 말하지 않는다. 넓은 지도의 5M 학습 가능성은 미확인.
+
+## E78. 기존 지도 학습 이정표와 넓은 지도 초반 비교(읽기 전용) — 2026-11-04 Claude Code, 사용자 질문(T184)
+
+- 스크립트 `output/difficulty_20261104/learning_milestones.py`, 출력 `learning_milestones_stdout.txt`.
+- 기존 지도(11×10, 모서리·개인, 처음부터 5M, 결정적 평가 20 ep): 평가 배송/ep 0.5·5·10·20 첫 도달 — IPPO s1 0.72/1.28/2.51/4.25M, IPPO s2 0.82/1.43/2.46/4.40M, PGCT v2 s1 0.77/1.38/2.46/4.51M. 5M 시점 25.6/24.1/19.8, agent별(≥0.5/ep) 학습 시작 0.77–2.97M, 각 run 6명 중 5명.
+- 학습 초반(0.026M까지) train 배송/ep: 기존 지도 .48–.57, 넓은 지도 본 실험(`runs/main_amax_20261104_115922_*`) .14–.30.
+- 해석(가정): 단순 비례로 2.5–3.5배 늦으면 넓은 지도 배송 시작 약 2–3M, 5/ep 약 3.5–5M, 10/ep 약 6–9M. 비례 가정은 검증되지 않았다.
+
+## E79. 수렴 판정·queue 재개 옵션 검증과 기존 지도 5M 수렴 여부(학습 없음) — 2026-11-04 Claude Code, 사용자 결정(T185)
+
+- `tests/test_main_check.py` 4개(평탄 수렴·상승 미수렴, 늦게 배우는 agent 1명이면 미수렴, 시점 미도달·평가 부족이면 판정 없음, 작은 잡음은 수렴). 전체 263개 통과.
+- 같은 규칙을 기존 지도 5M run에 적용(시점 2·3·4·4.95M): IPPO s1 4.95M 19.8→21.8, IPPO s2 18.2→21.6, PGCT v2 s1 16.2→19.9(배송/ep, A→B), agent 최대 변화 .59–1.09. 어느 시점도 수렴 아님.
+- `run_queue.ps1 -ResumePlan`(기존 plan 재사용, 기존 PID 기록 유지)을 `-PlanOnly`로만 확인: 계획을 다시 만들지 않고 12 job을 mode 순서로 인식. 확인용 로그는 지웠다.
+- 현재 본 실험 queue는 VS Code 터미널(PID 7124) 안에서 실행 중이며 4 job(부모 PID 7124)이 돌고 있다.
+
+
+## E80. 51,200 step 종료 원인 조사·격리 경로 저장 검증(학습 없음) — 2026-11-04 Codex (T186)
+
+- 대상 plan: runs/main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005. 처음부터·넓은 지도·개인 보상·r_c=5·action_max·mirror 없음·10M·W&B online·영상 저장.
+- 14:31 KST 관측: pgct_max s1–3, ippo s1–3, oracle_max s1–2 failed at 51,200. oracle_max s3 47,104, allk_max s1/s2/s3 45,056/44,032/43,008; 상태 running 및 metrics 증가 확인(CIM 조회는 접근 제한).
+- 결과: 넓은 지도 10M 실행의 첫 평가(51,200 step)에서 W&B 미디어 목적지 길이 262–268자로 파일 이동 실패. LongPathsEnabled=0. 짧은 경로 성공·260자 일반 경로 FileNotFoundError·확장 경로 성공을 격리 검증했다. 로컬 eval_00050.mp4는 저장됨. 예외 위치는 trainer log_to_wandb → W&B Video.bind_to_run → shutil.move/open(dst).
+- 실제 수행: 기존 로그·manifest·설치 SDK 열람, 레지스트리 조회, 별도 output 폴더의 표준 라이브러리 파일 저장 검증. W&B Video 추가 재현은 의존성 로딩 중 결과 없이 진단 프로세스만 중단. 장기 학습·새 평가 실행 없음.
+- 코드 관측: --save-video이면 첫 평가부터 eval_video가 생겨 wandb_video_interval=5와 무관하게 업로드 경로가 호출된다(trainer 5192, 5228–5233).
+- 한계: 현재 프로세스에 수정 주입 안 함. 새 경로에서의 실제 W&B 영상 업로드·학습 재실행 검증은 안 함.
+- 근거: output/wandb_path_diagnosis_20261104/REPORT.md, diagnose.py, diagnosis.json, path_probe.py, path_probe.json; 각 job_status.json·metrics.jsonl·err.log.
+
+
+## E81. 새 프로젝트·영상 10개 보존 실행기 검증(본 학습 아님) — 2026-11-04 Codex (T187)
+
+- 실제 수행: 관련 23개 및 전체 tests/ 271개 통과(53.15초), PowerShell AST 구문 검사, 새 launcher -PlanOnly로 12 job 계획 생성.
+- plan: runs/verify_am2_1104_b6_wide_corner_indiv_comm5_pen005/experiment.json. 프로젝트 rware-main-amax-v2, 요청 10M(실제 rollout 정렬 10,000,384), keep_last 10, 넓은 지도·개인·r_c5·action_max·mirror False, pgct_max/ippo/oracle_max/allk_max × s1–3 확인. 계획만이며 본 학습 미실행.
+- 실제 영상 smoke: output/video_retention_20261104/main_amax_20261104_144148_b6_wide_corner_indiv_comm5_pen005/b6_wide_corner_indiv_comm5_pen005_ippo_s1/final.pt. 처음부터 IPPO s1·CPU·넓은 지도, 32×12=384 step, 결정적 평가 1ep×2step, W&B offline. 13개 영상 생성 후 로컬10·W&B offline media10개, final 포함, 최장 W&B 경로177자, complete. 성능 결과/독립 seed 실험으로 세지 않는다.
+- 처음 sandbox 시도는 W&B backend 시작에 진전이 없어 해당 검증 프로세스만 중단. 새 폴더에서 sandbox 밖 offline 검증 완료. 실제 본 실험 프로세스 조작 없음.
+- 새 파일: latent_team/video_retention.py, run_main_amax_v2.ps1, tests/test_video_retention.py. 수정: train_from_scratch.py 옵션·설치 연결, README, .gitignore.
+- 한계: 온라인 업로드·본 학습 미실행. 종료 시 영상 업로드하며 강제 종료 시 로컬 파일만 남을 수 있음. 기존 결과 삭제 없음; 새 run의 오래된 영상만 사용자 지시대로 순환 삭제.
+- 근거: output/video_retention_20261104/REPORT.md, offline_result.json, verify_offline.py; 새 plan manifest.

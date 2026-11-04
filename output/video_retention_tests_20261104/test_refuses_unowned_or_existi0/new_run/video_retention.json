@@ -1,0 +1,13 @@
+{
+  "keep_last": 1,
+  "upload_policy": "tail_at_finish",
+  "wandb_local_dir": null,
+  "upload_status": "local_only",
+  "error": null,
+  "videos": [
+    {
+      "file": "eval_00001.mp4",
+      "env_steps": 10
+    }
+  ]
+}

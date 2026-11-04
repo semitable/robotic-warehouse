@@ -1,0 +1,33 @@
+{
+  "config": {
+    "radius": 2,
+    "buffer_size": 20000,
+    "event_buffer_size": 512,
+    "event_reward": 0.001,
+    "event_fraction": 0.25,
+    "hidden": 128,
+    "learning_rate": 0.001,
+    "train_steps": 2,
+    "batch_size": 16,
+    "min_events": 1,
+    "min_event_response": -1.0,
+    "probes_per_agent": 32,
+    "mirror": false,
+    "min_probes": 1,
+    "distance_threshold": 1.0,
+    "ema_beta": 0.35,
+    "min_rounds": 1,
+    "interval": 1,
+    "seed": 0,
+    "contact_snapshot": true,
+    "distance_mode": "action_max"
+  },
+  "learning": true,
+  "reward": "individual",
+  "coordinates": "masked",
+  "predictor": "mlp_own_reward",
+  "probes": "own reward events + mirror",
+  "comparison": "rollout-start snapshot, compared before refit",
+  "distance": "sum|a-b|/sum(|a|+|b|)",
+  "unsupported": "abstain"
+}

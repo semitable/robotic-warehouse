@@ -1,5 +1,68 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-04 14:42 KST, Codex (T187, 새 프로젝트 재실행 준비 완료)
+
+- **사용자 요청 반영(D117, E81)**: rware-main-amax-v2, 기존 넓은 지도·4 mode×seed1–3·10M. job별 최근 영상10개(final 포함), 로컬 순환 보존·W&B 종료 시 tail 업로드·수치 실시간. 짧은 W&B 경로로 D116 장애 해결.
+- **검증**: 전체271 테스트, 12 job plan-only, 실제 IPPO s1 384-step offline 영상 검증 완료(로컬10·W&B media10·최장177자). 본 학습 미시작. 실행: latent_team/run_main_amax_v2.ps1(사용자 직접).
+- **기존 실행 상태**: 14:42 상태 파일 기준 이전 main_amax 12개 중11 failed·1 running. 실제 본 학습은 중단/재시작하지 않았다.
+- 근거: output/video_retention_20261104/REPORT.md. 강제 종료 시 W&B 영상 업로드 불가할 수 있음.
+
+## 최신 확인 — 2026-11-04 14:31 KST, Codex (T186, 51,200 step 종료 원인)
+
+- **장애(D116, E80)**: 넓은 지도 10M 실행의 첫 평가(51,200 step)에서 W&B 미디어 목적지 길이 262–268자로 파일 이동 실패. LongPathsEnabled=0. 짧은 경로 성공·260자 일반 경로 FileNotFoundError·확장 경로 성공을 격리 검증했다.
+- **실제 상태**: pgct_max s1–3·ippo s1–3·oracle_max s1–2 총 8개 failed at 51,200. oracle_max s3와 allk_max s1–3은 43,008–47,104 step에서 로그 증가 확인. 이전 T185의 전부 정상 실행 중 기록은 과거 스냅샷이다.
+- **복구 제안**: 짧고 새 -Name(예 amax2) 또는 짧은 별도 W&B 경로. 실패 job의 .pt 없음(첫 checkpoint 256,000). ResumePlan은 실패 job 복구가 아니다. 학습 코드·프로세스 변경 없음.
+- 근거: output/wandb_path_diagnosis_20261104/REPORT.md.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T185, 10M 유지·수렴 시 중단)
+
+- **운영(D115)**: 본 실험 10M 유지, 5–9M에서 `main_check.py` 수렴 판정 → 사용자가 해당 PID 중단. 기존 지도도 5M에 수렴하지 않았다(E79).
+- **주의**: queue는 VS Code 터미널(PID 7124)에서 실행 중. 12 job이 모두 시작될 때까지 닫지 말 것. 끊기면 `run_queue.ps1 -ResumePlan`.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T184, 넓은 지도 5M 충분성)
+
+- **판단(D114, E78)**: 넓은 지도는 5M 안에 다 익히기 어렵다고 보고 현재 10M 유지를 권했다(5M은 중간 판정점). 사용자 결정 대기.
+
+## 최신 확인 — 2026-11-04 12:18 KST, Claude Code (T183, 본 실험 시작 점검)
+
+- **본 실험 진행 중**: `runs/main_amax_20261104_115922_b6_wide_corner_indiv_comm5_pen005`(사용자가 11:59 시작, queue 4개 동시). pgct_max s1·s2·s3(PID 37720·28732·10936), ippo s1(PID 31872) 각 약 0.02M, 17–19 step/s, 오류 없음, W&B 온라인. 처음부터·넓은 지도·action_max·mirror 없음·영상 확인. 1단계 분기 PID 28892는 종료됨(maxgae_br1M의 `ippo_s5`는 미완료).
+- **주의**: plan의 total_timesteps가 10M(effective 10,000,384). 총 step 의존 schedule이 없어 5M 판정은 가능하나 소요 약 2배(12 job 약 20일). 의도 여부를 사용자에게 확인 중.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T181, 넓은 지도 확정)
+
+- **본 실험 환경(D113)**: `b6_wide_corner_indiv_comm5_pen005`. 사용자가 PID 28892 중단 후 앱 밖에서 `run_queue.ps1`로 시작 예정. 1.3M에서 `main_check.py`로 점검, 성숙 agent 2명 미만이면 요청 2개로 전환.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T180, 처음부터·난이도 상향·W&B 영상)
+
+- **결정 대기**: 난이도 후보 넓은 지도(`b6_wide_corner_indiv_comm5_pen005`, 권장, 1.3M 안전 조건) 또는 요청 2개(`b6_corner_indiv_comm5_req2_pen005`). D112, E77.
+- **실행**: 사용자가 1단계 분기(PID 28892) 중단 후 앱 밖에서 `run_queue.ps1 ... --save-video`로 본 실험 시작 예정. 본 실험 미시작.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T178, 본 실험 준비 완료)
+
+- **준비(D111, E76)**: r_c=5 후보 `b6_corner_indiv_comm5_pen005`, `latent_team/acv2_nomirror.json`, `run_queue.ps1 -ExtraPlanArgs -ModeMajor`, `latent_team/main_check.py`. smoke 15 job·테스트 258개 통과. 기존 IPPO는 초기 가중치가 달라 재사용하지 않는다.
+- **다음**: 11-05 새벽 1단계 종료 → seed 3개 비교로 Q2 mode 확정 → 사용자가 앱 밖에서 본 실험 시작(4개 동시, 약 11일) → 약 1.3M에서 `main_check.py` 점검.
+
+## 최신 확인 — 2026-11-04 11:16 KST, Claude Code (T177, 본 실험 설계 제안)
+
+- **제안(D110, 승인 전)**: 11-05 새벽 1단계 결과로 Q2 mode 확정 → r_c=5 환경 후보·mirror 끄는 설정·smoke test 준비 → 처음부터 5M 본 실험(pgct_max·ippo·oracle_max·allk_max × seed 1–3, action_max, mirror 없음, r_c=5), 1.3M 중단 점검. 2개 병렬 약 13일.
+- **실행 중**: 1단계 분기 PID 28892(`ippo_s5`), 11-05 새벽 종료 추정.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T176, action_max gate 구현)
+
+- **구현(D109)**: gate v2에 `distance_mode="action_max"` 옵션과 `--ac-distance` 플래그를 넣었다. 기본값은 pooled. 테스트 255개 통과, 저장 checkpoint 대조에서 오프라인 분석과 차이 0(E75).
+- **다음(승인 필요)**: r_c=5 환경 후보 추가, action_max·mirror 없음 5M 학습, 논문 방법 절 수정. 1단계 분기(PID 28892)는 계속 실행 중.
+
+## 최신 확인 — 2026-11-04 KST, Claude Code (T175, gate 오승인 해결안)
+
+- **제안(D108, 승인 대기)**: gate 거리를 공개 행동별로 나눠 최댓값으로 판정하고, 두 agent 모두 그 행동의 자기 사건이 n_min=8개 이상인 행동만 비교한다. 오프라인(E74) 25개 checkpoint에서 임계값 .5 그대로 같은 팀 최대 .28, 다른 팀 최소 .98.
+- **다음 단계(승인 필요)**: `reward_probe_ac_v2.py` 옵션 구현과 테스트, 새 5M 학습, 논문 거리 정의·식별 조건 수정.
+
+## 최신 확인 — 2026-11-04 10:42 KST, Claude Code (T174, 다른 팀 거리 하락 원인)
+
+- **실행 중**: 1단계 분기 PID 28892 8/12 완료, `ippo_s5` 진행 중, 11-05 새벽 무렵 종료 추정. 2단계 6/6 완료. 중간 결과로는 어느 mode도 뒤처진 agent를 분명히 돕지 않는다(E73).
+- **gate 정밀도 문제(D107)**: v2 gate의 다른 팀 거리는 공통 반납 사건이 probe에서 늘며 희석되어 내려가고, 4.28M 이후 agent 2와 1·3·5 pair가 승인됐다(352 arc, 4M 이후 24%). mirror 제거로는 해결되지 않는다. 행동별 최대 거리는 후보일 뿐 구현하지 않았다.
+- **논문**: 사용자 수정본(r_c, M 제거)에 저자명이 있어 익명화 필요.
+
 ## 최신 확인 — 2026-11-02 KST, Claude Code (T173, IJCAI-27 형식 전환)
 
 - **논문(D106)**: 영어판은 IJCAI-27 공식 템플릿, 7쪽(본문 약 5.6 + 참고문헌 약 1.2), 보조 자료 2쪽, Overleaf용 `paper/overleaf_ijcai27.zip`. 한국어판은 내용 동기화.

@@ -1,0 +1,47 @@
+{
+ "base": {
+  "variant": "b6_corner_indiv_comm5_pen005",
+  "grid_hw": [
+   11,
+   10
+  ],
+  "requests_per_team": [
+   3,
+   3
+  ],
+  "own_requested_pickups": 0.8833333333333333,
+  "deliveries": 0.05,
+  "reward_events": 0.025,
+  "mean_shelf_goal_distance": 10.0
+ },
+ "wide": {
+  "variant": "b6_wide_corner_indiv_comm5_pen005",
+  "grid_hw": [
+   11,
+   16
+  ],
+  "requests_per_team": [
+   3,
+   3
+  ],
+  "own_requested_pickups": 0.25833333333333336,
+  "deliveries": 0.05,
+  "reward_events": 0.0,
+  "mean_shelf_goal_distance": 13.0
+ },
+ "req2": {
+  "variant": "b6_corner_indiv_comm5_req2_pen005",
+  "grid_hw": [
+   11,
+   10
+  ],
+  "requests_per_team": [
+   2,
+   2
+  ],
+  "own_requested_pickups": 0.775,
+  "deliveries": 0.03333333333333333,
+  "reward_events": 0.025,
+  "mean_shelf_goal_distance": 10.0
+ }
+}

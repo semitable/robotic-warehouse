@@ -1,0 +1,13 @@
+{
+  "keep_last": 10,
+  "upload_policy": "tail_at_finish",
+  "wandb_local_dir": "C:\\RWARE\\MARL_RWARE\\third_party\\robotic-warehouse\\output\\vr_tests_c_20261104\\test_upload_failure_preserves_0\\wb",
+  "upload_status": "failed",
+  "error": "FileNotFoundError('media copy failed')",
+  "videos": [
+    {
+      "file": "eval_00001.mp4",
+      "env_steps": 10
+    }
+  ]
+}

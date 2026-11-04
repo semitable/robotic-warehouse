@@ -312,6 +312,22 @@ E1-F에서 팀별 목표가 실제로 다를 때 행동·probe·critic 전이가
   - `python latent_team/pilot_verdict.py --plan runs/pilot_20261022_112521_b_e1f6_comm3_pen005 --spam-reference runs/pilot_20261021_133652_b_e1f6_comm3_nopen --compare runs/pilot_20261019_180044_b_e1f6_comm3 runs/pilot_20261021_133652_b_e1f6_comm3_nopen`
 - 비교 대상은 기존 `runs/pilot_20261019_180044_*`의 같은 seed 첫 1M이다. 학습률 일정이 없어 같은 step에서 바로 비교할 수 있다.
 
+## 10M 재실행·최근 영상 10개 보존 (2026-11-04)
+
+앱 밖 PowerShell에서 `./latent_team/run_main_amax_v2.ps1` 실행. 넓은 지도·개인 보상·r_c=5,
+PGCT/ IPPO/ Oracle/ AllK Max-GAE × seed 1–3, action_max·mirror 없음, 10M, 최대 4개 동시 실행이다.
+W&B 프로젝트는 `rware-main-amax-v2`다. `-PlanOnly`를 주면 학습을 시작하지 않는다.
+
+- 새 옵션 `train_from_scratch.py --save-video --video-keep-last 10`은 **job별 최근 10개**만
+  `videos/`에 보존한다. `final.mp4`도 10개에 포함한다. 기존 실험에는 소급 적용하지 않는다.
+- 수치 지표는 W&B에 실시간으로 기록한다. 영상은 학습 종료 시 남아 있는 최대 10개만
+  `eval/tail_01`–`eval/tail_10`으로 한 번 업로드한다. 학습 중 영상은 로컬 `videos/`에서 확인한다.
+- 정상 종료와 Python 예외/Ctrl+C 시 업로드를 시도한다. `Stop-Process`, 창 강제 종료, 시스템 종료는
+  업로드를 보장할 수 없다. 이때도 저장된 로컬 최근 10개는 남는다.
+- W&B 로컬 데이터는 `wandb_data/<고유 ID>/`로 분리하여 긴 실험 폴더명에 따른 Windows 경로
+  제한을 피한다. 실제 경로와 영상 목록·업로드 상태는 job의 `video_retention.json`에 기록한다.
+- 이 옵션을 생략하면 기존 동작을 유지한다. trainer·PPO·환경·gate는 바꾸지 않는다.
+
 ## 아직 하지 않은 것
 
 - 추론된 팀(learned-team) 모드는 구현하지 않았다. 실험 A에서 쓸 만한 팀 신호가 확인된 뒤에 설계한다.

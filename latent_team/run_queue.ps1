@@ -9,7 +9,7 @@
 # Run this from a PowerShell window you opened yourself (not from the Claude app).  Closing that window
 # stops the queue but not the jobs already started.  Nothing here changes the trainer or the environment.
 param(
-  [Parameter(Mandatory = $true)] [string[]] $Candidates,
+  [string[]] $Candidates = @(),
   [string[]] $Modes = @("ippo"),
   [int[]] $Seeds = @(1, 2),
   [int] $TotalTimesteps = 1000000,
@@ -22,7 +22,17 @@ param(
   [string] $WandbProject = "rware-from-scratch",
   [switch] $SmokeTest,
   [switch] $PlanOnly,
-  [string] $Python = "C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe"
+  [string] $Python = "C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe",
+  # T178: extra train_from_scratch.py planning arguments, e.g. @("--reward-probe-ac", "--ac-gate", "v2",
+  # "--ac-distance", "action_max", "--ac-config", "latent_team/acv2_nomirror.json").  Empty = unchanged.
+  [string[]] $ExtraPlanArgs = @(),
+  # T178: start jobs mode by mode in the order of -Modes (all seeds of the first mode first) instead of the
+  # plan's seed-by-seed order, so the most important modes finish first.
+  [switch] $ModeMajor,
+  # T185: resume an existing plan folder (runs/<Name>_<candidate>) without planning again, e.g. after the window
+  # that ran the queue was closed. Give the original -Name and -Modes; jobs whose folder exists are skipped and
+  # the PIDs already in runs/<Name>_pids.json are kept.
+  [string] $ResumePlan = ""
 )
 $ErrorActionPreference = "Continue"
 Set-Location (Split-Path $PSScriptRoot -Parent)
@@ -38,8 +48,17 @@ function Running-Training {
     Where-Object { $_.CommandLine -match "train_from_scratch\.py" -and $_.CommandLine -match "--run-job" })
 }
 
-# 1. plan every candidate
+# 1. plan every candidate (or reuse an existing plan)
 $Queue = @()
+if (-not $ResumePlan -and -not $Candidates) { throw "Give -Candidates (new plan) or -ResumePlan (existing plan)" }
+if ($ResumePlan) {
+  $Plan = (Resolve-Path $ResumePlan).Path
+  $Manifest = Get-Content (Join-Path $Plan "experiment.json") -Raw | ConvertFrom-Json
+  foreach ($Job in $Manifest.jobs) {
+    $Queue += [pscustomobject]@{ Job = $Job.name; Plan = $Plan; Mode = $Job.mode; Seed = [int]$Job.seed }
+  }
+  $Candidates = @()
+}
 foreach ($Candidate in $Candidates) {
   $Out = "runs/${Name}_$Candidate"
   $PlanArgs = @("latent_team/train_from_scratch.py", "--maps", "e1", "--env-variant", $Candidate, "--modes") + $Modes +
@@ -48,17 +67,25 @@ foreach ($Candidate in $Candidates) {
   if ($RandomReference) { $PlanArgs += @("--random-reference", $RandomReference) }
   if ($Track) { $PlanArgs += "--track" }
   if ($SmokeTest) { $PlanArgs += "--smoke-test" }
+  $PlanArgs += $ExtraPlanArgs
   & $Python @PlanArgs
   if ($LASTEXITCODE -ne 0) { throw "Planning $Candidate failed with exit code $LASTEXITCODE" }
   $Plan = (Resolve-Path $Out).Path
   $Manifest = Get-Content (Join-Path $Plan "experiment.json") -Raw | ConvertFrom-Json
-  foreach ($Job in $Manifest.jobs) { $Queue += [pscustomobject]@{ Job = $Job.name; Plan = $Plan } }
+  foreach ($Job in $Manifest.jobs) {
+    $Queue += [pscustomobject]@{ Job = $Job.name; Plan = $Plan; Mode = $Job.mode; Seed = [int]$Job.seed }
+  }
+}
+if ($ModeMajor) {
+  $Queue = @($Queue | Sort-Object @{ Expression = { [array]::IndexOf($Modes, $_.Mode) } }, Seed, Plan)
 }
 Log ("planned {0} jobs: {1}" -f $Queue.Count, (($Queue | ForEach-Object { $_.Job }) -join ", "))
 if ($PlanOnly) { return }
 
 # 2. start them a few at a time
 $Started = @()
+$PidFile = "runs/${Name}_pids.json"
+if ($ResumePlan -and (Test-Path $PidFile)) { $Started = @(Get-Content $PidFile -Raw | ConvertFrom-Json) }
 foreach ($Item in $Queue) {
   $RunDir = Join-Path $Item.Plan $Item.Job
   if (Test-Path $RunDir) { Log "skip $($Item.Job): output folder already exists (not overwritten)"; continue }

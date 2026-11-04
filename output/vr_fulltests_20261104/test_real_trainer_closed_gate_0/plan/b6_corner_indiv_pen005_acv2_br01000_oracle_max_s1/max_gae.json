@@ -1,0 +1,17 @@
+{
+  "config": {
+    "donors": "oracle",
+    "eta": 0.5,
+    "scale": "shrink",
+    "gae_lambda": null,
+    "cap": null,
+    "window": 8,
+    "warmup_updates": 0,
+    "seed": 1017,
+    "min_critic_ev": null
+  },
+  "lambda_f": 0.95,
+  "value_targets": "own returns",
+  "contact": "any step of the rollout",
+  "note": "MAMBA-like max aggregation without MAMBA's guarantees (D94/D95)"
+}
