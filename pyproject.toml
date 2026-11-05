@@ -14,6 +14,7 @@ dependencies = ["numpy", "torch", "gymnasium"]
 [project.optional-dependencies]
 test = ["pytest"]
 rware = ["networkx", "pyglet<2", "wandb"]   # RWARE experiment (install RWARE/ itself with: pip install -e RWARE)
+overcooked = ["wandb", "psutil"]
 analysis = ["psutil", "matplotlib"]
 
 # Installs the shared core (PGCT/pgct_core) and the Overcooked experiment package (Overcooked/pgct_overcooked).

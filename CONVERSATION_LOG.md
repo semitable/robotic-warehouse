@@ -20446,3 +20446,370 @@ python latent_team\train_from_scratch.py --env-variant b6_corner_indiv_comm5_pen
 ### Assistant — 최종 답변
 
 `feature/overcooked` 브랜치에 커밋했습니다(push는 하지 않았습니다). RWARE 코드·결과 이동은 rename으로 기록되어 이력이 이어집니다. 원격에 올리거나 PR을 만들려면 말씀해 주세요.
+
+## 원문 기록 T218 — 2026-11-05 KST, Codex
+
+### 사용자 — 원문
+
+# Files mentioned by the user:
+
+## PGCT_fin.pdf: C:/Users/95101/Downloads/PGCT_fin.pdf
+
+## My request:
+가장 최신 PGCT 논문이야.
+11월 5일 가장 최근 실험기록도 지금 문서에 남아있을꺼니 확인하고, 해당 실험을 동일하게 수행 가능한지 확인해주고, Overcooked도 동일하게 실험을 돌리고 싶으니까 잘 돌아가는지 확인해줘
+
+### 사용자 — 작업 중 추가 원문
+
+# Files mentioned by the user:
+
+## codex-clipboard-42a5d0f4-05f1-4d3e-a77c-c182bea0a784.png: C:/Users/95101/AppData/Local/Temp/codex-clipboard-42a5d0f4-05f1-4d3e-a77c-c182bea0a784.png
+
+## My request:
+두 이름으로 실험 돌아가는중이야
+
+(첨부 이미지: W&B run 이름 `b6_corner_indiv_comm5_pen005_acv2_amax_ippo_s1`, `b6_corner_indiv_comm5_pen005_acv2_amax_pgct_max_s1`.)
+
+### Assistant — 진행 안내 원문
+
+PDF의 최신 알고리즘 정의와 저장소의 11월 5일 기록·실행 설정을 대조하겠습니다. PDF 검증에는 `pdf` 스킬을 사용하고, 실제 본 실험은 시작하지 않은 채 동일 설정의 계획 생성·짧은 smoke 실행으로 RWARE와 Overcooked 양쪽의 실행 가능성을 확인하겠습니다.
+
+첨부 PDF는 저장소의 `MainPaper/PGCT_fin.pdf`와 SHA-256이 완전히 같습니다. 따라서 PDF 본문과 대응 LaTeX 원본을 함께 확인할 수 있습니다. 다음으로 11월 5일 기록에서 “실행 예정/실행 중”과 실제 완료 산출물을 구분해, 재현 가능한 정확한 명령과 누락된 조건을 확인하겠습니다.
+
+확인 결과, 11월 5일의 가장 마지막 실제 학습 기록은 `day_base_1105_nv`입니다. 기존 11×10 지도, 통신·관측 반경 5, 개인 보상, seed 1, 처음부터 2M step, `pgct_max` 대 `ippo`, action-max gate, mirror 없음, 영상 없음 조건입니다. 기록에는 15:10 기준 0.27–0.29M까지만 남아 있고, 현재 저장소에는 그 run의 실제 `runs/day_base_1105_nv_*` 산출물이 포함되어 있지 않아 최종 결과는 확인할 수 없습니다.
+
+이제 같은 2M 계획이 정확히 생성되는지와 두 환경의 짧은 실제 학습을 확인하겠습니다. 다만 현재 스크립트의 기본 Python 경로 `RWARE_MARL`은 이 컴퓨터에 없고, 설치된 호환 환경은 `marl-policy-sharing`이므로 검증 실행에는 그 경로를 명시하겠습니다.
+
+첫 계획 생성은 코드 오류가 아니라 PowerShell 배열을 외부 셸에서 전달한 방식 때문에 `pgct_max,ippo`가 하나의 문자열로 들어가 실패했습니다. 저장소의 실제 사용법처럼 PowerShell 배열로 다시 실행합니다.
+
+확인했습니다. 화면의 두 run은 바로 11월 5일 기록의 비교쌍입니다.
+
+- `..._ippo_s1`: 독립 PPO
+- `..._pgct_max_s1`: 현재 논문의 PGCT-D2(action-max gate + Max-GAE)
+
+이미 본 학습이 진행 중이므로 중복 학습은 띄우지 않겠습니다. 현재 프로세스의 실제 명령줄과 로컬 manifest/log를 읽기 전용으로 찾아서, 기록된 `day_base_1105_nv` 조건과 정확히 같은 실행인지 확인하겠습니다.
+
+이 PC에는 현재 Python 학습 프로세스가 하나도 없습니다. 따라서 W&B의 두 run이 실제로 계속 갱신 중이라면 다른 컴퓨터/서버에서 실행 중인 것이고, 이 PC에서 시작한 run이라면 W&B 상태만 `running`으로 남고 프로세스는 종료된 상황입니다. W&B API에서 두 run의 최근 step·heartbeat·설정을 읽어 어느 경우인지 확인하겠습니다.
+
+RWARE 검증은 통과했습니다.
+
+- 동일한 2M 계획이 정확히 생성됐고 실제 예산은 rollout 정렬 때문에 job당 2,000,896 step입니다.
+- 6 agent, seed 1, 무작위 초기화, 개인 보상, 요청 3개/팀, corner goal, 반경 5, action-max, mirror off, rollout-start snapshot, η=0.5/shrink가 모두 논문·11월 5일 기록과 일치합니다.
+- 64-step 실제 학습에서 두 job 모두 `final.pt`까지 정상 저장됐고, 초기 가중치 SHA-256도 동일했습니다.
+
+W&B의 현재 run도 18:36 KST heartbeat가 갱신되고 있어 실제 실행 중입니다. 현재 IPPO 617,472 step, PGCT 580,608 step이며 PGCT는 성숙 agent 5명, 같은 팀 승인 arc 8, 다른 팀 승인 arc 0, coverage 66.7%입니다. 두 run 모두 아직 평가 배송은 0이므로, 기록대로 0.8M 전후 회복 여부를 보는 단계입니다.
+
+이제 공유 코어 회귀 테스트와 Overcooked 6개 방법의 실제 smoke를 실행합니다.
+
+Overcooked의 여섯 방법은 모두 실제로 학습 루프를 완료하고 각각 `final.pt`와 `status=complete`를 만들었습니다. smoke는 wiring 확인용 256 step이라 평가 수익 0은 정상이며 성능 결과로 해석하면 안 됩니다. 테스트 결과 숫자를 확정하기 위해 RWARE 등가성 테스트와 Overcooked 테스트의 최종 요약만 다시 받겠습니다.
+
+핵심 결론이 나왔습니다. RWARE의 현재 run은 정상이고 논문 알고리즘과 맞습니다. 반면 Overcooked는 “코드 경로가 정상”인 것은 확인됐지만, 아직 “충분히 학습되는 실험”이라고 보기는 어렵습니다. 실제 설정 51.2K sanity에서 배달이 0이라 gate가 성숙하지 않았고, 현재 Overcooked에는 W&B 연동도 없습니다. 이 차이를 숨기지 않고 재현 명령과 함께 기록하겠습니다.
+
+### 수행 기록 — 원문 대화와 별도
+
+- PDF 스킬 지침을 읽고 첨부 PDF를 해시·전체 text·저장소 LaTeX와 대조했다. 첨부와 저장소 사본의 SHA-256이 같았다.
+- `RESEARCH_STATE.md`, `DECISIONS.md`, `EXPERIMENTS.md`, `CONVERSATION_LOG.md`에서 11월 5일 기록을 감사했다. 최신 실제 학습 기록은 T208의 `day_base_1105_nv`였다.
+- 로그인된 W&B API를 읽기 전용으로 조회해 현재 두 run의 heartbeat, step, 설정, 평가와 gate 지표를 확인했다. 외부 상태 변경 없음.
+- `RWARE/runs/verify_day_base_1105_exact`에 2M plan-only, `verify_day_base_smoke`에 64-step PGCT/IPPO smoke를 실행했다. 장기 학습은 시작하지 않았다.
+- 테스트: core 12 통과, RWARE 등가성 27 통과·3 건너뜀, Overcooked 14 통과. Overcooked 6개 방법 256-step smoke 모두 완료.
+- 기록: `RESEARCH_STATE.md`, `EXPERIMENTS.md` E87, 이 T218. 코드·알고리즘 변경 없음.
+
+### Assistant — 최종 답변
+
+확인 결과, **현재 RWARE 실험은 논문의 최신 PGCT-D2 설정과 맞고 정상 실행 중**입니다. Overcooked도 여섯 방법의 실행 경로는 정상이나, 아직 장기 학습 가능성까지 검증된 상태는 아닙니다.
+
+첨부 논문은 저장소의 `MainPaper/PGCT_fin.pdf`와 SHA-256이 완전히 같습니다. 논문의 핵심 설정(action별 최대 거리, mirror 없음, rollout-start snapshot, η=0.5/shrink Max-GAE, critic은 자기 return만 학습)도 현재 코드와 일치합니다.
+
+다만 논문에는 아직 “현재 방법을 11×16 넓은 지도에서 실행 중”이라고 적혀 있습니다. 11월 5일 E83에서 그 넓은 지도는 1.1M에 학습이 붕괴했고, 지금 실행하는 실험은 **기존 11×10 지도**로 전환한 뒤의 run입니다. 즉 알고리즘 설명은 최신이지만, 실험 진행 상황 문장과 결과 표는 아직 현재 run을 반영하지 않았습니다. 논문의 “learning comparisons are in progress”라는 결론은 여전히 맞습니다.
+
+#### 현재 W&B 두 run (18:36 KST 확인)
+
+| 방법 | W&B step | 상태 | 평가 배송 | 발견 상태 |
+|---|---:|---|---:|---|
+| IPPO | 617,472 | heartbeat 갱신 중 | 0 | 해당 없음 |
+| PGCT-D2 | 580,608 | heartbeat 갱신 중 | 0 | 성숙 5/6, 같은 팀 승인 arc 8, 다른 팀 0, coverage 66.7% |
+
+두 run은 실제로 살아 있습니다. 다만 이 Codex 환경에는 Python 학습 프로세스가 없으므로 다른 컴퓨터/호스트에서 실행 중입니다. 현재 0.6M 부근에도 평가 배송이 0이므로, 기록대로 **0.8M 전후에 pickup·배송이 회복하는지**가 첫 번째 중요한 판정점입니다.
+
+#### RWARE 재현성 확인
+
+- 같은 설정으로 2M 계획을 다시 생성했습니다: 6 agent, 2팀×3명, 개인 보상, corner goal, 요청 3개/팀, 관측·통신 반경 5, seed 1, scratch, action-max, mirror off, snapshot, η=.5/shrink.
+- 요청한 2M은 rollout에 맞춰 실제로 **2,000,896 step**입니다.
+- 64-step PGCT/IPPO smoke 둘 다 `final.pt`를 저장했고, 초기 가중치 hash도 같았습니다.
+- 공유 코어 12개, RWARE 분리 전후 등가성 27개가 통과했습니다(로컬 1M checkpoint가 필요한 3개는 건너뜀).
+
+따라서 **설정 수준과 실행 경로 수준에서는 동일 실험 재현이 가능**합니다. 다만 원래 `day_base_1105_nv` 로컬 run 폴더가 이 checkout에는 없으므로, 기존 run을 중간부터 resume하거나 완전 동일한 optimizer/RNG 상태를 복원하는 것은 불가능합니다. 새 실행은 같은 seed의 처음부터 실행입니다.
+
+작은 실행상 문제도 하나 있습니다. `run_queue.ps1` 기본 Python 경로는 이 PC에 없는 `RWARE_MARL`이고, 실제 설치 환경은 `marl-policy-sharing`입니다. 현재 run은 이미 잘 돌고 있으니 건드릴 필요 없지만, 새로 재현할 때는 `-Python C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe`를 명시해야 합니다.
+
+#### Overcooked 확인 결과
+
+- 테스트 **14개 통과**.
+- IPPO, Oracle, All, PGCT-D2, identification-only, random-gate의 **6개 방법 모두 256-step smoke 완료**, `status=complete`와 `final.pt` 생성.
+- RWARE와 같은 PPO·gate·Max-GAE 수치를 사용합니다. 환경 차이 때문에 4 agent/2팀, 행동 6개, 관측 반경 3·통신 반경 3을 쓰며, 원칙상 `r_c=관측 반경`은 같습니다.
+- runtime에서는 rollout-start snapshot이 실제로 `true`로 강제됩니다. 다만 `plan.json`의 pre-runtime nested config에는 `false`로 보이고 각 job의 실제 `config.json`에는 `true`로 기록되는 작은 로깅 혼동이 있습니다. 동작 자체는 맞습니다.
+
+하지만 **바로 5M 본 실험을 거는 것은 권하지 않습니다.** 이전 실제 설정 51,200-step sanity에서 배달 0, reward event 0, 성숙 agent 0이어서 PGCT가 IPPO와 완전히 같았습니다. 이는 오류가 아니라 희소한 배송 보상까지 아직 도달하지 못했다는 뜻입니다. 또한 현재 Overcooked는 W&B가 아니라 로컬 `metrics.jsonl`, `gate.jsonl`, `eval.jsonl`만 기록합니다.
+
+먼저 0.5M pilot을 권합니다.
+
+```powershell
+Set-Location C:\PGCT_Overcooked\PGCT
+$env:PGCT_PYTHON = "C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe"
+
+& .\Overcooked\scripts\run_overcooked.ps1 `
+  -Name oc_pilot_500k `
+  -Methods @("ippo", "pgct_d2") `
+  -Seeds @(1) `
+  -TotalTimesteps 500000 `
+  -MaxConcurrent 2
+```
+
+판정 기준은 delivery 발생, `ac_v2_mature_agents > 0`, 같은/다른 팀 거리 분리입니다. 이 세 조건이 확인되면 현재 RWARE와 같은 2M 비교로 확장하면 됩니다.
+
+```powershell
+& .\Overcooked\scripts\run_overcooked.ps1 `
+  -Name oc_2m_pair_v1 `
+  -Methods @("ippo", "pgct_d2") `
+  -Seeds @(1) `
+  -TotalTimesteps 2000000 `
+  -MaxConcurrent 2
+```
+
+검증 계획은 [RWARE experiment.json](C:/PGCT_Overcooked/PGCT/RWARE/runs/verify_day_base_1105_exact/experiment.json), Overcooked smoke 결과는 [run 폴더](C:/PGCT_Overcooked/PGCT/Overcooked/runs/verify_oc_smoke_1105)에서 확인할 수 있습니다.
+
+이번 점검은 `EXPERIMENTS.md` E87, `RESEARCH_STATE.md`, 대화 기록 T218에 남겼으며 아직 커밋하지 않았습니다.
+
+첨부 최신 논문: :codex-file-citation{path="C:/Users/95101/Downloads/PGCT_fin.pdf" purpose="source"}
+
+## 원문 기록 T219 — 2026-11-05 KST, Codex
+
+### 사용자 — 원문
+
+PS C:\PGCT_Overcooked> Set-Location C:\PGCT_Overcooked\PGCT
+>> $env:PGCT_PYTHON = "C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe"
+>>
+>> & .\Overcooked\scripts\run_overcooked.ps1 `
+>>   -Name oc_pilot_500k `
+>>   -Methods @("ippo", "pgct_d2") `
+>>   -Seeds @(1) `
+>>   -TotalTimesteps 500000 `
+>>   -MaxConcurrent 2
+& : 이 시스템에서 스크립트를 실행할 수 없으므로 C:\PGCT_Overcooked\PGCT\Over
+cooked\scripts\run_overcooked.ps1 파일을 로드할 수 없습니다. 자세한 내용은 a
+bout_Execution_Policies(https://go.microsoft.com/fwlink/?LinkID=135170)를 참
+조하십시오.
+위치 줄:4 문자:3
++ & .\Overcooked\scripts\run_overcooked.ps1 `
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : 보안 오류: (:) [], PSSecurityException
+- FullyQualifiedErrorId : UnauthorizedAccess
+
+### Assistant — 진행 안내 원문
+
+PowerShell 실행 정책 차단입니다. 시스템 설정을 영구 변경하지 않고, 현재 PowerShell 창에서만 `Bypass`로 바꾸면 됩니다. 학습은 아직 시작되지 않았습니다.
+
+### 수행 기록 — 원문 대화와 별도
+
+- 오류 메시지로 실행 정책 차단임을 확인했다. 코드·설정·학습 변경 없음.
+
+### Assistant — 최종 답변
+
+오류 원인은 코드가 아니라 PowerShell 실행 정책입니다. 현재 창에서만 허용하면 되며 관리자 권한은 필요 없습니다.
+
+먼저 같은 PowerShell 창에서 실행하세요.
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+```
+
+그다음 기존 명령을 그대로 다시 실행합니다.
+
+```powershell
+Set-Location C:\PGCT_Overcooked\PGCT
+$env:PGCT_PYTHON = "C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe"
+
+& .\Overcooked\scripts\run_overcooked.ps1 `
+  -Name oc_pilot_500k `
+  -Methods @("ippo", "pgct_d2") `
+  -Seeds @(1) `
+  -TotalTimesteps 500000 `
+  -MaxConcurrent 2
+```
+
+`-Scope Process`라서 이 PowerShell 창을 닫으면 설정이 자동으로 사라집니다. 시스템 전체 실행 정책은 바뀌지 않습니다.
+
+정상적으로 시작되면 `plan: ... (2 jobs)` 다음에 `start ippo_s1`, `start pgct_d2_s1`이 표시됩니다. 결과는 `C:\PGCT_Overcooked\PGCT\Overcooked\runs\oc_pilot_500k`에 저장됩니다. 이 queue 창은 두 job이 끝날 때까지 열어 두세요.
+
+그래도 같은 오류가 나오면 현재 정책이 그룹 정책으로 강제된 경우이므로, 아래 한 번짜리 명령을 사용하면 됩니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command `
+  "& '.\Overcooked\scripts\run_overcooked.ps1' -Name 'oc_pilot_500k' -Methods @('ippo','pgct_d2') -Seeds @(1) -TotalTimesteps 500000 -MaxConcurrent 2 -Python '$env:PGCT_PYTHON'"
+```
+
+## 대화 기록 T220 — 2026-11-05 KST, Codex
+
+### 사용자 원문
+
+저거 돌아가는것도 RWARE처럼 wandb로 확인가능?
+
+### Assistant 진행 안내 원문
+
+Overcooked 실행 코드와 스크립트에서 W&B 연동 여부, 프로젝트명, 실행 이름이 어떻게 기록되는지 확인하겠습니다. RWARE와 같은 화면에서 바로 추적 가능한지도 함께 보겠습니다.
+
+확인 결과 현재 Overcooked 학습은 정상 진행 중이지만, 지금 구현은 W&B에 전송하지 않고 로컬 JSONL 파일에만 기록합니다. 현재 두 실행 모두 약 18,432/500,000 step까지 진행됐고 오류 로그는 비어 있습니다.
+
+### 수행 기록
+
+- `Overcooked/pgct_overcooked/train.py`, `Overcooked/scripts/run_overcooked.ps1`, 의존성 및 문서를 검색했다.
+- 현재 Overcooked 코드에는 W&B 초기화/로깅이 없고 `metrics.jsonl`, `gate.jsonl`, `eval.jsonl`에 로컬 기록한다.
+- `oc_pilot_500k`의 IPPO와 PGCT-D2 모두 update 18, env step 18,432까지 진행 중이며 두 `.log.err` 파일은 비어 있다.
+
+### Assistant 최종 답변
+
+현재 실행은 **W&B에서는 확인할 수 없습니다.** RWARE와 달리 Overcooked 쪽에는 아직 W&B 연동이 없고, 지표를 로컬 `metrics.jsonl`, `gate.jsonl`, `eval.jsonl`에 기록합니다.
+
+지금 상태는 정상입니다.
+
+- IPPO: 18,432 / 500,000 step
+- PGCT-D2: 18,432 / 500,000 step
+- 두 오류 로그 모두 비어 있음
+
+현재 진행 상황은 별도 PowerShell에서 다음처럼 볼 수 있습니다.
+
+```powershell
+Get-Content C:\PGCT_Overcooked\PGCT\Overcooked\runs\oc_pilot_500k\ippo_s1.log -Wait
+```
+
+```powershell
+Get-Content C:\PGCT_Overcooked\PGCT\Overcooked\runs\oc_pilot_500k\pgct_d2_s1.log -Wait
+```
+
+W&B 연동 자체는 가능합니다. 다만 **이미 실행 중인 두 프로세스에는 코드 변경이 자동 반영되지 않으므로**, 정식 W&B 추적은 연동 코드를 추가한 뒤 새 실험부터 적용하는 것이 안전합니다. 현재 500k 파일럿은 그대로 끝까지 돌려도 결과가 모두 로컬에 남습니다.
+
+## 대화 기록 T221 — 2026-11-05 KST, Codex
+
+### 사용자 원문
+
+앞으로는 Wandb 연동시켜줘 알겠지?
+그리고 RWARE에서 최신 PGCT 논문이랑 구현 상에 관계없어진 과거 출력파일들이 좀 있을꺼야 그런것들 전부 지워줘
+
+### Assistant 진행 안내 원문
+
+알겠습니다. 앞으로 시작하는 Overcooked 실험은 W&B로 추적되도록 연동하고, 현재 실행 중인 500k 파일럿은 중단하지 않겠습니다.
+
+RWARE 정리는 먼저 논문·최신 실험 문서·현재 실행과 연결된 결과를 대조해 보존 목록과 삭제 대상을 확정한 뒤 진행하겠습니다. 체크포인트나 활성 실행을 과거 출력으로 오인해 지우지 않도록 경로와 실행 상태도 함께 검증하겠습니다.
+
+정리 기준을 확인했습니다. 최신 논문이 직접 참조하는 RWARE 산출물과 현재 구현 검증에 쓰이는 체크포인트·회귀 자료는 보존하겠습니다. 반면 과거 탐색/실패/임시 렌더링 결과처럼 최신 논문과 현재 구현에서 참조되지 않는 생성 산출물은 삭제 대상으로 분류하겠습니다. 삭제 내역은 Git에서 복구 가능한 manifest로 남기겠습니다.
+
+W&B는 Overcooked 대기열 스크립트에서 기본 활성화하고, 실험명은 W&B group, `방법_seed`는 개별 run으로 기록하도록 구현하겠습니다. 테스트나 오프라인 실행은 `-NoTrack`으로 끌 수 있게 하고, 기존 500k 프로세스에는 손대지 않습니다.
+
+W&B 검증 결과는 정상입니다. Overcooked 전체 테스트 16개가 통과했고, 실제 W&B SDK의 offline smoke도 256 step 완료되어 지표와 최종 평가가 기록됐습니다. 샌드박스 계정이 사용자 W&B 설정 파일을 읽지 못한다는 경고는 있었지만 run 자체는 정상 생성됐으며, 일반 사용자 PowerShell에서는 해당 권한 경고가 발생하지 않습니다.
+
+이제 RWARE 삭제 대상을 절대경로·용량과 함께 최종 사전 점검한 뒤 삭제하겠습니다. Git 추적 파일이므로 삭제 후에도 커밋 이력에서 복구할 수 있습니다.
+
+RWARE 정리가 완료됐습니다. `RWARE/output`의 과거 생성 산출물 53개 디렉터리, 1,445개 파일(163.44 MiB)을 삭제했고, 최신 논문·D2 설계 근거·회귀 검증에 직접 필요한 8개 디렉터리와 `RWARE/runs` 전체는 보존했습니다. 삭제 파일은 Git 이력에서 복구 가능합니다.
+
+이제 공유 코어와 RWARE 동등성 테스트를 다시 실행해 정리 때문에 현재 구현이나 체크포인트 호환 경로가 깨지지 않았는지 확인하겠습니다.
+
+최종 회귀 검증도 통과했습니다: 공유 코어 12개, RWARE 동등성 27개(3개 건너뜀), Overcooked 16개입니다. 새 대기열의 plan에도 W&B `enabled=true`, project `pgct-overcooked`, mode `online`이 기록되는 것을 확인했습니다. 현재 500k 파일럿도 중단 없이 IPPO 102,400 step, PGCT-D2 100,352 step까지 진행 중입니다.
+
+### 수행 기록
+
+- 공유 trainer에 선택적 metric/eval callback을 추가하고 Overcooked 전용 `WandbTracker`를 구현했다.
+- `run_overcooked.ps1`은 새 job에서 W&B online tracking을 기본 활성화한다. project 기본값은 `pgct-overcooked`, group은 plan 이름, run 이름은 `<plan>_<method>_s<seed>`다.
+- W&B 실행 중 오류는 `wandb_error.json`에 남기고 로컬 JSONL/checkpoint 학습을 계속하도록 했다.
+- Overcooked 16 tests, 공유 코어 12 tests, RWARE 등가성 27 tests 통과·3 skip, 실제 W&B offline IPPO 256-step smoke 성공.
+- `RWARE/output` 53개 디렉터리/1,445파일/163.44 MiB 삭제. 최신 논문·D2 설계·검증 관련 8개와 `RWARE/runs` 전체 보존.
+- 삭제 manifest: `docs/RWARE_OUTPUT_CLEANUP_20261105.md`. 삭제 파일은 Git commit `b01ab42`에서 복구 가능.
+
+### Assistant 최종 답변
+
+완료했습니다.
+
+- **앞으로 Overcooked는 W&B 기본 연동**: `run_overcooked.ps1`로 시작하는 새 실험은 project `pgct-overcooked`에 자동 기록됩니다. `-Name`이 group, `<Name>_<method>_s<seed>`가 개별 run 이름입니다.
+- **현재 500k 파일럿은 유지**: 변경 전에 시작됐기 때문에 W&B에는 나타나지 않지만 중단하지 않았습니다. 현재 IPPO 102,400 step, PGCT-D2 100,352 step이며 오류 로그는 비어 있습니다.
+- **RWARE 과거 출력 정리**: 최신 논문·현재 D2 구현과 무관한 `RWARE/output` 53개 디렉터리, 1,445개 파일(163.44 MiB)을 삭제했습니다. 최신 논문/설계/회귀 검증에 필요한 8개 디렉터리와 `RWARE/runs`·체크포인트는 보존했습니다.
+- **복구 가능**: 삭제 대상 전체는 [정리 manifest](C:/PGCT_Overcooked/PGCT/docs/RWARE_OUTPUT_CLEANUP_20261105.md)에 기록했고 Git commit `b01ab42`에서 복구할 수 있습니다.
+
+검증 결과:
+
+- Overcooked: 16 passed
+- 공유 PGCT 코어: 12 passed
+- RWARE 동등성: 27 passed, 3 skipped
+- 실제 W&B offline smoke: 256 step 완료
+- 새 plan의 W&B 기본값: `enabled=true`, `project=pgct-overcooked`, `mode=online`
+
+W&B를 의도적으로 끌 때만 `-NoTrack`, 인터넷 없이 로컬 저장할 때는 `-WandbMode offline`을 사용하면 됩니다. 이번 변경사항은 아직 커밋하지 않았습니다.
+
+## 대화 기록 T222 — 2026-11-05 KST, Codex
+
+### 사용자 원문
+
+저거 Wandb에서 가장 마지막 영상도 보게할수 있나?
+
+### Assistant 진행 안내 원문
+
+가능한지 현재 Overcooked 환경의 렌더링 지원과 W&B 영상 로깅 경로를 확인하겠습니다. 기존 500k 실행에 적용 가능한지와, 새 실행부터 적용해야 하는지도 구분해서 말씀드리겠습니다.
+
+확인 결과 현재 Overcooked 환경은 텍스트 렌더링만 있고 RGB 프레임·MP4 생성과 W&B `Video` 로깅은 아직 없습니다. 따라서 설정만 켜서 바로 표시할 수 있는 상태는 아니지만, 렌더러와 결정적 평가 영상 저장을 추가하면 구현 가능합니다.
+
+### 수행 기록
+
+- `Overcooked/pgct_overcooked/env/kitchen.py`, adapter, evaluation, shared trainer에서 렌더링·영상·W&B Video 경로를 검색했다.
+- 현재 `Kitchen.render_text()`만 존재하며 RGB frame/MP4/W&B Video 구현은 없다.
+- 기존 `oc_pilot_500k`는 W&B 연동 전 프로세스라 실행 중 코드 변경을 자동 반영할 수 없다.
+
+### Assistant 최종 답변
+
+가능합니다. 다만 **현재 실행 중인 500k 파일럿에서는 바로 볼 수 없습니다.**
+
+현재 상태는 다음과 같습니다.
+
+- Overcooked 환경에는 아직 텍스트 렌더링만 있고 RGB 영상 생성 기능이 없습니다.
+- 현재 파일럿은 W&B 연동 전 시작했기 때문에 training run 자체도 W&B에 없습니다.
+
+새 실험부터는 다음 방식으로 구현할 수 있습니다.
+
+1. 평가 episode를 RGB 프레임으로 렌더링
+2. MP4로 저장
+3. W&B의 동일한 `eval/video` 키로 업로드
+4. 최종 평가 영상을 마지막에 한 번 더 기록해 W&B에서 가장 최신 영상을 바로 표시
+
+학습 속도와 저장 공간을 고려하면 **평가마다 영상을 올리기보다 최종 deterministic 평가 1 episode만 업로드**하는 방식을 권장합니다. 필요하면 일정 평가 간격마다 올리고 최종 영상만 로컬에 남길 수도 있습니다.
+
+현재 500k 파일럿도 완료 후 `final.pt`에서 영상을 사후 생성할 수 있습니다. 다만 기존 training run이 W&B에 없으므로, 이 영상은 별도의 W&B evaluation run으로 올려야 합니다.
+
+## 대화 기록 T223 — 2026-11-05 KST, Codex
+
+### 사용자 원문
+
+지금 2M으로 하는중인데 video 있어?
+
+### Assistant 진행 안내 원문
+
+현재 실행 중인 2M이 RWARE인지 Overcooked인지 실제 run 폴더와 설정을 확인해서, 영상 저장 옵션이 켜졌는지 바로 확인하겠습니다.
+
+확인했습니다. 지금 실행 중인 것은 Overcooked `oc_2m_pair_v1`이며 W&B 온라인 연결은 정상입니다. 다만 이 실행에는 영상 생성 기능이 포함되지 않아 현재 로컬에도 W&B에도 영상은 없습니다.
+
+### 수행 기록
+
+- `Overcooked/runs/oc_2m_pair_v1/plan.json`에서 2M IPPO/PGCT-D2, W&B tracking enabled를 확인했다.
+- W&B run ID는 IPPO `cw74dyw5`, PGCT-D2 `f3mnzn3l`이다.
+- run 폴더 전체에서 MP4/GIF/AVI/WebM 및 video 파일을 검색했으나 0개였다.
+- 20:35 전후 local metrics는 IPPO 335,872 step, PGCT-D2 325,632 step이며 PGCT mature agent 2, approved arc 0이다.
+- `.log.err` 내용은 W&B 로그인/동기화 상태 메시지이며 실제 학습 오류가 아니다.
+
+### Assistant 최종 답변
+
+아니요. **현재 2M 실행에는 video가 없습니다.**
+
+확인한 실행은 `oc_2m_pair_v1`이고 W&B 연결은 정상입니다.
+
+- [IPPO W&B run](https://wandb.ai/t98339-hanyang-university/pgct-overcooked/runs/cw74dyw5) — 약 335,872 step
+- [PGCT-D2 W&B run](https://wandb.ai/t98339-hanyang-university/pgct-overcooked/runs/f3mnzn3l) — 약 325,632 step
+
+로컬 run 폴더에도 MP4/GIF 등의 영상 파일이 0개입니다. `.log.err`에 있는 내용은 오류가 아니라 W&B 로그인·동기화 메시지입니다.
+
+이 실행은 이미 시작됐기 때문에 지금 영상 코드를 추가해도 실행 중 프로세스에는 반영되지 않습니다. 완료 후 `final.pt`로 영상을 사후 생성해 별도 W&B evaluation run에 올리는 것은 가능합니다.

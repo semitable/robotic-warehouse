@@ -22,7 +22,8 @@ Overcooked/
 
 ## Setup (Windows PowerShell)
 
-Any Python ≥ 3.9 with `numpy`, `torch`, `pytest` (and optionally `psutil` for memory logging). On the PC
+Any Python ≥ 3.9 with `numpy`, `torch`, `pytest`, and `wandb` for the default tracked launcher (optionally
+`psutil` for memory logging). `pip install -e .[overcooked,test]` installs these from the repository root. On the PC
 used for the migration: `C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe`.
 
 ```powershell
@@ -36,7 +37,8 @@ repository root:
 $env:PYTHONPATH = "$PWD\Overcooked;$PWD\PGCT"
 ```
 
-(Alternatively `pip install -e .` at the repository root installs `pgct_core` and `pgct_overcooked`.)
+(Alternatively `pip install -e .` at the repository root installs `pgct_core` and `pgct_overcooked`
+without optional W&B/test dependencies.)
 
 ## Tests
 
@@ -52,12 +54,31 @@ powershell -ExecutionPolicy Bypass -File Overcooked\scripts\run_overcooked.ps1 -
 
 ## Main comparison
 
-Six methods × three seeds, 5M steps each (about 1.5 days per job at ≈37 steps/s; run 2–4 jobs at a time
+Six methods × three seeds, 5M steps each (about 10 hours per job at the ≈140 steps/s of the 500k pilot; run 2–4 jobs at a time
 depending on CPU cores). Start long runs yourself in a separate PowerShell window:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Name oc_main_v1 -Seeds 1,2,3 -MaxConcurrent 3"
 ```
+
+The queue launcher enables W&B by default. It creates project `pgct-overcooked`, uses `-Name` as the
+group, and creates one run named `<Name>_<method>_s<seed>` per job. Set `WANDB_API_KEY` or run
+`wandb login` before an online experiment. Useful tracking options:
+
+```powershell
+# Different project/entity, still online
+& .\Overcooked\scripts\run_overcooked.ps1 -Name oc_main_v1 -WandbProject pgct-overcooked -WandbEntity YOUR_ENTITY
+
+# Keep W&B files locally for a later `wandb sync`
+& .\Overcooked\scripts\run_overcooked.ps1 -Name oc_offline -WandbMode offline
+
+# Explicitly disable tracking (tests or private local runs)
+& .\Overcooked\scripts\run_overcooked.ps1 -Name oc_local -NoTrack
+```
+
+Each tracked job also writes `wandb.json` beside `metrics.jsonl`, containing its W&B run ID and URL.
+An already-running process does not acquire tracking after the code is changed; tracking applies to newly
+started jobs.
 
 Plan only (writes `Overcooked\runs\<name>\plan.json`, trains nothing):
 
@@ -68,7 +89,7 @@ powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcoo
 Single job without the queue:
 
 ```powershell
-python -m pgct_overcooked.train --config main_4p2t.json --methods pgct_d2 --seeds 1 --name oc_main_v1
+python -m pgct_overcooked.train --config main_4p2t.json --methods pgct_d2 --seeds 1 --name oc_main_v1 --track
 ```
 
 Rerunning the same command skips finished jobs (`final.pt`) and restarts unfinished ones from scratch.
@@ -94,6 +115,22 @@ events, `max_gae_*`, `ac_v2_*`, cost and timing), `gate.jsonl` (contact, approva
 pair comparisons, donors), `eval.jsonl`, `checkpoint_*.pt`, `final.pt` (agents, optimizers, gate state,
 RNG states), `status.json`. `aggregate` writes `summary.md`, `summary.json` and `jobs.csv` to the plan
 folder.
+
+## Play videos
+
+New queue-launched jobs record one greedy episode (first evaluation seed) at every evaluation and at the end,
+keep the newest 10 plus `final.mp4` in `<job>\videos\`, and upload each one to the job's W&B run as
+`eval/video` (`-VideoEvery N` = every N-th evaluation, `-VideoKeep`, `-NoVideo`). Recording uses its own
+environment and random stream, so training is bit-identical with or without videos (tested). Running jobs
+started before this option cannot gain it; make videos from their checkpoints instead:
+
+```powershell
+python -m pgct_overcooked.video --job Overcooked\runs\oc_2m_pair_v1\pgct_d2_s1 --checkpoint final.pt --wandb
+```
+
+This writes `<job>\videos\final_seed5000001_det.mp4` (never overwritten; `--seed`, `--stochastic` for
+others) and, with `--wandb`, logs it to a separate run `<training run>_video` in the same project and group.
+Badges O/T in the frames show each agent's hidden team recipe for the viewer only.
 
 ## Methods
 

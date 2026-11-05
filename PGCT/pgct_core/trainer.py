@@ -250,7 +250,11 @@ def evaluate(make_adapter: Callable, agents, ppo_cfg: PPOConfig, cfg: TrainerCon
 
 def run_training(make_adapter: Callable, out_dir, cfg: TrainerConfig, ppo_cfg: Optional[PPOConfig] = None,
                  gate_cfg: Optional[RewardGateConfig] = None, max_cfg: Optional[MaxGAEConfig] = None,
-                 extra_config: Optional[dict] = None) -> Dict[str, object]:
+                 extra_config: Optional[dict] = None,
+                 event_callback: Optional[Callable[[str, dict], None]] = None,
+                 eval_hook: Optional[Callable[[list, dict], None]] = None) -> Dict[str, object]:
+    """eval_hook(agents, eval_row) runs after every evaluation (e.g. environment videos). It must not change
+    the agents or any training random stream; the generic trainer never inspects what it does."""
     ppo_cfg = ppo_cfg or PPOConfig()
     spec = METHODS[cfg.method]
     out_dir = Path(out_dir)
@@ -390,21 +394,33 @@ def run_training(make_adapter: Callable, out_dir, cfg: TrainerConfig, ppo_cfg: O
                                 matrix_convention="receiver_donor", critic_ev=[float(v) for v in ev],
                                 **(dict(approved=approved, reward_mature=mature, rounds=gate.rounds, ema=gate.ema,
                                         pairs=pairs) if gate is not None else {}), **diag_row))
+            if event_callback is not None:
+                event_callback("metrics", row)
             if cfg.log_interval and update % cfg.log_interval == 0:
                 print(f"update {update}/{total_updates} steps {env_steps} return "
                       f"{row.get('episode_return_mean', float('nan')):.3f} donors {int(donors.sum())} "
                       f"approved {int(approved.sum()) if approved is not None else '-'} sps {row['sps']:.0f}",
                       flush=True)
             if cfg.eval_interval and update % cfg.eval_interval == 0:
-                eval_log.write(dict(update=update, env_steps=env_steps,
-                                    **evaluate(make_adapter, agents, ppo_cfg, cfg, device,
-                                               labels() if cfg.audit else None)))
+                eval_row = dict(update=update, env_steps=env_steps,
+                                **evaluate(make_adapter, agents, ppo_cfg, cfg, device,
+                                           labels() if cfg.audit else None))
+                eval_log.write(eval_row)
+                if event_callback is not None:
+                    event_callback("eval", eval_row)
+                if eval_hook is not None:
+                    eval_hook(agents, eval_row)
             if cfg.save_interval and update % cfg.save_interval == 0:
                 save_checkpoint(out_dir / f"checkpoint_{update:05d}.pt", agents, optimizers, gate, cfg, update,
                                 env_steps, rng, donor_rng)
         final_eval = evaluate(make_adapter, agents, ppo_cfg, cfg, device, labels() if cfg.audit else None)
-        eval_log.write(dict(update=total_updates, env_steps=total_updates * ppo_cfg.rollout_steps, final=True,
-                            **final_eval))
+        final_eval_row = dict(update=total_updates, env_steps=total_updates * ppo_cfg.rollout_steps, final=True,
+                              **final_eval)
+        eval_log.write(final_eval_row)
+        if event_callback is not None:
+            event_callback("eval", final_eval_row)
+        if eval_hook is not None:
+            eval_hook(agents, final_eval_row)
         save_checkpoint(out_dir / "final.pt", agents, optimizers, gate, cfg, total_updates,
                         total_updates * ppo_cfg.rollout_steps, rng, donor_rng)
     finally:

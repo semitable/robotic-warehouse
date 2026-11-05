@@ -16,6 +16,15 @@ param(
   [int] $MaxConcurrent = 2,
   [string] $Python = $(if ($env:PGCT_PYTHON) { $env:PGCT_PYTHON } else { "python" }),
   [string[]] $Set = @(),
+  [switch] $NoTrack,
+  [string] $WandbProject = "pgct-overcooked",
+  [string] $WandbEntity = "",
+  [ValidateSet("online", "offline")] [string] $WandbMode = "online",
+  [string[]] $WandbTags = @(),
+  # Play videos: one greedy episode at every N-th evaluation plus the final one (eval/video on W&B).
+  [int] $VideoEvery = 1,
+  [int] $VideoKeep = 10,
+  [switch] $NoVideo,
   [switch] $Smoke,
   [switch] $PlanOnly
 )
@@ -25,6 +34,12 @@ Set-Location $Repo
 $env:PYTHONPATH = "$Repo\Overcooked;$Repo\PGCT"
 $Root = Join-Path $Repo "Overcooked\runs\$Name"
 $Common = @("-m", "pgct_overcooked.train", "--config", $Config, "--name", $Name)
+if (-not $NoTrack) {
+  $Common += @("--track", "--wandb-project", $WandbProject, "--wandb-mode", $WandbMode)
+  if ($WandbEntity) { $Common += @("--wandb-entity", $WandbEntity) }
+  if ($WandbTags.Count -gt 0) { $Common += @("--wandb-tags") + $WandbTags }
+}
+if (-not $NoVideo) { $Common += @("--video-every", "$VideoEvery", "--video-keep", "$VideoKeep") }
 if ($Smoke) { $Common += "--smoke" }
 if ($TotalTimesteps -gt 0) { $Common += @("--total-timesteps", "$TotalTimesteps") }
 if ($Set.Count -gt 0) { $Common += @("--set") + $Set }

@@ -1591,3 +1591,36 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - Overcooked sanity(주 설정, 51,200 step, warm-up 10, ippo·pgct_d2 × seed 1, scratchpad): 두 job 모두 정상 종료(각 약 20분, 동시 실행에서 약 42 step/s). 51,200 step 동안 배달 0회였고 자기 재료 투입은 있었으나, gate 보상 사건(r ≥ .5)이 0개라 모든 agent가 미성숙이고 donor도 없었다. 그 결과 pgct_d2 최종 가중치가 ippo와 비트 단위로 같았다(gate가 학습 난수 흐름을 건드리지 않음을 실제 설정에서 재확인). 결정적 평가 수익 0. 학습 신호가 생기는지는 이 길이로 판단할 수 없다.
 - 한계: 학습·식별 성능 결과가 아니다. 1M checkpoint가 필요한 RWARE 실제 trainer 테스트 3개는 이 PC에서 건너뛰었다. 출력 폴더 중 scratchpad 것은 세션 임시 폴더라 남지 않는다.
 - 근거: `docs/MIGRATION.md`, `RWARE/tests/test_pgct_core_equivalence.py`, `RWARE/tests/characterize_pgct_d2.py`, `Overcooked/tests/`, `Overcooked/docs/EXPERIMENT_DESIGN.md`.
+
+## E87. 최신 논문·현재 RWARE 2M run·Overcooked 재현 점검 — 2026-11-05 18:42 KST Codex (T218)
+
+- 첨부: `C:/Users/95101/Downloads/PGCT_fin.pdf`(504,471 bytes, 11-05 18:28). SHA-256 `A3707649928E90CFC232D5C9E9FFD518EAE217216003079F55FB0ACD8ED71190`로 저장소 `MainPaper/PGCT_fin.pdf`와 동일. 본문 전체를 text 추출하고 LaTeX·코드와 대조했다.
+- 논문 대 코드: 개인 reward MLP(공개 before/action one-hot/after, 128-64), event ≥.5, 최근 event 32/agent, action-max n_min=8, EMA .35, 3 rounds, threshold .5, 5-update refit, rollout-start snapshot, contact donor, Max-GAE η=.5/shrink/window 8, critic own-return target가 일치한다. 논문의 현재 11×16 run 문장은 E83 이후 오래된 상태이며 현재 run은 11×10이다.
+- W&B 읽기 전용 확인(project `t98339-hanyang-university/rware-main-amax-v2`, 18:36 KST): IPPO `yidd96p3` running, heartbeat 18:36:46, 617,472 step, 평가 배송 0. PGCT `57ebqe5l` running, heartbeat 18:36:40, 580,608 step, 평가 배송 0, mature 5, same-team approved arcs 8, cross-team 0, coverage 2/3. 이 PC에는 Python 프로세스가 없어 실행은 다른 호스트다.
+- 정확 계획 재생성: `RWARE/runs/verify_day_base_1105_exact/experiment.json`. scratch, seed 1, 6 agent/2×3, 11×10 corner, 개인 보상, r_c=5, 2M(실제 2,000,896), PPO 1024/64·4 epoch·8 minibatch·lr 2e-4·entropy .05, gate action_max/no mirror/snapshot, Max-GAE η=.5/shrink/warm-up 100. 기록·논문과 일치.
+- RWARE 실제 smoke: 같은 후보와 두 mode, 64 step. 둘 다 `final.pt` 저장, 초기 hash `caaef33f...abcfae` 일치. 소프트웨어 경로 정상.
+- 테스트: `PGCT/tests` 12 통과; `RWARE/tests/test_pgct_core_equivalence.py` 27 통과·3 건너뜀; `Overcooked/tests` 14 통과.
+- Overcooked 6-method smoke: ippo/oracle/all/pgct_d2/pgct_id_only/random_gate × seed 1, 256 step, 모두 `status=complete`, `final.pt` 6개. wiring 확인용이라 return 0은 성능 결과가 아니다.
+- 한계: E86의 주 설정 51,200-step sanity에서는 delivery/event/maturity가 0이었다. 5M 본 실험의 과학적 유효성은 미확인이다. Overcooked runner는 W&B가 아니라 `metrics.jsonl`, `gate.jsonl`, `eval.jsonl`만 쓴다. 본 실험 전에 0.5–1M pilot을 권한다.
+- 실행 장애: `RWARE/latent_team/run_queue.ps1` 기본 Python은 이 PC에 없는 `RWARE_MARL`; 설치된 호환 환경은 `marl-policy-sharing`. `run_main_amax_v2.ps1`은 Python 인자를 전달하지 않으므로 이 PC에서는 direct Python entry 또는 `run_queue.ps1 -Python <경로>`가 필요하다. PowerShell script는 execution-policy bypass도 필요하다.
+
+## E88. Overcooked W&B 연동·RWARE 출력 정리 후 회귀 검증 — 2026-11-05 19:15 KST Codex (T221)
+
+- 실행 여부: 학습 성능 실험은 새로 시작하지 않았다. W&B offline wiring smoke 1개(IPPO, seed 1, 256 step)와 tests/plan-only만 실행했다. 진행 중 `oc_pilot_500k`는 중단·재시작하지 않았다.
+- W&B offline smoke: 실제 SDK `wandb 0.30.0`, project `pgct-overcooked-smoke`, run ID `amqxujbc`, 4 update/256 step 완료, metrics·eval·summary와 `final.pt` 생성. sandbox 사용자가 사용자 홈 W&B 설정/로그 경로를 읽지 못한다는 경고가 있었으나 job exit 0, offline run 파일 저장 완료. 실제 사용자 PowerShell의 권한 상태를 뜻하지 않는다.
+- launcher plan-only: `verify_wandb_plan_1105`, IPPO seed 1, 128 step, `tracking.enabled=true`, project `pgct-overcooked`, mode `online` 기록. 학습은 실행하지 않았다.
+- 테스트: `Overcooked/tests` 16 통과(새 tracking 2 포함), `PGCT/tests` 12 통과, `RWARE/tests/test_pgct_core_equivalence.py` 27 통과·3 건너뜀. 알고리즘 수치 경로 변경 없음.
+- RWARE cleanup: `RWARE/output` 상위 53개 디렉터리, 1,445개 파일, 171,382,902 bytes 삭제. 보존 8개는 `ac_drift_20261104`, `ac_early_id_20261026`, `ac_offline_20261026`, `fig2_real_20261105`, `fig_data_20261105`, `paper_revision_20261105`, `pgct_d2_validation_20261102`, `pgct_docs_20261102`. `RWARE/runs`와 source/checkpoint는 삭제하지 않았다. 상세 목록 `docs/RWARE_OUTPUT_CLEANUP_20261105.md`.
+- 현재 pilot 관측(19:15): IPPO 102,400 step(최근 episode return mean .233), PGCT-D2 100,352 step(.213), 오류 로그 비어 있음. 아직 warm-up 경계이며 PGCT mature/approval/donor 0. 기존 프로세스에는 새 W&B callback이 반영되지 않는다.
+
+## E89. RWARE day_base 재현성(현 저장소 대 실행 중 W&B run)과 Overcooked 500k·2M 학습·gate 진단, 재생 영상 — 2026-11-05 Claude Code (T224)
+
+- 실행 여부: 실제 실행(읽기 전용 W&B 조회, 짧은 재실행, checkpoint 분석). 장기 학습 없음. 실행 중인 학습(`oc_2m_pair_v1`, 다른 PC의 RWARE 2 run)은 건드리지 않았다.
+- RWARE 설정 대조: 다른 PC(DESKTOP-03ASKH8, RTX 5070 Ti, 분리 전 코드)에서 실행 중인 `b6_corner_indiv_comm5_pen005_acv2_amax_{ippo,pgct_max}_s1`(W&B `rware-main-amax-v2`, `yidd96p3`·`57ebqe5l`)의 W&B config와 현 저장소 계획(`RWARE/runs/verify_day_base_1105_exact`)이 trainer 87개·환경 40개 항목 모두 같다(예산 2,000,896, warm-up 100).
+- RWARE 짧은 재실행: 같은 계획을 3 update(3,072 step)로 이 PC(DJKLSFJ, RTX 3060, CUDA)에서 실행(`RWARE/runs/verify_gpu_3upd_1105`, W&B 끔). 첫 update에서 롤아웃의 이산 결과(배송·집기·에피소드 수익·행동 수 등 train 지표 99/114)가 W&B 기록과 정확히 같고, 행동 확률·hidden norm·loss는 상대 1e-5 수준으로 다르다(GPU 부동소수점). 2번째 update부터 경로가 갈라진다. 다른 GPU에서 비트 단위 연속은 기대할 수 없다. 같은 이 PC GPU에서도 ippo와 pgct_max의 첫 loss가 마지막 자리에서 달라 CUDA 연산 비결정성이 있다(원격은 두 run이 같았다).
+- 분리 전후 동작: Codex W&B 콜백과 이번 eval_hook 추가 후 `RWARE/tests/test_pgct_core_equivalence.py` 28 통과·4 건너뜀(건너뜀은 모두 probe bank 파일), trainer 지문 18/18이 분리 전 기록(E86)과 동일.
+- Overcooked 학습(`oc_pilot_500k`, seed 1, 500,736 step, CPU, job당 약 135–150 step/s): 에피소드당 자기 레시피 배달 0(0–100 update) → 약 25(451–489 update), 결정적 평가 수익 agent당 8.475(자기 배달 21). `oc_2m_pair_v1`(같은 seed·설정, W&B 추적)의 448k까지 지표는 pilot과 숫자까지 같다(CPU 결정적).
+- Overcooked gate: pgct_d2가 처음부터 끝까지 승인 0, donor 0이라 IPPO와 가중치·지표가 동일. 500k pilot `final.pt` 진단(`reward_gate` 상태): 팀 [0,0,1,1]. agent 0(양파 팀)은 배달 사건 2회로 미성숙(요리 담당). agent 2·3(토마토 팀)은 각각 서쪽·동쪽 창구에서만 배달해 서로의 배달 probe에 대한 예측이 .04(자기 1.0), 쌍 거리 EMA .92. 다른 팀 쌍 1-2 .82, 1-3 .999. 2M run 감사 거리(435k) 같은 팀 .919, 다른 팀 .917. 원인: 공개 view가 자기 중심이지만 회전 정규화가 없어 좌우 대칭 창구의 같은 사건이 다른 입력이 됨 + 역할 분화로 한 팀원이 보상 사건을 갖지 못함.
+- 재생 영상: `Overcooked/runs/oc_pilot_500k/ippo_s1/videos/final_seed5000001_det.mp4`(400 step, 수익 8.475로 평가와 일치), W&B run `el1xz1u1`(project `pgct-overcooked`, group `oc_pilot_500k`). 학습 중 영상 기록 옵션 추가(테스트로 학습 가중치 불변 확인).
+- 테스트: Overcooked 19 통과(영상 3개 추가), 공유 코어 12 통과.
+- 한계: Overcooked는 seed 1 하나, 0.5M까지만 관찰. 방향 정규화 가설은 아직 검증하지 않았다.

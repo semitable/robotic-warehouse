@@ -1712,3 +1712,16 @@
   - 2 agent 단일 팀 설정(`secondary_2p1t.json`)은 보조 기준이며 다중 팀 식별을 검증하지 못한다.
 - 근거: E86(회귀·등가성·지문·smoke·sanity), `docs/MIGRATION.md`, `Overcooked/docs/EXPERIMENT_DESIGN.md`.
 - 미결·주의: Overcooked 본 학습(5M × 6 방법 × 3 seed, 이 PC 기준 job당 약 1.5일)은 사용자가 시작한다. 다른 PC에서 `run_queue.ps1` 대기열이 도는 동안 이 브랜치로 바꾸지 않는다(새 job이 옛 경로를 찾지 못함). 커밋·push 하지 않았다.
+
+## D132. 새 Overcooked job은 W&B 기본 추적, RWARE 과거 생성 출력은 최신 논문·구현 의존성 기준으로 정리 — 2026-11-05 Codex (사용자 요청 T221)
+
+- 사용자 결정: 앞으로 Overcooked 실험도 W&B에 연동한다. `run_overcooked.ps1`은 별도 옵션 없이 online tracking을 켜며 project 기본값은 `pgct-overcooked`, group은 plan `-Name`, run은 `<Name>_<method>_s<seed>`다. 의도적인 로컬 실행만 `-NoTrack`, 네트워크 없이 보관할 때 `-WandbMode offline`을 쓴다.
+- 안정성 결정: W&B는 공유 trainer의 선택적 callback으로만 연결한다. JSONL을 authoritative record로 유지하고, init 실패는 job 시작 실패로 명시하되 실행 중 log/finish 실패는 `wandb_error.json`을 남기고 학습/checkpoint를 계속한다. 따라서 telemetry가 알고리즘이나 장기 학습 보존성을 바꾸지 않는다.
+- 정리 기준: 최신 논문이 직접 인용하거나 현재 PGCT-D2 설계 근거/회귀 검증에 필요한 8개 `RWARE/output` 디렉터리와 checkpoint 호환에 필요한 `RWARE/runs`는 보존한다. 그 외 옛 탐색 결과, 실패/임시 test output, 옛 논문 초안 및 중복 authoring 산출물은 삭제한다. 삭제는 Git에서 복구 가능하며 정확한 목록은 `docs/RWARE_OUTPUT_CLEANUP_20261105.md`에 고정한다.
+
+## D133. Overcooked는 학습되지만 PGCT gate가 승인하지 못한다: 예산 연장보다 probe 방향 정규화가 먼저 — 2026-11-05 Claude Code (사용자 요청 T224, 의견·결정 대기)
+
+- 사용자 허가(T224): 2M으로 부족하면 Overcooked 예산을 늘려도 된다.
+- 판단: 학습 자체는 0.5M에 이미 잘 된다(E89). 문제는 식별이다. 승인 0의 원인(좌우 창구 방향 차이로 같은 사건이 다른 공개 view, 요리 담당 미성숙)은 step을 늘려도 풀리지 않을 가능성이 크다. 2M 진행 중 run은 그대로 두고 결과만 확인한다. 실행 중 run은 이어 학습이 없어 늘리려면 처음부터 새로 돌려야 한다.
+- 제안(미구현): Overcooked 어댑터의 공개 probe view를 agent가 바라보는 방향이 항상 위가 되도록 회전한 view로 바꾼 v2 projection. 공유 비교 절차·gate 값·Max-GAE는 그대로이고 환경별 projection만 바뀐다(원 지시서 7절 "환경별 projection을 조정"). mirror 증강을 기본으로 되살리는 것과는 다르다. 회전 후에도 창구 양옆 칸(D/X)은 좌우가 바뀌므로 완전한 해결은 보장되지 않는다. 기존 결과와 섞지 않도록 새 config·새 plan 이름으로 0.5M pilot부터 다시 한다.
+- 요리 담당처럼 보상 사건이 없는 agent는 설계상 묶이지 않는다(RWARE와 같은 한계). 해결하려면 별도 결정이 필요하다.

@@ -25,6 +25,8 @@ from pathlib import Path
 
 from . import REPO_ROOT
 from .experiment import apply_overrides, build, load_config
+from .tracking import WandbTracker
+from .video import EvalVideoRecorder
 from pgct_core.trainer import METHODS, run_training
 
 SMOKE = ["ppo.rollout_steps=64", "ppo.sequence_length=16", "ppo.minibatch_chunks=2", "ppo.ppo_epochs=1",
@@ -79,6 +81,16 @@ def main(argv=None):
     parser.add_argument("--total-timesteps", type=int, help="shortcut for --set trainer.total_timesteps=N")
     parser.add_argument("--smoke", action="store_true", help="tiny budget and permissive wiring-only gate values")
     parser.add_argument("--plan-only", action="store_true")
+    parser.add_argument("--track", action="store_true", help="log each selected job to Weights & Biases")
+    parser.add_argument("--wandb-project", default=os.environ.get("WANDB_PROJECT", "pgct-overcooked"))
+    parser.add_argument("--wandb-entity", default=os.environ.get("WANDB_ENTITY"))
+    parser.add_argument("--wandb-mode", choices=("online", "offline"),
+                        default=os.environ.get("WANDB_MODE", "online"))
+    parser.add_argument("--wandb-tags", nargs="*", default=[])
+    parser.add_argument("--video-every", type=int, default=0,
+                        help="record a greedy play video at every N-th evaluation and at the end (0: off); "
+                             "uploaded as eval/video when --track is on")
+    parser.add_argument("--video-keep", type=int, default=10, help="newest periodic videos kept per job (+ final.mp4)")
     args = parser.parse_args(argv)
     if len(set(args.methods)) != len(args.methods) or len(set(args.seeds)) != len(args.seeds):
         parser.error("methods and seeds must be unique")
@@ -108,7 +120,10 @@ def main(argv=None):
     if write:
         write_plan(plan_path, dict(created=datetime.now().astimezone().isoformat(timespec="seconds"),
                                    git_commit=git_commit(), config_file=str(args.config), overrides=overrides,
-                                   smoke=args.smoke, config_source=data, jobs=planned))
+                                   smoke=args.smoke, config_source=data,
+                                   tracking=dict(enabled=args.track, project=args.wandb_project,
+                                                 entity=args.wandb_entity, mode=args.wandb_mode,
+                                                 tags=args.wandb_tags), jobs=planned))
     print(f"plan: {plan_path} ({len(planned)} jobs listed, {len(jobs)} selected)", flush=True)
     if args.plan_only:
         return 0
@@ -120,11 +135,28 @@ def main(argv=None):
             continue
         make_adapter, trainer_cfg, ppo_cfg, gate_cfg, max_cfg, resolved = build(data, job["method"], job["seed"])
         print(f"== {job['name']}", flush=True)
+        tracker = None
         try:
+            if args.track:
+                tracker = WandbTracker(
+                    out, project=args.wandb_project, entity=args.wandb_entity, group=name,
+                    run_name=f"{name}_{job['name']}", method=job["method"], seed=job["seed"],
+                    mode=args.wandb_mode,
+                    config=dict(experiment=resolved, environment=make_adapter().describe(),
+                                plan=name, job=job["name"], git_commit=git_commit()),
+                    tags=args.wandb_tags,
+                )
+            recorder = (EvalVideoRecorder(make_adapter, out, seed=trainer_cfg.eval_seed, every=args.video_every,
+                                          keep=args.video_keep, tracker=tracker) if args.video_every > 0 else None)
             result = run_training(make_adapter, out, trainer_cfg, ppo_cfg, gate_cfg, max_cfg,
-                                  extra_config=dict(experiment=resolved, environment=make_adapter().describe()))
+                                  extra_config=dict(experiment=resolved, environment=make_adapter().describe()),
+                                  event_callback=tracker, eval_hook=recorder)
+            if tracker is not None:
+                tracker.finish("complete")
             print(f"done {job['name']}: final eval return {result['final_eval']['eval_return_mean']:.3f}", flush=True)
         except Exception as exc:
+            if tracker is not None:
+                tracker.finish("failed", exit_code=1)
             out.mkdir(parents=True, exist_ok=True)
             (out / "status.json").write_text(json.dumps(dict(status="failed", error=repr(exc),
                                                              traceback=traceback.format_exc()), indent=2),

@@ -44,6 +44,9 @@ powershell -ExecutionPolicy Bypass -File Overcooked\scripts\run_overcooked.ps1 -
 powershell -ExecutionPolicy Bypass -File Overcooked\scripts\aggregate.ps1 -Name oc_smoke
 ```
 
+The Overcooked queue launcher tracks new jobs in W&B project `pgct-overcooked` by default (one run per
+method/seed, grouped by `-Name`). Pass `-NoTrack` for local-only runs or `-WandbMode offline` to sync later.
+
 ## What is shared and what is environment specific
 
 Shared (`PGCT/pgct_core`): reward predictors, probe sets, pooled/action-max response distance, EMA,

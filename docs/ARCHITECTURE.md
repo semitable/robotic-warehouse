@@ -89,7 +89,11 @@ update        ─ gate(update, contact, active = update > warmup)  → compare c
 ```
 
 RWARE runs the same gate/Max-GAE objects inside its own trainer through `latent_team/*install`; the
-Overcooked experiment uses `pgct_core.trainer.run_training`.
+Overcooked experiment uses `pgct_core.trainer.run_training`. The core trainer emits metric/evaluation rows
+through an optional callback while always retaining JSONL as the authoritative local record. Overcooked's
+`WandbTracker` consumes that callback; the queue launcher enables one W&B run per method/seed by default,
+grouped by the plan name. A W&B logging failure is written to `wandb_error.json` and does not destroy an
+otherwise valid long training run.
 
 ## Adding another MARL environment
 
