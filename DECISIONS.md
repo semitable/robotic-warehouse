@@ -1781,3 +1781,11 @@
 - 기본값은 "absolute"(기존 τ_r .5, 성숙 .3)다. 진행 중이거나 끝난 RWARE 실험, 기존 계획, job 이름은 바뀌지 않는다. 상대 규칙 RWARE job 이름에는 `_rel`이 붙는다.
 - 설정: `RWARE/latent_team/acv2_nomirror_relative.json`(본 실행 설정 + 상대 규칙), `Overcooked/configs/main_4p2t_probe_v3_rel.json`(v3 + 상대 규칙). D137의 `main_4p2t_probe_v3_ev01.json`(Overcooked만 절대 .1)은 D138에 따라 삭제했다.
 - 보고: κ ∈ {0.1, 0.5}를 두 환경의 민감도로 보고한다. 상대 규칙은 사건 범위(누구를 비교할 수 있는가)를 해결할 뿐, 대조 경험 문제는 해결하지 못한다(E93·E94).
+
+## D140. RWARE 개인 보상(팀 보상 숨김) 설정의 타당성 — 2026-11-06 Claude Code (사용자 질문 T232, 의견)
+
+- 질문: RWARE에서 팀 보상을 알아채지 못하게 막고 개인 보상처럼 둔 것(초기 IPPO 학습과 같게 하려던 것)이 괜찮은가.
+- 코드 확인: `team_reward_mode="individual"`이면 배송·반납 보상은 운반한 agent 본인에게, 자기 팀 선반일 때만 지급한다(`rware/multi_team_warehouse.py` `_reward_delivery`, `_reward_shelf_return`). 환경 클래스 기본값은 TEAM이고, 원래 RWARE 등록 환경은 모두 `RewardType.INDIVIDUAL`이다. `reveal_team_info=True`는 팀 ID를 관측이 아닌 step info에만 넣으며, D2 gate와 donor 선택은 읽지 않는다(감사·Oracle만).
+- 판단: 괜찮다. 팀을 같은 보상 함수를 가진 agent 집합으로 정의하면 일관되고 현실적이다. 팀 보상이면 보상 결합만으로 식별이 자명하다(D72·D81). 모든 비교군이 같은 개인 보상을 받아 공정하다. PGCT 전제(자기 보상만으로 학습·식별)와 맞는다. 원래 RWARE 관례와 같다.
+- 밝힐 것: (1) 개인 보상 때문에 팀원끼리 경쟁·독주가 생긴다(D81, day_base 팀당 배송자 1명). 따라서 Q2는 "같은 목표 agent 사이의 critic 공유가 학습을 돕는다"로 서술한다. (2) 보상 사건이 없는 팀원은 식별되지 않는다(day_base agent 1). D139로 줄일 수 있으나 없애지는 못한다.
+- Overcooked와 대비: RWARE는 원래 개인 보상 벤치마크, Overcooked는 원래 팀 공유 보상이라 개인 보상이 변형이다. RWARE 주 실험·Overcooked 보조 실험(D138)을 뒷받침한다.
