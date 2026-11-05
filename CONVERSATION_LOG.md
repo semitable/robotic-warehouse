@@ -21781,3 +21781,26 @@ powershell -ExecutionPolicy Bypass -Command "& '.\scripts\run_experiment.ps1' -E
 식별이 되면, 6개 방법 × seed 3개 × 5M의 본 비교로 넘어가면 됩니다. job 18개이고, 3개씩 동시에 돌리면 약 40시간입니다.
 
 기록은 D142, E96, `RESEARCH_STATE.md`, `CONVERSATION_LOG.md` T236에 남겼습니다. 커밋은 하지 않았습니다.
+
+## 원문 기록 T237 — 2026-11-06 KST, Claude Code
+
+### 사용자 — 원문
+
+Commit and push
+
+### 수행 기록 — 원문 대화와 별도
+
+- T236 작업(51개 파일)을 커밋 62d2b9d로 `feature/overcooked`에 push했다. 같은 기록 파일에 있던 Codex의 E95·T235 항목도 함께 들어갔다. 이 기록은 별도 커밋으로 push했다.
+
+### Assistant — 진행 안내 (원문)
+
+- 커밋 `62d2b9d`를 `feature/overcooked`에 push했습니다. 이 turn의 대화 기록을 남기고 별도 커밋으로 push합니다.
+
+### Assistant — 최종 답변 (원문)
+
+커밋하고 push했습니다. 커밋은 `62d2b9d`이고 브랜치는 `feature/overcooked`입니다.
+
+- 포함된 것: `LBF/`, `VMAS/`, `PGCT/pgct_runner/`, 실행·집계 스크립트, `docs/ENVIRONMENTS.md`, README·ARCHITECTURE·pyproject·run_tests 갱신, 기록 D142·E96·T236. 모두 51개 파일입니다.
+- Codex가 같은 기록 파일에 추가한 E95·T235 항목도 함께 들어갔습니다.
+- 학습 결과 폴더(`LBF/runs`, `VMAS/runs`)는 git에서 제외되므로 올라가지 않았습니다.
+- 이 대화 기록(T237)은 별도 커밋으로 push했습니다.
