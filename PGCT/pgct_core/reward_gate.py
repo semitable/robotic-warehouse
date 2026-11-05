@@ -26,6 +26,7 @@ import torch
 import torch.nn as nn
 
 DISTANCE_MODES = ("pooled", "action_max")
+EVENT_THRESHOLDS = ("absolute", "relative")
 
 
 @dataclass(frozen=True)
@@ -51,10 +52,21 @@ class RewardGateConfig:
     seed: int = 0
     contact_snapshot: bool = False
     distance_mode: str = "pooled"
+    # D139: reward-event rule. "absolute" (default, D2 as run so far): an event is r >= event_reward and maturity needs
+    # a mean prediction >= min_event_response on the own event probes (both in reward units). "relative": an event
+    # is r > 0 and r >= event_scale * (largest own reward so far); maturity needs a mean prediction >=
+    # min_event_response_ratio * (mean reward of those event probes). Scale-free, label-free, per agent.
+    event_threshold: str = "absolute"
+    event_scale: float = .1
+    min_event_response_ratio: float = .3
 
     def __post_init__(self):
         if self.distance_mode not in DISTANCE_MODES:
             raise ValueError(f"distance_mode must be one of {DISTANCE_MODES}")
+        if self.event_threshold not in EVENT_THRESHOLDS:
+            raise ValueError(f"event_threshold must be one of {EVENT_THRESHOLDS}")
+        if not 0 < self.event_scale <= 1:
+            raise ValueError("event_scale must be in (0, 1]")
         counts = (self.radius, self.buffer_size, self.event_buffer_size, self.hidden, self.train_steps,
                   self.batch_size, self.min_events, self.probes_per_agent, self.min_probes, self.min_rounds,
                   self.interval)
@@ -108,6 +120,7 @@ class RewardPredictor:
         self.events_seen = 0
         self.version = 0
         self.last_loss = None
+        self.reward_max = 0.0  # largest own reward so far ("relative" event rule only)
         self.rng = np.random.default_rng(seed)
         with torch.random.fork_rng(devices=[]):  # private init: the trainer's RNG stream is untouched
             torch.manual_seed(seed)
@@ -123,9 +136,34 @@ class RewardPredictor:
         if not np.isfinite(reward):
             raise ValueError("Nonfinite individual reward")
         self.buffer.add(before, action, after, reward)
-        if reward >= self.config.event_reward:
+        if self.config.event_threshold == "relative":
+            if reward > self.reward_max:
+                self.reward_max = float(reward)
+                self._purge_events()
+            is_event = reward > 0 and reward >= self.config.event_scale * self.reward_max
+        else:
+            is_event = reward >= self.config.event_reward
+        if is_event:
             self.events.add(before, action, after, reward)
             self.events_seen += 1
+
+    def event_threshold(self):
+        """Current reward-event threshold in reward units (relative rule: event_scale * own reward maximum)."""
+        if self.config.event_threshold == "relative":
+            return self.config.event_scale * self.reward_max
+        return self.config.event_reward
+
+    def _purge_events(self):
+        """Relative rule: a larger own reward raises the threshold; drop buffered events now below it, so the
+        probes always follow the current rule. events_seen then counts the kept events."""
+        b, a, f, r = self.events.recent(self.events.count)  # newest first
+        keep = np.flatnonzero(r >= self.config.event_scale * self.reward_max)
+        if len(keep) == len(r):
+            return
+        ring = Ring(self.events.capacity, self.events.before.shape[1], self.events.before.dtype)
+        for k in keep[::-1]:  # oldest first
+            ring.add(b[k], a[k], f[k], r[k])
+        self.events, self.events_seen = ring, ring.count
 
     def train(self):
         if self.buffer.count < self.config.batch_size:
@@ -159,12 +197,19 @@ class RewardPredictor:
         if self.events_seen < self.config.min_events or self.version == 0:
             return False
         b, a, f = self.event_probes()
-        return bool(self.predict(b, a, f).mean() >= self.config.min_event_response)
+        if self.config.event_threshold == "relative":
+            target = self.config.min_event_response_ratio * float(self.events.recent(self.config.probes_per_agent)[3].mean())
+        else:
+            target = self.config.min_event_response
+        return bool(self.predict(b, a, f).mean() >= target)
 
     def state_dict(self):
         b, a, f, r = self.events.recent(self.events.count)
-        return dict(net=self.net.state_dict(), events_seen=self.events_seen, version=self.version,
-                    last_loss=self.last_loss, event_before=b, event_action=a, event_after=f, event_reward=r)
+        state = dict(net=self.net.state_dict(), events_seen=self.events_seen, version=self.version,
+                     last_loss=self.last_loss, event_before=b, event_action=a, event_after=f, event_reward=r)
+        if self.config.event_threshold == "relative":
+            state["reward_max"] = self.reward_max
+        return state
 
 
 def response_distance(a, b):

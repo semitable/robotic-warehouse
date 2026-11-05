@@ -58,6 +58,30 @@ Agent `i` votes only if `events_seen_i >= 20`, it has been refit at least once, 
 `mean_{q in E_i} r̂_i(q) >= 0.3`. An agent that never earned a reward event is never paired.
 Code: `RewardPredictor.mature`, `RewardProbeGate.maturity`.
 
+### Reward-event rule τ_r (D138–D139)
+
+Two different thresholds exist: τ_r decides which own experiences become reward events (probes, maturity) and τ_D
+(§5) decides approval. τ_D acts on a normalised distance; τ_r = 0.5 and the maturity level 0.3 are in **reward
+units**, so their meaning changes with an environment's reward scale (RWARE: deliveries and returns, 1.0, while
+the team-specific requested pickup, 0.15, is excluded; Overcooked: deliveries only, so a cook who never serves
+never matures). The value 0.5 was chosen to select RWARE's large events; no scale-free reason was recorded.
+
+Option `event_threshold="relative"` (default `"absolute"` keeps the rule above and every RWARE run unchanged):
+
+    event:     r > 0  and  r >= κ · M_i            M_i = largest own reward so far (κ = event_scale = 0.1)
+    maturity:  mean_{q in E_i} r̂_i(q) >= ρ · mean_{q in E_i} r(q)        (ρ = min_event_response_ratio = 0.3)
+
+- Label-free and local (each agent uses only its own rewards); invariant to multiplying all rewards by a constant.
+- κ = 0.1 is an order-of-magnitude rule fixed before any relative-rule run: per-step progress terms and penalties
+  are ≤ 2 % of the largest reward in both environments, sub-goal rewards ≥ 10 % (RWARE pickup 0.15; Overcooked
+  ingredient 0.1, soup 0.2). ρ = 0.3 equals the absolute rule where events pay 1.0 (RWARE).
+- When M_i grows, buffered events below the new threshold are dropped so the probes always follow the current rule.
+- Configs: `RWARE/latent_team/acv2_nomirror_relative.json` (job names `*_acv2_amax_rel_*`),
+  `Overcooked/configs/main_4p2t_probe_v3_rel.json`. Report κ ∈ {0.1, 0.5} as sensitivity (κ = 0.5 is close to the
+  absolute rule once an agent has earned the maximal reward).
+- It addresses event coverage (who can be compared). It does not create contrast experience: when neither agent
+  has experienced the other team's paid situations, no event rule or τ_D separates them (E93).
+
 ## 4. Pairwise reward-response distance
 
 Responses `p = r̂_i(Q_ij)`, `q = r̂_j(Q_ij)`:

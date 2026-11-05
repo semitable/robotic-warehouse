@@ -1,0 +1,6 @@
+{
+  "mirror": false,
+  "event_threshold": "relative",
+  "event_scale": 0.1,
+  "min_event_response_ratio": 0.3
+}

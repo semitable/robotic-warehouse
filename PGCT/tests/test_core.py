@@ -131,3 +131,52 @@ def test_generic_trainer_on_the_toy_environment(tmp_path, method):
         trainer.run_training(ToyAdapter, tmp_path / method, cfg, ppo, gate)
     agents, payload = trainer.load_agents(tmp_path / method / "final.pt", 6, 3, ppo)
     assert len(agents) == 4 and payload["format"] == "pgct_core.trainer/1"
+
+
+def relative_predictor(scale=1.0, **kw):
+    from pgct_core.reward_gate import RewardPredictor
+    cfg = RewardGateConfig(event_threshold="relative", event_scale=.1, event_buffer_size=8, **kw)
+    p = RewardPredictor(cfg, 0, 3, 3)
+    view = np.zeros(3, np.uint8)
+    for r in (0.0, .1, .05, -1.0, .2, 1.0, .1, .05):
+        p.learn(view, 0, view, r * scale)
+    return p
+
+
+def test_relative_event_rule_selects_and_purges_by_own_reward_scale():
+    p = relative_predictor()
+    rewards = p.events.recent(p.events.count)[3]
+    # .05 was an event while the maximum was .1/.2, and was dropped once a reward of 1.0 raised the threshold to .1
+    assert np.allclose(rewards, [.1, 1.0, .2, .1]) and p.events_seen == 4 and p.reward_max == 1.0
+    assert p.event_threshold() == pytest.approx(.1) and "reward_max" in p.state_dict()
+    scaled = relative_predictor(scale=7.0)  # scale-free: multiplying every reward keeps the same events
+    assert np.allclose(scaled.events.recent(scaled.events.count)[3], 7.0 * rewards)
+
+
+def test_absolute_rule_is_the_default_and_unchanged():
+    from pgct_core.reward_gate import RewardPredictor
+    p = RewardPredictor(RewardGateConfig(event_buffer_size=8), 0, 3, 3)
+    view = np.zeros(3, np.uint8)
+    for r in (0.0, .1, .05, -1.0, .2, 1.0, .1, .05, .5):
+        p.learn(view, 0, view, r)
+    assert np.allclose(p.events.recent(p.events.count)[3], [.5, 1.0]) and "reward_max" not in p.state_dict()
+    with pytest.raises(ValueError):
+        RewardGateConfig(event_threshold="quantile")
+
+
+def test_relative_maturity_uses_the_own_event_reward_scale():
+    gate = RewardProbeGate(4, RewardGateConfig(event_threshold="relative", interval=1, batch_size=32, train_steps=40,
+                                               min_events=5, min_rounds=2, contact_snapshot=True, min_probes=4,
+                                               distance_mode="action_max"), ToyProjection(4))
+    adapter, rng = ToyAdapter(teams=(1, 0, 0, 1)), np.random.default_rng(1)
+    for update in range(1, 7):
+        gate.snapshot()
+        obs = adapter.reset()
+        for _ in range(200):  # toy rewards scaled down 20x: the absolute rule (0.5) would see no events at all
+            actions = rng.integers(0, 3, 4)
+            after, rewards, *_ = adapter.step(actions)
+            gate.observe(list(obs), actions, list(after), rewards * .05)
+            obs = after
+        gate(update, np.ones((4, 4), bool), active=True)
+    assert gate.maturity().all()
+    assert np.array_equal(gate.approved(), metrics.same_team_matrix(adapter.teams))

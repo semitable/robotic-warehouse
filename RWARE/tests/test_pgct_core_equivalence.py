@@ -27,6 +27,7 @@ from legacy import reward_probe_ac_v2_legacy as LV2  # noqa: E402
 import pgct_core  # noqa: E402
 from pgct_core import networks as CN, ppo as CP  # noqa: E402
 
+NEW_GATE_FIELDS = ("event_threshold", "event_scale", "min_event_response_ratio")  # D139, after the split
 GATE_SETTINGS = [dict(distance_mode=d, mirror=m, contact_snapshot=s)
                  for d in ("pooled", "action_max") for m in (True, False) for s in (False, True)]
 
@@ -79,14 +80,16 @@ def test_gate_matches_legacy_exactly(settings, observe_raw):
         assert a["log"] == b["log"] and a["metrics"] == b["metrics"]
     for a, b in zip(new_w, old_w):
         assert all(torch.equal(a[k], b[k]) for k in a)
-    assert new_state["config"] == old_state["config"]
+    assert {k: v for k, v in new_state["config"].items() if k not in NEW_GATE_FIELDS} == old_state["config"]
     assert new_state["last_versions"] == old_state["last_versions"]
 
 
 def test_config_defaults_and_helpers_match_legacy():
     from dataclasses import asdict, fields
-    assert asdict(V2.ACV2Config()) == asdict(LV2.ACV2Config())
-    assert [f.name for f in fields(V2.ACV2Config)] == [f.name for f in fields(LV2.ACV2Config)]
+    new = asdict(V2.ACV2Config())
+    assert {k: v for k, v in new.items() if k not in NEW_GATE_FIELDS} == asdict(LV2.ACV2Config())
+    assert [f.name for f in fields(V2.ACV2Config) if f.name not in NEW_GATE_FIELDS] == [f.name for f in fields(LV2.ACV2Config)]
+    assert new["event_threshold"] == "absolute"  # D139 option off by default: legacy event rule
     assert V2.ACV2Config().mirror is True and pgct_core.RewardGateConfig().mirror is False
     rng = np.random.default_rng(0)
     views = rng.integers(0, 2, size=(5, V2.view_size(2))).astype(np.uint8)

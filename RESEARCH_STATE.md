@@ -1,21 +1,10 @@
 # PGCT 현재 연구 상태
 
-## 최신 확인 — 2026-11-05 19:15 KST, Codex (T221, Overcooked W&B 기본 연동·RWARE 과거 출력 정리)
+## 최신 확인 — 2026-11-06 KST, Claude Code (T231, 상대 보상 사건 규칙)
 
-- 앞으로 `Overcooked/scripts/run_overcooked.ps1`로 시작하는 새 job은 W&B project `pgct-overcooked`에 기본 기록한다. plan 이름이 group, `<plan>_<method>_s<seed>`가 run 이름이다. `-NoTrack`, `-WandbMode offline`, project/entity 옵션을 제공한다. 로컬 JSONL은 계속 authoritative이며 W&B 기록 실패 시 `wandb_error.json`을 남기고 학습·checkpoint는 계속한다.
-- 공유 trainer에 선택적 metric/eval callback만 추가했으며 알고리즘 계산·PPO·gate·Max-GAE 경로는 바꾸지 않았다. Overcooked 전체 16 tests, 실제 W&B SDK offline 256-step smoke, 기본 online tracking plan-only를 통과했다.
-- 현재 `oc_pilot_500k`는 변경 전 시작한 프로세스이므로 W&B가 붙지 않는다. 중단 없이 19:15 기준 IPPO 102,400 step, PGCT-D2 100,352 step까지 진행 중이고 로컬 로그는 정상이다.
-- RWARE 출력 정리: 최신 논문·현재 D2 설계/검증에 직접 필요한 `RWARE/output` 8개와 `RWARE/runs` 전체를 보존하고, 과거 탐색·임시 테스트·옛 논문 초안 등 53개 디렉터리/1,445파일/163.44 MiB를 삭제했다. Git 추적 파일이라 commit `b01ab42`에서 복구 가능하다. manifest는 `docs/RWARE_OUTPUT_CLEANUP_20261105.md`.
-- 정리 후 공유 코어 12 통과, RWARE core 등가성 27 통과·3 건너뜀으로 현재 구현과 checkpoint 호환 경로가 유지됨을 확인했다.
-
-## 최신 확인 — 2026-11-05 18:42 KST, Codex (T218, 최신 논문·현재 RWARE run·Overcooked 실행 점검)
-
-- 첨부 `PGCT_fin.pdf`는 저장소 `MainPaper/PGCT_fin.pdf`와 SHA-256이 같다. 논문의 현재 PGCT-D2(action-max, mirror 없음, rollout-start snapshot, Max-GAE η=.5/shrink)는 코드와 일치한다. 다만 논문의 “11×16 현재 방법 실행 중” 문장은 E83 이후 상황보다 오래됐다. 넓은 지도는 1.1M에서 붕괴했고, 현재 실행은 기존 11×10 지도다.
-- W&B `rware-main-amax-v2`의 `b6_corner_indiv_comm5_pen005_acv2_amax_{ippo,pgct_max}_s1`은 18:36 KST heartbeat가 갱신되는 실제 실행이다. IPPO 617,472, PGCT 580,608 step; 둘 다 평가 배송 0. PGCT는 성숙 5/6, 같은 팀 승인 arc 8, 다른 팀 0, coverage .667이다. 이 Codex 환경에는 Python 학습 프로세스가 없어 실행 호스트는 별도다.
-- 같은 2M 계획을 다시 생성해 6 agent·개인 보상·corner goal·r_c=5·seed 1·scratch·action_max·mirror off·snapshot·η=.5/shrink·2,000,896 effective step을 확인했다. RWARE 64-step PGCT/IPPO smoke 둘 다 완료했고 초기 가중치 hash가 같다.
-- 재검증: 공유 코어 12 통과, RWARE 분리 전후 등가성 27 통과·3 건너뜀, Overcooked 14 통과. Overcooked 6 방법 256-step smoke가 모두 `status=complete`와 `final.pt`를 만들었다.
-- Overcooked는 실행 배선 검증만 끝났다. E86의 실제 설정 51,200-step sanity에서 배달·gate 사건이 0이라 PGCT=IPPO였고 학습 가능성은 아직 확인되지 않았다. 로컬 JSON 로그만 있으며 W&B 연동은 없다. 본 실험 전에 0.5–1M pilot과 reward-event/maturity 확인이 필요하다.
-
+- **구현(D139)**: 보상 사건 = 양수이고 자기 최대 보상의 10% 이상(성숙: 자기 사건 평균 보상의 30% 이상 예측). 선택 옵션이며 기본값(절대 .5)은 그대로라 RWARE 실험은 바뀌지 않는다(지문 18/18 동일).
+- **검증(E94)**: Overcooked 재생에서 환경별 튜닝 없이 절대 .1과 같은 결과(네 명 성숙, 같은 팀 두 쌍 승인). 다른 팀 오승인은 남는다.
+- **다음(사용자 실행)**: Overcooked `pgct_id_only` + `main_4p2t_probe_v3_rel.json` 0.5M, RWARE κ 민감도(`acv2_nomirror_relative.json`). 변경은 아직 커밋하지 않았다.
 
 ## 최신 확인 — 2026-11-06 KST, Claude Code (T229, Overcooked 해결책)
 
@@ -49,6 +38,23 @@
 - **Overcooked(E89, D133)**: 0.5M에 학습된다(배달 0→약 25/에피소드, 평가 수익 agent당 8.5). 그러나 PGCT gate 승인 0이라 PGCT-D2 = IPPO. 원인은 좌우 창구 방향 차이로 같은 배달이 다른 probe가 되는 것과 요리 담당 미성숙. 예산 연장보다 방향 정규화 projection(v2) 결정이 먼저(사용자 결정 대기).
 - **실행 중**: `oc_2m_pair_v1`(IPPO·PGCT-D2, 2M, W&B 추적, 영상 없음) — 건드리지 않음. 0.45M까지는 500k pilot과 숫자까지 같다.
 - **영상**: 새 Overcooked job은 평가마다 재생 영상을 W&B `eval/video`로 올린다. 기존 checkpoint는 `python -m pgct_overcooked.video --job ... --wandb`.
+
+## 최신 확인 — 2026-11-05 19:15 KST, Codex (T221, Overcooked W&B 기본 연동·RWARE 과거 출력 정리)
+
+- 앞으로 `Overcooked/scripts/run_overcooked.ps1`로 시작하는 새 job은 W&B project `pgct-overcooked`에 기본 기록한다. plan 이름이 group, `<plan>_<method>_s<seed>`가 run 이름이다. `-NoTrack`, `-WandbMode offline`, project/entity 옵션을 제공한다. 로컬 JSONL은 계속 authoritative이며 W&B 기록 실패 시 `wandb_error.json`을 남기고 학습·checkpoint는 계속한다.
+- 공유 trainer에 선택적 metric/eval callback만 추가했으며 알고리즘 계산·PPO·gate·Max-GAE 경로는 바꾸지 않았다. Overcooked 전체 16 tests, 실제 W&B SDK offline 256-step smoke, 기본 online tracking plan-only를 통과했다.
+- 현재 `oc_pilot_500k`는 변경 전 시작한 프로세스이므로 W&B가 붙지 않는다. 중단 없이 19:15 기준 IPPO 102,400 step, PGCT-D2 100,352 step까지 진행 중이고 로컬 로그는 정상이다.
+- RWARE 출력 정리: 최신 논문·현재 D2 설계/검증에 직접 필요한 `RWARE/output` 8개와 `RWARE/runs` 전체를 보존하고, 과거 탐색·임시 테스트·옛 논문 초안 등 53개 디렉터리/1,445파일/163.44 MiB를 삭제했다. Git 추적 파일이라 commit `b01ab42`에서 복구 가능하다. manifest는 `docs/RWARE_OUTPUT_CLEANUP_20261105.md`.
+- 정리 후 공유 코어 12 통과, RWARE core 등가성 27 통과·3 건너뜀으로 현재 구현과 checkpoint 호환 경로가 유지됨을 확인했다.
+
+## 최신 확인 — 2026-11-05 18:42 KST, Codex (T218, 최신 논문·현재 RWARE run·Overcooked 실행 점검)
+
+- 첨부 `PGCT_fin.pdf`는 저장소 `MainPaper/PGCT_fin.pdf`와 SHA-256이 같다. 논문의 현재 PGCT-D2(action-max, mirror 없음, rollout-start snapshot, Max-GAE η=.5/shrink)는 코드와 일치한다. 다만 논문의 “11×16 현재 방법 실행 중” 문장은 E83 이후 상황보다 오래됐다. 넓은 지도는 1.1M에서 붕괴했고, 현재 실행은 기존 11×10 지도다.
+- W&B `rware-main-amax-v2`의 `b6_corner_indiv_comm5_pen005_acv2_amax_{ippo,pgct_max}_s1`은 18:36 KST heartbeat가 갱신되는 실제 실행이다. IPPO 617,472, PGCT 580,608 step; 둘 다 평가 배송 0. PGCT는 성숙 5/6, 같은 팀 승인 arc 8, 다른 팀 0, coverage .667이다. 이 Codex 환경에는 Python 학습 프로세스가 없어 실행 호스트는 별도다.
+- 같은 2M 계획을 다시 생성해 6 agent·개인 보상·corner goal·r_c=5·seed 1·scratch·action_max·mirror off·snapshot·η=.5/shrink·2,000,896 effective step을 확인했다. RWARE 64-step PGCT/IPPO smoke 둘 다 완료했고 초기 가중치 hash가 같다.
+- 재검증: 공유 코어 12 통과, RWARE 분리 전후 등가성 27 통과·3 건너뜀, Overcooked 14 통과. Overcooked 6 방법 256-step smoke가 모두 `status=complete`와 `final.pt`를 만들었다.
+- Overcooked는 실행 배선 검증만 끝났다. E86의 실제 설정 51,200-step sanity에서 배달·gate 사건이 0이라 PGCT=IPPO였고 학습 가능성은 아직 확인되지 않았다. 로컬 JSON 로그만 있으며 W&B 연동은 없다. 본 실험 전에 0.5–1M pilot과 reward-event/maturity 확인이 필요하다.
+
 
 ## 최신 확인 — 2026-11-05 KST, Claude Code (T216, 저장소 분리·Overcooked 구현)
 

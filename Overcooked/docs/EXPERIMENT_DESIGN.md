@@ -103,6 +103,13 @@ dispenser vs counter) are dropped. Serving at either window becomes the same inp
 Overcooked reward is in the front cell and the agent's own held item. Scripted opposite-window teammates:
 same-team EMA 0.001 / 0.004, cross-team 0.96–0.97 (v2: 0.32 / 0.27). Policy-replay results: E92.
 
+**Reward-event rule (D138–D139).** With the absolute rule (event ⇔ r ≥ 0.5) only deliveries are events, so an
+agent that cooks but never serves never matures. The environment's rewards are frozen at the current version
+(D138: not changed to suit PGCT). Instead the gate uses the scale-free relative rule shared with RWARE
+(`configs/main_4p2t_probe_v3_rel.json`): an event is a positive own reward ≥ 0.1 × the largest own reward so far
+(`docs/ALGORITHM.md`, "Reward-event rule"). This brings ingredient and soup events in for every agent. It does not
+solve the contrast problem (agents that never handle the other team's items cannot tell the teams apart; E93).
+
 Critic compatibility: all critic inputs live in one space with identical semantics, so a donor critic
 `V_j` can be run on the receiver's history. `V_j` estimates returns under **j's** reward function; for a true
 teammate this is the same function (the case Max-GAE is meant for), for a wrongly approved agent it is not,

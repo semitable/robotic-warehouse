@@ -121,11 +121,12 @@ logs what the v3 gate decides along it:
 powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v3.json -Name oc_id_500k_probe_v3 -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
 ```
 
-Probe v3 with the reward-event threshold scaled to Overcooked's rewards (`configs/main_4p2t_probe_v3_ev01.json`:
-event_reward 0.1, min_event_response 0.06; D137, proposal). Same identification-only check:
+Probe v3 with the relative reward-event rule (`configs/main_4p2t_probe_v3_rel.json`, D139): an event is a positive own
+reward of at least 0.1 x the largest own reward so far (scale-free; the same rule is available for RWARE via
+`RWARE/latent_team/acv2_nomirror_relative.json`). Identification-only check on the IPPO trajectory:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v3_ev01.json -Name oc_id_500k_v3_ev01 -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scriptsun_overcooked.ps1' -Config main_4p2t_probe_v3_rel.json -Name oc_id_500k_v3_rel -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
 ```
 
 Offline check of a finished job's policies under all probe frames (`--gate KEY=VALUE` overrides gate values for

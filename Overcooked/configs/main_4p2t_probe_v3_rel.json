@@ -1,5 +1,5 @@
 {
-  "description": "Probe v3 + event scale (D137, proposal): main_4p2t_probe_v3.json with the gate's reward-event threshold set to Overcooked's smallest positive reward (event_reward 0.1; min_event_response 0.06 keeps the D2 ratio .3/.5). In this kitchen every positive reward is team-specific (own ingredient, own soup, own delivery), so any positive own reward is an objective-revealing event; RWARE keeps 0.5. Gate-only: ippo/oracle/all are identical to main_4p2t.json runs with the same seed.",
+  "description": "Probe v3 + relative reward-event rule (D139): main_4p2t_probe_v3.json with gate.event_threshold='relative' - an agent's reward event is a positive own reward of at least event_scale=0.1 times the largest own reward it has received; maturity needs a mean prediction of at least min_event_response_ratio=0.3 times the mean reward of its own event probes. The same rule and values are available for RWARE (RWARE/latent_team/acv2_nomirror_relative.json). Gate-only: ippo/oracle/all are identical to main_4p2t.json runs with the same seed.",
   "kitchen": {
     "layout": "two_team_kitchen",
     "horizon": 400,
@@ -44,14 +44,12 @@
   "gate": {
     "buffer_size": 20000,
     "event_buffer_size": 512,
-    "event_reward": 0.1,
     "event_fraction": 0.25,
     "hidden": 128,
     "learning_rate": 0.001,
     "train_steps": 50,
     "batch_size": 256,
     "min_events": 20,
-    "min_event_response": 0.06,
     "probes_per_agent": 32,
     "mirror": false,
     "min_probes": 8,
@@ -60,7 +58,10 @@
     "min_rounds": 3,
     "interval": 5,
     "seed": 0,
-    "distance_mode": "action_max"
+    "distance_mode": "action_max",
+    "event_threshold": "relative",
+    "event_scale": 0.1,
+    "min_event_response_ratio": 0.3
   },
   "max_gae": {
     "eta": 0.5,

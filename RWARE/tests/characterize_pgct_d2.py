@@ -81,6 +81,9 @@ def fingerprint(folder):
             row = json.loads(line)
             rows.append({k: v for k, v in row.items() if "time" not in k and "elapsed" not in k})
     gate = payload.get("reward_probe_ac_v2")
+    if gate:  # config keys added after the split (D139) are not part of the pre-split fingerprint
+        gate = dict(gate, config={k: v for k, v in gate["config"].items()
+                                  if k not in ("event_threshold", "event_scale", "min_event_response_ratio")})
     return dict(weights=digest(payload["agents"]), gate=digest(gate) if gate else None,
                 max_gae=digest(rows) if rows else None,
                 donor_arcs=[r.get("max_gae_donor_arcs") for r in rows],

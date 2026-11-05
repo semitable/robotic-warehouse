@@ -225,6 +225,8 @@ def plan(args):
                 label += "_acv2" if ac_v2 else "_ac"
                 if ac_v2 and ac_config.distance_mode != "pooled":
                     label += "_amax"  # D108 action_max distance; pooled runs keep their names
+                if ac_v2 and getattr(ac_config, "event_threshold", "absolute") == "relative":
+                    label += "_rel"  # D139 relative reward-event rule; absolute runs keep their names
             if args.team_reward != "individual":
                 label += f"_{args.team_reward}rew"
             if init_checkpoint is not None:
