@@ -1,11 +1,13 @@
-# Run the three test suites (shared core, RWARE regression incl. pre-split equivalence, Overcooked).
+# Run the test suites (shared core, RWARE regression incl. pre-split equivalence, Overcooked, LBF, VMAS).
 #   powershell -ExecutionPolicy Bypass -File scripts\run_tests.ps1 [-Python <python.exe>] [-Only PGCT,Overcooked]
 # RWARE real-trainer tests skip themselves when the local reference experiment / 1M checkpoints are absent.
 # The RWARE suite needs pyglet<2 for its one rendering test (tests\test_policy_probe_consensus.py).
+# LBF: the comparison with the original lbforaging skips itself unless `pip install lbforaging==2.0.0 --no-deps`.
+# VMAS: the whole suite skips itself unless `pip install vmas==1.5.2` (GPLv3).
 param(
   [string] $Python = $(if ($env:PGCT_PYTHON) { $env:PGCT_PYTHON } else { "python" }),
-  [ValidateSet("PGCT", "RWARE", "Overcooked")]
-  [string[]] $Only = @("PGCT", "RWARE", "Overcooked"),
+  [ValidateSet("PGCT", "RWARE", "Overcooked", "LBF", "VMAS")]
+  [string[]] $Only = @("PGCT", "RWARE", "Overcooked", "LBF", "VMAS"),
   [string] $BaseTemp = $(Join-Path $env:TEMP "pgct_pytest")
 )
 $Repo = Split-Path $PSScriptRoot -Parent

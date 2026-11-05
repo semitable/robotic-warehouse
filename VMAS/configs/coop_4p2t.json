@@ -1,0 +1,86 @@
+{
+  "description": "Variant: main_4p2t.json with VMAS discovery's default agents_per_target=2 (a target needs two agents at once; a helper from the other team counts but is not paid). Teammates are often paid in the same step: report the reward-correlation baseline next to PGCT. Fixed before any PGCT result (D142).",
+  "discovery": {
+    "team_sizes": [
+      2,
+      2
+    ],
+    "targets_per_type": 3,
+    "agents_per_target": 2,
+    "covering_range": 0.25,
+    "lidar_range": 0.35,
+    "n_lidar_rays_targets": 12,
+    "n_lidar_rays_agents": 12,
+    "x_semidim": 1.0,
+    "y_semidim": 1.0,
+    "min_dist_between_entities": 0.2,
+    "covering_rew_coeff": 1.0,
+    "agent_collision_penalty": 0.0,
+    "time_penalty": 0.0,
+    "horizon": 100,
+    "team_assignment": "shuffle",
+    "team_seed": null
+  },
+  "adapter": {
+    "comm_range": 0.6
+  },
+  "ppo": {
+    "rollout_steps": 1024,
+    "sequence_length": 64,
+    "minibatch_chunks": 8,
+    "ppo_epochs": 4,
+    "learning_rate": 0.0002,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_coef": 0.2,
+    "value_clip_coef": 0.2,
+    "value_loss_coef": 0.5,
+    "entropy_coef": 0.05,
+    "max_grad_norm": 0.5,
+    "mlp_hidden_dim": 128,
+    "recurrent_hidden_dim": 128
+  },
+  "gate": {
+    "buffer_size": 20000,
+    "event_buffer_size": 512,
+    "event_fraction": 0.25,
+    "hidden": 128,
+    "learning_rate": 0.001,
+    "train_steps": 50,
+    "batch_size": 256,
+    "min_events": 20,
+    "probes_per_agent": 32,
+    "mirror": false,
+    "min_probes": 8,
+    "distance_threshold": 0.5,
+    "ema_beta": 0.35,
+    "min_rounds": 3,
+    "interval": 5,
+    "seed": 0,
+    "distance_mode": "action_max",
+    "event_threshold": "relative",
+    "event_scale": 0.1,
+    "min_event_response_ratio": 0.3
+  },
+  "max_gae": {
+    "eta": 0.5,
+    "scale": "shrink",
+    "gae_lambda": null,
+    "cap": null,
+    "window": 8,
+    "min_critic_ev": null
+  },
+  "trainer": {
+    "total_timesteps": 2000000,
+    "device": "cpu",
+    "warmup_updates": 100,
+    "eval_interval": 50,
+    "eval_episodes": 10,
+    "eval_seed": 5000001,
+    "eval_deterministic": true,
+    "save_interval": 250,
+    "log_interval": 10,
+    "torch_threads": 1,
+    "audit": true
+  }
+}

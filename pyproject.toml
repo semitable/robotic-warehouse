@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pgct"
 version = "0.1.0"
-description = "PGCT (Probe-Gated Critic Transfer): latent team identification from individual reward responses and selective critic access via Max-GAE; shared core plus RWARE and Overcooked experiments"
+description = "PGCT (Probe-Gated Critic Transfer): latent team identification from individual reward responses and selective critic access via Max-GAE; shared core plus RWARE, Overcooked, LBF and VMAS experiments"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -15,12 +15,17 @@ dependencies = ["numpy", "torch", "gymnasium"]
 test = ["pytest"]
 rware = ["networkx", "pyglet<2", "wandb"]   # RWARE experiment (install RWARE/ itself with: pip install -e RWARE)
 overcooked = ["wandb", "psutil"]
+lbf = ["wandb", "psutil", "imageio", "pillow"]   # lbforaging itself is only needed for the equivalence test
+vmas = ["vmas==1.5.2", "wandb", "psutil", "imageio", "pillow"]   # VMAS is GPLv3; pulls gym 0.26, pyglet<=1.5.27
 analysis = ["psutil", "matplotlib"]
 
-# Installs the shared core (PGCT/pgct_core) and the Overcooked experiment package (Overcooked/pgct_overcooked).
+# Installs the shared core (PGCT/pgct_core), the shared experiment plumbing (PGCT/pgct_runner) and the Overcooked,
+# LBF and VMAS experiment packages (Overcooked/pgct_overcooked, LBF/pgct_lbf, VMAS/pgct_vmas).
 # Without installation every entry point adds <repo>/PGCT to sys.path itself (RWARE/latent_team/_pgct_path.py,
-# Overcooked/pgct_overcooked/__init__.py); RWARE scripts keep running from the RWARE folder as before.
+# Overcooked/pgct_overcooked/__init__.py, LBF/pgct_lbf/__init__.py, VMAS/pgct_vmas/__init__.py); RWARE scripts
+# keep running from the RWARE folder as before.
 [tool.setuptools.packages.find]
-where = ["PGCT", "Overcooked"]
-include = ["pgct_core*", "pgct_overcooked*"]
-# Tests: run each suite from its own folder (scripts/run_tests.ps1): PGCT/tests, RWARE/tests, Overcooked/tests.
+where = ["PGCT", "Overcooked", "LBF", "VMAS"]
+include = ["pgct_core*", "pgct_runner*", "pgct_overcooked*", "pgct_lbf*", "pgct_vmas*"]
+# Tests: run each suite from its own folder (scripts/run_tests.ps1): PGCT/tests, RWARE/tests, Overcooked/tests,
+# LBF/tests, VMAS/tests.

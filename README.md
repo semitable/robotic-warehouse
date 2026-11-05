@@ -10,11 +10,13 @@ This repository is organised as one shared algorithm and independent experiment 
 
 | folder | content |
 |---|---|
-| [`PGCT/`](PGCT) | `pgct_core`: environment-independent gate, Max-GAE, recurrent IPPO, generic trainer, metrics |
+| [`PGCT/`](PGCT) | `pgct_core`: environment-independent gate, Max-GAE, recurrent IPPO, generic trainer, metrics; `pgct_runner`: shared plans, CLI, W&B, videos, aggregation for LBF/VMAS |
 | [`RWARE/`](RWARE) | multi-robot warehouse experiments (the original study; behaviour unchanged by the split) |
-| [`Overcooked/`](Overcooked) | new 4-agent, 2-hidden-team Overcooked-style kitchen experiment |
-| [`docs/`](docs) | [ARCHITECTURE](docs/ARCHITECTURE.md), [MIGRATION](docs/MIGRATION.md), [ALGORITHM](docs/ALGORITHM.md), research context and history |
-| [`scripts/`](scripts) | `run_tests.ps1`, `migrate_local_layout.ps1` |
+| [`Overcooked/`](Overcooked) | 4-agent, 2-hidden-team Overcooked-style kitchen experiment (boundary case, D138/D141) |
+| [`LBF/`](LBF) | multi-team Level-Based Foraging: second main environment (D141, D142) |
+| [`VMAS/`](VMAS) | VMAS Team Discovery: continuous-physics check (optional `vmas`, GPLv3) |
+| [`docs/`](docs) | [ARCHITECTURE](docs/ARCHITECTURE.md), [MIGRATION](docs/MIGRATION.md), [ALGORITHM](docs/ALGORITHM.md), [ENVIRONMENTS](docs/ENVIRONMENTS.md), research context and history |
+| [`scripts/`](scripts) | `run_tests.ps1`, `run_experiment.ps1` / `aggregate_experiment.ps1` (LBF, VMAS), `migrate_local_layout.ps1` |
 
 Research records stay at the root: `RESEARCH_STATE.md`, `DECISIONS.md`, `EXPERIMENTS.md`,
 `CONVERSATION_LOG.md`, `paper/`, `presentation/` (see `AGENTS.md`, `CLAUDE.md`).
@@ -46,6 +48,14 @@ powershell -ExecutionPolicy Bypass -File Overcooked\scripts\aggregate.ps1 -Name 
 
 The Overcooked queue launcher tracks new jobs in W&B project `pgct-overcooked` by default (one run per
 method/seed, grouped by `-Name`). Pass `-NoTrack` for local-only runs or `-WandbMode offline` to sync later.
+
+**LBF** and **VMAS**: see [`LBF/README.md`](LBF/README.md), [`VMAS/README.md`](VMAS/README.md) and
+[`docs/ENVIRONMENTS.md`](docs/ENVIRONMENTS.md) (why these, why not MetaDrive / MAgent2).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_experiment.ps1 -Experiment LBF -Name lbf_smoke -Seeds 1 -Smoke -NoTrack
+powershell -ExecutionPolicy Bypass -File scripts\aggregate_experiment.ps1 -Experiment LBF -Name lbf_smoke
+```
 
 ## What is shared and what is environment specific
 

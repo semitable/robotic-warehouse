@@ -1679,3 +1679,40 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - Overcooked: 테스트 30 통과, `main_4p2t_probe_v3_rel.json` pgct_d2 smoke(256 step) 완료.
 - 정책 재생(500k pilot, checkpoint_00250 20 + final 20, seed 12345, v3): 상대 규칙(κ .1, ρ .3) 결과가 절대 .1(E93 B)과 모든 수치에서 같았다. 사건 [1230, 2844, 2973, 2335], 네 명 성숙. 같은 팀 0–1 .307·2–3 .258 승인. 다른 팀 1–2 .259·1–3 .320 오승인, 0–2 .524·0–3 .708 거부. precision .5, recall 1.0. 배달하지 않는 agent 0의 M은 .2라 기준 .02에서 재료 넣기(.1)가 사건이 된다.
 - 해석: 환경별 튜닝 없이 같은 규칙으로 Overcooked의 사건 범위 문제가 풀린다. 다른 팀 오승인(대조 경험 부족)은 그대로다.
+
+## E95. RWARE PGCT leading/lagging agent 학습 상승량 중간 분석 — 2026-11-06 02:45 KST Codex
+
+- 실행 여부: W&B API 읽기 전용 분석. 코드·설정·실행 중인 학습을 변경하지 않았다.
+- 대상: W&B project `t98339-hanyang-university/rware-main-amax-v2`, seed 1, 2M 예정. PGCT-D2 run `57ebqe5l`은 1,319,936 step, IPPO run `yidd96p3`은 1,423,360 step에서 실행 중이었다. 비교는 가장 최근 공통 평가점 1,280,000 step을 사용했다.
+- 평가 조건: 결정적 정책, 20 episode × 500 step. `eval/agent_i_delivery_count`는 20 episode 전체 배송 수다. 팀은 기본 balanced assignment `[0,1,0,1,0,1]`, 즉 team 0 = A1·A3·A5, team 1 = A2·A4·A6이다.
+- 1.28M 결과: PGCT `[30,0,13,17,0,40]`, IPPO `[0,0,0,0,0,0]`. 경험적 leader는 A1·A6이고, 배송이 나타난 lagging receiver는 A3·A4다. A3는 PGCT +13회(+0.65/episode), leader A1의 43.3%; A4는 +17회(+0.85/episode), leader A6의 42.5%다. A3 첫 배송은 1.28M, A4는 1.2288M이며 leader A1·A6은 0.768M부터 배송했다. A5는 donor access가 있으나 아직 배송 0, A2는 reward predictor 미성숙으로 donor access가 없고 배송 0이다.
+- 전달 기작: 0.768–1.28M 구간에 donor arc 8개가 모두 같은 팀이고 cross-team arc는 0, receiver는 5명이다. donor-derived max term 선택 비율은 평균 .643, 자기 advantage 대비 정규화 평균 변화량은 .338이다. A2만 reward predictor 미성숙이므로 team 1에서 A4의 유일한 donor 후보는 A6이다. team 0의 A3는 A1과 A5 모두를 후보로 가지므로 A1 단독 기여는 분리할 수 없다.
+- 한계: seed 1 중간 결과이며 IPPO가 공통 평가점에서 0이라 상대 개선율(%)은 정의할 수 없어 절대 배송 증가량과 leader 대비 비율을 보고했다. W&B에는 receiver별 실제 선택 donor와 agent별 `select_frac`이 없고 aggregate만 있다. 따라서 A4←A6은 강한 정황이지만 엄밀한 인과 효과는 아니며, 정확한 edge별 사용량은 실행 호스트의 `max_gae.jsonl`과 critic-access ablation/추가 seed가 필요하다.
+
+## E96. LBF·VMAS 환경 구현 검증과 짧은 IPPO 시험 학습 — 2026-11-06 03:00 KST 전후 Claude Code (T236)
+
+- 실행 여부: 테스트, 원본 비교, 스크립트 정책 식별 시험, smoke, 짧은 IPPO 시험 학습만 했다. 본 실험(수백만 step)은 하지 않았다. 환경: 이 PC, `marl-policy-sharing`(Python 3.11.15, torch 2.11 CPU 실행, numpy 2.4.6, gymnasium 1.3.0).
+- 테스트: PGCT 15, Overcooked 30, LBF 22(식별 시험 포함), VMAS 12 통과. `pgct_core`는 바꾸지 않았으므로 RWARE 동결 사본 비교는 다시 돌리지 않았다.
+- LBF 원본 일치(`LBF/tests/test_lbforaging_equivalence.py`): 팀 1개 설정에서 lbforaging 2.0.0과 비교했다. 6개 설정(크기 6–12, agent 2–4, 먹이 1–4, 시야 1–8, coop 포함) × 25 episode, 무작위 행동(LOAD 30%)으로 7,406 step을 비교했다. 그중 적재 성공 step 44, 실패 step 755다. 위치·먹이·보상·종료·격자 관측이 모두 같았다. lbforaging 2.0.0은 gymnasium 1.x에서 격자 관측 공간 생성이 실패한다(Box shape 불일치). 그래서 원본을 벡터 모드로 만든 뒤 원본의 격자 관측 코드 경로로 전환해 비교했다.
+- LBF 스크립트 정책 식별(`LBF/tests/test_identification.py`):
+  - 조건: 매 step 무작위 두 agent가 무작위 종류 먹이 옆에서 LOAD하고, 나머지는 무작위로 움직인다. 150 step × 8 update, main 설정의 gate 값(상대 사건 규칙, action_max, 거울 없음, snapshot).
+  - 결과: 네 명 모두 성숙했고, 같은 팀 두 쌍만 승인됐다. AUROC 1.0, 같은 팀 거리 평균 .003, 다른 팀 .905(EMA .902–.908), 첫 올바른 승인 750 step, 오승인 없음.
+  - 한계: 모든 agent가 두 종류 먹이를 다 겪는 이상적인 경험이다. 학습된 정책의 대조 경험 부족(Overcooked 조건 3)은 이 시험으로 확인되지 않는다.
+- VMAS: 덮기 보상, 협동 변형, 난수 격리, 라벨 무관성, 학습 경로 테스트가 통과했다.
+  - VMAS 난수 상태는 프로세스 전체가 공유한다(`Environment.vmas_random_state`). 어댑터마다 자기 사본을 쓰도록 고쳤고, 평가 환경을 끼워 넣어도 학습 환경 관측열이 같음을 테스트로 확인했다.
+  - 속도: 무작위 정책 1 thread 기준 초당 141 step(LIDAR 12선)과 146 step(8선). cProfile상 LIDAR가 step 시간의 약 40%다.
+- LBF 속도: 무작위 정책 기준 초당 약 22,600 env step.
+- 스크립트 경로: `scripts/run_experiment.ps1 -Experiment LBF -Smoke -NoTrack`로 ippo·pgct_d2 2개 job을 병렬 실행했다(`LBF/runs/lbf_smoke_ps_1106`). 영상 3개와 `aggregate_experiment.ps1` 요약까지 생성됐다. smoke 값은 배선 확인용이라 수치 의미가 없다.
+- LBF IPPO 시험 학습(`LBF/runs/lbf_pilot_ippo_200k/ippo_s1`, main_4p2t, seed 1, 숨은 팀 [0,0,1,1]):
+  - 규모: 200,704 step, 976초(초당 약 206 step, 다른 시험·테스트와 CPU를 같이 썼다).
+  - 학습 중 episode 평균(agent당 보상): update 1–10 .047, 91–100 .099, 187–196 .166. agent당 자기 팀 먹이 수집은 episode당 .19에서 .66으로 늘었고, 다른 팀 먹이 수집은 .17에서 .12로 줄었다.
+  - 결정적 평가(20 episode, 최대 50 step), agent 평균 보상: 51k .019, 102k .071, 154k .130, 200k .143.
+  - 200k 평가 세부: episode당 자기 팀 먹이 수집 합계 2.4개(전체 6개 중), 다른 팀 0.2개, 적재 실패 51.4회. 팀 보상(최대 1)은 team0 .253, team1 .321.
+  - 해석: IPPO는 배우지만 200k에서 먹이의 약 40%만 모은다. 결정적 정책은 혼자 들 수 없는 먹이에 LOAD를 반복한다. 영상 `videos/final_seed5000001_det.mp4`에서 레벨 1 agent가 레벨 2 먹이 옆에서 반복 적재한다. 같은 팀 협력이 병목이므로 critic 전이(Q2)를 볼 여지가 있다. seed 1개, 200k라 결론은 아니다.
+  - 비용: 5M이면 job당 약 6.7시간이다(초당 206 step 가정).
+- VMAS IPPO 시험 학습(`VMAS/runs/vmas_pilot_ippo_100k/ippo_s1`, main_4p2t, seed 1, 숨은 팀 [0,0,1,1]):
+  - 규모: 100,352 step, 1,199초(초당 약 84 step, 처음 몇 분은 LBF 시험과 CPU를 같이 썼다).
+  - 학습 중 100 step episode의 agent당 보상: update 1–10 .311, 45–54 .372, 89–98 .468. 자기 종류 덮기는 agent당 .31에서 .47로 늘었다. 다른 종류 덮기는 .36에서 .43으로 줄지 않았는데, 다른 종류를 덮어도 비용이 없기 때문이다.
+  - 결정적 평가(10 episode), agent 평균 보상: 51k .575, 100k .675. 100k에서 episode당 자기 종류 덮기 합계 2.7, 다른 종류 2.3.
+  - 해석: 학습은 느리게 오른다. 다른 종류 목표도 계속 덮으므로 대조 경험은 LBF보다 풍부할 수 있다. seed 1개, 100k라 결론은 아니다.
+  - 비용: 2M이면 job당 약 6.6시간이다.

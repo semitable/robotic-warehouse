@@ -1,5 +1,27 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-06 KST, Claude Code (T236, LBF·VMAS 환경 구현)
+
+- **구현(D142)**:
+  - `LBF/`: 다중 팀 LBF. lbforaging 2.0.0 규칙에 먹이 종류(팀)를 더했고, 자기 팀 먹이에만 지급한다.
+  - `VMAS/`: VMAS discovery의 팀형 변형. 자기 종류 목표에만 지급한다. vmas는 선택 의존성(GPLv3)이다.
+  - 공용 실행부 `PGCT/pgct_runner`와 `scripts/run_experiment.ps1`·`aggregate_experiment.ps1`을 추가했다.
+  - MetaDrive(agent 재생성, 자연 팀 없음, 무거움)와 MAgent2(관측에 팀 채널, 적대 팀, 사망)는 제외했다.
+  - `pgct_core`와 Overcooked 코드는 바꾸지 않았다.
+- **검증(E96)**:
+  - 테스트: PGCT 15, Overcooked 30, LBF 22, VMAS 12 통과.
+  - LBF는 팀 1개일 때 lbforaging과 7,406 step이 같다.
+  - LBF 스크립트 경험 식별: 같은 팀 거리 .003, 다른 팀 .905, AUROC 1.0.
+  - LBF IPPO 200k(seed 1): 평가 보상 .019(51k)에서 .143(200k)으로 올랐다. 자기 팀 먹이는 6개 중 2.4개를 모으고 적재 실패가 51회다. 같은 팀 협력이 병목이다.
+  - VMAS IPPO 100k(seed 1): 평가 보상 .575(51k)에서 .675(100k)로 올랐다. 학습 중 초당 약 84 step이다.
+- **다음(사용자 결정)**: 본 실험 예산과 범위. LBF 5M은 job당 약 6.7시간, VMAS 2M은 job당 약 6–7시간이다. 학습 중 식별(대조 경험)은 LBF `pgct_id_only`로 먼저 확인할 것을 제안한다.
+
+## 최신 확인 — 2026-11-06 02:45 KST, Codex (E95, RWARE leading/lagging 중간 분석)
+
+- **공통 평가점 1.28M(seed 1, 결정적 20×500)**: PGCT agent별 배송 `[30,0,13,17,0,40]`, IPPO `[0,0,0,0,0,0]`. leader A1·A6에 이어 lagging A3·A4가 각각 13회(+0.65/episode), 17회(+0.85/episode) 배송했다. 같은 step leader 성과의 43.3%, 42.5%다. A5는 donor access가 있으나 0, A2는 reward predictor 미성숙으로 access가 없고 0이다.
+- **전달 근거**: 0.768–1.28M에 같은 팀 donor arc 8, cross-team 0, receiver 5, donor max 선택 비율 평균 .643, 정규화 advantage 변화 .338. team 1의 A4는 A2 미성숙 때문에 donor 후보가 A6 하나뿐이라 가장 깨끗한 leading→lagging 사례다. A3는 A1·A5 후보라 A1 단독 기여는 분리되지 않는다.
+- **한계**: 실행 중인 seed 1 중간 결과다. W&B는 edge별 실제 donor 선택을 기록하지 않으므로 엄밀한 인과 귀속에는 실행 호스트 `max_gae.jsonl`, critic-access ablation, 추가 seed가 필요하다. 코드와 실행은 변경하지 않았다.
+
 ## 최신 확인 — 2026-11-06 KST, Claude Code (T231, 상대 보상 사건 규칙)
 
 - **구현(D139)**: 보상 사건 = 양수이고 자기 최대 보상의 10% 이상(성숙: 자기 사건 평균 보상의 30% 이상 예측). 선택 옵션이며 기본값(절대 .5)은 그대로라 RWARE 실험은 바뀌지 않는다(지문 18/18 동일).

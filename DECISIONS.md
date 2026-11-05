@@ -1789,3 +1789,31 @@
 - 판단: 괜찮다. 팀을 같은 보상 함수를 가진 agent 집합으로 정의하면 일관되고 현실적이다. 팀 보상이면 보상 결합만으로 식별이 자명하다(D72·D81). 모든 비교군이 같은 개인 보상을 받아 공정하다. PGCT 전제(자기 보상만으로 학습·식별)와 맞는다. 원래 RWARE 관례와 같다.
 - 밝힐 것: (1) 개인 보상 때문에 팀원끼리 경쟁·독주가 생긴다(D81, day_base 팀당 배송자 1명). 따라서 Q2는 "같은 목표 agent 사이의 critic 공유가 학습을 돕는다"로 서술한다. (2) 보상 사건이 없는 팀원은 식별되지 않는다(day_base agent 1). D139로 줄일 수 있으나 없애지는 못한다.
 - Overcooked와 대비: RWARE는 원래 개인 보상 벤치마크, Overcooked는 원래 팀 공유 보상이라 개인 보상이 변형이다. RWARE 주 실험·Overcooked 보조 실험(D138)을 뒷받침한다.
+
+## D141. Overcooked 다음 환경 후보: LBF 다중 팀 변형(1순위), VMAS(2순위) — 2026-11-06 Claude Code (사용자 질문 T233·T234, 제안)
+
+- 배경(T233): 분담형 협동(Overcooked)은 팀원의 보상 장면이 겹치지 않아 보상 반응 식별과 critic 전이 모두 전제가 약해진다. PGCT는 같은 목표·비슷한 역할·개인 보상·독립 학습에 맞는다.
+- 기준: 개인 보상이 원래 설정, 팀원 역할 유사(보상 장면 겹침), 팀이 목표로 자연스럽게 숨겨짐, IPPO가 쉽게 못 풀어 Q2 여지, 위치·방향 무관 공개 view, Windows·PyTorch에서 빠름.
+- 1순위 LBF 다중 팀 변형: 원래 개인 보상(함께 집은 음식 레벨을 기여만큼 분배), RWARE와 같은 SEAC 논문·EPyMARL 표준, MIT·Gymnasium. 음식 종류를 팀별로 두고 자기 팀 음식에만 보상한다. 역할이 같고, 높은 레벨 음식은 팀원이 함께 집어야 해 같은 팀이 실제로 협력한다(RWARE의 팀원 경쟁과 대비). 주의: 함께 집으면 보상이 동시에 들어와 보상 상관 기준선이 강해지므로 반드시 비교한다. 협동 필수 on/off는 결과 전에 고정한다.
+- 2순위 VMAS: 연속 제어 다중 로봇으로 일반성 주장에 좋다. 거리 기반 dense 보상이라 사건 정의가 까다롭고(D139가 도움), 시나리오 설계 부담이 있다.
+- 부적합: SMAC/SMACv2(고정 팀·공유 보상, D79), Melting Pot(Windows 불가), MPE simple_spread(공유·dense), Hanabi(완전 협력), Overcooked(분담형, 경계 사례로 유지).
+- 제안: LBF를 두 번째 주 환경으로 compact 다중 팀 시뮬레이터 + pgct_core 어댑터로 구현(테스트 포함 약 하루). Overcooked는 경계 사례로 남긴다. 사용자 결정 대기.
+
+## D142. LBF·VMAS 환경 구현, MetaDrive·MAgent2 제외 — 2026-11-06 Claude Code (사용자 요청 T236)
+
+- 요청(T236): LBF를 build하고, VMAS·MetaDrive·MAgent2를 검토해 실험에 쓸 만하면 함께 build.
+- 판단:
+  - **LBF 다중 팀 변형: 구현(두 번째 주 환경).** lbforaging 2.0.0 규칙을 그대로 따르고 먹이 종류(팀)만 추가했다. 물리는 팀을 무시한다(누구나 어느 먹이든 함께 들 수 있음). 보상은 LBF 몫 그대로이되 자기 팀 먹이에만 지급한다. 정규화 분모는 팀별 생성 먹이 합이다. 먹이 레벨 규칙(최대 = 하위 3명 레벨 합)도 팀별로 적용한다. 팀이 하나면 원본과 step 단위로 같다(E96).
+  - **VMAS Team Discovery: 구현(연속 물리 일반성 점검).** VMAS discovery에 목표 종류(팀)를 추가했다. 덮기는 팀을 무시하고, 보상은 자기 종류 목표를 덮은 agent에게만 준다. 종류별 LIDAR를 두고, probe view에서는 절대 위치를 뺀다. 한계 셋: VMAS는 GPLv3이고 선택 의존성이다. 단일 환경 CPU에서 초당 약 140 step으로 느리다(LIDAR가 시간의 약 40%). VMAS 난수 상태는 프로세스 전체가 공유하므로 어댑터별로 격리했다.
+  - **MetaDrive: 제외.** 차량이 종료·재생성돼 agent 집합이 고정되지 않는다. PGCT는 agent마다 지속되는 학습기·예측기·critic이 필요하다. 자연스러운 숨은 팀도 없고(각자 경로), Panda3D 3D·55MB·자산 다운로드·Python<3.12로 무겁다.
+  - **MAgent2: 제외.** 관측에 my_team/other_team 채널이 있어 팀 식별이 자명하다. 팀이 적대 관계이고, 전투 중 agent가 죽어 인원이 줄어든다. 수백 agent 규모가 장점인데 PGCT는 agent별 네트워크와 쌍별 비교를 쓴다. 숨은 팀으로 바꾸려면 MAgent2 설정을 직접 짜야 해서 벤치마크 성격을 잃는다.
+- 사전 고정 설정(D138 원칙, PGCT 결과를 보기 전에 고정):
+  - LBF main_4p2t: 12×12, 4 agent(2+2), 팀당 먹이 3, 시야 2, 50 step, 레벨 1–2, 팀별 LBF 레벨 규칙, 5M.
+  - LBF ind_4p2t: 먹이 레벨 1, 동시 보상 없음.
+  - LBF coop_4p2t: 먹이가 팀 최대, 둘이 함께 들어야 함.
+  - VMAS main_4p2t: 목표당 1 agent, 100 step, 2M.
+  - VMAS coop_4p2t: 목표당 2 agent(VMAS 기본값).
+  - gate·PPO·Max-GAE는 RWARE/Overcooked PGCT-D2와 같고, 상대 사건 규칙(D139)을 쓴다.
+- 구조: 공용 실행부 `PGCT/pgct_runner`(ExperimentSpec, 계획·CLI·W&B·영상·집계)를 추가했다. Overcooked 코드는 바꾸지 않았다. `pgct_core`도 바꾸지 않았다.
+- 의존성: `marl-policy-sharing` 환경에 vmas 1.5.2, gym 0.26.2, gym-notices 0.0.8, lbforaging 2.0.0을 `--no-deps`로 설치했다. 기존 패키지 버전은 그대로다. pip check상 없는 것은 pyglet(렌더링 전용, 미사용)뿐이다.
+- 남은 결정(사용자): 본 실험 예산과 실행 범위. LBF 5M은 job당 약 6–7시간, VMAS 2M은 job당 수 시간이다. 학습은 사용자 승인 후 앱 밖 PowerShell에서 건다.
