@@ -1,0 +1,24 @@
+% Shared colours and TikZ styles for the PGCT papers and slides (requires tikz, xcolor).
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shapes.geometric}
+\definecolor{pgblue}{HTML}{1F4E9A}
+\definecolor{pgsky}{HTML}{DCE7F7}
+\definecolor{pgorange}{HTML}{C0504D}
+\definecolor{pgsand}{HTML}{FBE9DA}
+\definecolor{pggreen}{HTML}{2E7D4F}
+\definecolor{pgmint}{HTML}{E2F2E8}
+\definecolor{pggrey}{HTML}{6B6B6B}
+\definecolor{pglight}{HTML}{F4F4F4}
+\tikzset{
+  pg/.style={font=\sffamily\small},
+  stage/.style={draw=pgblue,line width=.8pt,rounded corners=3pt,fill=white,align=center,
+                minimum height=1.25cm,text width=2.7cm,inner sep=3pt},
+  card/.style={draw=pggrey,rounded corners=2pt,fill=white,align=center,inner sep=2.5pt,font=\sffamily\scriptsize},
+  box/.style={draw=pgblue,line width=.8pt,rounded corners=3pt,fill=white,align=center,inner sep=4pt},
+  flow/.style={-{Stealth[length=2.4mm]},line width=.9pt,draw=pgblue},
+  flowg/.style={-{Stealth[length=2.2mm]},line width=.8pt,draw=pggrey},
+  flowo/.style={-{Stealth[length=2.4mm]},line width=.9pt,draw=pgorange},
+  band/.style={rounded corners=5pt,inner sep=7pt},
+  num/.style={circle,fill=pgblue,text=white,font=\sffamily\bfseries\scriptsize,inner sep=1.2pt,minimum size=4mm},
+  lbl/.style={font=\sffamily\scriptsize,text=pggrey,align=center},
+}
+\newcommand{\stagetitle}[1]{{\bfseries\color{pgblue}#1}}

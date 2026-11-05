@@ -1,0 +1,10 @@
+4.35M, agents with >=32 deliveries and >=32 returns in their buffer: [1, 2, 3, 4, 5]
+k= 0 | pooled: same<= 0.21 / cross>= 0.03 | max8: same<= 0.21 / cross>= 0.03 | max2: same<= 0.21 / cross>= 0.03 | count: same<= 18 / cross>= 0
+k= 1 | pooled: same<= 0.20 / cross>= 0.05 | max8: same<= 0.21 / cross>= 0.03 | max2: same<= 0.21 / cross>= 0.03 | count: same<= 17 / cross>= 2
+k= 2 | pooled: same<= 0.19 / cross>= 0.07 | max8: same<= 0.21 / cross>= 0.03 | max2: same<= 0.21 / cross>= 0.98 | count: same<= 16 / cross>= 4
+k= 4 | pooled: same<= 0.17 / cross>= 0.10 | max8: same<= 0.20 / cross>= 0.03 | max2: same<= 0.20 / cross>= 0.98 | count: same<= 15 / cross>= 8
+k= 6 | pooled: same<= 0.16 / cross>= 0.14 | max8: same<= 0.21 / cross>= 0.03 | max2: same<= 0.21 / cross>= 0.98 | count: same<= 14 / cross>= 12
+k= 8 | pooled: same<= 0.16 / cross>= 0.18 | max8: same<= 0.22 / cross>= 0.98 | max2: same<= 0.22 / cross>= 0.98 | count: same<= 14 / cross>= 16
+k=12 | pooled: same<= 0.13 / cross>= 0.26 | max8: same<= 0.22 / cross>= 0.98 | max2: same<= 0.22 / cross>= 0.98 | count: same<= 12 / cross>= 24
+k=16 | pooled: same<= 0.12 / cross>= 0.36 | max8: same<= 0.26 / cross>= 0.99 | max2: same<= 0.26 / cross>= 0.99 | count: same<= 12 / cross>= 32
+k=32 | pooled: same<= 0.01 / cross>= 0.99 | max8: same<= 0.01 / cross>= 0.99 | max2: same<= 0.01 / cross>= 0.99 | count: same<= 0 / cross>= 64

@@ -18254,3 +18254,1692 @@ Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
 수치 지표는 실시간으로 기록하고, **W&B 영상은 종료 시 마지막 10개만 업로드**합니다. 학습 중 영상은 로컬 `videos` 폴더에서 확인할 수 있습니다. 강제 종료하면 W&B 업로드가 생략될 수 있습니다.
 
 전체 테스트 **271개**와 실제 영상 보존 검증을 통과했습니다. 본 실험은 아직 시작하지 않았습니다.
+
+## 원문 기록 T188 — 2026-11-04 KST, Claude Code
+
+### 사용자 — 원문
+
+51200에서 멈추는거 해결하려는데 너 토큰이 다써서 일단 codex로 수정했는데 확인좀 해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 검토: D116·D117·E80·E81·T186·T187, `latent_team/video_retention.py`, `latent_team/run_main_amax_v2.ps1`, `train_from_scratch.py` 연결부, 새 실행 상태·프로세스·경로 길이, 전체 테스트 271개. 학습·코드 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 51,200 step 통과 확인을 위해 scratchpad의 읽기 전용 감시 스크립트를 백그라운드로 실행했다.
+- `RESEARCH_STATE.md`는 Codex가 LF로 바꿔 두어 LF를 유지했다.
+- 기록: `DECISIONS.md` D118, `EXPERIMENTS.md` E82, `RESEARCH_STATE.md`, 이 T188.
+
+### Assistant — 진행 안내
+
+The new run (`am2_1104_152110`) started 4 jobs at 15:21. I'll first read Codex's cause analysis (D116) and changes (D117).
+
+Cause: at the first evaluation (51,200 step), the W&B video storage path exceeded the Windows 260-character limit and the job failed. My earlier video check used a short temporary path, so it missed this. Now reviewing Codex's code changes.
+
+The fix itself (moving the W&B storage folder to a short path) looks valid. But Codex chose to upload videos to W&B **only once, when a job ends**. That can conflict with D115 (stopping a converged job with Stop-Process). I'll check the user instructions recorded in T186/T187.
+
+Codex's code also has no problems with the job flow (training path unchanged, only logging and video hooks swapped). Next I'll check the processes, where the queue is running, and the tests.
+
+Everything checks out: 271 tests pass, the 4 new jobs run without errors, and the longest local video path is 184 characters (under 260). The final confirmation is whether the jobs pass the first evaluation (51,200 step, around 16:10). I'll start a background watcher that reports automatically once they pass.
+
+The watcher is running in the background. Meanwhile I'll save the review results.
+
+D118 and E82 were saved. The update stopped at RESEARCH_STATE, so I'll check that file's header format.
+
+Codex changed RESEARCH_STATE line endings to LF, so I'll keep LF and add only the remaining records.
+
+### Assistant — 최종 답변
+
+Codex의 원인 분석과 수정은 **맞습니다.** 새로 건 실행(`am2_1104_152110`)도 지금까지 정상입니다. 다만 영상이 W&B에 올라가는 방식 때문에 알아 두셔야 할 점이 두 가지 있습니다.
+
+## 원인과 수정: 맞음
+
+**원인**
+- 첫 평가는 51,200 step(1,024 × 50 update)에서 돌고, 이때 W&B로 영상을 옮깁니다.
+- 그 경로가 262–268자로 Windows 기본 한도 260자를 넘었습니다. 이 PC는 긴 경로 지원이 꺼져 있어서 job이 죽었습니다.
+- 제가 앞서 한 영상 확인은 짧은 임시 경로에서 해서 이 문제를 잡지 못했습니다. 제 확인이 부족했습니다.
+
+**수정** (`latent_team/video_retention.py`, `run_main_amax_v2.ps1`)
+- W&B 저장 폴더를 `wandb_data/<12자리 ID>`라는 짧은 경로로 분리했습니다. 경로 문제를 근본적으로 해결하는 방법입니다.
+- 로컬 영상은 job마다 최근 10개만 남깁니다(final 포함).
+- 새 W&B 프로젝트 `rware-main-amax-v2`, 10M, 4 mode × seed 1–3은 그대로입니다.
+
+**확인한 것**
+- **학습 경로는 바뀌지 않았습니다.** 영상 저장과 W&B 기록 함수만 감싸고, PPO·Max-GAE·gate·환경은 그대로입니다. 끝나면 원래 함수로 되돌립니다.
+- **삭제 범위가 안전합니다.** 지우는 것은 이 run이 직접 만든 `videos/eval_*.mp4`뿐이고, 기존 파일은 지우지도 덮어쓰지도 않습니다.
+- **경로 길이**: 새 실행에서 가장 긴 로컬 영상 경로가 184자입니다. W&B 쪽은 Codex 확인 기준 최장 177자로, 모두 260자 아래입니다.
+- **테스트**: 전체 271개가 통과했습니다.
+- **새 실행 상태**: pgct_max s1·s2·s3, ippo s1이 15:21부터 돌고 있고, 오류 로그는 깨끗합니다. 예전 실행의 프로세스는 남아 있지 않습니다.
+- **아직 확인 못 한 것**: 실제로 51,200 step을 넘기는지입니다. 16:10–16:15 무렵이라, 백그라운드 감시를 걸어 두었습니다. 넘기거나 실패하면 바로 알려 드리겠습니다.
+
+## 알아 두실 점
+
+**1. W&B 영상은 각 job이 끝날 때 한 번에 올라갑니다.**
+- 학습 중에는 W&B에 숫자 지표만 실시간으로 올라갑니다. 영상은 10M이 끝날 때(job당 약 7일 뒤) 마지막 10개가 올라갑니다.
+- 학습 중 영상은 로컬 `runs\am2_1104_152110_...\<job>\videos\`에서 보셔야 합니다.
+- 왜 이렇게 했는지도 이해는 됩니다. 지금 설정에서는 평가마다 영상이 생겨서 실시간으로 올리면 job당 약 200개가 쌓이는데, W&B에 올라간 영상은 나중에 지우기 어렵습니다.
+
+**2. 수렴해서 `Stop-Process`로 멈춘 job은 W&B 영상이 올라가지 않습니다.**
+- 강제 종료는 종료 처리를 건너뛰기 때문입니다. 로컬 영상 10개는 남습니다.
+- 5–9M에서 수렴하면 멈추기로 한 운영(D115)과 정면으로 부딪힙니다.
+- 해결책은 **나중에 올리는 스크립트**를 따로 만드는 것입니다. job 폴더의 W&B run ID로 그 run을 다시 열어 남은 영상 10개를 올립니다. 실행 중인 학습은 건드리지 않습니다.
+
+**3. 영상은 마지막 10번 평가(약 0.5M 구간)만 남습니다.** 학습 초반 행동 영상은 지워집니다. 학습이 어떻게 변해 갔는지 영상으로 보고 싶으시면, 다음 실험부터는 "1M마다 1개"처럼 띄엄띄엄 남기는 방식이 더 맞습니다.
+
+**4. 실험 중에는 학습 코드를 고치지 마세요.**
+- 아직 시작하지 않은 8개 job은 시작하는 순간의 코드를 읽습니다.
+- 지금 코드를 바꾸면 한 실험 안에서 버전이 섞입니다. 위의 "나중에 올리는 스크립트"는 학습 코드와 별개라 괜찮습니다.
+
+**5. queue는 다시 VS Code 터미널(PID 7124)에서 돌고 있습니다.**
+- 12개가 모두 시작될 때까지 닫지 마세요.
+- 끊겼다면 `-ResumePlan runs\am2_1104_152110_b6_wide_corner_indiv_comm5_pen005 -Name am2_1104_152110`으로 이어서 시작할 수 있습니다.
+
+참고로, 예전 실행(`main_amax_20261104_115922`)의 실패한 job들은 첫 checkpoint(256,000 step) 전에 죽어서 이어서 학습할 수 없습니다. 폴더는 기록용으로 그대로 두었습니다.
+
+기록은 `DECISIONS.md` D118, `EXPERIMENTS.md` E82, `RESEARCH_STATE.md`, 대화 기록 T188에 남겼습니다. 커밋하지 않았습니다. Codex가 변경 사항을 git index에 올려 둔 상태(staged)라는 점도 참고하세요.
+
+## 원문 기록 T189 — 2026-11-04 KST, Claude Code
+
+### 사용자 — 원문
+
+그리고 지금 max 3개 ippo 1개 이런식으로 하던데
+실험 현황 확인하기 좋게 max, oracle, ippo, pgct 같은 느낌으로 하는건 어때
+
+### 수행 기록 — 원문 대화와 별도
+
+- 코드 변경: `latent_team/run_main_amax_v2.ps1`(기본 seed별 순서, `-ModeMajor` 옵션). 학습 코드 변경 없음. plan-only 1회(`runs/plancheck_am2_seed_*`). 실행 중 학습은 건드리지 않았다. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D119, `RESEARCH_STATE.md`, 이 T189.
+
+### Assistant — 진행 안내
+
+Only 9 minutes in (0.01M), so reordering now costs almost nothing. I'll make the launcher default to running one of each mode per seed.
+
+The new order is confirmed (pgct_max, ippo, oracle_max, allk_max for seed 1 → seed 2 → seed 3). Saving the records and writing the answer.
+
+### Assistant — 최종 답변
+
+좋은 생각입니다. **seed 하나의 4 mode(pgct_max, ippo, oracle_max, allk_max)를 같이 돌리는 순서**가 지금 목적에 더 맞습니다. 실행기를 그렇게 바꿔 두었습니다.
+
+## 왜 더 나은가
+
+- **비교가 바로 됩니다.** 같은 seed의 4 mode가 같은 시간대에 같은 속도로 진행합니다. 그래서 W&B에서 pgct_max와 ippo의 agent별 배송 곡선을 처음부터 나란히 볼 수 있습니다. 말씀하신 "먼저 배운 agent가 있을 때 나머지의 학습 속도" 비교가 첫 묶음(약 일주일)부터 가능합니다.
+- **수렴 판정도 같은 시점에 나옵니다.** 5–9M에서 seed 1의 4 mode가 함께 판정되므로, 멈출지 판단하기 쉽습니다.
+- **단점**: 시간이 모자라 중간에 끊기면 "모든 mode × seed 1–2"가 남습니다. 지금 방식이면 "pgct_max × seed 1–3"이 남습니다. 10M과 수렴 시 중단을 감안하면 전체가 끝날 시간(최대 약 20일)이 있으므로, 이 단점은 작습니다.
+
+## 바꾼 것
+
+- `latent_team/run_main_amax_v2.ps1`의 기본 순서를 seed별로 바꿨습니다.
+- 예전 순서가 필요하면 `-ModeMajor`를 붙이면 됩니다.
+- 계획만 만들어 확인한 실행 순서는 이렇습니다.
+  - seed 1: pgct_max, ippo, oracle_max, allk_max
+  - 이어서 seed 2, seed 3 순서입니다.
+- 프로젝트 `rware-main-amax-v2`, 10M, 영상 10개 보존은 그대로입니다.
+
+## 적용하려면 지금 다시 거는 것이 가장 쌉니다
+
+지금 실행은 시작한 지 9분(0.01M)이라, 다시 걸어도 잃는 것은 job당 약 10분입니다. 앱 밖에서 직접 해 주세요.
+
+**1.** queue가 돌고 있는 **VS Code 터미널**에서 `Ctrl+C`를 누릅니다. queue만 멈추고 학습은 계속 돕니다.
+
+**2.** 지금 도는 4개를 멈춥니다.
+
+```powershell
+Stop-Process -Id 34424,23532,38028,35324
+```
+
+**3.** **VS Code가 아닌 별도 PowerShell 창**에서 새로 겁니다. VS Code를 닫거나 업데이트해도 queue가 끊기지 않습니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1
+```
+
+그러면 seed 1의 4 mode가 먼저 시작됩니다. 이 창은 12개가 모두 시작될 때까지 열어 두세요.
+
+## 참고
+
+- 멈춘 `am2_1104_152110` 폴더는 지우지 않고 기록으로 남깁니다.
+- W&B `rware-main-amax-v2`에는 몇 분짜리 run 4개가 "crashed"로 남습니다. 헷갈리면 W&B 화면에서 지우셔도 됩니다.
+- 순서 확인용 계획 폴더 `runs/plancheck_am2_seed_b6_wide_corner_indiv_comm5_pen005`가 생겼습니다. 계획과 bank만 있습니다.
+- 51,200 step 통과 감시는 지금 실행에 걸려 있습니다. 새로 거시면 새 실행으로 다시 확인하겠습니다.
+
+기록은 `DECISIONS.md` D119, `RESEARCH_STATE.md`, 대화 기록 T189에 남겼습니다. 실행 중인 학습은 건드리지 않았습니다.
+
+## 원문 기록 T190 — 2026-11-04 KST, Claude Code (백그라운드 감시 종료 알림, 사용자 메시지 없음)
+
+### 수행 기록 — 원문 대화와 별도
+
+- T188에서 건 읽기 전용 감시가 시간 초과로 끝났다(감시 대상 am2_1104_152110은 사용자가 재시작하며 멈춤). 새 실행 am2_1104_153231을 읽기 전용으로 점검했다. 학습 변경 없음. 진행 안내를 영어로 보냈다.
+- 기록: `EXPERIMENTS.md` E82 후속, `RESEARCH_STATE.md`, 이 T190.
+
+### Assistant — 진행 안내
+
+The watcher timed out because the user stopped the old run (`am2_1104_152110`) at about 10k step. A new run (`am2_1104_153231`) started at 15:32, so I'll check that one passed 51,200 step.
+
+### Assistant — 최종 답변
+
+새 순서로 다시 건 실행(`am2_1104_153231`)이 **51,200 step 문제 없이 잘 돌고 있습니다.**
+
+- seed 1의 pgct_max·ippo·oracle_max·allk_max가 15:32부터 함께 돌고 있고, 17:58 기준 각각 0.14M입니다. 속도는 job당 약 16 step/s입니다.
+- 첫 평가(51,200 step)와 두 번째 평가(102,400 step)를 모두 넘겼습니다. 영상 `eval_00050.mp4`·`eval_00100.mp4`도 job마다 저장됐고, 오류 로그는 깨끗합니다.
+- W&B에는 숫자 지표가 실시간으로 올라가고 있습니다. 영상은 설계대로 job이 끝날 때 올라갑니다.
+- gate는 아직 성숙한 agent가 0명입니다. 0.14M이라 정상이고, 판정은 약 1.3M(11-05 저녁 무렵)에 `main_check.py`로 하시면 됩니다.
+
+앞서 걸어 둔 감시는 멈춘 이전 실행을 보고 있어서 시간 초과로 끝났습니다. 그래서 새 실행을 직접 확인했습니다.
+
+## 원문 기록 T191 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+논문에서 해당 부분 수정해줘
+지금 논문에서 AI가 쓴거같은 표현들
+대학원 1학년 기준으로 너무 고급지거나 복잡한 영어 문법들
+현재 알고리즘 바뀐거랑 크리틱 전이하는데 몇채널이 드는지가 알고리즘 설명 란에 있는 문제, MAMBA의 Max GAE를 차용했으나 그 가정은 들어가지 않았다는 표현등등
+
+### 사용자 — 원문 (작업 중 추가)
+
+그리고 D_ij 알고리즘 바뀐걸로 아는데 그것도 알려줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 수정: OneDrive `제출 논문/paper/english/main.tex`·`supplementary.tex`·`method_equations.tex`, PDF 재빌드(임시 사본에서 빌드 후 복사). 백업·사본 `output/paper_revision_20261105/`. 학습·코드 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D120, `RESEARCH_STATE.md`, 이 T191.
+
+### Assistant — 진행 안내
+
+Read the paper and the shared equations file. Next I'll back up the originals into the project folder, then rewrite the text.
+
+Backup done, and I found the LaTeX build tool. Adding the per-action distance equation to the shared equations file (the old equation stays so the Korean paper is unaffected).
+
+Now rewriting the body. I'll keep sentences short, simplify the grammar, reflect the per-action distance, move implementation numbers to the Setup section, and remove the MAMBA assumption sentences.
+
+The abstract is 197 words, close to the 200-word limit, so I'll trim one sentence for margin and then compile.
+
+Compiled cleanly: 7 pages, 0 Overfull, no undefined references. I'll render the method pages to check the new equation layout.
+
+The browser pane can't capture local PDFs, so I judged the equation layout from the build log (no overflow warnings). Next I'll add the per-action evidence to the supplementary material and copy the compiled PDFs into place.
+
+Both PDFs compiled (main 7 pages, supplementary 2 pages, 0 Overfull) and are in place. I'll also keep a copy of the revised sources in the project, then write the records.
+
+### Assistant — 최종 답변
+
+논문을 고쳤습니다. 수정한 파일은 `제출 논문\paper\` 폴더의 `english\main.tex`, `english\supplementary.tex`, `method_equations.tex`입니다. PDF도 다시 만들었습니다. 본문과 참고문헌을 합쳐 7쪽, 초록 189단어이고, 줄 넘침 경고나 깨진 참조는 없습니다.
+
+## 먼저: D_ij가 어떻게 바뀌었나
+
+| | 예전 (pooled) | 지금 (action_max) |
+|---|---|---|
+| 계산 범위 | 모든 probe를 한꺼번에 | probe를 **공개 행동별로 나눠** 따로 계산 |
+| 식 | D = Σ\|p−q\| / Σ(\|p\|+\|q\|) | 행동 a마다 같은 식으로 D^a를 구하고, **그중 최댓값**을 D로 씀 |
+| 비교 조건 | – | 두 agent 모두 그 행동의 자기 사건이 **n_min = 8개 이상**인 행동만 비교. 그런 행동이 없으면 그 round는 건너뜀 |
+| mirror | probe에 좌우 대칭 사본 추가 | 쓰지 않음 |
+| 통신 거리 r_c | 3 | 5 |
+
+EMA(β 0.35), 임계값 0.5, 최소 3 round, 성숙 조건은 그대로입니다.
+
+**바꾼 이유**
+- 반납은 두 팀 모두 보상받는 사건입니다. 예전 방식은 반납 probe가 늘어날수록 배송에서 생기는 팀 차이가 평균에 묻혀, 4.28M 이후 다른 팀이 승인됐습니다.
+- 수학적으로 예전 거리는 행동별 거리의 가중평균이라서, 최댓값을 넘을 수 없습니다.
+- 같은 팀이라면 모든 행동에서 응답이 같아야 하므로, 최댓값으로 판정하는 것이 맞습니다.
+
+**근거**: 저장된 checkpoint 25개로 다시 계산했습니다.
+
+| 방식 | 같은 팀 최대 | 다른 팀 최소 |
+|---|---|---|
+| 지금 (action_max) | 0.281 | 0.975 |
+| 예전 (pooled) | 0.28 | 0.39 |
+
+## 논문에서 바꾼 것
+
+**1. 바뀐 알고리즘 반영**
+- 거리 식을 행동별 최댓값 식으로 바꿨습니다. 공용 수식 파일에 새 식을 추가하는 방식이라, 기존 식은 한국어판을 위해 그대로 남아 있습니다.
+- "왜 최댓값인가" 문단을 새로 넣었습니다.
+- Properties에 "합친 거리 = 행동별 거리의 가중평균 ≤ 최댓값"을 추가했습니다.
+- 식별 조건을 "두 agent가 모두 8번 이상 겪은 행동에서 보상이 달라야 한다"로 고쳤습니다.
+- 알고리즘 1의 4단계를 고쳤습니다.
+- mirror 설명을 방법에서 뺐습니다.
+- 실험 절에 **Method versions** 문단을 넣었습니다. 보고한 발견 결과는 예전 규칙(pooled, mirror, r_c = 3)이고, 현재 방법(행동별 거리, mirror 없음, r_c = 5, 11×16 지도)은 실행 중이라고 밝혔습니다.
+- 그림 3 캡션에도 예전 규칙의 결과라고 적었습니다.
+- 늦게 생긴 다른 팀 승인의 **원인 분석과 재계산 결과**를 한 문단으로 넣었습니다. 그래서 Limitations의 "원인 미분석"을 "온라인 학습에서는 아직 미검증"으로 바꿨습니다.
+
+**2. 구현 수치를 알고리즘 설명에서 뺐습니다**
+- Problem Setting과 Method에 있던 수치를 Setup의 **Implementation** 문단과 표로 옮겼습니다. 옮긴 것은 이렇습니다.
+  - 공개 view 채널 수(ego 6개, grid 11채널, 281차원)와 입력 567차원
+  - MLP 크기, 버퍼 크기, probe 사건 32개
+  - n_min = 8, 재생 mask 8 step
+- 방법 절에는 일반적인 설명만 남겼습니다.
+- 말씀하신 "몇 채널이 드는지"는 이 공개 view와 입력 차원 설명으로 이해했습니다. 다른 부분을 뜻하신 거면 알려 주세요.
+
+**3. MAMBA 문장**
+- "MAMBA의 전제는 성립하지 않는다", "성능 보장은 주장하지 않는다" 같은 문장을 지웠습니다.
+- Related Work에는 "Max-GAE는 같은 최댓값을 쓰고, 값으로는 승인된 팀원의 Critic을 쓴다"만 남겼습니다.
+- Properties 마지막 문장도 "잘못된 peer 값이 advantage를 얼마나 바꿀 수 있는지 제한한다"로 줄였습니다.
+- 성능 보장을 주장하는 문장은 어디에도 없습니다.
+
+**4. AI 투와 어려운 문법**
+- 긴 문장은 쪼갰고, 세미콜론과 분사구문은 줄였고, 어려운 단어는 쉬운 말로 바꿨습니다.
+- 예시는 이렇습니다.
+  - "This comparison raises three difficulties." → "There are three practical problems."
+  - "Two details matter." → 지우고 내용만 서술
+  - "Is a teammate's Critic useful only for teammates?" (수사 의문문) → "We checked whether a teammate's Critic is more useful than the Critic of another team."
+  - "presuppose", "indiscriminately", "conservatively", "persistent agreement", "by design", "as soon as" 계열 → 평이한 표현
+  - "Causal snapshot" → "Snapshot at rollout start"
+
+**5. 보조 자료**: 행동별 거리 처리 방법과 재계산 근거를 한 줄씩 추가했습니다(2쪽 유지).
+
+## 바꾸지 않은 것과 확인할 것
+
+- **저자명 `\author{HwanRyul Lee}`가 그대로입니다.** 교수님 검토용이면 괜찮지만, 제출본은 반드시 익명으로 바꿔야 합니다(이중 맹검).
+- **한국어판은 손대지 않았습니다.** 아직 예전 거리로 설명되어 있습니다. 공용 수식 파일에는 새 식만 추가해서 한국어판 내용은 그대로입니다.
+- **그림은 손대지 않았습니다.** `fig_overall.png`(직접 만드신 그림)에 예전 거리 식이나 mirror가 그려져 있다면 고쳐야 합니다.
+- **화면으로 직접 보지는 못했습니다.** 이 PC에 PDF를 이미지로 띄우는 도구가 없어서, 빌드 로그(쪽수, 넘침, 참조)로만 확인했습니다. 새 식(3줄)의 배치는 PDF에서 한 번 봐 주세요.
+- **원본 백업**: `output/paper_revision_20261105/original/`에 있고, 수정본 사본은 `revised/`에 있습니다.
+
+기록은 `DECISIONS.md` D120, `RESEARCH_STATE.md`, 대화 기록 T191에 남겼습니다. 커밋하지 않았습니다.
+
+## 원문 기록 T192 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+한국어판도 수정
+
+### 사용자 — 원문 (작업 중 추가, 영어판 알고리즘 1 캡처 이미지 첨부)
+
+알고리즘 너무 글자만 있는거 아냐?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 수정: OneDrive `제출 논문/paper/korean/main.tex`(전면 수정), `english/main.tex`(알고리즘 1, 알고리즘 주석 스타일), `method_equations.tex`(주석). PDF 재빌드 후 복사. 첨부 이미지는 영어판 알고리즘 1 캡처로 확인했다. 학습·코드 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D121, `RESEARCH_STATE.md`, 이 T192.
+
+### Assistant — 진행 안내
+
+Agreed: written only in prose, it is hard to see where each equation is used. In both versions I'll rewrite Algorithm 1 as math-based pseudocode (inputs, loop, the distance, EMA and Max-GAE formulas, and equation references). I'll write the Korean version first.
+
+Read the Korean version. I'll edit it to match the English version: the per-action distance, moving implementation numbers to Setup, cleaning up the MAMBA sentences, and plain wording.
+
+Now updating the preamble (comment style, Input label) and the algorithm block in both versions.
+
+Backslashes got mixed up in the heredoc, so I'll put the script in a file instead (as the project instructions say).
+
+Both compiled: English 7 pages, Korean 8 pages, 0 Overfull, no undefined references. I'll copy the PDFs into place and write the records.
+
+### Assistant — 최종 답변
+
+한국어판도 영어판과 같은 내용으로 고쳤습니다. 알고리즘 1은 두 판 모두 수식 중심으로 바꿨습니다. PDF를 다시 만들었고, 영어판은 7쪽, 한국어판은 8쪽입니다. 둘 다 줄 넘침 경고와 깨진 참조가 없습니다.
+
+## 알고리즘 1 (영어·한국어 공통)
+
+글 위주였던 9줄을 입력과 수식이 보이는 16줄로 바꿨습니다.
+
+```
+Input: Actor π_θi, Critic V_i, reward predictor r̂_i, pair statistics D̄_ij, n_ij
+ 1  Freeze E_i^u, m_i^u, r̂_i^u                         ▷ rollout-start snapshot
+ 2  Roll out π_θi; store (q_t, r_i,t); add q_t to the events if r_i,t ≥ 0.5
+ 3  Record contacts C_ij^u                              ▷ Eq. (contact)
+ 4  if u mod 5 = 0 then
+ 5    for each j with C_ij^u = 1 and m_i^u = m_j^u = 1 do
+ 6      Q_ij^u ← E_i^u ∪ E_j^u
+ 7      D_ij^u ← max_{a∈A_ij^u} D_ij^{u,a}             ▷ Eq. (distance)
+ 8      D̄_ij ← (1−β) D̄_ij + β D_ij^u,  n_ij ← n_ij + 1
+ 9      B_ij ← 1[n_ij ≥ 3, D̄_ij < 0.5]                ▷ Eq. (approval)
+10    end for
+11    Refit r̂_i by minimizing L_i^r                    ▷ Eq. (loss)
+12  end if
+13  G_i^u ← { j : C_ij^u = 1, B_ij = 1 }
+14  b_i,t ← [max_{j∈G} V_j(h̃^j_i,t) − V_i(h_i,t)]_+     ▷ Eq. (max)
+15  A^PGCT ← A^self + η s_i w_t (A^f − A^self)          ▷ Eq. (blend)
+16  Update π_θi with A^PGCT and V_i toward R^self       ▷ Eq. (PPO)
+```
+
+- 각 줄 끝의 ▷에 해당 식 번호를 달았습니다. 본문 식과 바로 연결됩니다.
+- 본문의 "1–4단계는 Q1, 5–7단계는 Q2"를 "1–12줄은 Q1, 13–16줄은 Q2"로 고쳤습니다.
+- 8줄은 짧게 쓰려고 단순화했습니다. 실제로 $n_{ij}$는 두 예측기가 모두 새로 학습된 round에서만 늘어나며, 이 조건은 본문에 설명되어 있습니다.
+
+## 한국어판에서 바꾼 것
+
+영어판과 같은 항목을 고쳤습니다.
+
+**1. 알고리즘 변경 반영**
+- 거리 식을 행동별 최댓값으로 바꿨습니다. 두 판이 같은 식을 씁니다. 공용 수식 파일의 예전 식은 참고용으로만 남겼습니다.
+- "왜 최댓값인가" 문단을 넣었습니다.
+- 성질에 "합친 거리 ≤ 행동별 최댓값"을 넣고, 식별 조건을 고쳤습니다.
+- 방법 설명에서 대칭 사본을 뺐습니다.
+- 실험 절에 "방법 버전" 문단과 늦은 다른 팀 승인의 원인·재계산 문단을 넣었습니다.
+- 한계 절과 그림 3 캡션을 고쳤습니다.
+
+**2. 구현 수치 이동**: 281차원, 채널 11개, 입력 567, MLP·버퍼 크기, probe 32개, n_min 8, 마스크 8을 설정의 "구현" 문단과 표로 옮겼습니다.
+
+**3. MAMBA 문장**: "전제는 성립하지 않는다", "성능 보장이 아니다" 같은 문장을 지웠습니다.
+
+**4. 번역투·AI 투 정리**
+- "그래서 두 질문을 던진다" → "이 논문은 두 질문을 다룬다"
+- "두 가지가 중요하다. 첫째, …" → 내용만 서술
+- "팀원의 Critic은 팀원에게만 쓸모 있을까?"(수사 의문문) → "팀원의 Critic이 다른 팀의 Critic보다 더 쓸모 있는지 확인했다"
+- "곧", "설계상", "보수적 축소" 같은 표현을 평이하게 바꿨습니다.
+- 소제목 "인과적 스냅샷" → "rollout 시작 시점 스냅샷"
+
+**5. 부록**: 행동별 거리 처리 방법과 재계산 근거 위치를 추가했습니다.
+
+## 확인할 것
+
+- **알고리즘과 새 거리 식의 배치는 PDF에서 한 번 봐 주세요.** 이 PC에서는 PDF를 화면으로 볼 수 없어 빌드 로그로만 확인했습니다. 긴 줄이 있으면 ▷ 주석이 다음 줄로 내려갈 수 있습니다.
+- **저자명 `HwanRyul Lee`는 두 판 모두 그대로입니다.** 제출본은 익명으로 바꿔야 합니다.
+- **`fig_overall.png`는 손대지 않았습니다.**
+- **백업**: 원본은 `output/paper_revision_20261105/original/`(한국어판 포함), 수정본 사본은 `revised/`에 있습니다.
+
+기록은 `DECISIONS.md` D121, `RESEARCH_STATE.md`, 대화 기록 T192에 남겼습니다. 커밋하지 않았습니다.
+
+## 원문 기록 T193 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+한번 생각하고 내 말이 맞다고 생각하면 수정해줘
+
+1. 5번의 Properties 꼭 넣어야 하는 내용인가? 그냥 빼거나 본문에 1~2줄 정도로 남겨도 되는거 아냐?
+2. Limitation의 경우 아직 본 실험이 안된 상태인데 지금은 빼도 괜찮지 않나?
+3. 현재 실험은 어디까지 됐는지?
+
+### 사용자 — 원문 (작업 중 추가)
+
+그리고 10번에서 std에 괄호가 빠진거 같은데 이것도 수정
+
+### 수행 기록 — 원문 대화와 별도
+
+- 수정: OneDrive 논문 영어·한국어 `main.tex`, `method_equations.tex`, PDF 재빌드·복사(사본 `output/paper_revision_20261105/revised/`). `latent_team/run_main_amax_v2.ps1`(`-Candidate`). plan-only 2회(`runs/plancheck_am3_*`). 실행 중 학습은 멈추지 않았다(중단은 사용자). 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D122, `EXPERIMENTS.md` E83, `RESEARCH_STATE.md`, 이 T193.
+
+### Assistant — 진행 안내
+
+pgct_max_s1 is at 1.17M with **0 mature agents**. On the base map, 5 agents had matured by 0.25M, so I'll check how far learning has actually got.
+
+Serious: on the wide map **none of the 4 modes delivers anything in evaluation at about 1.1M**, and training deliveries also fell from 0.15/ep at the start to 0. I'll check whether pickup behaviour itself has disappeared.
+
+The cause is clear: pickups fell from about 6.3 per agent·episode at the start to about 0.03 by 0.6M. On the wide map rewards are too far away, so the penalty dominates and agents stop picking up shelves. I'll report this together with the paper edits. Starting the paper changes (Properties, Limitations, the brackets in Eq. 10).
+
+Both compile: English 6 pages (was 7), Korean 7 pages (was 8), 0 Overfull. Next I'll add an option to pick the environment in the launcher, for switching the main experiment to another environment.
+
+The launcher now runs 12 jobs (10M) for either environment. Saving the records and writing the answer.
+
+### Assistant — 최종 답변
+
+세 가지 모두 말씀이 맞다고 보고 고쳤습니다. 다만 **실험 쪽에 급한 문제가 있어서** 그것부터 말씀드립니다.
+
+## 3. 현재 실험: 넓은 지도에서 학습이 무너졌습니다 (11-05 11:41 기준)
+
+| job | 진행 | 평가 배송/ep | 성숙 agent |
+|---|---|---|---|
+| pgct_max_s1 | 1.17M | 0.00 (6명 모두 0) | 0/6 |
+| ippo_s1 | 1.17M | 0.00 | – |
+| oracle_max_s1 | 1.09M | 0.00 | – |
+| allk_max_s1 | 1.08M | 0.00 | – |
+
+오류 없이 job당 15–16 step/s로 잘 돌고는 있습니다. 문제는 **학습이 반대 방향으로 가고 있다**는 점입니다. ippo_s1 기준 수치는 이렇습니다.
+
+| 구간 | 선반 집기/agent·ep | 학습 중 배송/ep |
+|---|---|---|
+| 0–0.2M | 6.3 | 0.15 |
+| 0.4–0.6M | 0.07 | 0.01 |
+| 1.0–1.2M | 0.04 | 0.00 |
+
+**원인**
+- 넓은 지도에서는 보상(배송)이 너무 멀어서, 선반을 집을 때 받는 감점만 계속 경험합니다.
+- 그래서 정책이 "아예 집지 않기"로 굳었습니다. 예전에 본 pickup 정체(E44–E47)와 같은 현상입니다.
+- 4 mode 모두 똑같아서 방법의 문제가 아니라 **환경의 문제**입니다.
+- 보상 사건이 없으니 보상 예측기도 성숙하지 못합니다. 사건은 agent당 평균 8개로, 성숙에 필요한 20개에 못 미칩니다.
+
+1.3M 점검 기준(성숙 agent 2명 미만이면 전환)에 이미 걸리는 상황이고, 추세상 기다려도 나아지지 않습니다. **지금 멈추고 환경을 바꾸는 것을 권합니다.**
+
+**선택지**
+
+| 환경 | 장점 | 위험 |
+|---|---|---|
+| **기존 지도 11×10, r_c = 5** (`b6_corner_indiv_comm5_pen005`) — 권장 | 같은 지도에서 IPPO가 5M에 episode당 24–26 배송까지 배운 것이 확인됨 | 덜 어렵습니다. 그래도 5M에 수렴하지 않았고, agent마다 배우는 시점이 0.8–3M로 흩어져 "먼저 배운 agent가 나머지를 돕는가"를 보기에 좋습니다 |
+| 요청 2개 (`b6_corner_indiv_comm5_req2_pen005`) — D113에서 정한 대안 | "살짝 어렵게"에 맞음 | 학습해 본 적이 없습니다. 또 실패하면 시간을 잃고, 팀원 경쟁으로 보상을 못 받는 agent가 늘 수 있습니다 |
+
+마감까지 다시 돌릴 여유가 사실상 한 번이라, 저는 **확실히 배우는 기존 지도**를 권합니다.
+
+**실행 방법** (앱 밖, 직접)
+1. queue 창에서 `Ctrl+C`를 누릅니다.
+2. 지금 도는 4개를 멈춥니다.
+```powershell
+Stop-Process -Id 32108,20432,28100,29944
+```
+3. 별도 PowerShell 창에서 다시 겁니다. 이제 실행기가 `-Candidate`로 환경을 꼭 지정하게 바뀌었습니다.
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_pen005
+```
+요청 2개로 하시려면 `-Candidate b6_corner_indiv_comm5_req2_pen005`로 바꾸면 됩니다. 두 환경 모두 계획만 만들어 확인했고, 12 job × 10M, r_c = 5로 잡힙니다.
+
+## 1. Properties 절: 뺐습니다
+
+말씀대로 독립된 절로 둘 만한 내용은 아니었습니다. 다만 세 가지는 본문에 한두 줄로 남겼습니다.
+- **거리의 범위와 척도 무관성, 합친 거리 ≤ 행동별 최댓값**: "왜 최댓값인가" 문단에 넣었습니다. 최댓값을 쓰는 근거라서 그 자리가 맞습니다.
+- **발견의 필요조건**: 승인 규칙 뒤에 세 문장으로 넣었습니다. 연구 기여 후보인 "식별 조건"에 해당하는 내용이라 완전히 빼지는 않는 게 좋다고 판단했습니다.
+- **독립 PPO로의 환원**: Max-GAE 절 끝에 한 문장으로 넣었습니다.
+
+가치 오차 민감도(상한 식)는 주장과 직접 연결되지 않아 지웠습니다.
+
+## 2. Limitations: 뺐습니다
+
+본 실험 결과가 없는 지금은 대부분 "아직 안 했다"는 내용이라 빼는 게 맞습니다. 방법 자체의 한계는 본문에 이미 남아 있습니다.
+- 보상을 못 받은 agent는 판정을 보류한다는 점은 필요조건 문장에 있습니다.
+- 팀원 Critic이 이득을 과대평가한다는 점은 반사실 점검 절에 있습니다.
+
+다만 심사자는 한계를 자주 묻기 때문에, 본 실험이 끝나면 짧게 다시 넣는 것을 권합니다.
+
+## 4. 식 (10)의 std 괄호: 고쳤습니다
+
+`std_t A^self` → `std_t(A^self)`, `std_t w_t(…)` → `std_t(w_t(…))`. 본문의 `std A^self`도 `std(A^self)`로 고쳤습니다(영어·한국어 모두).
+
+**결과**: 영어판은 7쪽에서 6쪽, 한국어판은 8쪽에서 7쪽이 됐습니다. 둘 다 줄 넘침 경고와 깨진 참조가 없습니다. 영어판은 결과를 넣을 자리가 약 1쪽 생겼습니다.
+
+기록은 `DECISIONS.md` D122, `EXPERIMENTS.md` E83, `RESEARCH_STATE.md`, 대화 기록 T193에 남겼습니다. 학습은 건드리지 않았고, 커밋하지 않았습니다.
+
+## 원문 기록 T194 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+서버 있으니까 컴퓨터로 작은거 돌리고, 서버로 큰거 돌리는 방안은?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: plan이 읽는 기준 파일(`train_from_scratch.py`의 reference experiment.json), `.gitignore`의 runs/, git 상태(origin과 일치, HEAD `ba14c40`), Python·torch·gymnasium·numpy 버전, CPU 20개. 코드·학습 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D123, `RESEARCH_STATE.md`, 이 T194.
+
+### Assistant — 진행 안내
+
+Branch `feature/PGCT_Next` already matches GitHub (code commit `ba14c40`), so the server can pull it. Only `experiment.json` from the reference run is needed. Saving the records and writing the plan.
+
+### Assistant — 최종 답변
+
+좋은 방안입니다. 특히 지금은 환경을 하나로 정하기 애매했는데, 이 분담으로 그 고민이 풀립니다. **안전한 본 실험은 서버에서, 위험한 확인은 PC에서** 돌리면 됩니다.
+
+## 역할 분담 제안
+
+| 어디서 | 무엇을 | 이유 |
+|---|---|---|
+| **서버 (큰 것)** | 본 실험: 기존 지도 r_c = 5, 4 mode × seed 1–3, 10M(수렴하면 중단). 코어가 넉넉하면 seed 4–5까지 | 학습이 되는 것이 확인된 환경. 한 번에 다 돌릴 수 있으면 대기 없이 끝남 |
+| **PC (작은 것)** | ① 요청 2개 환경 IPPO 1–2M pilot(배우는지 확인) ② 오프라인 분석(agent별 학습 속도, gate 재계산) ③ 코드 수정 뒤 smoke test ④ 논문·그림 | 실패해도 손해가 작음. 요청 2개가 배운다면 나중에 "더 어려운 환경" 실험으로 서버에 추가 |
+
+**지켜야 할 원칙: 한 비교는 한 기계 안에서.**
+- 같은 seed의 pgct_max·ippo·oracle_max·allk_max를 PC와 서버에 나눠 돌리지 마세요.
+- CPU와 라이브러리가 다르면 같은 seed라도 결과가 비트 단위로 같지 않습니다. 비교는 반드시 한 기계 안에서 해야 공정합니다.
+- 본 실험 12 job(또는 15–20 job)은 전부 서버에서 돌립니다.
+
+## 서버에서 돌리려면 필요한 것
+
+1. **코드**: `feature/PGCT_Next` 브랜치가 GitHub와 맞춰져 있습니다(커밋 `ba14c40`, 행동별 거리·환경 후보·영상 보존 포함). 서버에서 `git clone`/`git pull`이면 됩니다. 아직 커밋 안 된 것은 연구 노트와 `run_main_amax_v2.ps1`의 `-Candidate` 정도입니다.
+2. **기준 설정 파일 하나**: plan은 `runs/sp_20261008_120638_983201/experiment.json`만 읽습니다.
+   - `runs/`는 git에 없어서 따로 옮겨야 합니다.
+   - 폴더 전체(3.4GB)는 필요 없고, 이 파일 하나만 같은 경로에 두면 됩니다.
+3. **Python 환경**: PC와 버전을 맞추세요. Python 3.11.15, torch 2.11.0, gymnasium 1.3.0, numpy 2.4.6입니다. 프로젝트 폴더에서 `pip install -e .`도 해야 합니다.
+4. **실행 스크립트**: 지금 queue 스크립트는 PowerShell 전용입니다.
+   - 서버가 Linux라면 bash용이 필요합니다. 계획을 한 번 만들고(`--plan-only`), job마다 `--run-job`을 병렬로 띄우는 짧은 스크립트입니다.
+   - 서버 사양을 알려 주시면 만들어 드리겠습니다.
+5. **끊김 방지**: SSH가 끊겨도 학습이 계속되도록 `tmux`나 `nohup` 안에서 돌려야 합니다. 서버가 Slurm 같은 작업 스케줄러를 쓴다면 job 스크립트 형태로 만들어야 합니다.
+6. **W&B**: 서버에서 `wandb login` 한 번이면 됩니다. Windows의 경로 길이 문제는 Linux에서는 생기지 않습니다.
+
+## 알려 주시면 좋은 것
+
+- 서버 OS(Linux인지)
+- CPU 코어 수와 메모리
+- GPU(이 학습은 GPU를 거의 안 씁니다)
+- 작업 스케줄러가 있는지, 1–2주 연속 실행이 되는지
+
+**코어 수에 따른 대략의 시간**
+- PC에서는 4개를 동시에 돌리면 job당 약 16 step/s였습니다.
+- 서버에서 12 job을 한 번에 돌릴 수 있으면 10M까지 약 7일입니다. 수렴하면 일찍 멈추니 더 짧을 수 있습니다.
+- 서버 CPU가 더 빠르면 그만큼 줄어듭니다.
+
+## 지금 PC에서 할 일
+
+넓은 지도 실험은 무너졌으니 어느 쪽이든 멈추는 게 맞습니다(`Stop-Process -Id 32108,20432,28100,29944`, queue 창은 `Ctrl+C`). 그 뒤 PC는 요청 2개 pilot용으로 비워 두면 됩니다. pilot 명령은 서버 쪽이 정해지면 함께 드리겠습니다.
+
+기록은 `DECISIONS.md` D123(제안), `RESEARCH_STATE.md`, 대화 기록 T194에 남겼습니다.
+
+## 원문 기록 T195 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+일단 컴퓨터쪽 실험 코드 알려줘
+5~7M 정도로 돌리는걸로
+
+### 수행 기록 — 원문 대화와 별도
+
+- 코드 변경: `latent_team/run_main_amax_v2.ps1`(`-Seeds`, `-TotalTimesteps`). plan-only 1회(`runs/plancheck_pc_req2_*`). 실행 중 프로세스 확인(넓은 지도 4 job 실행 중). 학습 시작·중단 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D124, `RESEARCH_STATE.md`, 이 T195.
+
+### Assistant — 진행 안내
+
+The plan is as intended: 4 jobs, 7M, r_c 5, 2 requests per team, from scratch. I'll check whether the wide-map jobs are still running, then save the records.
+
+### Assistant — 최종 답변
+
+PC에서는 **요청 2개 환경**(`b6_corner_indiv_comm5_req2_pen005`, 11×10 지도, r_c = 5, 팀당 요청 선반 2개)을 돌리는 것으로 준비했습니다.
+- 4 mode(pgct_max, ippo, oracle_max, allk_max) × seed 1, 총 4 job을 동시에 돌립니다.
+- 상한은 7M이고, 5M이나 6M에 수렴하면 거기서 멈춥니다.
+
+## 실행 순서 (앱 밖, 별도 PowerShell 창)
+
+**1. 넓은 지도 실험 멈추기** — 아직 4개가 돌고 있습니다.
+- 그 실험의 queue 창에서 `Ctrl+C`를 누릅니다.
+- 그다음 아래를 실행합니다.
+
+```powershell
+Stop-Process -Id 32108,20432,28100,29944
+```
+
+**2. PC 실험 시작**
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_req2_pen005 -Seeds 1 -TotalTimesteps 7000000 -Name pc_req2_1105
+```
+
+- 실행 폴더는 `runs\pc_req2_1105_b6_corner_indiv_comm5_req2_pen005`입니다.
+- W&B는 `rware-main-amax-v2` 프로젝트에 올라가고, run 이름에 `req2`가 들어가서 구분됩니다.
+- 계획만 만들어 확인한 설정은 이렇습니다.
+  - 4 job, job당 7,000,064 step
+  - r_c = 5, 팀당 요청 [2, 2](요청 수 자동 상향은 꺼짐)
+  - 처음부터 학습, 영상 10개 보존
+
+## 점검 시점
+
+| 시점 | 대략 언제 | 볼 것 |
+|---|---|---|
+| 1.3M | 시작 후 약 하루 | 성숙 agent 2명 이상, 같은 팀 승인, **평가 배송이 0이 아닌지**(넓은 지도처럼 무너지지 않았는지) |
+| 5M·6M | 약 3.6일·4.3일 | 수렴 판정. 수렴했으면 멈춤 |
+| 7M | 약 5일 | 끝 |
+
+점검은 아래 명령으로 합니다. 수렴했는데 아직 돌고 있는 job이 있으면 PID와 함께 나옵니다.
+
+```powershell
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team\main_check.py runs\pc_req2_1105_b6_corner_indiv_comm5_req2_pen005
+```
+
+## 참고
+
+- 이 PC 실험은 seed 1 하나라 **확인용**입니다. 요청 2개 환경에서 학습이 되는지, PGCT가 거기서 어떻게 움직이는지를 봅니다. 주 비교는 서버 실험(seed 여러 개)으로 합니다.
+- 실행기에 `-Seeds`와 `-TotalTimesteps` 옵션을 추가했습니다. 빼면 기존처럼 seed 1–3 × 10M입니다.
+- 혹시 PC에서 기존 지도를 돌리실 생각이었다면 `-Candidate b6_corner_indiv_comm5_pen005`로 바꾸면 됩니다. 다만 그러면 서버와 같은 실험이 되므로, 서버에는 다른 것을 맡기는 편이 낫습니다.
+- 확인용 계획 폴더 `runs/plancheck_pc_req2_*`가 생겼습니다. 계획과 bank만 들어 있습니다.
+
+기록은 `DECISIONS.md` D124, `RESEARCH_STATE.md`, 대화 기록 T195에 남겼습니다. 학습은 시작하지 않았습니다.
+
+## 원문 기록 T196 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+아 아니다 2~3M 하루짜리로 할수있는걸로 해줘
+내일 이사라서 집 컴퓨터 3060으로 일단 진행하게
+
+### 수행 기록 — 원문 대화와 별도
+
+- 직전 T195 답변(요청 2개, 7M)은 사용자가 바꿨다. T195 최종 답변은 화면에 표시된 뒤 이 요청이 왔다.
+- 코드 변경: `latent_team/run_main_amax_v2.ps1`(`-Modes`). plan-only 1회(`runs/plancheck_home_*`). 학습 시작·중단 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D125, `RESEARCH_STATE.md`, 이 T196.
+
+### Assistant — 진행 안내
+
+Got it. For a run that finishes in about a day I'll cut the job count. Measured on this PC, 2 jobs at once give about 25 step/s per job, so 2M takes about 22 hours; 4 jobs drop to 16 step/s and reach only about 1.4M in a day. I'll add a mode-selection option to the launcher.
+
+The plan is as intended: 2 jobs, 2M, base map r_c 5, per-action distance, no mirror, device auto. Saving the records and writing the commands.
+
+### Assistant — 최종 답변
+
+하루짜리로 바꿨습니다. **기존 지도(11×10, r_c = 5)에서 pgct_max와 ippo 두 개만 seed 1로 2M** 돌리는 것을 권합니다.
+
+## 왜 이렇게 했나
+
+**하루 안에 끝내려면 job 수를 줄여야 합니다.** 이 PC에서 잰 job당 속도로 계산하면 이렇습니다.
+
+| 동시 실행 | job당 속도 | 하루에 가는 step |
+|---|---|---|
+| 4개 | 약 16 step/s | 약 1.4M |
+| 2개 | 약 25 step/s | 약 2.2M |
+
+2개면 2M이 약 22시간입니다.
+
+**이 학습은 거의 CPU로 돕니다.** 3060보다는 집 컴퓨터의 CPU 성능이 속도를 정합니다. CPU가 이 PC(20코어)보다 약하면 더 걸릴 수 있습니다.
+
+**기존 지도를 고른 이유**
+- 하루는 짧아서, 환경이 또 무너지면 하루를 통째로 잃습니다.
+- 기존 지도는 2M 안에 학습이 되는 것이 확인되어 있습니다.
+  - 보상 예측기는 약 0.3M에 성숙합니다.
+  - 평가 배송은 1.3–1.4M에 episode당 5개에 이릅니다.
+- 그래서 2M이면 두 가지를 볼 수 있습니다.
+  - **행동별 거리 gate가 실제 학습 중에 처음으로 제대로 도는지**(같은 팀만 승인되는지)
+  - **pgct_max와 ippo의 agent별 학습 속도 차이**(W&B `train/agent_k_delivery_count` 비교)
+- 서버 본 실험 전에 미리 확인해 두는 의미도 있습니다.
+- 요청 2개 환경은 학습해 본 적이 없어서, 하루짜리에는 위험합니다. 그래도 원하시면 `-Candidate b6_corner_indiv_comm5_req2_pen005`로 바꾸면 됩니다.
+
+## 실행 명령 (집 컴퓨터, 별도 PowerShell 창)
+
+```powershell
+Set-Location '<집 컴퓨터의 robotic-warehouse 경로>'
+.\latent_team\run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo -Seeds 1 -TotalTimesteps 2000000 -Name home_base_1106
+```
+
+이 PC에서 계획만 만들어 확인한 설정은 이렇습니다.
+- 2 job, job당 2,000,896 step
+- r_c = 5, 팀당 요청 3개
+- 행동별 거리, mirror 없음, 처음부터 학습, 영상 10개 보존
+
+결과는 `runs\home_base_1106_b6_corner_indiv_comm5_pen005`에 쌓이고, W&B는 `rware-main-amax-v2` 프로젝트입니다.
+
+끝나면 이렇게 점검합니다.
+
+```powershell
+python latent_team\main_check.py runs\home_base_1106_b6_corner_indiv_comm5_pen005
+```
+
+## 집 컴퓨터 준비물
+
+1. **코드**
+   - 브랜치 `feature/PGCT_Next`를 받으면 됩니다.
+   - 다만 오늘 실행기에 추가한 옵션(`-Candidate`, `-Seeds`, `-Modes`, `-TotalTimesteps`)은 아직 커밋하지 않았습니다.
+   - 커밋하고 push하거나, `latent_team\run_main_amax_v2.ps1` 파일 하나를 직접 옮겨야 합니다.
+2. **기준 설정 파일**: `runs\sp_20261008_120638_983201\experiment.json` 한 파일을 같은 경로에 복사합니다.
+3. **Python 환경**
+   - Python 3.11.15, torch 2.11.0, gymnasium 1.3.0, numpy 2.4.6
+   - 프로젝트 폴더에서 `pip install -e .`
+   - 실행기는 Python을 `C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe`에서 찾습니다. 경로가 다르면 `run_queue.ps1`의 `-Python` 기본값을 바꿔야 합니다.
+4. **W&B**: `wandb login`
+5. **경로 길이**: 저장소를 짧은 경로에 두세요.
+   - 여기서 가장 긴 영상 경로가 171자이고, Windows 기본 한도는 260자입니다.
+   - 저장소 경로가 지금(`C:\RWARE\MARL_RWARE\third_party\robotic-warehouse`, 49자)보다 약 80자 이상 길어지면 지난번 51,200 step 오류가 다시 날 수 있습니다.
+
+## 이사 전에
+
+이 PC의 넓은 지도 실험 4개가 아직 돌고 있습니다. 컴퓨터를 끄기 전에 queue 창에서 `Ctrl+C`를 누르고 `Stop-Process -Id 32108,20432,28100,29944`로 멈춰 주세요.
+
+기록은 `DECISIONS.md` D125, `RESEARCH_STATE.md`, 대화 기록 T196에 남겼습니다. 학습은 시작하지 않았고, 커밋하지 않았습니다.
+
+## 원문 기록 T197 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+아니 지금 이 컴퓨터에서 하루짜리로 돌리는거야
+
+### 수행 기록 — 원문 대화와 별도
+
+- 이 PC 실행 명령으로 답을 준비했으나, 보내기 전에 T198 요청(영상 업로드)이 와서 최종 답변은 T198에 합쳐 보냈다. 이 turn에 사용자에게 보인 진행 안내는 없다.
+
+## 원문 기록 T198 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+wandb에 영상도 업로드하는걸로 해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 코드 변경: `latent_team/video_retention.py`(live 업로드), `latent_team/train_from_scratch.py`(`--video-upload`), `latent_team/run_main_amax_v2.ps1`(`-VideoUpload`, 기본 live), `tests/test_video_retention.py`(테스트 1개). 1 update 실제 확인(임시 폴더, W&B 오프라인, `wandb_data/fab1dcc77e28` 생성). plan-only(`runs/plancheck_day_*`). 학습 시작·중단 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D126, `RESEARCH_STATE.md`, T197·이 T198.
+
+### Assistant — 진행 안내
+
+9 video tests pass, including the new live-upload test. I'll check a real 1-update run with W&B offline to confirm the video is recorded in W&B as soon as it is saved.
+
+All 272 tests pass. The plan check hit an execution-policy block in the shell, so I'll rerun it with the PowerShell tool.
+
+The plan is as intended: 2 jobs, live upload, local copies of the latest 10. Saving the records and writing the commands.
+
+### Assistant — 최종 답변
+
+이 PC에서 하루짜리로 돌리고, **영상도 학습 중에 바로 W&B에 올라가도록** 바꿨습니다.
+
+## 바꾼 것
+
+- 영상 업로드 방식에 **live** 옵션을 추가했습니다. 평가 영상이 저장될 때마다 바로 W&B에 올라갑니다.
+- 실행기 `run_main_amax_v2.ps1`의 기본값도 live로 바꿨습니다.
+- 로컬에는 지금처럼 최근 10개만 남깁니다.
+- W&B 저장 폴더는 짧은 경로(`wandb_data\…`)를 그대로 써서, 지난번 경로 길이 오류는 생기지 않습니다.
+- 업로드가 실패해도 학습은 멈추지 않습니다. 경고만 남기고, 로컬 영상은 지우지 않습니다.
+- 예전 방식(끝날 때 10개만 올리기)이 필요하면 `-VideoUpload finish`를 붙이면 됩니다.
+
+**확인한 것**
+- 새 테스트를 추가했습니다. 영상마다 한 번씩 업로드되고, 끝날 때 중복으로 올리지 않는지 봅니다.
+- 실제 1 update 실행(W&B 오프라인)에서 영상이 저장되자마자 W&B media에 기록되는 것을 확인했습니다.
+- 전체 테스트 272개가 통과했습니다.
+
+## 실행 방법 (앱 밖, 별도 PowerShell 창)
+
+**1. 넓은 지도 실험 멈추기** — 아직 4개가 돌고 있습니다.
+
+그 queue 창에서 `Ctrl+C`를 누른 뒤 아래를 실행합니다.
+
+```powershell
+Stop-Process -Id 32108,20432,28100,29944
+```
+
+**2. 하루짜리 실험 시작**
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo -Seeds 1 -TotalTimesteps 2000000 -Name day_base_1105
+```
+
+- 실험 구성: 기존 지도 11×10, r_c = 5에서 pgct_max와 ippo를 seed 1로 각 2M 돌립니다(2 job 동시 실행). 계획만 만들어 확인한 결과 job당 2,000,896 step이고, 영상은 live로 올라갑니다.
+- 소요 시간: job당 약 25 step/s라 **약 22시간**, 내일 오전 10시 무렵 끝납니다.
+- 결과 위치: `runs\day_base_1105_b6_corner_indiv_comm5_pen005`, W&B 프로젝트는 `rware-main-amax-v2`입니다.
+- 영상: 평가가 50 update(약 51k step)마다 돌기 때문에, W&B에는 job당 약 39개가 쌓입니다(하나에 약 0.9MB). `eval/video` 패널에서 step별로 넘겨 볼 수 있습니다.
+
+**3. 끝나면 점검**
+
+```powershell
+& 'C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe' latent_team\main_check.py runs\day_base_1105_b6_corner_indiv_comm5_pen005
+```
+
+- gate가 같은 팀만 승인하는지 확인합니다. 행동별 거리를 실제 학습에서 처음 확인하는 것입니다.
+- W&B에서 `train/agent_k_delivery_count`를 agent별로 겹쳐, pgct_max와 ippo의 학습 속도를 비교합니다.
+
+## 참고
+
+- 서버에서 10M을 돌릴 때도 live가 기본입니다. 그러면 job당 영상이 약 195개(약 175MB)가 됩니다. 너무 많으면 그때는 `-VideoUpload finish`를 쓰세요.
+- 컴퓨터를 끄면 그 시점에서 학습이 멈춥니다. checkpoint는 약 0.26M마다 남고, 그때까지 올라간 영상은 W&B에 그대로 있습니다.
+- 확인용 계획 폴더(`runs/plancheck_day_*`, `runs/plancheck_home_*`)와 시험 실행의 W&B 폴더(`wandb_data/fab1dcc77e28`)가 생겼습니다. 학습 결과는 없습니다.
+
+기록은 `DECISIONS.md` D126, `RESEARCH_STATE.md`, 대화 기록 T197–T198에 남겼습니다. 커밋하지 않았습니다.
+
+## 원문 기록 T199 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+그리고 A_ij^PGCT에서 4.6 PPO 업데이트 연결이 자연스럽지가 않은데
+
+### 수행 기록 — 원문 대화와 별도
+
+- 수정: OneDrive 논문 `method_equations.tex`(PPO 식 첫 줄에 $A^{\rm PGCT}$ 정규화 추가, 에이전트별 rollout 전체 평균·표준편차로 trainer 코드와 동일), 영어·한국어 `main.tex` 4.6절 첫머리와 Critic 목표 문장, 4.5절 정규화 참조. PDF 재빌드(영어 6쪽, 한국어 7쪽, Overfull 0), 사본 `output/paper_revision_20261105/revised/`. 학습·코드 변경 없음. 커밋 없음.
+
+### Assistant — 진행 안내
+
+The normalization step that turns A^PGCT into Ã is not written out, so the reader cannot see how A^PGCT connects to PPO. I'll add Ã = (A^PGCT − mean)/std (per agent, over the whole rollout, as in the trainer) to the PPO equation, and rewrite the start of 4.6 to connect directly to A^PGCT.
+
+Both compiled (6 and 7 pages, 0 Overfull). Saving the records.
+
+### Assistant — 최종 답변
+
+맞습니다. 원인은 **$A^{\rm PGCT}$가 $\widetilde A$로 바뀌는 단계가 글로만 있고 식에는 없었다**는 점입니다. 4.5절에서 $A^{\rm PGCT}$를 정의한 뒤, 4.6절이 갑자기 "정규화를 거친 advantage $\widetilde A$"로 시작해서 둘의 관계가 보이지 않았습니다.
+
+## 고친 것 (영어·한국어 모두)
+
+**1. PPO 식(식 11)의 첫 줄에 정규화를 넣었습니다.**
+
+$$\widetilde A_{i,t}=\big(A^{\rm PGCT}_{i,t}-\operatorname{mean}_t(A^{\rm PGCT}_{i,t})\big)\big/\operatorname{std}_t(A^{\rm PGCT}_{i,t})$$
+
+이어서 $\rho$, $L^\pi$, $R^{\rm self}$가 나오고, 식 번호는 하나 그대로입니다. 정규화는 trainer 코드와 똑같이 에이전트별로 rollout 전체에서 평균을 빼고 표준편차로 나눕니다.
+
+**2. 4.6절 첫머리를 $A^{\rm PGCT}$에서 바로 이어지게 바꿨습니다.**
+> The Actor is trained by PPO with $A^{\rm PGCT}$ in place of the usual advantage $A^{\rm self}$. As in standard PPO, the advantage is first normalized for each agent over the rollout:
+
+**3. Critic 쪽 연결도 분명히 했습니다.**
+> Its target $R^{\rm self}$ is computed from $A^{\rm self}$, not from $A^{\rm PGCT}$ … Peer Critics therefore change only the Actor update.
+
+**4. 4.5절 끝의 "PPO's advantage normalization"에 식 (11) 참조를 달았습니다.** $s_i$가 왜 필요한지와 정규화 식이 서로 이어집니다.
+
+이제 흐름은 이렇습니다.
+- 4.5절: $A^{\rm self}$, $A^f$ → $A^{\rm PGCT}$ (식 10)
+- 4.6절: $A^{\rm PGCT}$ → 정규화한 $\widetilde A$ → PPO의 $L^\pi$ (식 11)
+- Critic은 $A^{\rm self}$로 만든 $R^{\rm self}$를 목표로 합니다.
+
+PDF를 다시 만들었습니다. 영어판 6쪽, 한국어판 7쪽이고 줄 넘침 경고는 없습니다. 새 정규화 식(한 줄)이 칸 안에 맞는지는 PDF에서 한 번 봐 주세요.
+
+기록은 대화 기록 T199에 남겼습니다.
+
+## 원문 기록 T200 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+방금 VS code에서 Resource busy라고 떴는데 혹시 영상을 매 타임 계속 보내는 중이야?
+나는 eval에서 가끔 보내는 정도로 생각했는데
+
+### 사용자 — 원문 (작업 중 추가)
+
+아니다 영상은 아예 빼주고 그냥 그래프만 뽑을래
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: `runs/day_base_1105_*` 두 job(PID 34888·33240, 부모 VS Code 터미널 PID 7124, 12:05 시작), 평가 0회, 영상 0개, `live_logged 0`.
+- 코드 변경: `latent_team/run_main_amax_v2.ps1`(기본 영상 없음, `-Video` 스위치). plan-only(`runs/plancheck_novid_*`): save_eval_video False, W&B 영상 False, track True. 학습 중단·재시작은 사용자. 커밋 없음.
+
+### Assistant — 진행 안내
+
+Checked: **no video has been sent yet.** The run started at 12:05 and has not reached the first evaluation (51,200 step, about 34 minutes in). With the live option, videos go up only once per evaluation (about every 34 minutes), never every step. Now removing videos entirely as you asked.
+
+Without videos, the plan now has 2 jobs and 2M with only W&B metrics. Saving the records and writing the commands.
+
+### Assistant — 최종 답변
+
+영상은 아예 빼도록 바꿨습니다. 이제 실행기의 기본값은 **영상 없이 W&B 지표와 그래프만** 남깁니다.
+
+## 영상이 계속 올라가고 있었나?
+
+아닙니다. 지금 실행(`day_base_1105`)은 12:05에 시작해서 아직 첫 평가(51,200 step, 시작 후 약 34분)에도 도달하지 않았습니다. 그래서 영상은 하나도 만들어지지도, 올라가지도 않았습니다(`live_logged 0`). live 방식도 매 step이 아니라 평가 때만, 즉 약 34분에 한 번 올리는 구조였습니다.
+
+VS Code의 "Resource busy"는 영상 때문이 아닐 가능성이 큽니다.
+- 학습 프로세스는 `runs\`와 `wandb_data\` 폴더에 로그와 W&B 파일을 계속 쓰고 있습니다.
+- VS Code는 작업 폴더 전체를 감시하기 때문에, 쓰는 중이라 잠긴 파일에 접근하다 이 메시지를 낼 수 있습니다.
+- 그리고 지금 두 job은 **VS Code 터미널에서 시작되어 있습니다.** VS Code를 닫으면 같이 꺼질 수 있습니다.
+
+## 다시 거는 방법 (앱 밖, **VS Code가 아닌 별도 PowerShell 창**)
+
+**1. 지금 도는 2개 멈추기**
+
+시작한 지 몇 분밖에 안 됐습니다.
+
+```powershell
+Stop-Process -Id 34888,33240
+```
+
+**2. 영상 없이 다시 시작**
+
+이름을 새로 붙여야 합니다. 같은 이름이면 이미 있는 job 폴더를 건너뜁니다.
+
+```powershell
+Set-Location 'C:\RWARE\MARL_RWARE\third_party\robotic-warehouse'
+.\latent_team\run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo -Seeds 1 -TotalTimesteps 2000000 -Name day_base_1105_nv
+```
+
+- 계획만 만들어 확인한 설정은 이렇습니다.
+  - 2 job, job당 2,000,896 step
+  - 영상 저장 꺼짐, W&B 영상 꺼짐, W&B 지표는 켜짐
+  - 행동별 거리 gate
+- 약 22시간이 걸리고, 결과는 `runs\day_base_1105_nv_b6_corner_indiv_comm5_pen005`에 쌓입니다.
+- W&B 그래프는 그대로 다 나옵니다. agent별 배송(`train/agent_k_delivery_count`), gate 지표(`max_gae_*`) 등입니다.
+- 나중에 영상이 다시 필요하면 `-Video`를 붙이면 됩니다.
+
+## 참고
+
+- 멈춘 `day_base_1105` 폴더는 지우지 않고 둡니다. W&B에는 몇 분짜리 run 2개가 crashed로 남습니다.
+- 확인용 계획 폴더 `runs/plancheck_novid_*`가 생겼습니다.
+
+기록은 대화 기록 T200과 `RESEARCH_STATE.md`에 남겼습니다. 학습은 건드리지 않았습니다.
+
+## 원문 기록 T201 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+현재 2M은 앞에 사전학습한 모델을 쓰는거지?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: `runs/day_base_1105_nv_*`(사용자가 새로 시작)와 `runs/day_base_1105_*`의 `experiment.json` initialization·init_checkpoint. 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+아닙니다. **사전학습한 모델 없이 처음부터(무작위 가중치) 학습합니다.**
+
+- 새로 건 `day_base_1105_nv` 실행의 `experiment.json`을 확인했습니다. `initialization`이 `random (no checkpoint, no curriculum)`이고, 모든 job의 `init_checkpoint`가 비어 있습니다.
+- 실행 명령에 `--init-checkpoint`가 없기 때문입니다. 1M checkpoint에서 출발한 것은 예전 분기 실험(0.5M 추가 학습)뿐이었습니다.
+- pgct_max와 ippo는 seed가 같아서 같은 무작위 초기 가중치에서 출발합니다. 그래서 학습 속도를 공정하게 비교할 수 있습니다.
+
+2M이면 기존 지도에서 보상 예측기 성숙(약 0.3M)과 배송 학습 시작(약 0.8M)까지는 충분히 들어갑니다. 대신 끝난 결과가 아니라 학습 초중반의 비교입니다.
+
+## 원문 기록 T202 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+그러면 2M으로 되는거 아냐?
+왜 8M, 10M까지 하는거야
+
+### 수행 기록 — 원문 대화와 별도
+
+- 설명만 했다(기존 지도 5M run 이정표 E78 근거). 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+좋은 지적입니다. **무엇을 주장하느냐에 따라 2M으로 충분할 수도 있습니다.** 10M은 넓은 지도를 쓰려고 할 때(학습이 2.5–3.5배 느릴 것으로 예상) 잡은 값이었습니다. 기존 지도로 돌아온 지금은 다시 따져 보는 게 맞습니다.
+
+## 주장별로 필요한 길이 (기존 지도 기준, 이전 5M run 3개)
+
+| 주장 | 필요한 시점 | 2M이면? |
+|---|---|---|
+| Q1 팀 발견: 같은 팀만 승인되는가 | 보상 예측기 성숙 약 0.3M, 첫 승인 직후 | **충분** |
+| "먼저 배운 agent가 있으면 나머지가 더 빨리 배우는가" | agent별 학습 시작 0.77–2.97M | **대부분 들어감** (3M 근처에 시작한 agent는 빠질 수 있음) |
+| 최종 성능: PGCT가 IPPO보다 높은 수준에 도달하는가 | 배송 20/ep 도달이 4.3–4.5M, 5M에도 아직 상승 중 | **부족** |
+| 이전 run에서 끝까지 못 배운 agent가 PGCT로 배우는가 | 5M까지도 못 배움 | **부족** |
+
+## 제 의견
+
+- 말씀하신 핵심 비교인 **학습 속도**는 2–3M이면 볼 수 있습니다. agent별로 처음 배송하는 시점과, 배송 0.5/ep에 도달하는 시점을 비교하면 됩니다. 팀 발견도 2M이면 충분합니다.
+- **최종 성능**까지 주장하려면 5M 이상이 필요합니다. 기존 지도는 5M에도 수렴하지 않았기 때문입니다. 다만 논문의 중심이 팀 발견이고 Q2는 보조라서, 최종 성능은 꼭 필요한 주장이 아닙니다.
+- 계산 자원은 **길게 돌리기보다 seed를 늘리는 데** 쓰는 편이 논문에 유리합니다. 같은 시간이면 10M × 3 seed보다 3M × 10 seed가 학습 속도 차이를 통계적으로 보여 주기 좋습니다.
+
+## 그래서 이렇게 가면 됩니다
+
+1. 지금 2M run을 끝까지 봅니다(내일 오전). pgct_max와 ippo의 agent별 학습 속도 차이가 보이는지 확인합니다.
+2. 차이가 보이면, 서버 본 실험은 **3M 정도 × seed 5개 이상**으로 줄입니다. 그러면 seed 수를 늘릴 수 있습니다.
+3. 차이가 안 보이면 2M 이후에 생기는지 보기 위해 5M으로 늘리는 것을 고려합니다. 10M까지는 필요 없을 가능성이 큽니다.
+
+실행 중인 학습과 설정은 바꾸지 않았습니다.
+
+## 원문 기록 T203 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+그리고 현재 wandb PGCT에서 논문 자료로 쓰기 좋은 그래프 자료들 말해줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: `runs/day_base_1105_nv_*/*pgct_max_s1/metrics.jsonl`의 지표 이름(217개, 7,168 step 시점). 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+지금 돌고 있는 `day_base_1105_nv`의 pgct_max run에서 실제로 기록되는 지표 이름을 확인하고 골랐습니다. W&B에서는 앞에 `train/`, `update/`, `eval/`가 붙습니다. `eval/`는 첫 평가(51,200 step) 뒤에 생깁니다.
+
+## 논문 본문에 쓰기 좋은 것
+
+**A. 팀 발견 (Q1, 논문의 중심)**
+
+| 그림 | W&B 지표 | 논문에서 보여 주는 것 |
+|---|---|---|
+| 승인 arc 누적, 실제 관계별 | `update/max_gae_approved_same_team_arcs`, `update/max_gae_approved_cross_team_arcs` | 승인이 같은 팀에만 가는가(정밀도). 지금 논문 그림 3(c)와 같은 그림 |
+| 같은 팀 승인 비율 | `update/max_gae_same_team_approval_coverage` | 접촉한 같은 팀 쌍 중 몇 %를 찾았나(재현율) |
+| 성숙한 agent 수 | `update/ac_v2_mature_agents` (agent별 `update/max_gae_reward_mature_agent_k`) | 언제부터 판정이 가능한가. 그림 3(b) |
+
+**B. 학습 속도 (Q2, 말씀하신 비교)**
+
+| 그림 | W&B 지표 | 논문에서 보여 주는 것 |
+|---|---|---|
+| **agent별 배송 곡선, pgct_max 대 ippo** | `eval/agent_k_delivery_count`(결정적 평가 20 ep 합계), 학습 중은 `train/agent_k_delivery_count` | 먼저 배운 agent가 있을 때 나머지가 더 빨리 배우는가. **가장 중요한 그림** |
+| 팀 전체 배송 | `eval/deliveries`, `train/episode_return` | 전체 성능 비교 |
+| agent별 양의 보상 비율 | `update/agent_k/positive_reward_density` | 뒤처진 agent가 보상을 얼마나 경험하나 |
+
+## 부록·설명용
+
+| 지표 | 용도 |
+|---|---|
+| `update/ac_v2_pairs_no_common_action` ÷ `update/ac_v2_pairs_compared` | 행동별 거리에서 비교할 행동이 없어 건너뛴 비율. 설계의 부작용이 작다는 근거 |
+| `update/max_gae_donor_arcs`, `update/max_gae_receivers` | 실제로 팀원 Critic을 쓴 횟수와 받은 agent 수 |
+| `update/max_gae_mean_b`, `update/max_gae_select_frac` | 상승분 $b$의 크기와 $b>0$인 step 비율 |
+| `update/max_gae_eta_eff` | $s_i$로 줄어든 실제 $\eta$. $s_i$의 효과 설명 |
+| `update/max_gae_critic_ev_agent_k` | agent별 Critic 설명력. donor Critic이 믿을 만한지 |
+
+## 주의할 점
+
+- **같은 팀/다른 팀 응답 거리 곡선(그림 3(a))은 W&B에 팀별로 나뉘어 있지 않습니다.**
+  - W&B의 `update/ac_v2_distance_mean`은 모든 쌍의 평균이라 논문용으로는 맞지 않습니다.
+  - 이 그림은 로컬 로그(`max_gae.jsonl`의 쌍별 거리)에서 그려야 합니다. 기존 그림 스크립트(`output/pgct_docs_20261102/evidence_plots.py`)를 새 run에 맞게 고치면 됩니다.
+- **agent 번호가 지표마다 다릅니다.**
+  - `train/`·`eval/`의 `agent_1`–`agent_6`은 1부터 셉니다.
+  - `max_gae_*_agent_0`–`agent_5`는 0부터 셉니다.
+  - 즉 `agent_1`이 gate의 agent 0입니다.
+- **최종 논문 그림은 W&B 캡처보다 로컬 로그로 그리는 것을 권합니다.** 그래야 seed 평균과 신뢰구간, 글꼴과 색을 논문에 맞출 수 있습니다. W&B는 실시간 확인용으로 쓰시면 됩니다. 2M run이 끝나면 이 그림들을 한 번에 뽑는 스크립트를 만들어 드릴 수 있습니다.
+
+## 원문 기록 T204 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+figure 2 실제 데이터가 아니라 설명용 그림이라는데
+할꺼면 실제 데이터 기반으로 해줘
+
+### 사용자 — 원문 (작업 중 추가)
+
+그리고 다른 figure 데이터로 넣을꺼 있으면 찾아줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 스크립트 `output/fig2_real_20261105/fig_discovery_data.py`(읽기 전용 checkpoint 사용), 그림을 OneDrive `paper/figures/fig_discovery_data.pdf`로 복사. 영어·한국어 `main.tex` 그림·캡션·본문 참조 수정, PDF 재빌드·복사, 사본 `output/paper_revision_20261105/revised/`. 후보 조사(`output/oracle_why_20261029/cf_*.json` 구조 확인). 학습·코드 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D127, 이 T204.
+
+### Assistant — 진행 안내
+
+Figure 2 is currently a hand-drawn example (8 probes). I'll redraw it from the predictors and event buffers saved in a real run. If I pick the checkpoint where the old pooled distance wrongly fell below 0.5 (4.35M), the same figure shows real data and also why the per-action distance is needed. I'll check the existing figure style first.
+
+Real data fits well. At 4.35M, the same-team pair (a3, a5) has pooled 0.04 and per-action max 0.08. The different-team pair (a2, a5) has **pooled 0.39** (would be wrongly approved), but delivery 0.99 / return 0.02, so the **per-action max is 0.99**. I'll draw this in the existing figure style.
+
+The titles are cut off on the right and the legend overlaps the data. I'll shorten the titles, use the agent names in each panel's legend, and move it to an empty area.
+
+The figure looks clean. Now I'll swap the figure and caption in both papers, and reference Figure 2(b) from the "why the maximum" paragraph.
+
+The paper rebuild is running in the background. Meanwhile I'll look for other figures that could be drawn from real data, starting with where the counterfactual-check data lives.
+
+Both papers compiled with the new Figure 2 (English 7, Korean 7 pages, 0 Overfull). The counterfactual-check data also has per-state raw values (critic-predicted uplift dV vs actual return gain dMC, team relation), so it can be drawn as a figure. Saving the records and writing the answer.
+
+### Assistant — 최종 답변
+
+그림 2를 실제 데이터로 다시 그렸습니다. 다른 그림 후보도 찾아 정리했습니다.
+
+## 그림 2: 실제 데이터로 교체 (영어·한국어)
+
+**데이터**: 실제 학습(모서리 goal, 개인 보상, seed 1)의 4.35M checkpoint에 저장된 보상 예측기와 사건 버퍼입니다.
+- probe는 두 agent 각각의 최근 자기 사건 32개이고, 행동별로 묶었습니다.
+- 현재 방법대로 대칭 사본은 넣지 않았습니다.
+
+**(a) 같은 팀 $a_3$, $a_5$**
+- 모든 probe에서 둘 다 높은 보상을 예측합니다.
+- 배송 거리 0.01, 반납 거리 0.08 → 합친 거리 0.04, 최댓값 0.08
+
+**(b) 다른 팀 $a_2$, $a_5$**
+- 반납에서는 예측이 같습니다(0.02). 두 팀 모두 반납으로 보상받기 때문입니다.
+- 배송에서는 정반대입니다(0.99).
+- **합친 거리는 0.39로 문턱 0.5 아래라, 예전 방식이면 잘못 승인됩니다. 행동별 최댓값은 0.99라 승인되지 않습니다.**
+
+이 그림 한 장이 실제 데이터이면서, 행동별 거리를 쓰는 이유를 직접 보여 줍니다. 그래서 "왜 최댓값인가" 문단에서 그림 2(b)를 참조하게 했습니다.
+
+- 새 파일은 `figures/fig_discovery_data.pdf`입니다. 예전 설명용 그림 `fig_discovery.pdf`는 지우지 않고 남겼습니다.
+- 그리는 스크립트는 `output/fig2_real_20261105/fig_discovery_data.py`입니다.
+- 영어판이 6쪽에서 7쪽이 됐습니다. 그림이 조금 커졌기 때문이고, 본문 7쪽 + 참고문헌 2쪽 제한 안에 있습니다. 한국어판은 7쪽입니다. 줄 넘침 경고는 없습니다.
+
+## 실제 데이터로 넣을 만한 다른 그림
+
+지금 논문의 그림은 세 개입니다.
+- 그림 1 `fig_overall.png`: 방법 개념도라 데이터가 필요 없습니다.
+- 그림 2: 이번에 교체했습니다.
+- 그림 3 `discovery_log.pdf`: 이미 실제 데이터입니다.
+
+추가 후보는 이렇습니다.
+
+| 후보 | 데이터 | 넣으면 좋은 이유 | 상태 |
+|---|---|---|---|
+| **① 반사실 점검 산점도**: Critic이 예측한 상승분 dV 대 실제 return 이득 dMC, 같은 팀/다른 팀 색 구분 | `output/oracle_why_20261029/cf_*.json`(데이터 4묶음, 상태별 원시값) | 5.3절이 지금 숫자만 나열한 문단입니다. 그림 한 장이면 "같은 팀 Critic의 상승분만 실제 이득과 맞는다"가 바로 보입니다 | 바로 만들 수 있음 |
+| **② 합친 거리 대 행동별 거리, checkpoint별** (같은 팀 최대·다른 팀 최소) | `output/ac_drift_20261104/`(checkpoint 25개 재계산) | 합친 거리는 다른 팀이 0.39까지 내려가고, 행동별 거리는 0.97 이상을 유지하는 것을 시간축으로 보여 줍니다. 그림 3에 패널로 붙이면 공간을 덜 씁니다 | 바로 만들 수 있음 |
+| ③ 반납 사건 비율 변화(최근 32개 중 반납 수) | 같은 폴더 | 원인 설명용. ②와 겹치므로 부록 정도 | 바로 만들 수 있음 |
+| **④ agent별 학습 곡선, pgct_max 대 ippo** | 지금 도는 2M run, 이후 서버 본 실험 | Q2의 핵심 그림 | 실험 결과 필요 |
+| ⑤ 분기 실험 온라인 발견 결과 표(seed별 승인 arc, 다른 팀 0) | `runs/pgctd2_br1M_20261102_180212` | 지금 본문에 숫자로 있는 내용을 표로 정리 | 바로 만들 수 있음 |
+
+**공간 문제**
+- 영어판은 지금 7쪽이고, 본문은 약 5.8쪽입니다.
+- 본 실험 결과(④와 표)를 넣을 자리로 약 1쪽은 남겨 둬야 합니다.
+- 그래서 지금 넣는다면 **①(5.3절 문단을 그림으로 대체, 공간은 거의 그대로)**과 **②(그림 3에 패널로 추가)**를 권합니다.
+
+기록은 `DECISIONS.md` D127, 대화 기록 T204에 남겼습니다.
+
+## 원문 기록 T205 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+둘 다 만들어줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 스크립트·그림(`output/fig_data_20261105/`), OneDrive 영어·한국어 `main.tex`(그림 3 교체·캡션, 5.3절 그림·본문, 원인 문단 참조), PDF 재빌드·복사, 사본 갱신. 학습·코드 변경 없음. 커밋 없음. 진행 안내를 영어로 보냈다.
+- 기록: `DECISIONS.md` D128, 이 T205.
+
+### Assistant — 진행 안내
+
+Panels (a)–(c) of Figure 3 are produced by `evidence_plots.py` from the raw logs, so I'll build the new figures in a separate script without changing that code. Panel (d) is the per-checkpoint per-action vs pooled distance comparison; the other new figure is the counterfactual scatter.
+
+Both figures show the data well. In panel (d) and in the scatter's (a) the legend overlaps data, so I'll move them to empty areas.
+
+The legend in panel (d) still overlaps the threshold line. Since color already means same/different team in the other panels, I'll make the legend show only line style (solid = per-action, dotted = pooled).
+
+Both figures are clean. Next I'll update the papers: Figure 3 becomes 4 panels with an updated caption, Section 5.3 is rewritten as the counterfactual scatter plus a shorter paragraph, and the same in Korean.
+
+Both compiled: English 7 pages including references, Korean 8 pages, 0 Overfull. Saving the records.
+
+### Assistant — 최종 답변
+
+두 그림 모두 실제 데이터로 만들어 영어·한국어 논문에 넣었습니다.
+
+## 1. 그림 3에 (d) 패널 추가: 합친 거리 대 행동별 거리
+
+- **데이터**: 5M 발견 run의 모든 checkpoint(19개)입니다. 저장된 예측기와 probe로 대칭 사본 없이 오프라인에서 다시 계산했습니다.
+- **그린 것**: 같은 팀의 최댓값(파랑)과 다른 팀의 최솟값(빨강)을, 행동별 최댓값(실선)과 합친 거리(점선)로 나눠 그렸습니다.
+- **보이는 것**
+  - 합친 거리(빨간 점선)는 1M부터 계속 내려가 4.35M에 0.39로 문턱 0.5 아래까지 갑니다.
+  - 행동별 최댓값(빨간 실선)은 끝까지 0.98 이상입니다.
+  - 같은 팀은 두 방식 모두 0.28 이하입니다.
+- (a)–(c)는 예전과 같은 학습 로그로 다시 그렸고, 캡션에 "이전 규칙의 로그"임을 밝혔습니다. 본문 원인 분석 문단에서도 그림 3(d)를 참조합니다.
+
+## 2. 5.3절에 반사실 점검 산점도 추가 (새 그림 4)
+
+- **데이터**: 저장된 독립 PPO checkpoint 네 묶음의 반사실 점검 원시값입니다(상태 387개).
+- **축**: 가로는 팀원 Critic이 예측한 상승분 $V_j-V_i$, 세로는 그 팀원 정책으로 움직였을 때 실제로 바뀐 return(100 step, 8회 반복)입니다.
+- **패널**: (a) 뒤처진 에이전트, (b) 앞선 에이전트.
+- **보이는 것**(예측 상승분 > 0.2인 경우)
+
+| | 사례 수 | 평균 실제 이득 | 이득이 난 비율 |
+|---|---|---|---|
+| 뒤처진, 같은 팀 | 56 | **0.36** | 89% |
+| 뒤처진, 다른 팀 | 47 | 0.10 | 96% (작은 이득) |
+| 앞선, 다른 팀 | 38 | **−0.04** | 50% |
+
+- 5.3절 본문은 숫자를 나열하던 방식에서, 그림을 보며 읽는 짧은 문단으로 바꿨습니다.
+- 숫자도 네 묶음을 합친 값으로 통일했습니다. 예전에는 "67–100%, 0.28–0.58"처럼 묶음별 범위로 적었습니다.
+
+## 결과
+
+- 영어판은 참고문헌까지 **7쪽**이라, 본문 7쪽 + 참고문헌 2쪽 제한 안에 있습니다. 한국어판은 8쪽입니다. 둘 다 줄 넘침 경고와 깨진 참조가 없습니다.
+- 영어판 기준으로 본 실험 결과를 넣을 자리는 이제 1쪽이 조금 안 됩니다. 결과 그림이 들어갈 때 공간이 모자라면, 그림 3을 2×2로 바꾸거나 5.3절 문단을 더 줄이면 됩니다.
+- 그림을 만드는 스크립트는 `output/fig_data_20261105/make_figures.py`이고, 수치는 `figure_data.json`에 있습니다. 새 그림 파일은 `figures/discovery_log_v2.pdf`, `figures/counterfactual.pdf`이며, 예전 그림 파일은 그대로 두었습니다.
+- PDF를 직접 화면으로 보지는 못했습니다. 그림 배치는 한 번 확인해 주세요.
+
+기록은 `DECISIONS.md` D128, 대화 기록 T205에 남겼습니다.
+
+## 원문 기록 T206 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+(붙여넣은 외부 피드백: 지금 고칠 것 — Figure 1의 distance 박스를 per-action max로 수정, Algorithm 1에 식 (9) 계산 단계 추가, n_ij 본문 정의와 알고리즘 8행 일치, 중복 정의된 G_i^u 하나 삭제 / 본 실험 뒤 — Figure 3 교체, Abstract·Conclusion 수치 갱신, Limitations 복원, Figure 2 캡션 조정 / 실험에 미리 챙길 것 — IPPO, PGCT, Oracle-team, No-gate 비교와 arc 단위 precision·recall, 4.28M 이후 다른 팀 거리 유지 여부. 전문은 사용자가 붙여넣은 원문 참조)
+다음 피드백
+
+### 사용자 — 원문 (작업 중 추가)
+
+아 사진은 건들지마
+
+### 수행 기록 — 원문 대화와 별도
+
+- 붙여넣은 피드백은 외부 자료로 보고, 사용자 지시("다음 피드백")에 따라 "지금 고칠 것"을 반영했다. 그림 1(PNG)은 사용자 지시로 수정하지 않았다(해상도 804×423 확인만).
+- 코드 확인: `reward_probe_ac_v2.py`의 round 집계는 예측기 버전 쌍이 바뀌면(어느 한쪽 재학습) 센다.
+- 수정: `method_equations.tex`(식 1을 접촉 규칙만으로), 영어·한국어 `main.tex`(알고리즘 1에 f·GAE 두 줄과 n_ij 조건, n_ij 본문 정의, 줄 번호 안내). PDF 재빌드(영어 7쪽, 한국어 8쪽, Overfull 0). 커밋 없음.
+
+### Assistant — 진행 안내
+
+Figure 1 is a PNG you made yourself, so it has no source code. I'll check the resolution to see whether only the formula box can be cleanly replaced.
+
+Figure 1 is only 804×423 pixels. Pasting a new formula into an image this small would look worse, so it's better to fix it in the source file. Before editing the other items, I'll check in code exactly when $n_{ij}$ increases.
+
+I won't touch the image. I'll fix only the other three items in the text and the equation file.
+
+### Assistant — 최종 답변
+
+피드백 중 "지금 고칠 것" 네 가지 가운데 그림을 뺀 세 가지를 고쳤습니다. 그림 1은 말씀대로 건드리지 않았습니다.
+
+## 고친 것 (영어·한국어 모두)
+
+**1. 알고리즘 1에 식 (9) 단계를 넣었습니다.**
+- $b$ 다음에 두 줄을 추가했습니다.
+  - $f_{i,t}\leftarrow V_i+w_tb_{i,t}$
+  - $A^f\leftarrow\mathrm{GAE}(f)$, $A^{m self}\leftarrow\mathrm{GAE}(V_i)$ (식 9)
+- 이제 $b$ → $f$ → $A^f$, $A^{m self}$ → $A^{m PGCT}$ → update가 한 줄씩 이어집니다.
+- 본문의 줄 번호 안내도 "1–14줄은 Q1, 15–20줄은 Q2"로 고쳤습니다.
+
+**2. $n_{ij}$의 정의를 코드에 맞춰 본문과 알고리즘을 일치시켰습니다.**
+- 코드를 확인해 보니 실제 규칙은 "두 예측기 **모두**"가 아니었습니다. "그 쌍의 마지막 집계 이후 $\widehat r_i$ **또는** $\widehat r_j$가 다시 학습됐을 때만" round를 셉니다(예측기 버전 쌍이 바뀌었을 때).
+- 본문의 "both predictors were refitted"는 코드와 달라서 고쳤습니다.
+- 알고리즘 8–10줄은 이 조건을 `if`로 감싸, 조건이 맞을 때만 EMA와 $n_{ij}$를 갱신하게 했습니다.
+
+**3. 중복된 $\mathcal G_i^u$ 정의를 하나로 줄였습니다.**
+- 식 (1)에는 접촉 규칙 $C_{ij}^u$만 남겼습니다.
+- donor 집합은 Peer Critic Access 절의 식 하나로만 정의합니다. 승인 $B_{ij}$가 정의되기 전에 $\mathcal G$가 먼저 나오던 순서 문제도 함께 풀렸습니다.
+
+**빌드**: 영어판 7쪽(참고문헌 포함), 한국어판 8쪽, 줄 넘침 경고와 깨진 참조 없음.
+
+**그림 1**: 거리 박스가 아직 합친 거리 식입니다. 원본 파일에서 직접 고쳐 주세요.
+- 바꿀 식: $D_{ij}^u=\max_{a\in\mathcal A_{ij}^u}D_{ij}^{u,a}$ (행동별 거리 중 최댓값)
+- 현재 PNG는 804×423 픽셀로, 인쇄용으로는 해상도가 낮습니다. 다시 내보내실 때 300 dpi 이상이나 PDF로 저장하시길 권합니다.
+
+## 실험 쪽 피드백 점검
+
+| 피드백 | 현재 상태 |
+|---|---|
+| IPPO, PGCT, Oracle-team, No-gate 비교 | 서버 본 실험 구성에 **모두 있습니다**: ippo, pgct_max, oracle_max, allk_max(만나는 모든 agent를 donor로 쓰는 No-gate). 지금 이 PC의 하루짜리 run은 pgct_max와 ippo만 돌리므로, Oracle·No-gate는 서버 몫입니다 |
+| arc 단위 precision·recall을 시간에 따라 기록 | **이미 기록 중**입니다. precision은 `update/max_gae_approved_same_team_arcs`·`..._cross_team_arcs`, recall은 `update/max_gae_same_team_approval_coverage`이고, 쌍별 거리는 `max_gae.jsonl`에 남습니다. 그림 3을 바꿀 때 오늘 만든 그림 스크립트를 새 run 경로로 돌리면 됩니다 |
+| 4.28M 이후에도 다른 팀 거리가 유지되는지 | **중요한 지적입니다.** 지금 하루짜리 2M run으로는 이 구간을 볼 수 없습니다. 그래서 서버 본 실험의 pgct_max는 **최소 5M**까지 돌려야 합니다. 앞서 "3M × seed 여러 개"를 제안했는데, 이 이유로 **5M × seed 여러 개**로 고치는 게 맞습니다 |
+
+피드백에 적힌 "11×16 맵"은 학습이 무너져 그만둔 환경입니다. 현재 규칙의 결과는 기존 지도(11×10, r_c = 5)에서 나옵니다.
+
+기록은 대화 기록 T206에 남겼습니다.
+
+## 원문 기록 T207 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+1. MLP(u_t, onehot, u_t+1)에서 onehot을 e_{a_t+1}로 바꾸기로 했어
+2. MLP Loss 함수도 1/N sum (hat r - r)^2의 형태로 했어
+3. Figure 4는 Max-GAE를 사용하지 않았을때의 예시인건가? 아니면 그냥 Lagging, Leading을 보여주는건가?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 수정: `method_equations.tex`(식 2를 MLP(u_t, e_{a_t+1}, u_{t+1}), 식 3을 1/N 합), 영어·한국어 `main.tex`(e_k 정의 문장, batch 표기, 그림 4 캡션에 Max-GAE 미사용·목적 설명). PDF 재빌드(영어 7쪽, 한국어 8쪽, Overfull 0). 커밋 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+1, 2번은 그림에 맞춰 논문 식을 고쳤고, 3번은 아래에 설명했습니다(영어·한국어 모두).
+
+## 1·2. 식 고침
+
+- **식 (2)**: $\widehat r_i(q;\psi_i)=\operatorname{MLP}_{\psi_i}(u_t,e_{a_t+1},u_{t+1})$
+  - 바로 아래에 "$e_k$는 $\mathbb R^5$의 $k$번째 단위벡터이고, 행동 번호는 0부터 센다"는 한 줄을 넣었습니다. $e_{a_t+1}$에서 왜 $+1$이 붙는지 읽는 사람이 알 수 있게 하기 위해서입니다.
+- **식 (3)**: $\mathcal L_i^r(\psi_i)=\frac1N\sum_{n=1}^{N}\big(\widehat r_i(q_n;\psi_i)-r_{i,n}\big)^2$
+  - 앞 문장을 "batch $\{(q_n,r_{i,n})\}_{n=1}^N$에 대한 손실은"으로 바꿔, $N$과 $q_n$이 무엇인지 정의되게 했습니다.
+
+## 3. 그림 4는 무엇을 보여 주나
+
+**"Max-GAE를 안 썼을 때의 예시"도 아니고, 단순히 뒤처진·앞선 agent를 보여 주는 것도 아닙니다.** Max-GAE가 쓰는 신호를 미리 확인하는 실험입니다.
+
+- **어떤 모델을 썼나**: Max-GAE 없이 학습한 독립 PPO checkpoint입니다. 이 점검에서 Max-GAE로 학습한 에이전트는 없습니다.
+- **가로축**: 팀원 Critic이 예측한 상승분 $V_j-V_i$입니다. Max-GAE가 advantage에 더할 $b$가 바로 이 값의 양수 부분입니다.
+- **세로축**: 같은 상태에서 그 팀원의 정책으로 실제로 움직였을 때 return이 얼마나 바뀌었는지입니다.
+- **확인하는 질문**: Max-GAE가 쓰려는 "상승분"이 실제 이득과 맞는가? 그리고 그것이 같은 팀일 때만 맞는가?
+- **(a) 뒤처진 / (b) 앞선 에이전트**: Max-GAE가 실제로 영향을 주는 쪽이 대개 뒤처진 에이전트라서 둘을 나눠 보였습니다.
+
+결론은 이렇습니다. 같은 팀 Critic의 상승분은 실제 이득과 맞습니다. 다른 팀 Critic의 상승분은 이득이 작거나, 앞선 에이전트에게는 손해가 됩니다. 그래서 팀 발견이 필요하고, 상승분 크기 조정도 필요합니다.
+
+읽는 사람도 같은 질문을 할 수 있어서, 그림 4 캡션에 "여기서는 Max-GAE로 학습한 에이전트가 없고, Max-GAE가 더할 상승분이 실제 이득과 맞는지를 확인한다"는 두 문장을 넣었습니다.
+
+빌드는 영어판 7쪽(참고문헌 포함), 한국어판 8쪽이며 줄 넘침 경고는 없습니다. 기록은 대화 기록 T207에 남겼습니다.
+
+## 원문 기록 T208 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+현재 학습 분석
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 분석(15:10 KST): `runs/day_base_1105_nv_b6_corner_indiv_comm5_pen005` main_check, metrics(평가·학습 배송·집기), pgct_max의 max_gae.jsonl(성숙·승인·쌍별 거리). 이전 기존 지도 run(ac ippo s1, acv2 pgct s1)의 0–1.3M 집기·배송 추이와 비교. 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+현재 하루짜리 실험(`day_base_1105_nv`, 기존 지도 r_c = 5, pgct_max·ippo, seed 1)은 **정상적으로 돌고 있습니다**(11-05 15:10 기준).
+
+## 진행
+
+| job | 진행 | 속도 | 오류 |
+|---|---|---|---|
+| pgct_max_s1 | 0.27M | 25.9 step/s | 없음 |
+| ippo_s1 | 0.29M | 27.0 step/s | 없음 |
+
+이 속도면 2M까지 남은 시간은 약 18시간이고, **내일(11-06) 오전 9–10시 무렵** 끝납니다.
+
+## 팀 발견 (pgct_max): 지금까지 깔끔합니다
+
+- **성숙**: 0.27M에 6명 중 5명이 성숙했습니다. agent 1만 아직 아닙니다.
+- **첫 승인**: 0.16M에 나왔습니다.
+
+| 쌍 | 관계 | 현재 거리(행동별 최대) | 승인 |
+|---|---|---|---|
+| (0,2), (0,4), (2,4) | 같은 팀 | 0.14–0.20 | **승인** (0.18–0.24M) |
+| (3,5) | 같은 팀 | 0.31 | **승인** (0.16M) |
+| 다른 팀 6쌍 | 다른 팀 | 0.99–1.00 | 승인 없음 |
+| (1,3), (1,5) | 같은 팀 | – | agent 1이 미성숙이라 보류 |
+
+- **다른 팀 승인은 0입니다.** 같은 팀 승인 arc는 524개입니다.
+- 같은 팀 6쌍 중 4쌍을 찾았습니다. 나머지 2쌍은 미성숙한 agent 1이 낀 쌍입니다.
+- `no_common_action`(비교할 행동이 없어 건너뛴 경우)은 0%입니다.
+- 지금은 반납 사건이 적어서 **배송 행동만 비교되고**, 합친 거리와 행동별 거리가 거의 같습니다. 두 방식의 차이는 반납이 늘어나는 후반에 나타납니다(이전 run에서는 2M 이후).
+- Max-GAE donor arc는 532개, $b>0$인 step 비율은 54%입니다.
+
+## 학습: 아직 판단할 시점이 아닙니다
+
+- 두 job 모두 **평가 배송은 아직 0**입니다(0.05–0.26M, 평가 5회).
+- 학습 중 선반 집기와 배송은 시작 때(집기 2.8/ep)보다 줄었습니다(0.2–0.3M에 약 1.1/ep). 넓은 지도가 무너질 때와 비슷해 보여서 이전 기존 지도 run과 비교해 봤습니다. **같은 지도의 이전 run도 똑같이 줄었다가 다시 올라갔습니다.**
+
+| 구간 | 이전 run 집기/ep | 이번 run 집기/ep |
+|---|---|---|
+| 0.0–0.1M | 3.1 | 2.8 |
+| 0.2–0.3M | 0.85 | 1.1–1.15 |
+| 0.6–0.7M | **8.3** (회복) | – |
+| 0.7–0.8M | 10.0, 평가 배송 시작 | – |
+
+- 그래서 지금 감소는 초반 탐색이 줄어드는 정상 구간으로 봅니다. 이전 run 기준으로 **0.6–0.8M에 회복하고 평가 배송이 시작**되어야 합니다.
+- pgct_max와 ippo의 agent별 차이는 아직 잡음 수준입니다. 같은 seed라 0.1M까지는 완전히 같았고, 이후 조금씩 갈라지고 있습니다.
+
+## 다음 점검
+
+1. **약 0.8M(오늘 밤 10시 무렵)**: 집기와 평가 배송이 회복했는지 봅니다. 회복하지 않으면 기존 지도에서도 문제가 생긴 것이라 다시 따져야 합니다.
+2. **2M(내일 오전)**: agent별 학습 속도 비교, 그리고 agent 1이 성숙해 (1,3)·(1,5)가 승인되는지 봅니다.
+
+기록은 대화 기록 T208에 남겼습니다.
+
+## 원문 기록 T209 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+지금 팀 발견 확률이 99%로 사기적으로 나올수 있는 이유가 보상이 이산적으로 확실한 두 케이스만 있어서 그런가지?
+
+### 사용자 — 원문 (작업 중 추가)
+
+예로 CNN에 시야에 발견되는 보상함수 구조 같은 경우는 조금 더 힘들꺼고?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 읽기 전용 확인: 현재 실행·기준 설정의 보상 항목(배송·반납 1.0, 그 밖 ≤ 0.15). 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+네, 정확히 보셨습니다. **지금 발견 성능이 높은 데에는 방법보다 환경이 쉬운 탓이 큽니다.** 심사자도 바로 그 점을 짚을 겁니다.
+
+## 지금 환경이 발견에 유리한 이유
+
+1. **사건이 이산적이고 확실합니다.**
+   - 사건 기준이 $r\ge0.5$인데, 이를 넘는 보상은 배송(1.0)과 반납(1.0) 두 가지뿐입니다.
+   - 나머지 보상은 모두 0.15 이하입니다(선반 집기 0.15, 진척 0.002–0.02, 감점 0.002–0.05).
+   - 그래서 probe에 들어가는 사건이 "1 아니면 0"인 두 종류뿐이고, 보상에 잡음도 없습니다.
+2. **팀을 가르는 사건이 완전히 겹치지 않습니다.**
+   - 목적지가 서로 반대쪽 모서리라서, 내 목적지에서의 배송은 나에게 1이고 다른 팀에게는 정확히 0입니다.
+   - 그래서 예측도 거의 1 대 0이 되고, 배송 행동의 거리가 0.99–1.00으로 나옵니다.
+3. **팀이 두 개이고, 규칙 차이가 "목적지 위치" 하나뿐입니다.**
+4. 유일하게 어려웠던 점은 두 팀이 공유하는 반납 사건이었고, 그마저 행동별 거리로 해결했습니다.
+
+그래서 이 결과는 "이 정도로 갈리는 환경에서는 잘 찾는다"까지만 말해 줍니다. 논문에 적은 식별 필요조건("팀마다 다른 공개 보상 사건이 있어야 한다")을 이 환경은 아주 강하게 만족하는 셈입니다.
+
+## CNN 시야에서 보상 구조를 찾아야 하는 경우
+
+**네, 더 어렵습니다.** 이유는 이렇습니다.
+
+| 어려움 | 왜 거리가 흐려지나 |
+|---|---|
+| 보상이 연속적이거나 단계적 (예: 거리에 따른 보상, 팀마다 크기만 다른 보상) | 예측이 1 대 0이 아니라 0.8 대 0.6처럼 나와서, 다른 팀 거리가 작아집니다 |
+| 보상이 시야 속 여러 시각 특징에 걸려 있음 | 예측기가 처음 보는 장면에서 일반화해야 합니다. 그 오차 때문에 같은 팀 거리가 커지고 다른 팀 거리는 작아집니다 |
+| 팀끼리 보상 규칙이 일부 겹침 | 겹치는 부분이 반납처럼 차이를 희석합니다. 행동만으로 그 부분을 나눌 수 없으면 행동별 최대도 소용없습니다 |
+| 보상에 잡음이 있음 | 같은 팀도 예측이 흔들려 거리가 커집니다. 문턱 0.5가 맞지 않을 수 있습니다 |
+| 행동이 연속적임 | "행동별로 나누기"가 정의되지 않습니다. 장면 특징으로 나누는 등 다른 방법이 필요합니다 |
+
+즉 지금 방법의 고정 문턱 0.5와 행동별 나누기는 **이산 행동에 뚜렷한 보상 사건이 있는 경우**에 맞춰져 있습니다.
+
+## 논문에 대비할 것 (제안)
+
+학습 성능까지 볼 필요 없이 **발견만** 보면 되므로 짧은 run(1M 안팎)으로 됩니다.
+
+1. **인접 목적지** (`b6_adjacent_indiv_pen005` 계열): 두 목적지가 붙어 있어 배송 장면이 서로 비슷해집니다. 지금보다 어려운 기하 조건입니다.
+2. **보상 잡음**: 배송·반납 보상에 잡음을 섞어(래퍼에서, 환경 코드 수정 없이) 잡음 크기별 정밀도·재현율이 어떻게 떨어지는지 봅니다.
+3. **보상 일부 공유**: 예를 들어 두 팀이 목적지 하나를 같이 쓰고 하나씩 따로 갖게 해서, 차이가 일부 사건에만 있을 때를 봅니다.
+
+이 중 1·2번만 해도 "쉬운 환경이라 잘 된 것 아니냐"는 질문에 답할 수 있습니다. 결과가 나빠도 식별 조건이 언제 깨지는지를 보여 주는 자료가 됩니다. 논문에서는 지금 결과를 "팀 사건이 뚜렷이 다른 경우"로 범위를 좁혀 쓰는 것이 안전합니다.
+
+기록은 대화 기록 T209에 남겼습니다. 코드와 학습은 바꾸지 않았습니다.
+
+## 원문 기록 T210 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+일부 보상은 다르고, 다른 보상 함수를 공유하는 케이스면 이에 대한 대비도 가능한가?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 오프라인 스크립트 `output/ac_drift_20261104/disagreement_count_check.py` 실행(읽기 전용 checkpoint). 학습·코드 변경 없음. 진행 안내를 영어로 보냈다.
+- 기록: `EXPERIMENTS.md` E84, 이 T210.
+
+### Assistant — 진행 안내
+
+Good question. I'll check the idea with numbers: a test that **counts how many probes disagree, without splitting by action**, should not be diluted even when shared and team-specific events are mixed in one action. I'll test it right away on the 19 saved checkpoints.
+
+The count test separates teams at every checkpoint even without splitting by action, but its margin is much smaller than the per-action maximum. Saving the records and writing the answer.
+
+### Assistant — 최종 답변
+
+**부분적으로는 가능하고, 경우에 따라 다릅니다.** 핵심은 공유하는 보상과 팀마다 다른 보상이 **같은 행동 안에서 섞이느냐**입니다.
+
+## 경우별 정리
+
+| 경우 | 지금 방법(행동별 최대)으로 되나 | 예 |
+|---|---|---|
+| 공유 보상과 다른 보상이 **다른 행동**에서 생김 | **됨.** 지금 환경이 바로 이 경우입니다 | 반납(TOGGLE, 공유) 대 배송(FORWARD, 팀별) |
+| 둘이 **같은 행동** 안에서 섞임 | **약해짐.** 그 행동 안에서 다시 평균이 되어 희석됩니다 | 목적지 하나는 같이 쓰고 하나는 팀별로 다른데, 배송은 모두 FORWARD |
+| 팀을 가르는 사건을 한쪽만 충분히 겪음 | **잘못 승인될 수 있음.** 공유 행동만 비교되기 때문입니다 | 다른 팀 agent가 자기 배송을 8번 미만 겪은 경우 |
+
+## 대비 방법
+
+**1. 같은 행동 안에서 섞일 때: 불일치 개수로 판정하기**
+- 거리를 평균하는 대신, 두 예측이 뚜렷이 다른 probe(|p−q| > 0.5)의 **개수**를 셉니다.
+- 공유 사건에서는 두 예측이 같아 개수에 더해지지 않으므로, 공유 사건이 아무리 늘어도 희석되지 않습니다.
+- 저장된 checkpoint 19개로 바로 확인해 봤습니다. 행동으로 나누지 않고 64개 probe를 모두 섞은 상태입니다.
+
+| 시점 | 같은 팀 최대 개수 | 다른 팀 최소 개수 |
+|---|---|---|
+| 0.26M | 27 | 48 |
+| 2.05M | 13 | 49 |
+| 4.35M | 17 | 34 |
+| 전체 | ≤ 27 | ≥ 33 |
+
+  - 모든 시점에서 갈리기는 합니다. 하지만 여유가 작고(27 대 33), 문턱 개수를 정해야 합니다.
+  - 지금 환경에서는 행동별 최대(0.28 대 0.97)가 훨씬 낫습니다. 이 방식은 **행동으로 나눌 수 없을 때의 대안**입니다.
+
+**2. 더 잘게 나누기**
+- 행동 대신 사건 장면(예: 사건이 일어난 위치나 공개 view의 군집)으로 묶은 뒤 최댓값을 씁니다.
+- 공유 목적지와 팀별 목적지의 배송을 따로 묶을 수 있습니다. 대신 묶는 기준을 정해야 합니다.
+
+**3. 한쪽만 겪은 경우를 막기: 보수적 규칙**
+- 한 agent가 8번 이상 겪은 행동을 상대가 8번 미만 겪었다면 승인하지 않고 보류합니다.
+- 다른 팀이 잘못 승인되는 것을 막는 대신, 같은 팀을 늦게 찾게 됩니다(예: 반납 경험이 거의 없는 agent 0).
+
+## 짚어 둘 점: 부분 공유는 "팀"인가?
+
+- 논문의 정의는 "보상 규칙이 **같으면** 팀"입니다. 그래서 일부만 공유하는 쌍은 **거절하는 것이 맞습니다.**
+- Max-GAE가 쓰는 Critic은 상대의 **전체** return을 추정합니다. 공유 부분만 맞고 나머지는 다른 보상까지 섞인 값이라, 부분 공유 상대의 Critic을 쓰면 오히려 틀린 신호가 들어갈 수 있습니다.
+- 부분 공유를 활용하려면 보상 성분별로 Critic을 나누는 등 다른 설계가 필요합니다. 이번 논문의 범위 밖입니다.
+
+## 제안
+
+- **논문**: 식별 조건을 "팀마다 다른 보상이, 두 agent가 모두 충분히 겪은 행동에서 나타나야 한다"로 분명히 쓰고, 불일치 개수 방식은 논의(Discussion)에서 행동으로 나눌 수 없을 때의 대안으로 한두 줄 언급합니다.
+- **실험**(여유가 있으면): 목적지 하나를 공유하는 환경으로 짧은 발견 run을 돌립니다. 행동별 최대와 불일치 개수를 오프라인으로 비교하면, 위의 둘째·셋째 경우를 직접 보여 줄 수 있습니다.
+- 지금 코드와 학습은 바꾸지 않았습니다. 확인 스크립트는 `output/ac_drift_20261104/disagreement_count_check.py`, 결과는 같은 폴더의 `disagreement_count_check_stdout.txt`·`.json`입니다.
+
+기록은 `EXPERIMENTS.md` E84와 대화 기록 T210에 남겼습니다.
+
+## 원문 기록 T211 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+보상의 전체 공유가 아니라
+보상은 팀 공유를 하는데
+보상함수가 특정 상황은 다르고, 나머지는 유사한 케이스면?
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 오프라인 스크립트 `output/ac_drift_20261104/rare_difference_check.py` 실행(읽기 전용 checkpoint). 학습·코드 변경 없음. 진행 안내를 영어로 보냈다.
+- 기록: `EXPERIMENTS.md` E85, 이 T211.
+
+### Assistant — 진행 안내
+
+I'll test this with numbers too. The core of your case is "**the situations where the reward functions differ are rare**". So I'll take the saved predictors and, for each agent, fill the 32 probes with only k team-specific events (deliveries) and the rest with shared events (returns). Lowering k shows from what point teams can no longer be told apart.
+
+The results are clear. Saving the records and answering.
+
+### Assistant — 최종 답변
+
+정리하면 두 가지가 겹친 경우입니다. 하나는 **팀 보상**(팀원이 같은 보상을 받음)이고, 다른 하나는 **두 팀의 보상 함수가 대부분 같고 특정 상황에서만 다른 것**입니다. 둘을 나눠서 답하겠습니다.
+
+## 1. "특정 상황에서만 다름": 실제 데이터로 시험했습니다
+
+핵심은 **그 다른 상황이 경험에서 얼마나 드문가**입니다.
+
+**방법**
+- 4.35M checkpoint의 실제 예측기를 그대로 씁니다.
+- 각 agent의 probe 32개를 다시 구성합니다. 팀마다 다른 사건(배송)을 k개, 두 팀이 공유하는 사건(반납)을 32−k개 넣습니다.
+- k가 작을수록 "다른 상황이 드문" 경우입니다.
+
+| 팀별 사건 수 k (/32) | 합친 거리 (같은/다른) | 행동별 최대, n_min 8 | 행동별 최대, n_min 2 | 불일치 개수 |
+|---|---|---|---|---|
+| 0 | 0.21 / 0.03 | 0.21 / 0.03 | 0.21 / 0.03 | 18 / 0 |
+| 2 | 0.19 / 0.07 | 0.21 / **0.03** | 0.21 / **0.98** | 16 / 4 |
+| 4 | 0.17 / 0.10 | 0.20 / **0.03** | 0.20 / **0.98** | 15 / 8 |
+| 8 | 0.16 / 0.18 | 0.22 / **0.98** | 0.22 / 0.98 | 14 / 16 |
+| 16 | 0.12 / 0.36 | 0.26 / 0.99 | 0.26 / 0.99 | 12 / 32 |
+| 32 | 0.01 / 0.99 | 0.01 / 0.99 | 0.01 / 0.99 | 0 / 64 |
+
+(같은 팀은 최댓값, 다른 팀은 최솟값입니다. 승인 문턱은 0.5입니다.)
+
+**읽는 법**
+- **합친 거리**: k = 16(절반)이어도 다른 팀이 0.36이라 **잘못 승인됩니다.** 드문 차이에 가장 약합니다.
+- **행동별 최대(지금 설정, n_min = 8)**: k가 8 이상, 즉 **최근 사건의 1/4 이상**이 팀별 사건이어야 잡습니다. 그보다 드물면 공유 행동만 비교되어 **잘못 승인됩니다.**
+- **행동별 최대(n_min = 2)**: **k = 2만 있어도 0.98로 잡습니다.** 같은 팀은 0.21로 그대로입니다.
+- **불일치 개수**: 같은 팀도 반납에서 생기는 예측 잡음 때문에 개수가 높게 나와서(최대 18), 드문 차이에는 약합니다.
+
+**결론**: 지금 방법의 약점은 거리 식이 아니라 **"최근 32개 중 8개 이상"이라는 경험 조건**입니다. 차이가 나는 상황이 드물면 이 조건 때문에 그 행동이 비교에서 빠집니다.
+
+**대비책**
+1. **행동별로 probe를 따로 모으기(제안)**
+   - 지금은 "최근 사건 32개"를 섞어서 씁니다. 대신 **행동마다 최근 사건을 따로 모읍니다**(예: 행동별 최대 16개).
+   - 사건 버퍼에는 이미 512개가 저장되어 있어서 바로 할 수 있습니다.
+   - 그러면 드문 사건도 비교에 계속 남고, n_min = 8을 그대로 둬도 됩니다.
+2. **n_min을 낮추기**
+   - 드문 차이에 민감해집니다(위 표의 n_min 2).
+   - 대신 한쪽이 거의 겪어 보지 않은 행동까지 비교하게 됩니다. 이전 분석에서 agent 0 같은 경우에 같은 팀이 0.96까지 올라갔습니다. 그래서 1번이 더 안전합니다.
+3. **근본적 한계**
+   - 다른 상황을 두 agent 모두 거의 겪지 않았다면, 경험만으로는 구분할 수 없습니다. 논문의 필요조건 그대로입니다.
+   - 다만 그렇게 드문 상황이면, 서로의 Critic 값도 실제로 방문하는 상태에서는 거의 같습니다. 그래서 공유해도 해가 작을 가능성이 큽니다. 다만 확인하지는 않았습니다.
+
+## 2. 팀 보상(팀원끼리 보상 공유)일 때
+
+- 팀원이 배송하면 나도 보상을 받습니다. 그래서 내 사건 버퍼에 **내가 한 일과 상관없는 보상**이 섞입니다(팀원이 멀리서 배송한 순간의 내 전이).
+- 이런 probe는 내 공개 전이만 봐서는 설명이 안 되므로, 두 팀 예측기 모두 낮게 답할 가능성이 큽니다. 차이를 거의 만들지 않는 "공유 잡음" 사건이 되는 셈입니다.
+- 팀을 가르는 내 배송 사건은 그대로 남기 때문에 발견 자체는 될 것으로 봅니다. 하지만 **시험하지 않았습니다.**
+- 팀 보상에서는 "팀원이 동시에 보상을 받는다"는 훨씬 강한 신호가 있습니다(D81). 대신 보상 시점을 주고받아야 해서 지금의 정보 모델(보상 값 교환 금지)과 맞지 않습니다. 그래서 프로젝트는 개인 보상을 주 설정으로 정해 두었습니다.
+
+## 제안
+
+- 논문의 식별 조건을 정확히 쓰는 것이 좋습니다. "팀마다 다른 보상이, 두 agent가 모두 **n_min번 이상** 겪은 행동에서 나타나야 한다"로 적으면, 드문 차이가 왜 어려운지가 조건에 드러납니다.
+- 1번(행동별 probe 수집)은 코드 변경이 작고, 지금 데이터로 오프라인 효과를 바로 볼 수 있습니다. 다만 학습 중인 실험과는 다른 규칙이 되므로, 넣는다면 서버 본 실험 전에 정해야 합니다.
+
+스크립트는 `output/ac_drift_20261104/rare_difference_check.py`, 결과는 같은 폴더에 있습니다. 기록은 `EXPERIMENTS.md` E85와 대화 기록 T211에 남겼습니다. 코드와 학습은 바꾸지 않았습니다.
+
+## 원문 기록 T212 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+지금은 기록만
+
+### 수행 기록 — 원문 대화와 별도
+
+- T211의 "행동별 probe 수집을 오프라인으로 검증할까요?"에 대한 답. 검증·구현 없이 `DECISIONS.md` D129와 `RESEARCH_STATE.md`만 갱신했다. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+기록만 해 두었습니다.
+
+- `DECISIONS.md` D129에 남긴 내용은 이렇습니다.
+  - 팀 차이가 드문 경우의 약점: 지금 규칙은 팀별 사건이 최근 32개 중 1/4 미만이면 다른 팀을 잘못 승인합니다.
+  - 대안 세 가지: 행동별 probe 수집, n_min 낮추기, 불일치 개수 검정.
+  - 지금은 검증하거나 구현하지 않기로 했습니다.
+- 근거 수치는 `EXPERIMENTS.md` E84·E85에 있습니다.
+- `RESEARCH_STATE.md`에는 "도입 여부는 서버 본 실험 전에 결정"과 "하루짜리 실험은 0.8M 무렵 회복을 확인할 것"을 적어 두었습니다.
+
+지금 돌고 있는 실험과 코드는 그대로입니다.
+
+## 원문 기록 T213 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+현재 11월 5일, IJCAI 2027 2027년 초록 마감기간 1월 4일인데
+나머지 로드맵 쭉 만들어줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 마감은 `DECISIONS.md` D105(IJCAI-27 CFP 확인 기록)에서 다시 확인했다. 로드맵은 제안이며 실행·코드 변경 없음.
+- 기록: `DECISIONS.md` D130, `RESEARCH_STATE.md`, 이 T213.
+
+### Assistant — 진행 안내
+
+IJCAI-27 deadlines are already recorded in an earlier note (D105): abstract 2027-01-04 and full paper 2027-01-11 (AoE). I'll build the roadmap backward from those, starting with the experiment decisions and launches that remain.
+
+### Assistant — 최종 답변
+
+마감은 이전에 확인한 IJCAI-27 CFP 기준으로 **초록 2027-01-04, 본문 2027-01-11(AoE)**입니다. 오늘이 11-05이니 초록까지 약 8주, 본문까지 약 9주가 남았습니다. 가장 큰 위험은 계산 시간입니다. **본 실험은 늦어도 11월 둘째 주에 시작해야** 결과를 보고 쓸 시간이 남습니다.
+
+## 전체 흐름
+
+| 기간 | 핵심 | 끝나면 남는 것 |
+|---|---|---|
+| 11/5–11/9 | 하루짜리 run 분석, 설계 확정, 서버 준비 | 본 실험 설정 확정 |
+| 11/10–11/16 | **서버 본 실험 시작**, PC에서 강건성 run | 본 실험 진행 중 |
+| 11/17–11/30 | 중간 점검, 분석 스크립트, 방법 절 마무리 | 5M 결과(1차) |
+| 12/1–12/14 | 결과 분석·그림, Results 집필 → **초고 완성** | 전체 초고 v1 |
+| 12/15–12/28 | 교수님 검토 반영, 필요한 추가 seed | 초고 v2 |
+| 12/29–1/4 | 마무리, **초록 제출** | 초록 제출 완료 |
+| 1/5–1/11 | 최종 검토, **본문·보조 자료 제출** | 제출 완료 |
+
+## 주차별 상세
+
+**1주 (11/5–11/9): 확인과 결정**
+- **11/6 오전**: 하루짜리 run(2M) 결과를 봅니다.
+  - gate가 같은 팀만 승인하는가(현재 다른 팀 0)
+  - 0.6–0.8M에 학습이 회복했는가
+  - pgct_max 대 ippo의 agent별 학습 속도 차이가 보이는가
+- **결정할 것** (본 실험 전에 반드시)
+  - 행동별 probe 수집을 넣을지(D129). 넣으면 오프라인 검증에 반나절, 구현과 테스트에 하루가 걸립니다.
+  - 본 실험 규모: 5M, mode 4개(ippo·pgct_max·oracle_max·allk_max), seed 수. 서버 코어 수를 보고 정합니다.
+- **서버 준비**: 서버 사양을 알려 주시면 bash 실행기를 만듭니다. 코드 커밋·push, 기준 설정 파일 복사, Python 환경과 `wandb login`을 합니다.
+- 이사(11/6) 일정과 겹치니, 이번 주는 결정과 준비만 해도 충분합니다.
+
+**2주 (11/10–11/16): 본 실험 시작**
+- **서버**: 본 실험을 시작합니다. 예를 들어 4 mode × seed 5 = 20 job, 5M입니다. 서버에서 동시에 다 돌 수 있으면 약 3–4일, 안 되면 1–2주가 걸립니다.
+- **PC**: 강건성 실험(팀 발견만, 각 1M)을 돌립니다. "쉬운 환경이라 잘 된 것"이라는 지적에 대비하는 실험입니다.
+  - 인접 목적지
+  - 보상 잡음
+- **분석 도구**: agent별 학습 속도(처음 배송 시점, 0.5/ep 도달 시점), 승인 정밀도·재현율 시간축, 그림 3 교체용 스크립트를 미리 만들어 둡니다.
+- 본 실험 1.3M 점검(`main_check.py`)도 이 주에 합니다.
+
+**3–4주 (11/17–11/30): 결과 수집과 방법 절 마무리**
+- 본 실험이 5M에 도달하면 수렴 판정을 하고, 필요하면 일부만 연장합니다.
+- **논문**: 방법·관련 연구·문제 설정을 최종본으로 만듭니다(실험과 무관한 부분).
+- 그림 1 원본 수정(행동별 거리 식, 고해상도)도 직접 해 주세요.
+- 강건성 결과를 정리합니다. 잘 되든 안 되든 식별 조건의 경계를 보여 주는 자료가 됩니다.
+
+**5–6주 (12/1–12/14): 결과와 초고**
+- **그림 3 교체**: 현재 규칙의 온라인 결과(정밀도·재현율, 4.28M 이후 구간 포함)로 바꿉니다.
+- **학습 속도 그림·표**: pgct_max 대 ippo, 그리고 oracle_max(상한)와 allk_max(No-gate)를 함께 넣습니다.
+- 초록·결론 수치를 갱신하고, Limitations를 다시 씁니다.
+- **12/14까지 전체 초고 v1 완성** → 교수님께 드립니다.
+
+**7–8주 (12/15–12/28): 수정과 여유**
+- 검토 의견을 반영합니다.
+- 분산이 크면 seed를 추가합니다(서버 2–4일).
+- 제출 준비
+  - 재현성 체크리스트 작성
+  - 저자명 익명화
+  - Overleaf(pdfLaTeX)에서 최종 빌드와 쪽수 확인
+  - 보조 자료 정리
+- 연말이라 일정이 밀릴 수 있으니, 이 2주는 여유분으로 둡니다.
+
+**9주 (12/29–1/4): 초록 제출**
+- 제목과 초록(200단어 이하)을 확정해 **1/4 전에 제출**합니다. 초록은 이때 확정한 결과 수치로 씁니다.
+
+**1/5–1/11: 본문 제출**
+- 마지막 교정, 그림과 표의 해상도·글자 크기, 익명 코드 링크(필요하면)를 확인합니다.
+- **1/11(AoE) 전에 본문과 보조 자료를 제출합니다.** 하루 전인 1/10 제출을 목표로 합니다.
+
+## 꼭 지켜야 할 결정 시점
+
+| 날짜 | 결정 |
+|---|---|
+| **11/6** | 하루짜리 run 결과로 본 실험 설계 확정(학습 회복 여부, gate 동작) |
+| **11/9** | 행동별 probe 수집 도입 여부(D129), 서버 사양과 규모 확정 |
+| **11/12** | 서버 본 실험 시작. 이보다 늦으면 결과 분석 시간이 줄어듭니다 |
+| **12/14** | 초고 v1 |
+| **1/4 · 1/11** | 초록 · 본문 마감 |
+
+## 위험과 대비
+
+| 위험 | 대비 |
+|---|---|
+| Q2(Critic 활용)에서 IPPO 대비 이득이 없음 | 논문 중심은 Q1(팀 발견)으로 둡니다. Q2는 "찾은 팀이 정답 팀만큼 쓸 만하다(pgct ≈ oracle), 아무나 쓰는 것(allk)보다 낫거나 같다"로 주장을 낮춥니다 |
+| 서버를 쓸 수 없음 | PC로 4개씩 돌리면 5M × 12 job에 약 11일입니다. 11/12에 시작하면 11/23 무렵 끝나서 일정 안에 들어갑니다 |
+| 학습이 또 무너짐(넓은 지도처럼) | 1.3M 점검에서 바로 멈추고 원인을 찾습니다. 기존 지도는 이전에 학습이 확인되어 있어 가능성은 낮습니다 |
+| 리뷰어의 "환경이 쉽다" 지적 | 2주 차 강건성 run(인접 목적지, 보상 잡음)과 식별 조건을 분명히 쓰는 것으로 대비합니다 |
+| 쪽수 초과 | 지금 영어판은 7쪽(참고문헌 포함)이고, 결과 공간은 1쪽이 조금 안 됩니다. 넘치면 그림 3을 2×2로 바꾸고 5.3절을 줄입니다 |
+
+필요하시면 이 로드맵을 공유용 페이지로 만들어 드릴 수 있습니다. 이번 로드맵은 `DECISIONS.md` D130, `RESEARCH_STATE.md`, 대화 기록 T213에 남겼습니다.
+
+## 원문 기록 T214 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+아예 표로 그려주면 안돼?
+
+### 수행 기록 — 원문 대화와 별도
+
+- D130 로드맵을 인라인 위젯(간트 표, 10주 × 11개 작업, 결정·마감 표시)으로 그렸다. 파일·코드 변경 없음. 진행 안내 없음.
+
+### Assistant — 최종 답변
+
+D130 로드맵을 주차별 간트 표로 그려 화면에 보여 드렸습니다(인라인 그림, 파일 없음). 실험·분석/집필·제출 세 색으로 나눴고, 아래에 결정·마감일(11/6, 11/9, 11/12, 12/14, 1/4, 1/11)을 표시했습니다. 내용은 직전 로드맵과 같습니다. 파일로 저장하거나 공유용 페이지로 만들고 싶으시면 말씀해 주세요.
+
+## 원문 기록 T215 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+파일로
+
+### 수행 기록 — 원문 대화와 별도
+
+- 새 스크립트 `output/roadmap_20261105/make_roadmap.py`로 `pgct_roadmap_ijcai27.png`·`.pdf` 생성(라벨 겹침 두 번 수정). 학습·코드 변경 없음.
+
+### Assistant — 진행 안내
+
+Some milestone labels overlap at the top, and the dashed lines cross the text inside the bars. I'll stagger the labels across three rows and draw the dashed lines behind the bars.
+
+The dashed line still passes through the "11/6 확인" text, so I'll give that label a white background.
+
+### Assistant — 최종 답변
+
+로드맵 간트 표를 파일로 만들었습니다.
+
+- `output/roadmap_20261105/pgct_roadmap_ijcai27.png`: 이미지(2300×1120)라 메신저나 슬라이드에 바로 넣을 수 있습니다.
+- `output/roadmap_20261105/pgct_roadmap_ijcai27.pdf`: 벡터라 확대해도 깨지지 않고, 인쇄할 때 좋습니다.
+- 그리는 스크립트는 `output/roadmap_20261105/make_roadmap.py`입니다. 일정이 바뀌면 파일 위쪽 `TASKS`의 날짜만 고치고 다시 실행하면 됩니다.
+
+내용은 로드맵 D130과 같습니다. 실험·분석/집필·제출을 세 색으로 나눴고, 결정·마감일(11/6, 11/9, 11/12, 12/14, 1/4, 1/11)을 점선으로 표시했습니다.

@@ -1,0 +1,37 @@
+% Figure 3: selective peer Critic use by receiver i (local computation; peer Critic weights received on contact).
+\begin{tikzpicture}[pg]
+\tikzset{box/.append style={minimum height=1.35cm}}
+% observation stream
+\node[box,text width=2.6cm] (obs) at (0,0.8) {\stagetitle{My own history}\\[3pt]
+  \tikz{\foreach \k in {0,...,6}{\draw[pgblue,fill=pgsky] (0.3*\k,0) rectangle ++(0.22,0.22);}}\\[2pt]
+  $o_{i,1},\dots,o_{i,T}$};
+% donor set and critics
+\node[box,text width=3.7cm,draw=pggreen] (gate) at (4.4,3.55) {{\bfseries\color{pggreen}Donor set $\mathcal G_i^u$}\\[2pt]
+  approved $B_{ij}=1$ \emph{and}\\ met during rollout $u$};
+\node[box,text width=3.7cm] (peer) at (4.4,1.65) {\stagetitle{Approved peer Critics}\\[2pt]
+  $V_j(\tilde h^{\,j}_{i,t})$, \ $j\in\mathcal G_i^u$\\{\scriptsize replay my history, frozen weights}};
+\node[box,text width=3.7cm] (own) at (4.4,-0.15) {\stagetitle{Own Critic}\\[2pt]$V_i(h_{i,t})$};
+\draw[flow] (obs.east) -- ++(0.3,0) |- (peer.west);
+\draw[flow] (obs.east) -- ++(0.3,0) |- (own.west);
+\draw[flow,draw=pggreen] (gate) -- (peer);
+% uplift, self GAE, Max-GAE, blend
+\node[box,text width=4.1cm] (b) at (9.2,1.65) {\stagetitle{Positive uplift}\\[2pt]
+  $b=[\max_j V_j-V_i]_+$\\[2pt] $f=V_i+w_t\,b$};
+\node[box,text width=4.1cm] (af) at (9.2,-0.15) {\stagetitle{Self GAE}\\[2pt]$A^{\rm self}$ and $R^{\rm self}$\\from own $r_i$ and $V_i$};
+\draw[flow] (peer) -- (b);
+\draw[flow] (own.east) -- ++(0.35,0) |- ($(b.west)+(0,-0.4)$);
+\draw[flow] (own) -- (af);
+\node[box,text width=3.5cm] (mg) at (14.0,1.65) {\stagetitle{Max-GAE}\\[2pt]$A^{f}$ from $f$ and own $r_i$};
+\draw[flow] (b) -- (mg);
+\node[box,text width=3.5cm,draw=pgorange,line width=1.1pt] (blend) at (14.0,-0.15) {{\bfseries\color{pgorange}Actor advantage}\\[2pt]
+  $A^{\rm self}+\eta\,s_i\,w_t(A^f-A^{\rm self})$\\[1pt] {\scriptsize $s_i\le1$ shrinks a large difference}};
+\draw[flow] (mg) -- (blend);
+\draw[flow] (af) -- (blend);
+% updates
+\node[stage,text width=3.3cm,minimum height=1.0cm] (actor) at (14.0,-2.15) {\stagetitle{Actor update}\\PPO with $A^{\rm PGCT}$};
+\node[stage,text width=3.3cm,minimum height=1.0cm] (critic) at (9.2,-2.15) {\stagetitle{Critic update}\\target $R^{\rm self}$ only};
+\draw[flowo] (blend) -- (actor);
+\draw[flow] (af) -- (critic);
+\node[lbl,text width=4.3cm,anchor=north] at (4.4,-1.2) {peer values never enter Critic targets;\\no peer distillation loss};
+\node[lbl,text width=3.6cm] at (14.0,3.55) {no donor or no uplift\\$\Rightarrow$ $A^{\rm PGCT}=A^{\rm self}$ (independent PPO)};
+\end{tikzpicture}

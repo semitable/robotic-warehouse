@@ -1,0 +1,9 @@
+\begin{tikzpicture}[font=\sffamily\small,>=stealth,b/.style={draw=blue!60!black,align=center,text width=28mm,minimum height=10mm},a/.style={->,thick}]
+\node[b] (h) at (0,0) {Receiver $i$: own observation stream};
+\node[b] (own) at (4,1) {Own Critic $V_i$: self advantage};
+\node[b] (peer) at (4,-1) {Approved peer $V_j$: replay $i$'s stream};
+\node[b] (max) at (8,0) {Positive uplift\\$\to$ Max-GAE};
+\node[b] (actor) at (12,0) {Shrink and blend: Actor PPO};
+\draw[a](h)--(own);\draw[a](h)--(peer);\draw[a](own)--(max);\draw[a](peer)--(max);\draw[a](max)--(actor);
+\node[font=\sffamily\footnotesize,align=center] at (6,-2) {Contact $\cap$ reward approval selects peers.\\ Own Critic still learns own returns; peer outputs are detached.};
+\end{tikzpicture}

@@ -162,6 +162,9 @@ def plan(args):
     video_keep_last = getattr(args, "video_keep_last", 0)
     if video_keep_last < 0 or (video_keep_last and not args.save_video):
         raise ValueError("--video-keep-last must be nonnegative and needs --save-video when positive")
+    video_upload = getattr(args, "video_upload", "finish")
+    if video_upload == "live" and not video_keep_last:
+        raise ValueError("--video-upload live needs --video-keep-last (short W&B path)")
     ac_enabled = getattr(args, "reward_probe_ac", False)
     ac_v2 = ac_enabled and getattr(args, "ac_gate", "v1") == "v2"  # gate v2: reward_probe_ac_v2.py
     ac_config = ((AC2.ACV2Config if ac_v2 else AC.ACConfig)(
@@ -246,6 +249,7 @@ def plan(args):
                            * config["rollout_steps"])
                 if video_keep_last:
                     job["video_keep_last"] = video_keep_last if config["save_eval_video"] else 0
+                    job["video_upload"] = video_upload
                 if ac_enabled:
                     # D102 (ii): PGCT-D2 modes compare on rollout contacts, so only the rollout-start state
                     # (what an agent could send on such a contact) is compared, before the refit.
@@ -297,7 +301,8 @@ def plan(args):
                     reference_experiment=str(args.reference_experiment.resolve()), 
                     eval_seed=args.eval_seed,
                     smoke_test=args.smoke_test, 
-                    **(dict(video_keep_last=video_keep_last, video_upload_policy="tail_at_finish")
+                    **(dict(video_keep_last=video_keep_last,
+                            video_upload_policy="live" if video_upload == "live" else "tail_at_finish")
                        if video_keep_last else {}),
                     jobs=jobs,
                     note="Same seed => same random initial weights for every mode (checked via "
@@ -359,7 +364,8 @@ def run_job(output, manifest, name, eval_seed):
         return run
     T.init_wandb = init_wandb
     try:
-        with VR.install(T, cfg, run_dir, job.get("video_keep_last", 0)), \
+        with VR.install(T, cfg, run_dir, job.get("video_keep_last", 0),
+                        upload=job.get("video_upload", "finish")), \
                 EC.agent_count_support(cfg.agent_count), experiment_logging(cfg, run_dir, eval_seed):
             job_status(run_dir, status="running")
             if job["mode"] in B.ALGORITHMS:
@@ -536,6 +542,9 @@ def main():
                         help="With --save-video: keep only the latest N eval videos per job (including final); "
                              "upload that tail to W&B at finish using a short local W&B path. "
                              "0 preserves the old unlimited behavior.")
+    parser.add_argument("--video-upload", choices=["finish", "live"], default="finish",
+                        help="With --video-keep-last: finish = upload the kept videos once at the end; "
+                             "live = upload every eval video to W&B right after it is saved (T198).")
     parser.add_argument("--smoke-test", action="store_true")
     args = parser.parse_args()
     os.environ.setdefault("WANDB_DISABLE_GIT", "true")
