@@ -32,11 +32,12 @@
 
 ## 코드 원칙
 
-- 수정 금지: `examples/train_recurrent_ippo_consensus.py`(trainer), `rware/`(환경), `examples/`. 새 기능은 `latent_team/`에 새 파일이나 옵션으로 넣고 기본값은 유지한다.
-- 환경 후보: `latent_team/env_candidates.py`. 실행: `latent_team/train_from_scratch.py`, `latent_team/run_queue.ps1`. 판정: `latent_team/pilot_verdict.py`.
+- 저장소 구조(2026-11-05 분리, D131): 공유 알고리즘 `PGCT/pgct_core`, RWARE 실험 `RWARE/`(기존 `rware/`·`latent_team/`·`examples/`·`tests/`·`runs/`·`output/`이 이 아래로 이동), 새 실험 `Overcooked/`. 안내는 `docs/ARCHITECTURE.md`·`docs/MIGRATION.md`·`docs/ALGORITHM.md`. RWARE 명령은 `RWARE/` 폴더에서 예전 그대로 실행한다.
+- 수정 금지: `RWARE/examples/train_recurrent_ippo_consensus.py`(trainer), `RWARE/rware/`(환경), `RWARE/examples/`. 새 RWARE 기능은 `RWARE/latent_team/`에 새 파일이나 옵션으로 넣고 기본값은 유지한다. `pgct_core`를 고치면 `RWARE/tests/test_pgct_core_equivalence.py`(분리 전 동결 사본과 정확히 같은지)를 반드시 돌린다.
+- 환경 후보: `RWARE/latent_team/env_candidates.py`. 실행: `RWARE/latent_team/train_from_scratch.py`, `RWARE/latent_team/run_queue.ps1`. 판정: `RWARE/latent_team/pilot_verdict.py`. Overcooked: `Overcooked/scripts/run_overcooked.ps1`.
 - 수백만 step 학습은 사용자 승인 없이 시작하지 않는다. 긴 학습은 사용자가 Claude 앱 밖 PowerShell에서 건다. 앱 업데이트 때 하위 프로세스가 함께 죽은 적이 있다(E26).
 - 자동화는 감시·판정·보고까지만 한다. 실행 중인 학습은 멈추거나 다시 시작하지 않는다.
-- Python: `C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe`. pytest는 `--basetemp`를 scratchpad로 준다.
+- Python: `C:\Users\95101\anaconda3\envs\RWARE_MARL\python.exe`. pytest는 `--basetemp`를 scratchpad로 준다. 단, `C:\PGCT_Overcooked` 클론이 있는 PC에는 RWARE_MARL이 없고 `marl-policy-sharing` 환경(pyglet 없음)을 썼다.
 - 백슬래시가 들어가는 내용(LaTeX, Windows 경로, Python 스크립트)은 Bash heredoc 대신 Write 도구로 파일에 쓴다.
 - 커밋은 요청이 있을 때만 한다. 사용자에게 무조건 동의하지 말고 냉정하게 의견을 낸다.
 

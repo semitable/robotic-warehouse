@@ -1573,3 +1573,21 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - 방법: `output/ac_drift_20261104/rare_difference_check.py`. v2 발견 run checkpoint_04250(4.35M)의 예측기와 512 사건 버퍼에서, 각 agent의 probe를 팀별 사건(배송, FORWARD) k개 + 공유 사건(반납, TOGGLE) 32−k개로 재구성(대칭 사본 없음). 두 종류가 32개 이상인 성숙 agent 1–5.
 - 결과(같은 팀 최대 / 다른 팀 최소): 합친 거리 k=8 .16/.18, k=16 .12/.36, k=32 .01/.99. 행동별 최대 n_min 8: k ≤ 6 다른 팀 .03(분리 실패), k ≥ 8 .98 이상. n_min 2: k ≥ 2 다른 팀 .98, 같은 팀 ≤ .21. 불일치 개수(|p−q|>.5): k=0 18/0, k=8 14/16, k=16 12/32.
 - 해석: 드문 차이에서 실패하는 원인은 거리 식이 아니라 "최근 32개 중 n_min개" 경험 조건이다. 행동별 probe 수집(행동마다 최근 사건 따로 보관) 또는 n_min 낮추기가 대안이며, 후자는 경험 불균형 쌍의 같은 팀 거리를 키울 수 있다. 구현하지 않았다.
+
+## E86. 저장소 분리(D131) 회귀 검증과 Overcooked smoke·sanity — 2026-11-05 Claude Code (T216)
+
+- 실행 여부: 실제 실행. 장기 학습 아님(smoke·sanity만).
+- 환경: 이 PC `C:\PGCT_Overcooked\robotic-warehouse`(브랜치 `feature/overcooked`, 시작 커밋 122615f), conda `marl-policy-sharing`(Python 3.11.15, torch 2.11.0+cu128, numpy 2.4.6, gymnasium 1.3.0), CPU. 문서의 `RWARE_MARL` 환경은 이 PC에 없고 `pyglet`도 없다.
+- 로컬 참조 실험: 이 PC에는 `runs/sp_20261008_120638_983201/experiment.json`이 없어, 저장된 plan(`output/ac_validation_20261023_final_tmp/test_from_scratch_plan_is_rand0/plan/experiment.json`의 `e1_pgct_s3`)으로 대체본을 만들었다(`_reconstructed` 표시, git 무시, 커밋 안 함). 원래 파일이 아니다.
+- RWARE 테스트(`RWARE/tests`, 이 PC):
+  - 변경 전: 264 통과, 7 건너뜀, 1 실패. 실패는 `test_policy_probe_consensus.py::test_rware_probe_map_builder_saves_visual_manifest`(pyglet 없음, 렌더링)로 분리와 무관하다. 대체본 없이 돌리면 240 통과·31 건너뜀·같은 1 실패.
+  - 구조 이동 직후: 264 통과, 7 건너뜀, 같은 1 실패.
+  - 알고리즘 추출 후: 289 통과, 8 건너뜀, 같은 1 실패(기존 264 + 등가성 25; 추가 건너뜀은 agent checkpoint가 아닌 probe bank 파일).
+- 등가성 테스트(`RWARE/tests/test_pgct_core_equivalence.py`): 분리 전 동결 사본(`RWARE/tests/legacy/`)과 새 코드를 같은 입력에서 비교, 허용 오차 0. gate 8 update 기록(pooled/action_max × mirror × snapshot × view/원관측), 설정 기본값, 거리, GAE, Max-GAE 목표·혼합, donor 규칙 5종, core 네트워크·PPO 업데이트 대 trainer `update_ippo`(가중치 비트 동일), 기존 checkpoint 적재(MLP 1, CNN 1), 실제 trainer `pgct_max`·`oracle_max` 옛 모듈 대 새 모듈. 모두 통과.
+- trainer 지문(`RWARE/tests/characterize_pgct_d2.py`, `b6_corner_indiv_comm5_pen005`, action_max, seed 1, 64 step smoke, 6 mode × 3 설정): 추출 전후 18/18 동일(최종 가중치·gate 상태·max_gae.jsonl). gate 닫힘이면 pgct_max = ippo, oracle 주입이면 pgct_max = oracle_max, 허용 설정에서는 실제 비교 10회·donor 16 arc.
+- 공유 코어 테스트(`PGCT/tests`): 12 통과(toy 환경에서 6개 방법 학습 루프 포함).
+- Overcooked 테스트(`Overcooked/tests`): 14 통과. 스크립트 경험(각 agent가 두 수프를 모두 가끔 배달)에서 RWARE D2 값 그대로의 gate가 숨은 팀 2쌍만 승인(AUROC 1, F1 1, 같은 팀 거리 < .2, 다른 팀 > .8). gate 닫힘이면 pgct_d2·pgct_id_only·random_gate 가중치 = ippo, oracle 승인 주입이면 pgct_d2 = oracle, oracle 외 방법은 라벨을 읽지 않음.
+- Overcooked smoke: 6 방법 × seed 1, 256 step(`Overcooked/runs/oc_smoke_20261105`, `oc_smoke_parallel_20261105`, PowerShell 실행기·집계 포함) 오류 없음. 첫 시도에서 병렬 job의 `plan.json` 동시 쓰기 경쟁으로 1 job이 실패해 원자적 교체·재시도로 고쳤고, 6개 동시 실행으로 재확인했다.
+- Overcooked sanity(주 설정, 51,200 step, warm-up 10, ippo·pgct_d2 × seed 1, scratchpad): 두 job 모두 정상 종료(각 약 20분, 동시 실행에서 약 42 step/s). 51,200 step 동안 배달 0회였고 자기 재료 투입은 있었으나, gate 보상 사건(r ≥ .5)이 0개라 모든 agent가 미성숙이고 donor도 없었다. 그 결과 pgct_d2 최종 가중치가 ippo와 비트 단위로 같았다(gate가 학습 난수 흐름을 건드리지 않음을 실제 설정에서 재확인). 결정적 평가 수익 0. 학습 신호가 생기는지는 이 길이로 판단할 수 없다.
+- 한계: 학습·식별 성능 결과가 아니다. 1M checkpoint가 필요한 RWARE 실제 trainer 테스트 3개는 이 PC에서 건너뛰었다. 출력 폴더 중 scratchpad 것은 세션 임시 폴더라 남지 않는다.
+- 근거: `docs/MIGRATION.md`, `RWARE/tests/test_pgct_core_equivalence.py`, `RWARE/tests/characterize_pgct_d2.py`, `Overcooked/tests/`, `Overcooked/docs/EXPERIMENT_DESIGN.md`.

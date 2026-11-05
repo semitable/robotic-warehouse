@@ -1,52 +1,36 @@
-"""A+C gate v2: generalising personal reward predictors queried on shared reward-event probes.
+"""PGCT reward-response gate (A+C gate v2), environment independent.
 
-v1 (reward_probe_ac.py) answers only exactly repeated public transitions and abstains when the reward
-of a transition varies. Offline (output/ac_offline_20261026) that removed every delivery, the only
-team-discriminating event. v2 keeps the v1 information rules and changes the model and the probes:
+Extracted without algorithmic change from RWARE ``latent_team/reward_probe_ac_v2.py`` (commit 122615f).
+Only the RWARE-specific parts moved out: the public observation projection, the action count and the
+left-right mirror now come from a :class:`pgct_core.interfaces.ProbeProjection`.
 
-- Predictor: each agent fits a small MLP r_hat_i(public before, action, public after) to its OWN
-  scalar reward, from a bounded buffer of its own transitions. Its reward events are oversampled.
-- Probes (C): the public views of each neighbour's own recent reward events (|r| >= event_reward).
-  Only the views are exchanged, never a reward. (A): the left-right mirror of those events.
-- Abstention: an agent votes only when its predictor is mature (enough own events, and it predicts
-  them). An agent that never earned a reward has no reward response to compare and abstains.
-- Distance: sum|a-b| / sum(|a|+|b|) over the probes (0 = same responses, 1 = disjoint); EMA over
-  rounds; same team if below .5, i.e. most of the response mass is shared. Scale-free; not fitted
-  to any run.
-- distance_mode="action_max" (D108, opt-in): the pooled distance is the response-mass weighted mean of
-  the distances within each public action of the probe events, so an event kind every team is paid for
-  (shelf returns) dilutes the kind on which teams differ (deliveries). action_max takes the maximum over
-  the actions in which BOTH agents have at least min_probes own probe events; equal reward functions
-  agree in every action. No such action -> no comparison in that round.
-Team labels never enter a decision. The install() logger audits same/cross decisions afterwards
-from the environment info, for W&B only. Private RNGs leave the trainer's random stream untouched.
+- Predictor: each agent fits a small MLP r_hat_i(public before, action, public after) to its OWN scalar
+  reward, from a bounded buffer of its own transitions. Its reward events (r >= event_reward) are
+  oversampled.
+- Probes: Q_ij = E_i u E_j, the public views of both agents' own recent reward events. Only views are
+  exchanged, never a reward. An optional symmetry augmentation (``mirror``) is off by default here.
+- Abstention: an agent votes only when its predictor is mature (enough own events, and it predicts them).
+- Distance: sum|a-b| / sum(|a|+|b|) over the probes (0 = same responses, 1 = disjoint); EMA over rounds;
+  same team if below the threshold after ``min_rounds`` rounds. ``distance_mode="action_max"`` (D108)
+  takes the maximum over public-action strata in which both agents have >= min_probes own events.
+- ``contact_snapshot`` (D103): compare what each agent held at the rollout start, then refit.
+Team labels never enter a decision; :func:`audit` is for logging only. Private RNGs leave the caller's
+random streams untouched.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-import json
-from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-try:
-    from . import reward_probe_ac as AC
-except ImportError:
-    import reward_probe_ac as AC
-
-EGO = 6          # public ego: carrying, up, down, left, right, highway
-N_ACTIONS = 5    # NOOP, FORWARD, LEFT, RIGHT, TOGGLE_LOAD
-LEFT, RIGHT = 2, 3
-DIR_LEFT, DIR_RIGHT = 7, 8  # public channel positions of the visible agents' left/right heading
 DISTANCE_MODES = ("pooled", "action_max")
 
 
 @dataclass(frozen=True)
-class ACV2Config:
-    radius: int = 2
+class RewardGateConfig:
+    radius: int = 2                 # radius of the public view (interpreted by the projection)
     buffer_size: int = 20000
     event_buffer_size: int = 512
     event_reward: float = .5
@@ -58,17 +42,14 @@ class ACV2Config:
     min_events: int = 20
     min_event_response: float = .3
     probes_per_agent: int = 32
-    mirror: bool = True
+    mirror: bool = False            # Q_ij = E_i u E_j; no augmentation unless explicitly requested
     min_probes: int = 8
     distance_threshold: float = .5
     ema_beta: float = .35
     min_rounds: int = 3
     interval: int = 5
     seed: int = 0
-    # D102 (ii): compare only what each agent held at the rollout start (predictor, recent own event views,
-    # maturity), i.e. what it could send on a contact during that rollout; refit after the comparison.
     contact_snapshot: bool = False
-    # D108: "pooled" (default, original) or "action_max" (max over public-action strata both agents experienced)
     distance_mode: str = "pooled"
 
     def __post_init__(self):
@@ -85,39 +66,17 @@ class ACV2Config:
             raise ValueError("Event reward, learning rate and distance threshold must be positive")
 
 
-def view_size(radius):
-    return EGO + len(AC.PUBLIC_CHANNELS) * (2 * radius + 1) ** 2
-
-
-def mirror_view(views, radius):
-    """Left-right mirror of public views [..., V]: a feasible variant of the same local event."""
-    views = np.array(views, copy=True)
-    side = 2 * radius + 1
-    ego = views[..., :EGO].copy()
-    ego[..., [3, 4]] = ego[..., [4, 3]]
-    grid = views[..., EGO:].reshape(views.shape[:-1] + (len(AC.PUBLIC_CHANNELS), side, side))[..., ::-1].copy()
-    grid[..., [DIR_LEFT, DIR_RIGHT], :, :] = grid[..., [DIR_RIGHT, DIR_LEFT], :, :]
-    views[..., :EGO] = ego
-    views[..., EGO:] = grid.reshape(views.shape[:-1] + (-1,))
-    return views
-
-
-def mirror_action(actions):
-    actions = np.asarray(actions)
-    return np.where(actions == LEFT, RIGHT, np.where(actions == RIGHT, LEFT, actions))
-
-
-def features(before, actions, after):
+def features(before, actions, after, n_actions):
     before = np.asarray(before, dtype=np.float32)
-    onehot = np.eye(N_ACTIONS, dtype=np.float32)[np.asarray(actions, dtype=np.int64)]
+    onehot = np.eye(n_actions, dtype=np.float32)[np.asarray(actions, dtype=np.int64)]
     return np.concatenate([before, onehot, np.asarray(after, dtype=np.float32)], axis=-1)
 
 
 class Ring:
     """Fixed-size FIFO of (before, action, after, reward) public transitions."""
-    def __init__(self, capacity, size):
-        self.before = np.zeros((capacity, size), np.uint8)
-        self.after = np.zeros((capacity, size), np.uint8)
+    def __init__(self, capacity, size, dtype=np.uint8):
+        self.before = np.zeros((capacity, size), dtype)
+        self.after = np.zeros((capacity, size), dtype)
         self.action = np.zeros(capacity, np.int8)
         self.reward = np.zeros(capacity, np.float32)
         self.capacity, self.count, self.head = capacity, 0, 0
@@ -140,21 +99,25 @@ class Ring:
 
 class RewardPredictor:
     """r_hat_i fitted only on agent i's own (public transition, own scalar reward) pairs."""
-    def __init__(self, config, seed):
+    def __init__(self, config, seed, view_size, n_actions, view_dtype=np.uint8):
         self.config = config
-        size = view_size(config.radius)
-        self.buffer = Ring(config.buffer_size, size)
-        self.events = Ring(config.event_buffer_size, size)
+        self.n_actions = int(n_actions)
+        size = int(view_size)
+        self.buffer = Ring(config.buffer_size, size, view_dtype)
+        self.events = Ring(config.event_buffer_size, size, view_dtype)
         self.events_seen = 0
         self.version = 0
         self.last_loss = None
         self.rng = np.random.default_rng(seed)
         with torch.random.fork_rng(devices=[]):  # private init: the trainer's RNG stream is untouched
             torch.manual_seed(seed)
-            self.net = nn.Sequential(nn.Linear(2 * size + N_ACTIONS, config.hidden), nn.ReLU(),
+            self.net = nn.Sequential(nn.Linear(2 * size + self.n_actions, config.hidden), nn.ReLU(),
                                      nn.Linear(config.hidden, config.hidden // 2), nn.ReLU(),
                                      nn.Linear(config.hidden // 2, 1))
         self.optimizer = torch.optim.Adam(self.net.parameters(), lr=config.learning_rate)
+
+    def features(self, before, actions, after):
+        return features(before, actions, after, self.n_actions)
 
     def learn(self, before, action, after, reward):
         if not np.isfinite(reward):
@@ -174,7 +137,7 @@ class RewardPredictor:
             if n_event:
                 parts.append(self.events.sample(n_event, self.rng))
             b, a, f, r = (np.concatenate(x) for x in zip(*parts))
-            x = torch.as_tensor(features(b, a, f))
+            x = torch.as_tensor(self.features(b, a, f))
             loss = ((self.net(x).squeeze(-1) - torch.as_tensor(r)) ** 2).mean()
             self.optimizer.zero_grad(set_to_none=True)
             loss.backward()
@@ -186,7 +149,7 @@ class RewardPredictor:
 
     @torch.inference_mode()
     def predict(self, before, actions, after):
-        return self.net(torch.as_tensor(features(before, actions, after))).squeeze(-1).numpy().astype(np.float64)
+        return self.net(torch.as_tensor(self.features(before, actions, after))).squeeze(-1).numpy().astype(np.float64)
 
     def event_probes(self):
         b, a, f, _ = self.events.recent(self.config.probes_per_agent)
@@ -228,11 +191,23 @@ def action_max_distance(p, q, actions, own_i, own_j, min_count):
     return best
 
 
-class ACV2Controller:
-    """Pairwise probe exchange across the supplied physical links; same call protocol as v1."""
-    def __init__(self, n_agents, config=None):
-        self.config = config or ACV2Config()
-        self.predictors = [RewardPredictor(self.config, self.config.seed * 1000 + i) for i in range(n_agents)]
+class RewardProbeGate:
+    """Pairwise probe exchange across the supplied physical links (the v2 controller protocol).
+
+    ``__call__(update, neighbors, active)`` refits/compares every ``interval`` updates and returns a
+    row-normalised legacy allocation (gate & neighbors); :meth:`approved` is the contact-independent
+    symmetric approval used by Max-GAE.
+    """
+    model_name = "mlp_reward_event_probe_v2"
+
+    def __init__(self, n_agents, config=None, projection=None):
+        if projection is None:
+            raise ValueError("RewardProbeGate needs a ProbeProjection (view size, actions, public view)")
+        self.config = config or RewardGateConfig()
+        self.projection = projection
+        dtype = getattr(projection, "view_dtype", np.uint8)
+        self.predictors = [RewardPredictor(self.config, self.config.seed * 1000 + i, projection.view_size,
+                                           projection.n_actions, dtype) for i in range(n_agents)]
         self.ema = np.zeros((n_agents, n_agents), dtype=np.float64)
         self.rounds = np.zeros((n_agents, n_agents), dtype=np.int64)
         self.gate = np.zeros((n_agents, n_agents), dtype=bool)
@@ -257,9 +232,8 @@ class ACV2Controller:
         n = len(self.predictors)
         if np.asarray(rewards).shape != (n,) or np.asarray(actions).shape != (n,):
             raise ValueError("A+C v2 consumes one separate scalar reward/action per agent")
-        r = self.config.radius
-        self.observe_views([AC.public_view(o, r) for o in before], actions,
-                           [AC.public_view(o, r) for o in after], rewards)
+        view = self.projection.public_view
+        self.observe_views([view(o) for o in before], actions, [view(o) for o in after], rewards)
 
     def observe_views(self, before, actions, after, rewards):
         for i, predictor in enumerate(self.predictors):
@@ -273,9 +247,8 @@ class ACV2Controller:
         parts = [self.own_probes(i), self.own_probes(j)]
         b, a, f = (np.concatenate(x) for x in zip(*parts))
         if self.config.mirror and len(b):
-            r = self.config.radius
-            b, a, f = (np.concatenate([b, mirror_view(b, r)]), np.concatenate([a, mirror_action(a)]),
-                       np.concatenate([f, mirror_view(f, r)]))
+            mb, ma, mf = self.projection.mirror(b, a, f)
+            b, a, f = (np.concatenate([b, mb]), np.concatenate([a, ma]), np.concatenate([f, mf]))
         return b, a, f
 
     def __call__(self, update, neighbors, active):
@@ -313,7 +286,7 @@ class ACV2Controller:
         self.last_metrics["ac_v2_gate_arcs"] = float(np.count_nonzero(allocation))
         denom = allocation.sum(1, keepdims=True)
         allocation = np.divide(allocation, denom, out=np.zeros_like(allocation), where=denom > 0)
-        return allocation, dict(**self.last_log, ac_model="mlp_reward_event_probe_v2",
+        return allocation, dict(**self.last_log, ac_model=self.model_name,
                                 ac_probe_update=self.last_probe_update,
                                 ac_own_events=[p.events_seen for p in self.predictors])
 
@@ -350,7 +323,7 @@ class ACV2Controller:
                 row["reason"] = "no_common_action"
                 self.gate[i, j] = self.gate[j, i] = False
                 return row
-        versions =(self.predictors[i].version, self.predictors[j].version)
+        versions = (self.predictors[i].version, self.predictors[j].version)
         if distance is not None and versions != self.last_versions.get((i, j)):
             # A round counts only after both predictors were refitted on new own experience.
             self.ema[i, j] = distance if not self.rounds[i, j] else (
@@ -383,10 +356,9 @@ class ACV2Controller:
     def approved(self):
         """Symmetric reward approval, without a physical-contact mask or team labels.
 
-        Unlike the legacy distillation gate (cleared on lost contact), this is derived from
-        the retained pair evidence. Max-GAE intersects it with this rollout's contacts.
-        Maturity comes from maturity() (current, or frozen at the rollout start with contact_snapshot), also
-        between probe rounds; callers receive a fresh array.
+        Unlike the legacy distillation gate (cleared on lost contact), this is derived from the retained
+        pair evidence. Max-GAE intersects it with this rollout's contacts. Maturity comes from maturity()
+        (current, or frozen at the rollout start with contact_snapshot); callers receive a fresh array.
         """
         mature = self.maturity()
         upper = np.triu((self.rounds >= self.config.min_rounds)
@@ -406,92 +378,3 @@ def audit(controller, team_ids):
         if d:
             out[f"ac_v2_audit_distance_{label}"] = float(np.mean(d))
     return out
-
-
-class AuditedObservationEnv(AC.LocalObservationEnv):
-    """v1's coordinate-free wrapper; also keeps the latest team ids from info for the audit log only."""
-    def __init__(self, env, controller=None):
-        super().__init__(env, controller)
-        self.audit_team_ids = None
-
-    def step(self, actions):
-        obs, rewards, terminated, truncated, info = self.env.step(actions)
-        if isinstance(info, dict) and info.get("agent_team_ids") is not None:
-            self.audit_team_ids = np.asarray(info["agent_team_ids"]).copy()
-        after = AC.strip_coordinates(obs)
-        if self.controller is not None and self.controller.active:
-            self.controller.observe(self.previous, actions, after, rewards)
-        self.previous = after
-        return tuple(after.copy()), rewards, terminated, truncated, info
-
-
-@contextmanager
-def install(cfg, run_dir=None, config=None, *, learn=True):
-    """Scoped adapter like reward_probe_ac.install; adds update/ac_v2_* metrics for W&B."""
-    from examples import train_recurrent_ippo_consensus as T
-
-    config = config or ACV2Config()
-    env_kwargs = json.loads(cfg.env_kwargs_json)
-    if env_kwargs.get("team_reward_mode") != "individual":
-        raise ValueError("A+C requires explicit individual rewards; team/ALL is forbidden")
-    if cfg.observation_format != "semantic" or cfg.sensor_range < config.radius:
-        raise ValueError("A+C v2 needs semantic observations covering the probe radius")
-    originals = {name: getattr(T, name) for name in
-                 ("make_env", "collect_rollout", "sample_policy_probe_sequences", "save_checkpoint", "update_ippo")}
-    controller = ACV2Controller(cfg.agent_count or env_kwargs["n_agents"], config) if learn else None
-    envs = []
-
-    def make_env(*args, **kwargs):
-        env = AuditedObservationEnv(originals["make_env"](*args, **kwargs), controller)
-        envs.append(env)
-        return env
-
-    def collect(*args, **kwargs):
-        if controller is not None:
-            if controller.config.contact_snapshot:
-                controller.snapshot()  # before this rollout's first step (and before any contact in it)
-            controller.active = True
-        try:
-            return originals["collect_rollout"](*args, **kwargs)
-        finally:
-            if controller is not None:
-                controller.active = False
-
-    def sample(*args, **kwargs):
-        probes, metadata = originals["sample_policy_probe_sequences"](*args, **kwargs)
-        probes = probes.clone()
-        probes[..., :2] = 0
-        return probes, metadata
-
-    def update(*args, **kwargs):
-        metrics = originals["update_ippo"](*args, **kwargs)
-        if controller is not None and isinstance(metrics, dict):
-            metrics.update(controller.last_metrics)
-            teams = next((e.audit_team_ids for e in reversed(envs) if e.audit_team_ids is not None), None)
-            if teams is not None:
-                metrics.update(audit(controller, teams))
-        return metrics
-
-    def save(path, *args, **kwargs):
-        originals["save_checkpoint"](path, *args, **kwargs)
-        payload = torch.load(path, map_location="cpu", weights_only=False)
-        payload["ac_observation"] = "self_x/self_y masked to zero; input dimension retained"
-        if controller is not None:
-            payload["reward_probe_ac_v2"] = controller.state_dict()
-        torch.save(payload, path)
-
-    T.make_env, T.collect_rollout, T.sample_policy_probe_sequences = make_env, collect, sample
-    T.save_checkpoint, T.update_ippo = save, update
-    try:
-        if run_dir is not None:
-            Path(run_dir).mkdir(parents=True, exist_ok=True)
-            (Path(run_dir) / "reward_probe_ac_v2.json").write_text(json.dumps(dict(
-                config=asdict(config), learning=learn, reward="individual", coordinates="masked",
-                predictor="mlp_own_reward", probes="own reward events + mirror",
-                comparison=("rollout-start snapshot, compared before refit" if config.contact_snapshot
-                            else "refit, then compare"),
-                distance="sum|a-b|/sum(|a|+|b|)", unsupported="abstain"), indent=2), encoding="utf-8")
-        yield controller
-    finally:
-        for name, original in originals.items():
-            setattr(T, name, original)

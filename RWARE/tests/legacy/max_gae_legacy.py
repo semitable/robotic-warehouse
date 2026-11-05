@@ -1,3 +1,5 @@
+# FROZEN COPY of latent_team/max_gae.py at commit 122615f (pre-refactor). Test fixture only:
+# RWARE/tests/test_pgct_core_equivalence.py compares the refactored code against it. Do not import elsewhere.
 """Max-aggregated advantage from teammates' critics (D; D91-D95). Actor only: critics keep their own returns.
 
 For receiver i with donor set G_i (fixed for one update), each donor critic j is run recurrently over i's own

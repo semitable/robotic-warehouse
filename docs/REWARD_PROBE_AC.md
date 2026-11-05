@@ -1,5 +1,7 @@
 # A+C 보상 프로브 구현 — 2026-10-23 Codex
 
+> 2026-11-05 저장소 분리(D131): gate v2 알고리즘은 `PGCT/pgct_core/reward_gate.py`로 옮겼고, `RWARE/latent_team/reward_probe_ac_v2.py`는 같은 이름·기본값의 RWARE 어댑터다. 아래 경로는 `RWARE/` 기준이다. `docs/MIGRATION.md` 참고.
+
 사용자 승인 범위는 A+C를 가능하게 하는 코드 수정이다. 본 학습 실행과 실행 중인 프로세스 중단은 하지 않았다. 기존 기본 실행은 그대로이며 `--reward-probe-ac`로 새 경로를 선택한다.
 
 ## 구현과 정보 흐름

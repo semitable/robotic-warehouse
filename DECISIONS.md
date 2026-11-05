@@ -1698,3 +1698,17 @@
 - 일정: 11/5–9 하루짜리 run 분석·설계 확정·서버 준비, 11/10–16 서버 본 실험 시작(기존 지도 r_c 5, 5M, ippo·pgct_max·oracle_max·allk_max × seed 다수)과 PC 강건성 run(인접 목적지, 보상 잡음, 발견만 1M), 11/17–30 결과 수집·방법 절 최종본·그림 1 원본 수정(사용자), 12/1–14 그림 3 교체·학습 속도 그림·Results·초록/결론 갱신·Limitations 복원으로 초고 v1, 12/15–28 검토 반영·추가 seed·재현성 체크리스트·익명화·Overleaf 빌드, 12/29–1/4 초록 제출, 1/5–11 본문·보조 자료 제출(1/10 목표).
 - 결정 시점: 11/6 하루짜리 결과, 11/9 D129 도입 여부·서버 규모, 11/12 서버 본 실험 시작, 12/14 초고 v1.
 - 대비: Q2 이득 없음이면 Q1 중심·Q2 주장 축소, 서버 불가면 PC 4개 동시(5M × 12 job 약 11일), 학습 붕괴면 1.3M 점검으로 즉시 중단, "쉬운 환경" 지적은 강건성 run과 식별 조건 명시, 쪽수 초과면 그림 3 2×2·5.3절 축소.
+
+## D131. 저장소를 공유 PGCT 코어 + RWARE + Overcooked로 분리, Overcooked는 자체 4 agent·2팀 주방으로 구현 — 2026-11-05 Claude Code (사용자 요청 T216)
+
+- 요청(T216, 붙여넣은 작업 지시서): PGCT를 환경 독립 패키지로 추출하고 RWARE가 이를 쓰게 옮기되 동작 동등성을 우선하며, 같은 코어를 쓰는 Overcooked 실험(기준선·ablation·지표·스크립트·문서)을 구현한다. 장기 학습은 자동으로 시작하지 않는다.
+- 감사 결과: 기준 구현(PGCT-D2)은 `pgct_max` + `--reward-probe-ac --ac-gate v2 --ac-distance action_max --ac-config latent_team/acv2_nomirror.json`(rollout 시작 스냅샷 자동) + Max-GAE D2(η .5, shrink)다. 환경 독립 부분은 `reward_probe_ac_v2.py`의 예측기·probe·거리·EMA·성숙·승인·스냅샷과 `max_gae.py`의 donor 규칙·Max-GAE 계산이고, RWARE 고유 부분은 공개 관측 채널·mirror·접촉 wrapper·trainer monkeypatch다.
+- 결정·구현:
+  - 구조: `PGCT/pgct_core`(gate, Max-GAE, GRU IPPO, 범용 trainer, 식별 지표), `RWARE/`(기존 코드·결과를 `git mv`로 이동), `Overcooked/`. 연구 기록·논문·`docs/` 연구 문서는 루트에 그대로 둔다.
+  - 구조 이동과 알고리즘 추출을 따로 했다. 알고리즘·기본값·난수 흐름·로그 이름·job 이름·checkpoint 형식은 바꾸지 않았다. RWARE `ACV2Config`의 기본 mirror=True는 옛 명령 호환으로 유지하고, 코어 기본은 mirror=False(Q_ij = E_i ∪ E_j)다.
+  - RWARE trainer·환경·`examples/`는 이동만 했다. `reward_probe_ac_v2.py`·`max_gae.py`는 같은 이름을 내보내는 얇은 RWARE 어댑터가 됐다. 분리 전 두 파일의 동결 사본(`RWARE/tests/legacy/`)과 같은 입력에서 정확히 같은지 테스트한다.
+  - Overcooked: 조사한 구현(overcooked_ai 2인·공유 주문, JaxMARL 2인·JAX, Melting Pot은 Windows 불가)이 4 agent·팀별 레시피·개인 보상을 지원하지 않아, Overcooked식 규칙의 자체 N-agent 주방을 작성했다. 팀 0 양파 수프, 팀 1 토마토 수프, 개인 보상(자기 레시피 배달 +1, 자기 재료 투입 +.1, 자기 수프 집기 +.2), 팀 배정은 seed별 무작위, 관측·probe에 팀·레시피·좌표 없음. gate·Max-GAE 값은 RWARE D2 그대로이며 Overcooked에서 조정하지 않았다.
+  - 방법 6개: ippo, oracle(라벨은 이 기준선만), all, pgct_d2, pgct_id_only(식별만, critic 접근 없음), random_gate(라벨 없이 PGCT의 receiver별 donor 수를 맞춘 무작위 donor). 같은 seed면 모든 방법의 초기 가중치가 같다.
+  - 2 agent 단일 팀 설정(`secondary_2p1t.json`)은 보조 기준이며 다중 팀 식별을 검증하지 못한다.
+- 근거: E86(회귀·등가성·지문·smoke·sanity), `docs/MIGRATION.md`, `Overcooked/docs/EXPERIMENT_DESIGN.md`.
+- 미결·주의: Overcooked 본 학습(5M × 6 방법 × 3 seed, 이 PC 기준 job당 약 1.5일)은 사용자가 시작한다. 다른 PC에서 `run_queue.ps1` 대기열이 도는 동안 이 브랜치로 바꾸지 않는다(새 job이 옛 경로를 찾지 못함). 커밋·push 하지 않았다.

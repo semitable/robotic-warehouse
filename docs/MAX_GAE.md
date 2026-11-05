@@ -1,5 +1,7 @@
 # Max-GAE (D) — 2026-11-02 Claude Code
 
+> 2026-11-05 repository split (D131): the Max-GAE math now lives in `PGCT/pgct_core/max_gae.py`; `RWARE/latent_team/max_gae.py` keeps the RWARE adapter (`ContactEnv`, `install`) with unchanged names and behaviour. Paths below are relative to `RWARE/`. See `docs/MIGRATION.md`.
+
 Implementation of D91–D95: actor advantages use the max over met teammates' critics; critics keep learning from their own returns. Code: `latent_team/max_gae.py`. Tests: `tests/test_max_gae.py`. Defaults of existing modes are unchanged.
 
 ## Computation

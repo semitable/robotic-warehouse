@@ -1,5 +1,12 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-05 KST, Claude Code (T216, 저장소 분리·Overcooked 구현)
+
+- **구조 변경(D131)**: 공유 알고리즘 `PGCT/pgct_core`, RWARE 실험 `RWARE/`(기존 코드·`runs/`·`output/` 이동), 새 실험 `Overcooked/`. RWARE 명령은 `RWARE/` 폴더에서 예전 그대로 실행한다. 커밋하지 않았다(`git mv`로 스테이징만).
+- **동작 보존(E86)**: 이 PC에서 분리 전후 RWARE 테스트 결과 동일(기존 264개 통과), 등가성 테스트 25개 정확 일치, trainer 지문 18/18 동일.
+- **Overcooked**: 4 agent·2 숨은 팀 주방, 6개 방법, 테스트·smoke·51,200 step sanity만 실행. 학습·식별 결과는 아직 없다. 본 학습은 사용자가 `Overcooked/scripts/run_overcooked.ps1`로 시작.
+- **주의**: 다른 PC의 무시된 `runs/`·`output/`은 옛 위치에 남는다. 학습이 끝난 뒤 `scripts/migrate_local_layout.ps1`로 옮긴다.
+
 ## 최신 확인 — 2026-11-05 KST, Claude Code (T213, 제출 로드맵)
 
 - **로드맵(D130)**: 11/6 하루짜리 결과 → 11/9 설계·서버 규모 확정 → 11/12 서버 본 실험 시작 → 12/14 초고 v1 → 1/4 초록 → 1/11 본문(AoE).

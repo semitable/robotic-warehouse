@@ -1,0 +1,138 @@
+# Overcooked experiment design
+
+**Question.** Does reward-response-based latent team identification (PGCT-D2) generalise from RWARE to a
+different cooperative domain, and does approved critic access (Max-GAE) help there?
+
+Status (2026-11-05): implemented and tested; smoke and short sanity runs only. **No learning or
+identification result exists yet**; nothing below is a result claim.
+
+## 1. Choice of simulator
+
+Investigated (2026-11-05):
+
+| implementation | agents | teams / recipes | rewards | API / deps | verdict |
+|---|---|---|---|---|---|
+| [overcooked_ai](https://github.com/HumanCompatibleAI/overcooked_ai) (MIT) | built and documented for 2 (human-AI coordination); some featurisation comments mention N | one shared order list, no per-team recipes | shared team reward with per-agent sparse/shaped breakdowns in the step info | own MDP/env API, pygame; PyPI releases infrequent, DRL code deprecated | would need deep changes for 4 agents with team-specific recipes |
+| JaxMARL Overcooked / OvercookedV2 ([paper](https://arxiv.org/abs/2311.10090)) | 2 | fully cooperative | shared | JAX (not installed; the PGCT code is PyTorch) | mismatch of framework, 2 agents |
+| Melting Pot *collaborative cooking* ([PettingZoo port](https://meltingpot-pz.pages.dev/substrates/collaborative_cooking/)) | small fixed groups | one tomato soup | shared | dmlab2d (no Windows support) | cannot run here |
+| N-player research extensions (e.g. [arXiv 2506.17560](https://web3.arxiv.org/pdf/2506.17560)) | N | not aimed at hidden teams | — | research code | not a maintained dependency |
+
+None supports a **four-agent, two-team** kitchen with **team-specific recipes** and **individual rewards**,
+which the scientific question needs. Forcing four agents into a two-player benchmark would be invalid, and
+a two-agent cooperative task cannot test latent multi-team identification (every pair is a teammate pair).
+
+**Decision**: a compact, original N-agent kitchen (`pgct_overcooked/env/kitchen.py`, ≈250 lines, no
+third-party code or layouts) that follows the common Overcooked research mechanics — ingredient and dish
+dispensers, counters, pots that cook three ingredients (cooking starts automatically when full), serving
+windows; actions stay / four moves (turn, and move if free) / interact with the faced cell; simultaneous moves
+with conflicts cancelled — and adds hidden teams with team-specific recipes. Trade-offs: results are not
+directly comparable with published Overcooked-AI numbers; the mechanics are simple and fully unit-tested;
+the simulator runs on CPU in pure Python/numpy (rollout collection ≈100 steps/s for 4 agents including
+observation encoding and the four policy forward passes, measured on this PC). A standard two-agent cooperative configuration (`secondary_2p1t.json`) is included as a
+secondary benchmark only.
+
+## 2. Main environment (`configs/main_4p2t.json`)
+
+- Layout `two_team_kitchen` (11×7): left-right mirror symmetric, the mirror swaps onion and tomato
+  dispensers; four shared pots, two dish dispensers, two serving windows; agents start in the four corners.
+- 4 agents, 2 hidden teams of 2; team 0 cooks **onion soup**, team 1 **tomato soup**. The assignment is a
+  random permutation drawn from the run seed (`team_seed: null`), so agent indices carry no team meaning.
+- Horizon 400, cook time 10.
+
+### Individual rewards
+
+An agent is paid only for **its own** actions that advance **its own** team's recipe:
+
+| event (by agent i) | reward to i | to everyone else |
+|---|---|---|
+| serve a soup of its team's recipe | +1.0 | 0 |
+| serve any other soup (other team's, mixed) | 0 | 0 |
+| put its team's ingredient into a pot | +0.1 (shaping) | 0 |
+| take its team's soup out of a pot | +0.2 (shaping) | 0 |
+
+Nothing is summed or shared, so teammates have equal reward *functions* but independent reward *streams*
+(as in RWARE's individual setting, D81). Teammates can still take different roles (one cooks, one serves); the
+team reward function, not the action, defines a team. Teams interact physically through shared pots: putting
+the other ingredient into a pot ruins it (mixed soup, worth nothing), which creates natural cross-team
+interference. Reward events for the gate are `r >= 0.5`, i.e. own-recipe deliveries; shaping never counts as
+an event.
+
+## 3. Information given to PGCT
+
+| | content |
+|---|---|
+| actor observation | egocentric 7×7 window (radius 3) × 32 channels + own facing + own held item (1,579 values); no coordinates, team, recipe or agent identity |
+| critic input | the same vector (shared space for all agents) |
+| private reward | own scalar reward only |
+| public probe view | centre 3×3 crop (radius 1) of the same channels + own facing/held (299 values, binary, uint8) |
+| communication | Chebyshev distance ≤ 3, any step of the rollout |
+| evaluation only | `oracle_team_ids()`, per-team summaries |
+
+Comparability of probes across agents: the view is egocentric and contains only physical state, so the
+same transition (e.g. "holding a tomato soup, facing a serving window, interact → empty hands") has the same
+encoding whoever experienced it, at any position. No position, role or team normalisation is needed. The
+recipe is never observed: each agent has its own network, so its objective is learned from its reward.
+Unlike RWARE (which must drop private request channels), nothing has to be removed from the observation.
+
+Critic compatibility: all critic inputs live in one space with identical semantics, so a donor critic
+`V_j` can be run on the receiver's history. `V_j` estimates returns under **j's** reward function; for a true
+teammate this is the same function (the case Max-GAE is meant for), for a wrongly approved agent it is not,
+which is exactly what the identification metrics and the `all`/`random_gate` controls measure. Max-GAE was
+not modified.
+
+## 4. Methods (identical environment, budget, seeds, evaluation)
+
+`ippo`, `oracle` (labels: baseline only), `all`, `pgct_d2`, `pgct_id_only`, `random_gate` — see
+`docs/ALGORITHM.md` §9. Gate and Max-GAE values are the RWARE PGCT-D2 main-run values (action_max, no mirror,
+rollout-start snapshot, τ .5, β .35, 3 rounds, n_min 8, η .5 shrink, warm-up 100 updates); they were not tuned
+on Overcooked. PPO values follow the RWARE reference (rollout 1024, lr 2e-4, entropy .05) with the MLP encoder.
+Same seed ⇒ same initial weights for every method (tested).
+
+## 5. Metrics (logged per update; aggregated by `pgct_overcooked.aggregate`)
+
+- Identification (labels on the evaluation side): same/different-team EMA distances, AUROC of −distance,
+  final precision/recall/F1 and false-approval rate of the approval matrix, time-averaged false-approval
+  rate and recall, first env step with a correct and with a wrong approval, gate stability (fraction of
+  unchanged updates) and approval flips, mature agents, approved arcs (same/cross).
+- Learning: evaluation return (mean and per agent), own/other deliveries per agent and per team, AUC of the
+  evaluation curve (sample efficiency), training episode returns, multi-seed mean ± std.
+- Critic access: donor arcs per update (same/cross team), receivers, Max-GAE `mean_b`, `select_frac`,
+  `adv_shift`, `eta_eff`, critic explained variance per agent.
+- Cost: probe exchanges and approximate bytes (`probes × (2·view + 1)` + float32 responses), critic bytes
+  (`donor arcs × critic parameters × 4`), wall time of rollout / gate (predictor training + comparison) /
+  Max-GAE (donor critic evaluation) / PPO, steps per second, peak RSS.
+
+Field names match RWARE where they exist (`max_gae_*`, `ac_v2_*`).
+
+## 6. Built-in checks (tests)
+
+- Mechanics, rewards per team, collisions, horizon (`tests/test_kitchen.py`).
+- Observations and public views are identical under different hidden team assignments.
+- **Scripted identification**: when every agent sometimes serves each soup type, the unchanged gate approves
+  exactly the true teammates (AUROC 1, F1 1, same-team distance < .2, cross-team > .8;
+  `tests/test_identification.py`). This shows the probe representation carries the needed information; it is
+  not evidence that learning agents will generate such experience.
+- Every method trains; identical initial weights; closed gate ⇒ `pgct_d2`/`pgct_id_only`/`random_gate` give
+  IPPO's exact weights; oracle approvals injected ⇒ `pgct_d2` gives `oracle`'s exact weights; non-oracle
+  methods never read labels (`tests/test_training.py`).
+
+## 7. Threats to validity and open choices
+
+- **Experience coverage.** A predictor answers probes from the other team's events by extrapolation if the
+  agent never experienced them (the RWARE limitation E85/D129). Early random exploration produces some
+  wrong-soup deliveries; trained specialists may not. The cross-team distance must be monitored over time.
+- **Sparse events.** Gate maturity needs 20 own deliveries; until then there is no identification and no
+  critic access. Time to first maturity is part of the result.
+- **Learning difficulty and budget.** Four agents with a long recipe chain may need several million steps.
+  At ≈37 env steps/s per process on this PC (measured with two processes in parallel), 5M steps take about
+  1.5 days per job; 6 methods × 3 seeds = 18 jobs. Run them yourself (scripts below), e.g. 2–4 at a time.
+- **Shaping.** The shaping terms are individual and recipe-specific. An ablation without shaping is one
+  override away (`--set kitchen.pot_reward=0 kitchen.soup_pickup_reward=0`).
+- **Distance mode.** `action_max` was chosen for RWARE (D108). A pooled-distance ablation:
+  `--set gate.distance_mode=pooled`.
+- **Encoder.** MLP on a 1,579-dim egocentric vector; a CNN encoder may learn faster but would add a second
+  change; kept identical across methods.
+
+## 8. How to run
+
+See `Overcooked/README.md`.

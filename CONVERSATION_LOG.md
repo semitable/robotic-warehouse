@@ -19943,3 +19943,506 @@ The dashed line still passes through the "11/6 확인" text, so I'll give that l
 - 그리는 스크립트는 `output/roadmap_20261105/make_roadmap.py`입니다. 일정이 바뀌면 파일 위쪽 `TASKS`의 날짜만 고치고 다시 실행하면 됩니다.
 
 내용은 로드맵 D130과 같습니다. 실험·분석/집필·제출을 세 색으로 나눴고, 결정·마감일(11/6, 11/9, 11/12, 12/14, 1/4, 1/11)을 점선으로 표시했습니다.
+
+## 원문 기록 T216 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+나는 지금부터 프로젝트를 수정할꺼야
+밑의 문서를 따라줘
+
+(붙여넣은 문서 시작)
+PGCT Repository Refactoring and Overcooked Experiment Implementation
+1. Objective
+I have already cloned my existing PGCT/RWARE research repository on this computer.
+Repository:
+https://github.com/LeeHwanRyul/robotic-warehouse
+Currently, the PGCT algorithm is implemented directly within the RWARE project.
+I want to restructure the repository into a multi-environment PGCT research framework.
+The target structure is:
+
+```
+PGCT/
+├── PGCT/                 # Environment-independent PGCT algorithm
+├── RWARE/                # Existing warehouse experiment
+├── Overcooked/           # New Overcooked experiment
+├── docs/
+├── scripts/
+└── pyproject.toml
+```
+
+The goal is to make PGCT reusable across different MARL environments without maintaining separate copies of the algorithm.
+This is both a repository refactoring task and an Overcooked experiment implementation task.
+Do not stop after designing the architecture. Complete the implementation, tests, and runnable experiment scripts as far as the local environment permits.
+2. First: Thoroughly Audit the Existing Repository
+Before changing anything:
+
+1. Inspect the entire repository.
+2. Read README files and all relevant PGCT documentation.
+3. Inspect the current training and evaluation pipelines.
+4. Identify the authoritative PGCT-D2 implementation.
+5. Inspect previous implementations and distinguish them from D2.
+6. Examine existing tests, checkpoints, configurations, and experiment outputs.
+7. Inspect Git branches, history, and working-tree status.
+
+Pay particular attention to:
+
+* Individual reward predictors
+* Public reward-probe transitions
+* Pairwise reward-response distance
+* Predictor maturity
+* Gate approval
+* Communication restrictions
+* Selective critic access
+* Max-GAE
+* PPO/GRU training
+* Checkpointing and logging
+
+Potential files include:
+
+* `latent_team/reward_probe_ac_v2.py`
+* `latent_team/max_gae.py`
+* `train_from_scratch.py`
+
+These paths are references. Verify the actual code.
+Do not assume the existing directory structure or algorithm details without inspection.
+Identify which components are truly environment-independent and which are RWARE-specific.
+Document the current architecture before refactoring.
+3. Required Repository Architecture
+Use the following conceptual separation.
+PGCT/PGCT — Shared Algorithm
+This directory contains the reusable PGCT implementation.
+It should own:
+
+* Reward-response predictors
+* Reward-probe comparison logic
+* Pairwise similarity/distance computation
+* Maturity and approval mechanisms
+* Gate state management
+* Approved critic selection
+* Max-GAE
+* Environment-independent configuration
+* Shared mathematical and algorithmic tests
+
+It must not depend directly on:
+
+* RWARE observation fields
+* RWARE shelf and delivery definitions
+* Overcooked recipes
+* Overcooked cooking mechanics
+* Environment-specific reward shaping
+
+Provide an importable Python package, preferably named `pgct_core`, within this directory.
+Avoid ambiguous imports caused by the outer PGCT/PGCT directory names.
+PGCT/RWARE — Existing Experiment
+This directory contains:
+
+* The existing RWARE environment and dependencies
+* RWARE-specific observation adapters
+* RWARE-specific reward and probe projections
+* Existing training scripts
+* Existing evaluation scripts
+* Existing experiment configurations
+* Existing test compatibility
+* Existing checkpoint and result handling
+
+The RWARE implementation should use shared PGCT components instead of maintaining a second independent PGCT-D2 implementation.
+However, prioritize behavioral equivalence and backward compatibility.
+PGCT/Overcooked — New Experiment
+This directory contains:
+
+* Overcooked environment integration
+* Environment-specific observation and reward adapters
+* Overcooked reward-probe projection
+* Overcooked experiment configurations
+* Training and evaluation entry points
+* Environment-specific tests
+* Baselines and ablations
+* Logging and analysis tools
+
+It must import the common PGCT algorithm.
+Do not implement a second copy of PGCT-D2 inside Overcooked.
+4. Refactoring Rules
+The most important requirement is preserving the existing RWARE experiment.
+Follow these rules:
+
+1. Do not rewrite PGCT from scratch.
+2. Extract existing validated components whenever possible.
+3. Preserve current PGCT-D2 mathematics and training behavior.
+4. Do not introduce unrequested algorithmic improvements during migration.
+5. Keep the old RWARE entry points working where practical.
+6. Preserve checkpoint compatibility or provide an explicit compatibility loader.
+7. Do not overwrite existing checkpoints or results.
+8. Do not change existing experiment hyperparameters without justification.
+9. Keep random-seed behavior consistent.
+10. Document all import and path changes.
+11. Do not push, merge, or delete branches without permission.
+12. Do not discard unrelated uncommitted changes.
+
+Before migrating any algorithm component, create or identify tests that characterize its existing behavior.
+After migration, compare its outputs with the original implementation under identical inputs.
+For deterministic components, require numerical equivalence within an appropriately documented tolerance.
+If exact equivalence is feasible, require exact equivalence.
+For PPO training and max-GAE, verify that the migration itself does not alter the algorithm.
+Treat algorithm changes and structural changes as separate operations.
+5. Shared Environment Interface
+Design a minimal interface allowing PGCT to operate in different environments.
+The interface should support:
+
+* Agent identifiers
+* Individual observations
+* Individual actions
+* Individual rewards
+* Experience transitions
+* Public transition projections
+* Pairwise communication availability
+* Agent-specific reward predictors
+* Agent-specific critics
+* Critic evaluation inputs
+* Optional ground-truth team information for evaluation only
+
+Do not force every environment to use identical raw observation vectors.
+Instead, use environment-specific adapters to produce semantically valid probe inputs.
+Separate the following concepts:
+
+1. Local actor observation
+2. Local critic input
+3. Private reward information
+4. Public reward-probe representation
+5. Communication topology
+6. Evaluation-only information
+
+The interface should not expose ground-truth team labels to the PGCT training algorithm.
+Avoid unnecessarily large abstractions.
+Create only the interfaces needed for the existing RWARE implementation and the new Overcooked experiment.
+6. Preserve the Current PGCT-D2 Algorithm
+The existing algorithm remains the reference implementation.
+Its main research objective is latent team identification under decentralized multi-agent reinforcement learning.
+Agents independently learn their own objectives from local experience and individual rewards.
+They compare predicted responses to common reward probes to identify potential teammates.
+Once a relationship is approved, an agent may selectively access approved teammate critics.
+The current design uses max-GAE rather than ordinary critic averaging or parameter distillation.
+Preserve the current:
+
+* Reward-predictor structure
+* Public probe construction
+* Pairwise reward-response distance
+* EMA logic
+* Maturity requirements
+* Approval thresholds
+* Predictor-refit comparison counts
+* Communication restrictions
+* Critic access restrictions
+* Max-GAE computation
+
+The current basic probe design is based on actual experiences:
+[
+Q_{ij}^{u}=E_i^{u}\cup E_j^{u}
+]
+Do not reintroduce left-right mirror augmentation by default.
+Do not replace this with synthetic trajectories without separate justification.
+Do not introduce centralized training, shared team rewards, policy sharing, or oracle team identification into the PGCT implementation.
+If parts of the algorithm are ambiguous, examine code and documentation before making decisions.
+Do not silently reinterpret the method.
+7. Overcooked Experimental Design
+After the PGCT core architecture is established, design the Overcooked experiment.
+Investigate available Overcooked implementations before choosing one.
+Determine:
+
+* Supported number of agents
+* Cooperative versus multi-team mechanics
+* Observation structure
+* Reward structure
+* Partial observability
+* Environment API compatibility
+* Extensibility
+* Maintenance status
+* Dependencies and licenses
+
+The main scientific question is:
+Does reward-response-based latent team identification generalize from RWARE to a different cooperative multi-agent domain?
+Prefer a four-agent, two-team environment with unknown team assignments if feasible.
+However, do not force an invalid four-agent experiment into an environment designed only for two agents.
+If significant simulator changes are required, explain the tradeoffs and implement a scientifically valid solution.
+A standard two-agent cooperative Overcooked experiment may be included as a secondary benchmark, but it cannot independently establish latent multi-team identification.
+Reward Structure
+Prefer individual rewards that reveal agents' objectives through experience.
+Avoid directly encoding team identity into observations or reward-probe features.
+Consider recipe-specific objectives, deliveries, cooking tasks, and role differences.
+Teammates may perform different actions despite pursuing related objectives.
+Common Reward Probes
+Investigate whether public experience projections are comparable across agents.
+Do not assume that observations from different positions or roles have identical semantics.
+Adapt the environment-specific projection while preserving the shared PGCT comparison procedure.
+Critic Compatibility
+Investigate whether approved teammate critics can meaningfully evaluate another agent's information.
+If the observation or value domains differ, address the incompatibility explicitly.
+Do not silently change max-GAE or introduce oracle information.
+8. Baselines and Ablations
+Implement fair comparisons using shared training infrastructure.
+Required methods:
+
+1. IPPO
+2. Oracle-team critic access
+3. All-sharing critic access
+4. PGCT-D2
+5. PGCT identification without critic access
+6. Random or shuffled gate control
+
+Use identical training budgets, seeds, and environment configurations.
+Keep ground-truth team labels strictly restricted to the Oracle baseline and evaluation code.
+Measure team identification independently from learning performance.
+9. Required Metrics
+Identification
+
+* Same-team and different-team reward-response distances
+* AUROC
+* Precision, recall, and F1
+* False approval rate
+* Time to first correct approval
+* Gate stability
+* Approved teammate connections
+
+Learning
+
+* Episode return
+* Successful deliveries
+* Sample efficiency
+* Per-agent performance
+* Critic access frequency
+* Max-GAE statistics
+* Multi-seed variance
+
+Cost
+
+* Probe communication frequency
+* Approximate transmitted bytes
+* Reward-predictor training cost
+* Critic evaluation overhead
+* Runtime
+* Memory usage
+
+Use consistent logging between RWARE and Overcooked wherever possible.
+10. Implementation Order
+Work in the following sequence.
+Phase 1 — Audit
+Inspect the existing repository and document all PGCT-D2 dependencies.
+Create an architecture and migration plan.
+Phase 2 — Preserve Existing Behavior
+Identify or create regression tests for the RWARE implementation before moving code.
+Record the reference outputs of important deterministic components.
+Phase 3 — Extract Shared PGCT
+Create `PGCT/PGCT` as the environment-independent algorithm package.
+Move or extract code incrementally.
+Add thin environment adapters where needed.
+Do not unnecessarily duplicate PGCT logic.
+Phase 4 — Migrate RWARE
+Make the RWARE training pipeline use the common PGCT package.
+Retain backward-compatible entry points where feasible.
+Run regression tests, smoke training, and checkpoint loading tests.
+Resolve migration errors before continuing.
+Phase 5 — Implement Overcooked
+Create `PGCT/Overcooked`.
+Implement the environment adapter, reward projections, training entry points, and evaluation.
+Use the existing shared PGCT algorithm.
+Phase 6 — Baselines and Tests
+Implement required baselines.
+Add unit tests, integration tests, and short smoke runs.
+Verify that all methods operate on comparable environments.
+Phase 7 — Experiment Infrastructure
+Create reproducible experiment configurations, PowerShell scripts, logging, checkpointing, and result aggregation.
+Do not launch expensive full-scale experiments automatically.
+11. Required Documentation
+Create or update:
+
+* Root `README.md`
+* `docs/ARCHITECTURE.md`
+* `docs/MIGRATION.md`
+* `docs/ALGORITHM.md`
+* `RWARE/README.md`
+* `Overcooked/README.md`
+* `Overcooked/docs/EXPERIMENT_DESIGN.md`
+
+Explain:
+
+* How shared PGCT works
+* How to add another MARL environment
+* How environment adapters are implemented
+* How RWARE remains backward compatible
+* How to train and evaluate each environment
+* Which configurations are environment-specific
+* Which algorithmic components are shared
+
+Provide runnable Windows PowerShell commands.
+12. Completion Criteria
+The task is complete when:
+
+1. PGCT exists as a reusable, importable algorithm package.
+2. RWARE uses the shared PGCT implementation.
+3. Existing RWARE functionality passes regression tests.
+4. Existing RWARE checkpoints remain usable or have a tested compatibility path.
+5. Overcooked is implemented as an independent environment project.
+6. Overcooked uses the same PGCT core.
+7. Baselines have runnable entry points.
+8. Tests and smoke training execute successfully.
+9. Documentation explains how to reproduce the experiments.
+10. No unrelated repository content has been damaged.
+
+If some criteria cannot be completed, clearly document what remains incomplete and why.
+Do not claim tests passed unless they were actually executed.
+Do not invent experimental results.
+At completion, summarize the architecture, files changed, migration tests, Overcooked implementation, and exact commands needed to run experiments.
+The ultimate goal is a scalable research repository in which PGCT is one shared algorithm and RWARE, Overcooked, and future MARL environments are independent experimental modules.
+(붙여넣은 문서 끝)
+
+한국어로 답해주고
+
+### 수행 기록 — 원문 대화와 별도
+
+- 감사 → 구조 이동(`git mv`) → 동결 사본·지문 기록 → `pgct_core` 추출 → RWARE 어댑터 교체 → 등가성·회귀 → Overcooked 시뮬레이터·어댑터·trainer·테스트·스크립트·문서 순으로 진행(D131, E86). 커밋·push 없음.
+- 첨부: 붙여넣은 작업 지시서 전체(위 원문)를 읽었다. 외부 조사: overcooked_ai GitHub 페이지, JaxMARL·Melting Pot·N-player Overcooked 관련 검색 결과(`Overcooked/docs/EXPERIMENT_DESIGN.md` 1절).
+
+### Assistant — 진행 안내 (요지)
+
+- 감사 시작, `feature/overcooked` 브랜치가 깨끗함, PGCT-D2 문서와 핵심 코드 확인.
+- 문서의 Python 환경 `RWARE_MARL`이 이 PC에 없어 `marl-policy-sharing` 환경으로 기준선 테스트 실행: 240 통과·31 건너뜀·1 실패(pyglet). 로컬 참조 실험이 없어 저장된 plan에서 대체본을 만들어 264 통과·7 건너뜀·1 실패를 기준선으로 확정.
+- Overcooked 구현 조사 결론(4 agent·2팀·팀별 레시피·개인 보상을 지원하는 구현 없음) → 자체 주방 시뮬레이터로 결정.
+- Windows 대소문자 무시 때문에 `RWARE/`가 기존 `rware/`로 해석된 문제를 임시 이름으로 우회해 이동, 이동 직후 테스트 결과가 기준선과 동일.
+- 동결 사본 해시 일치 확인, 원본 상태 trainer 지문 18개 기록, RWARE 모듈 교체, 등가성 25개 통과, 지문 18/18 동일, RWARE 전체 289 통과·8 건너뜀·같은 1 실패.
+- Overcooked 6개 방법 smoke 통과, 테스트 작성(테스트 쪽 실수 1건 수정), 코어 테스트 12개 통과, 처리량 약 37 step/s 측정, `plan.json` 병렬 쓰기 경쟁 발견·수정, `run_tests.ps1`의 basetemp 상위 폴더 결함 수정.
+
+### Assistant — 최종 답변
+
+작업을 마쳤습니다. PGCT-D2를 환경 독립 패키지 `PGCT/pgct_core`로 추출했고, RWARE가 이 패키지를 쓰도록 옮겼습니다. 이 PC에서 확인한 범위에서 동작은 분리 전과 비트 단위로 같습니다. 같은 코어를 쓰는 4 agent·2팀 Overcooked 실험도 새로 만들었습니다. 커밋과 push는 하지 않았고, 이동한 파일은 `git mv`로 스테이징만 되어 있습니다.
+
+## 구조
+
+```
+robotic-warehouse/        저장소 루트 = 지시서의 PGCT/
+├── PGCT/pgct_core/       gate, Max-GAE, GRU IPPO, 범용 trainer, 식별 지표 (numpy·torch만 사용)
+├── RWARE/                기존 rware/, latent_team/, examples/, tests/, runs/, output/ (git mv, 이력 보존)
+├── Overcooked/           주방 시뮬레이터, 어댑터, 학습·평가·집계, 설정, 스크립트, 테스트
+├── docs/  scripts/  pyproject.toml
+└── 연구 기록(RESEARCH_STATE·DECISIONS·EXPERIMENTS·CONVERSATION_LOG), paper/ 등은 루트에 그대로
+```
+
+감사 결과, 기준 구현은 `pgct_max` 모드입니다. 구성은 v2 gate(action_max, mirror 끔, rollout 시작 스냅샷)와 Max-GAE D2(η .5, shrink)입니다.
+- 환경 독립 부분: 예측기, `Q_ij = E_i ∪ E_j`, 거리, EMA, 성숙, 승인, donor 규칙, Max-GAE. 모두 `pgct_core`로 옮겼습니다.
+- RWARE 고유 부분: 공개 관측 채널, mirror, 접촉 wrapper, trainer 패치. `RWARE/latent_team/reward_probe_ac_v2.py`와 `max_gae.py`에 같은 이름의 얇은 어댑터로 남겼습니다.
+- RWARE trainer, 환경, `examples/`는 위치만 바꾸고 내용은 그대로입니다.
+- 코어의 mirror 기본값은 꺼짐입니다. RWARE의 옛 `ACV2Config` 기본값(켜짐)은 예전 명령과의 호환을 위해 유지했고, D2 본 실행은 원래대로 끈 설정을 넘깁니다.
+
+## 마이그레이션 검증 (이 PC에서 실제 실행)
+
+| 단계 | RWARE 테스트 |
+|---|---|
+| 변경 전 | 264 통과 · 7 건너뜀 · 1 실패 |
+| 구조 이동 직후 | 264 · 7 · 1 (동일) |
+| 추출 후 | 289 · 8 · 1 (기존 264 + 등가성 25) |
+
+- **실패 1건**: 이 PC에 `pyglet`이 없어서 생기는 렌더링 테스트 실패입니다. 변경 전에도 실패했습니다.
+- **등가성 테스트 25개**: 분리 전 코드의 동결 사본(`RWARE/tests/legacy/`)과 새 코드를 같은 입력으로 돌려 허용 오차 0으로 비교했습니다.
+  - 비교 대상: gate 기록 전체, GAE, Max-GAE 목표·혼합, donor 규칙 5종, 네트워크 초기화.
+  - PPO 업데이트: trainer의 `update_ippo`와 가중치가 비트 단위로 같습니다.
+  - 실제 trainer로 돌린 PGCT-D2 job도 포함했습니다.
+- **trainer 지문**: 6개 mode × 3개 설정, 64 step smoke job 18개의 최종 가중치·gate 상태·로그 해시가 추출 전후 18/18 같았습니다.
+- **checkpoint**: 기존 checkpoint 2개(MLP, CNN)를 strict 모드로 적재하는 데 성공했습니다. 형식이 바뀌지 않아 호환 로더는 필요 없었습니다.
+- **나머지 테스트**: 코어 12개, Overcooked 14개 통과. `scripts\run_tests.ps1`로 세 묶음을 다시 돌려 같은 결과를 확인했습니다.
+
+## Overcooked
+
+**구현 선택**
+- 조사한 구현은 4 agent·팀별 레시피·개인 보상을 지원하지 않았습니다.
+  - overcooked_ai: 2인용, 공유 주문 목록
+  - JaxMARL: 2 agent, JAX 기반
+  - Melting Pot: Windows에서 실행 불가
+- 2인용 환경에 4 agent를 억지로 넣는 대신, Overcooked 규칙을 따르는 N-agent 주방을 새로 작성했습니다. 근거는 `Overcooked/docs/EXPERIMENT_DESIGN.md`에 정리했습니다.
+
+**설계**
+- 숨은 2팀: 팀 0은 양파 수프, 팀 1은 토마토 수프를 만들고 냄비는 공유합니다.
+- 개인 보상: 자기 레시피 배달 +1, 자기 재료 투입 +.1, 자기 수프 집기 +.2. 상대 팀 수프를 배달하면 0입니다.
+- 팀 배정은 seed마다 무작위입니다.
+- 관측과 probe에는 팀, 레시피, 좌표가 없습니다.
+- 공개 probe는 자기 중심 관측의 중앙 3×3 부분입니다. 그래서 위치·역할이 달라도 의미가 같습니다.
+- critic 입력 공간이 모든 agent에 공통이라 Max-GAE를 바꾸지 않고 그대로 씁니다.
+- gate·Max-GAE 값은 RWARE D2 값을 그대로 썼고, Overcooked에 맞춰 조정하지 않았습니다.
+
+**방법 6개**
+- `ippo`
+- `oracle`: 라벨을 읽는 유일한 학습 방법
+- `all`
+- `pgct_d2`
+- `pgct_id_only`: 식별만 하고 critic 접근은 없음
+- `random_gate`: 라벨 없이 PGCT와 같은 수의 donor를 무작위로 뽑음
+
+같은 seed면 모든 방법의 초기 가중치가 같습니다.
+
+**검증한 것**
+- 스크립트로 만든 경험(각 agent가 두 수프를 모두 가끔 배달)에서, 바꾸지 않은 gate가 진짜 팀원 쌍만 승인했습니다(AUROC 1, F1 1).
+- gate가 닫혀 있으면 `pgct_d2`의 가중치가 `ippo`와 같고, oracle 승인을 주입하면 `oracle`과 같습니다.
+- oracle 외 방법은 팀 라벨을 읽지 않습니다.
+
+**sanity 학습**: 주 설정 그대로 IPPO와 PGCT-D2를 각 51,200 step(약 20분) 돌렸고 오류는 없었습니다. 이 길이에서는 배달이 한 번도 없어 gate가 성숙하지 않았고, 그래서 두 방법의 최종 가중치가 비트 단위로 같았습니다. 학습이 되는지는 이 길이로 판단할 수 없습니다.
+
+**처리량**: 이 PC에서 job 2개를 동시에 돌릴 때 job당 약 37–43 step/s입니다. 5M step이면 job당 약 1.5일 걸립니다.
+
+## 실행 명령 (PowerShell, 저장소 루트)
+
+```powershell
+$env:PGCT_PYTHON = "C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe"
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\run_tests.ps1
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Overcooked\scripts\run_overcooked.ps1 -Name oc_smoke -Seeds 1 -Smoke
+```
+
+본 실험(6개 방법 × seed 3개, 5M)은 별도 PowerShell 창에서 직접 시작해 주세요.
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Name oc_main_v1 -Seeds 1,2,3 -MaxConcurrent 3"
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Overcooked\scripts\aggregate.ps1 -Name oc_main_v1
+```
+
+RWARE는 `RWARE` 폴더에서 예전 명령을 그대로 쓰면 됩니다.
+
+```powershell
+cd RWARE
+```
+
+```powershell
+python latent_team\train_from_scratch.py --env-variant b6_corner_indiv_comm5_pen005 --modes ippo pgct_max --reward-probe-ac --ac-gate v2 --ac-distance action_max --ac-config latent_team\acv2_nomirror.json --seeds 1 --timesteps 64 --smoke-test --output-dir runs\smoke_pgct_d2_check
+```
+
+## 남은 것과 주의할 점
+
+- **Overcooked 본 학습은 하지 않았습니다.** 지시대로 자동으로 시작하지 않았고, 학습·식별 성능 결과는 아직 없습니다.
+- **이 PC에 없는 것**: 문서에 적힌 `RWARE_MARL` 환경, `pyglet`, 원래 참조 실험, 1M checkpoint가 없습니다.
+  - 참조 실험은 저장된 plan으로 로컬 대체본을 만들어 테스트에만 썼습니다. git이 무시하는 파일이고 커밋하지 않았습니다.
+  - 1M checkpoint가 필요한 테스트 3개는 건너뛰었습니다.
+  - 같은 이유로 `run_tests.ps1`은 이 PC에서 RWARE 묶음을 FAILED로 표시합니다(pyglet 1건).
+- **학습 PC를 옮길 때**: 다른 PC에서 `run_queue.ps1` 대기열이 도는 동안에는 이 브랜치로 바꾸지 마세요. 새 job이 옛 경로를 찾지 못합니다. 학습이 끝난 뒤 그 PC의 `runs\`·`output\`을 `scripts\migrate_local_layout.ps1`로 옮기면 됩니다(기본은 미리보기만 하고, `-Apply`일 때만 이동).
+- **저장소 밖 폴더**: `C:\PGCT_Overcooked\Overcooked`(비어 있음)는 건드리지 않았습니다. 지시서의 `Overcooked`는 저장소 안 `Overcooked\`입니다.
+- **기록**: `DECISIONS.md` D131, `EXPERIMENTS.md` E86, `RESEARCH_STATE.md`, `CONVERSATION_LOG.md` T216을 추가했습니다. 문서는 `docs\ARCHITECTURE.md`, `docs\MIGRATION.md`, `docs\ALGORITHM.md`, `RWARE\README.md`, `Overcooked\README.md`, `Overcooked\docs\EXPERIMENT_DESIGN.md`입니다.
+
+조사 출처: [overcooked_ai](https://github.com/HumanCompatibleAI/overcooked_ai), [JaxMARL 논문](https://arxiv.org/abs/2311.10090), [Melting Pot collaborative cooking](https://meltingpot-pz.pages.dev/substrates/collaborative_cooking/), [N-agent Overcooked 확장](https://web3.arxiv.org/pdf/2506.17560), [DI-engine Overcooked 문서](https://di-engine-docs.readthedocs.io/zh-cn/latest/_sources/13_envs/overcooked.rst.txt)
+
+## 원문 기록 T217 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+커밋해 줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- T216 변경 전체(D131, E86)를 `feature/overcooked`에 커밋했다. push·merge 없음. 커밋 해시는 `git log`로 확인한다.
+
+### Assistant — 최종 답변
+
+`feature/overcooked` 브랜치에 커밋했습니다(push는 하지 않았습니다). RWARE 코드·결과 이동은 rename으로 기록되어 이력이 이어집니다. 원격에 올리거나 PR을 만들려면 말씀해 주세요.
