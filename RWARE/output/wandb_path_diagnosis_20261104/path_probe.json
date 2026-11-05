@@ -1,8 +1,0 @@
-{
-  "path_chars": 260,
-  "parent_exists": true,
-  "short_write": "success",
-  "long_write": "FileNotFoundError",
-  "error": "[Errno 2] No such file or directory: 'C:\\\\RWARE\\\\MARL_RWARE\\\\third_party\\\\robotic-warehouse\\\\output\\\\wandb_path_diagnosis_20261104\\\\xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\\yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\\\\video_51200_01234567890123456789.mp4'",
-  "extended_write": "success"
-}

@@ -1,3 +1,0 @@
-base  grid (11, 10) requests [3, 3]  per agent-episode: own requested pickups 0.883, deliveries 0.0500, reward events 0.0250; mean shelf-goal distance 10.0
-wide  grid (11, 16) requests [3, 3]  per agent-episode: own requested pickups 0.258, deliveries 0.0500, reward events 0.0000; mean shelf-goal distance 13.0
-req2  grid (11, 10) requests [2, 2]  per agent-episode: own requested pickups 0.775, deliveries 0.0333, reward events 0.0250; mean shelf-goal distance 10.0

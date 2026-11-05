@@ -1,1 +1,0 @@
-{"interval": 1, "batch_size": 16, "train_steps": 2, "min_events": 1, "min_event_response": -1.0, "event_reward": 0.001, "min_rounds": 1, "distance_threshold": 1.0, "min_probes": 1, "mirror": false}

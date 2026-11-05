@@ -1,7 +1,0 @@
-base ippo s1: delivery/episode >=0.5:0.72M >=2:0.82M >=5:1.28M >=10:2.51M >=20:4.25M | per agent (>=.5/ep) ['-', '1.48M', '0.77M', '0.82M', '2.56M', '0.87M'] | at 4.97M total 25.6, per agent [0.0, 5.05, 5.95, 5.55, 4.4, 4.7]
-base ippo s2: delivery/episode >=0.5:0.82M >=2:1.23M >=5:1.43M >=10:2.46M >=20:4.40M | per agent (>=.5/ep) ['1.38M', '0.82M', '-', '2.66M', '1.28M', '1.95M'] | at 4.97M total 24.1, per agent [5.2, 4.45, 0.0, 3.2, 6.95, 4.25]
-base pgct(v2) s1: delivery/episode >=0.5:0.77M >=2:0.97M >=5:1.38M >=10:2.46M >=20:4.51M | per agent (>=.5/ep) ['-', '0.77M', '1.28M', '1.02M', '2.97M', '0.92M'] | at 4.97M total 19.8, per agent [0.0, 3.95, 5.15, 4.2, 3.35, 3.1]
-wide ippo_s1: 0.022M, recent train deliveries/ep [0.5, 0.0, 0.0, 0.5, 0.0], evals []
-wide pgct_max_s1: 0.024M, recent train deliveries/ep [0.0, 0.5, 0.0, 0.0, 0.5], evals []
-wide pgct_max_s2: 0.023M, recent train deliveries/ep [0.0, 0.5, 0.0, 0.67, 0.0], evals []
-wide pgct_max_s3: 0.023M, recent train deliveries/ep [0.0, 1.0, 1.0, 0.0, 0.5], evals []

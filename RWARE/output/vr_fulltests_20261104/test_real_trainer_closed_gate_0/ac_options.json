@@ -1,1 +1,0 @@
-{"interval": 1, "batch_size": 16, "train_steps": 2, "min_events": 1000000}
