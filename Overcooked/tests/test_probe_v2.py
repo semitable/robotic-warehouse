@@ -143,3 +143,27 @@ def test_v2_config_changes_only_the_gate(tmp_path):
     a, b = final["main_4p2t.json", "ippo"], final["main_4p2t_probe_v2.json", "ippo"]
     assert all(torch.equal(x[k], y[k]) for x, y in zip(a["agents"], b["agents"]) for k in x)
     assert final["main_4p2t_probe_v2.json", "pgct_d2"]["reward_gate"]["predictors"][0]["version"] >= 1
+
+
+def test_v3_cross_makes_west_and_east_window_deliveries_identical():
+    adapter = KitchenAdapter(FIXED, AdapterConfig(probe_frame="facing_cross"))
+    adapter.reset()
+    place(adapter, 0, (3, 1), 3, "soup_tomato")
+    place(adapter, 1, (3, 9), 1, "soup_tomato")
+    place(adapter, 2, (1, 5), 2)
+    place(adapter, 3, (5, 5), 2)
+    obs = adapter.observations()
+    west, east = (adapter.projection.public_view(obs[i]) for i in (0, 1))
+    assert len(west) == adapter.projection.view_size == EGO_SIZE + N_CHANNELS * 5
+    assert np.array_equal(west, east)
+    cells = west[EGO_SIZE:].reshape(N_CHANNELS, 5)
+    assert cells[CH["serve"], 0] == 1 and cells[CH["serve"], 1:].sum() == 0  # the window is the front cell
+    with pytest.raises(ValueError):
+        KitchenAdapter(FIXED, AdapterConfig(obs_radius=3, probe_radius=2, probe_frame="facing_cross"))
+
+
+def test_v3_pairs_opposite_window_teammates_with_a_wide_margin():
+    gate, teams = run_gate("facing_cross")
+    assert gate.maturity().all() and np.array_equal(gate.approved(), same_team_matrix(teams))
+    v3 = gate.ema + gate.ema.T
+    assert max(v3[0, 1], v3[2, 3]) < .1 and min(v3[0, 2], v3[0, 3], v3[1, 2], v3[1, 3]) > .8

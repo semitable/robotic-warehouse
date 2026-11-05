@@ -83,6 +83,44 @@ symmetric and does **not** require current contact:
 Losing contact does not erase the evidence; critic access still requires contact in the current rollout.
 Code: `RewardProbeGate.compare`, `approved`. Config: `ema_beta`, `min_rounds`, `distance_threshold`.
 
+### What τ = 0.5 means (D136; checked numerically in the D136 record)
+
+"D lies in [0, 1], so take the middle" is not a justification by itself. The value rests on these facts:
+
+1. **Ideal outcomes are exactly 0 and 1.** With perfect predictors, team-specific reward events and
+   `Q_ij = E_i ∪ E_j`: a same-team pair answers every probe alike (D = 0); a cross-team pair answers each
+   probe with "paid / not paid" in opposite ways (D = 1). This holds for any number of probes and any reward
+   scale (D is normalised). With pooled distances, events paid to both teams (fraction s of the probe
+   mass) pull the cross-team value down to (1 − s)/(1 + s), which is below 0.5 once s > 1/3; `action_max`
+   restores the ideal 1 whenever one public action is team-specific (D107–D108). τ = 0.5 is the midpoint of the
+   two ideal outcomes, not of the range.
+2. **Interpretation as a response ratio.** If a predictor answers its own events with a and the partner's
+   events with ρ·a (and vice versa), D = (1 − ρ)/(1 + ρ). Hence τ ↔ ρ* = (1 − τ)/(1 + τ): τ = 0.5 approves a pair
+   when each agent responds to the other's reward moments with more than one third of its own response. The
+   same number bounds both errors: a teammate whose predictor is three times weaker still passes; an
+   other-team agent that "leaks" up to one third of a response is still rejected.
+3. **Tolerance to prediction error.** If every prediction is within ε of its 0/1 target, same-team D ≤ ε and
+   cross-team D ≥ 1 − 2ε (both tight). τ separates the two whenever ε < τ < 1 − 2ε. τ = 0.5 is guaranteed for
+   ε < 1/4; the worst-case optimum would be τ = 1/3 (ε < 1/3). So 0.5 is not the minimax value under this
+   error model; it is a pre-registered value that is safe for ε < 1/4.
+4. **Empirical margin, not fitting.** RWARE D2: same-team EMA ≤ 0.28 and cross-team ≥ 0.98 over 25 offline
+   checkpoints (E74), same-team 0.07–0.25 and cross-team 0.99–1.00 in the running day_base run (E91): every
+   τ in roughly (0.28, 0.98) gives the same decisions there. τ was fixed before these runs and is not tuned per
+   environment; Overcooked failures are addressed in the probe representation (v2/v3), not by moving τ.
+
+5. **What no τ can fix: one-sided discrimination.** If only one of the two predictors separates the teams (the
+   other answers "paid" to every probe because it never experienced the other team's events), the pooled
+   distance is n_i / (n_i + 2 n_j) for n_i probes from the "blind" agent and n_j from the discriminating one —
+   exactly 1/3 for balanced probes, and smaller when the blind agent contributes fewer probes. Overcooked v3
+   policy replay showed this (E92: cross-team 0.30). Taking the maximum of D over the two probe owners
+   (E_i and E_j separately; 1 in this case, 0 for teammates) would remove it — a candidate in the spirit of
+   `action_max`, not implemented.
+
+Recommended reporting: state (1)–(3), show a τ sweep of the identification metrics recomputed from logged EMAs
+(counterfactual decisions on the same trajectory; learning curves would need new runs), and mention τ = 1/3 as
+the worst-case-optimal alternative. A label-free data-driven variant (compare D_ij with each agent's own
+split-half self-distance) is a possible extension, not implemented.
+
 ## 6. Rollout-start snapshot (D103)
 
 Because pairs are compared on rollout contacts, each agent's **sendable** state is frozen when a rollout

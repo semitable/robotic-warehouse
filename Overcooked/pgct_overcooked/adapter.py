@@ -36,7 +36,7 @@ HELD_INDEX = {None: 0, "onion": 1, "tomato": 2, "dish": 3, "soup_onion": 4, "sou
 AGENT_CHANNELS = slice(CH["agent"], CH["agent_held_soup_mixed"] + 1)
 
 
-PROBE_FRAMES = ("absolute", "facing")
+PROBE_FRAMES = ("absolute", "facing", "facing_cross")
 
 
 @dataclass
@@ -47,7 +47,9 @@ class AdapterConfig:
     # Public probe frame. "absolute" (v1, default): north-up egocentric crop. "facing" (v2, D133/D134): the
     # crop, heading channels and move actions of a transition are expressed relative to the agent's heading
     # before the step, so the same event at mirror-placed stations (e.g. west vs east serving window) is
-    # encoded alike. Only the gate's public view changes; actor/critic observations are identical.
+    # encoded alike. "facing_cross" (v3, D135): the facing frame restricted to the agent's own cell and its
+    # four neighbours (front, left, right, back), dropping the four diagonal cells. Only the gate's public view
+    # changes; actor/critic observations are identical.
     probe_frame: str = "absolute"
 
     def __post_init__(self):
@@ -124,6 +126,37 @@ class FacingProbeProjection(KitchenProbeProjection):
         return self._rotate(vb, heading), relative_action(action, heading), self._rotate(va, heading)
 
 
+CROSS_CELLS = ((0, 1), (1, 0), (1, 1), (1, 2), (2, 1))  # front, left, self, right, back in the facing frame
+
+
+class CrossProbeProjection(FacingProbeProjection):
+    """v3 public view: the v2 facing frame restricted to the agent's cell and its four neighbours.
+
+    The four diagonal cells are dropped. At mirror-placed stations (west vs east serving window) the diagonal
+    cells hold different fixtures (dish dispenser vs counter) even after rotation; the interaction target is
+    always the front cell, so the cross keeps everything that decides an Overcooked reward.
+    """
+
+    def __init__(self, obs_radius, probe_radius):
+        if probe_radius != 1:
+            raise ValueError("probe_frame 'facing_cross' needs probe_radius 1")
+        super().__init__(obs_radius, probe_radius)
+        self.view_size = EGO_SIZE + N_CHANNELS * len(CROSS_CELLS)
+
+    def _cross(self, view):
+        view = np.asarray(view)
+        grid = view[EGO_SIZE:].reshape(N_CHANNELS, 3, 3)
+        cells = np.stack([grid[:, r, c] for r, c in CROSS_CELLS], axis=1)
+        return np.concatenate([view[:EGO_SIZE], cells.reshape(-1)]).astype(np.uint8)
+
+    def public_view(self, observation):
+        return self._cross(super().public_view(observation))
+
+    def public_transition(self, before, action, after):
+        vb, action, va = super().public_transition(before, action, after)
+        return self._cross(vb), action, self._cross(va)
+
+
 class KitchenAdapter:
     """pgct_core.interfaces.EnvAdapter for the multi-team kitchen."""
 
@@ -134,7 +167,8 @@ class KitchenAdapter:
         self.n_agents = self.env.n_agents
         self.n_actions = N_ACTIONS
         self.obs_dim = obs_size(self.config.obs_radius)
-        projection = FacingProbeProjection if self.config.probe_frame == "facing" else KitchenProbeProjection
+        projection = {"absolute": KitchenProbeProjection, "facing": FacingProbeProjection,
+                      "facing_cross": CrossProbeProjection}[self.config.probe_frame]
         self.projection = projection(self.config.obs_radius, self.config.probe_radius)
 
     def describe(self):

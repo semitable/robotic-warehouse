@@ -17,6 +17,19 @@
 - Overcooked는 실행 배선 검증만 끝났다. E86의 실제 설정 51,200-step sanity에서 배달·gate 사건이 0이라 PGCT=IPPO였고 학습 가능성은 아직 확인되지 않았다. 로컬 JSON 로그만 있으며 W&B 연동은 없다. 본 실험 전에 0.5–1M pilot과 reward-event/maturity 확인이 필요하다.
 
 
+## 최신 확인 — 2026-11-06 KST, Claude Code (T228, Overcooked v3 검증·문제 분석·τ 근거)
+
+- **v2 pilot 완료**: PGCT-D2 0.5M 승인 0(같은 팀 .58). oracle job 실행 중.
+- **v3(D135)**: 방향 기준 십자형 probe. 반대 창구 배달이 같은 입력이 되고 스크립트 시험 같은 팀 .001–.004. 정책 재생에서는 같은 팀 쌍이 비교되지 않았고, 수프 종류를 못 배운 예측기 때문에 다른 팀 쌍이 붙었다(1–3 .30, 이론값 1/3). 실제 학습 궤적에서 확인하려면 `pgct_id_only` v3 0.5M이 필요하다(사용자 실행).
+- **τ = 0.5(D136)**: 범위의 중간이 아니라 이상값 0·1의 중간이며 응답 비율 1/3 기준, 오차 ε < 1/4에서 보장(최적은 1/3). 한쪽만 구분하는 경우는 τ로 못 막는다. probe 주인별 최대 거리가 후보다(미구현).
+- 변경은 아직 커밋하지 않았다.
+
+## 최신 확인 — 2026-11-06 KST, Claude Code (T227, RWARE day_base·Overcooked 분석)
+
+- **RWARE day_base(E91)**: 진행 중(IPPO 1.26M, PGCT-D2 1.17M / 2M, 약 27 step/s, 남은 시간 약 8시간). PGCT-D2 식별은 오승인 0, 같은 팀 승인 8/12(agent 1 미성숙), 같은 팀 거리 .07 대 다른 팀 1.0. IPPO는 평가 배송 0에 머물고, PGCT-D2는 0.77M부터 배송이 회복돼 학습 배송 약 2.5/에피소드. 배송은 agent 0·5만 한다. 잘못된 반납이 늘어 확인이 필요하다. seed 1뿐이라 원인 귀속은 아직 못 한다.
+- **Overcooked(E91)**: v1 2M은 11-05 21:08 중단(0.51–0.53M). v2 pilot PGCT-D2는 0.497M에서 승인 0, 같은 팀 거리 .58(v1 .92)로 임계 .5를 못 넘었다. 처리량 36 step/s(CPU 클럭 저하 추정). oracle job 대기 중.
+- **다음 후보(결정 대기)**: Overcooked probe를 회전 후 십자형(앞·좌·우·뒤·자기 칸)으로 줄여 창구 대각선 차이를 없애는 v3. gate만 바뀐다.
+
 ## 최신 확인 — 2026-11-05 KST, Claude Code (T225, Overcooked probe v2 준비)
 
 - **구현(D134)**: Overcooked 공개 probe를 이동 전 바라보는 방향 기준으로 표현하는 v2(`configs/main_4p2t_probe_v2.json`). 관측·보상·PPO·gate 값·Max-GAE 불변, IPPO는 v1과 비트 동일. 공유 코어에는 선택적 `public_transition` hook만 추가했고 RWARE 지문 18/18 동일.

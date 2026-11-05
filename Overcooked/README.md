@@ -113,10 +113,18 @@ python -m pgct_overcooked.train --config secondary_2p1t.json --methods ippo all 
 powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v2.json -Name oc_pilot_500k_probe_v2 -Methods pgct_d2,oracle -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 2"
 ```
 
-Offline check of a finished job's policies under both probe frames (no training):
+Probe v3 (`configs/main_4p2t_probe_v3.json`, heading frame restricted to the agent's cell and four neighbours;
+D135). A gate-only identification check that reproduces the IPPO trajectory exactly (deterministic CPU run) and
+logs what the v3 gate decides along it:
 
 ```powershell
-python -m pgct_overcooked.offline_gate_check --job Overcooked\runs\oc_pilot_500k\ippo_s1 --updates 40
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v3.json -Name oc_id_500k_probe_v3 -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
+```
+
+Offline check of a finished job's policies under all probe frames (no training; checkpoints replayed in order):
+
+```powershell
+python -m pgct_overcooked.offline_gate_check --job Overcooked\runs\oc_pilot_500k\ippo_s1 --schedule checkpoint_00250.pt:20 final.pt:20
 ```
 
 ## Results

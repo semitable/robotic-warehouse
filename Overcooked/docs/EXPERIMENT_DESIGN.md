@@ -93,6 +93,16 @@ gate's public view changes; observations, rewards, PPO, gate values and Max-GAE 
 - replay of the 500k pilot policies with identical experience for both frames: see E90 in `EXPERIMENTS.md`.
 The cook who never serves still abstains in v2: identification needs each agent's own reward events.
 
+v2 in training (`oc_pilot_500k_probe_v2`, seed 1, 0.5M): same-team EMA 0.92 → 0.58, cross-team 0.82 / 1.00,
+still no approval (τ = 0.5), so PGCT-D2 again equalled IPPO.
+
+**Probe v3 (D135, `configs/main_4p2t_probe_v3.json`, `probe_frame = "facing_cross"`).** The v2 frame restricted to
+the agent's cell and its four neighbours; the four diagonal cells (where the west and east windows differ: dish
+dispenser vs counter) are dropped. Serving at either window becomes the same input
+(`docs/img/probe_views_v1_v2_v3.png`, made by `docs/make_probe_view_figure.py`). Everything that decides an
+Overcooked reward is in the front cell and the agent's own held item. Scripted opposite-window teammates:
+same-team EMA 0.001 / 0.004, cross-team 0.96–0.97 (v2: 0.32 / 0.27). Policy-replay results: E92.
+
 Critic compatibility: all critic inputs live in one space with identical semantics, so a donor critic
 `V_j` can be run on the receiver's history. `V_j` estimates returns under **j's** reward function; for a true
 teammate this is the same function (the case Max-GAE is meant for), for a wrongly approved agent it is not,

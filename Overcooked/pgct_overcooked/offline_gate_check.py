@@ -1,11 +1,14 @@
 """Offline gate check: replay a trained job's policies and feed the SAME experience to fresh gates that differ
-only in the public probe frame (absolute v1 vs facing v2). No training, nothing written to the job folder.
+only in the public probe frame (absolute v1, facing v2, facing_cross v3). No training, nothing written.
 
-  python -m pgct_overcooked.offline_gate_check --job Overcooked/runs/oc_pilot_500k/ippo_s1 --updates 40
+  python -m pgct_overcooked.offline_gate_check --job Overcooked/runs/oc_pilot_500k/ippo_s1 \
+         --schedule checkpoint_00250.pt:20 final.pt:20 --frames absolute facing facing_cross
 
-Policies act stochastically (as in training), with a fixed torch seed so both frames see identical trajectories.
-The gate uses the job's own gate configuration (contact_snapshot forced as in training). Labels are used only
-for the printed identification summary.
+--schedule replays several checkpoints in order (e.g. a mid-training policy that still explores, then the
+final one), so the predictors see experience closer to what they see during training than with the final
+policy alone. Policies act stochastically with a fixed torch seed, so every frame sees identical trajectories.
+The gate uses the job's own configuration (contact_snapshot forced as in training). Labels are used only for
+the printed identification summary.
 """
 from __future__ import annotations
 
@@ -20,76 +23,96 @@ import torch
 from . import REPO_ROOT  # noqa: F401
 from .experiment import build
 from pgct_core.metrics import identification_summary
-from pgct_core.reward_gate import RewardGateConfig, RewardProbeGate
+from pgct_core.reward_gate import RewardProbeGate
 from pgct_core.trainer import load_agents
 
 
-def replay(job, frame, updates, seed, checkpoint):
+def parse_schedule(items):
+    schedule = []
+    for item in items:
+        name, _, count = item.rpartition(":")
+        if not name or not count.isdigit() or int(count) < 1:
+            raise ValueError(f"schedule entries look like checkpoint.pt:UPDATES, got {item!r}")
+        schedule.append((name, int(count)))
+    return schedule
+
+
+def replay(job, frame, schedule, seed):
     config = json.loads((job / "config.json").read_text(encoding="utf-8"))
     experiment = json.loads(json.dumps(config["experiment"]))
     experiment["adapter"]["probe_frame"] = frame
     make_adapter, trainer_cfg, ppo_cfg, gate_cfg, *_ = build(experiment, "pgct_d2", experiment["trainer"]["seed"])
     gate_cfg = replace(gate_cfg, contact_snapshot=True)
     adapter = make_adapter()
-    agents, _ = load_agents(job / checkpoint, adapter.obs_dim, adapter.n_actions, ppo_cfg)
     gate = RewardProbeGate(adapter.n_agents, gate_cfg, adapter.projection)
     n, hidden = adapter.n_agents, ppo_cfg.recurrent_hidden_dim
-    records, deliveries = [], np.zeros(n)
+    records, deliveries, update = [], {"own": np.zeros(n), "other": np.zeros(n)}, 0
     with torch.random.fork_rng(devices=[]):
         torch.manual_seed(seed)
         obs = np.asarray(adapter.reset(seed=seed), dtype=np.float32)
-        ah, ch = torch.zeros((n, hidden)), torch.zeros((n, hidden))
-        for update in range(1, updates + 1):
-            gate.snapshot()
-            gate.active = True
-            contact = np.zeros((n, n), dtype=bool)
-            for _ in range(ppo_cfg.rollout_steps):
-                obs_t = torch.as_tensor(obs)
-                actions = []
-                with torch.no_grad():
-                    for i, net in enumerate(agents):
-                        a, _, _, ah_i, ch_i = net.act(obs_t[i], ah[i], ch[i])
-                        actions.append(int(a.item()))
-                        ah[i], ch[i] = ah_i.squeeze(0), ch_i.squeeze(0)
-                after, rewards, terminated, truncated, info = adapter.step(np.asarray(actions))
-                after = np.asarray(after, dtype=np.float32)
-                gate.observe(list(obs), np.asarray(actions), list(after), rewards)
-                contact |= adapter.contact_matrix()
-                deliveries += info["events"]["deliveries_own"]
-                if terminated or truncated:
-                    after = np.asarray(adapter.reset(), dtype=np.float32)
-                    ah.zero_(), ch.zero_()
-                obs = after
-            gate.active = False
-            gate(update, contact, active=True)
-            records.append(dict(env_steps=update * ppo_cfg.rollout_steps, approved=gate.approved(),
-                                pairs=gate.last_log.get("ac_pairs", [])))
+        for checkpoint, updates in schedule:
+            agents, _ = load_agents(job / checkpoint, adapter.obs_dim, adapter.n_actions, ppo_cfg)
+            ah, ch = torch.zeros((n, hidden)), torch.zeros((n, hidden))
+            for _ in range(updates):
+                update += 1
+                gate.snapshot()
+                gate.active = True
+                contact = np.zeros((n, n), dtype=bool)
+                for _ in range(ppo_cfg.rollout_steps):
+                    obs_t = torch.as_tensor(obs)
+                    actions = []
+                    with torch.no_grad():
+                        for i, net in enumerate(agents):
+                            a, _, _, ah_i, ch_i = net.act(obs_t[i], ah[i], ch[i])
+                            actions.append(int(a.item()))
+                            ah[i], ch[i] = ah_i.squeeze(0), ch_i.squeeze(0)
+                    after, rewards, terminated, truncated, info = adapter.step(np.asarray(actions))
+                    after = np.asarray(after, dtype=np.float32)
+                    gate.observe(list(obs), np.asarray(actions), list(after), rewards)
+                    contact |= adapter.contact_matrix()
+                    deliveries["own"] += info["events"]["deliveries_own"]
+                    deliveries["other"] += info["events"]["deliveries_other"]
+                    if terminated or truncated:
+                        after = np.asarray(adapter.reset(), dtype=np.float32)
+                        ah.zero_(), ch.zero_()
+                    obs = after
+                gate.active = False
+                gate(update, contact, active=True)
+                records.append(dict(env_steps=update * ppo_cfg.rollout_steps, approved=gate.approved(),
+                                    pairs=gate.last_log.get("ac_pairs", [])))
     return gate, adapter.oracle_team_ids(), records, deliveries
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--job", type=Path, required=True)
-    parser.add_argument("--checkpoint", default="final.pt")
-    parser.add_argument("--updates", type=int, default=40)
+    parser.add_argument("--schedule", nargs="+", default=["final.pt:40"], help="checkpoint:updates, in order")
     parser.add_argument("--seed", type=int, default=12345)
-    parser.add_argument("--frames", nargs="+", default=["absolute", "facing"])
+    parser.add_argument("--frames", nargs="+", default=["absolute", "facing", "facing_cross"])
+    parser.add_argument("--out", type=Path, help="optional JSON file for the results (never inside the job folder)")
     args = parser.parse_args(argv)
     torch.set_num_threads(1)
+    schedule = parse_schedule(args.schedule)
     out = {}
     for frame in args.frames:
-        gate, teams, records, deliveries = replay(args.job, frame, args.updates, args.seed, args.checkpoint)
+        gate, teams, records, deliveries = replay(args.job, frame, schedule, args.seed)
         ema = gate.ema + gate.ema.T
+        iu = np.triu_indices(len(teams), 1)
         summary = identification_summary(records, teams)
-        out[frame] = dict(teams=teams.tolist(), own_deliveries=deliveries.tolist(),
+        out[frame] = dict(schedule=args.schedule, teams=teams.tolist(), own_deliveries=deliveries["own"].tolist(),
+                          other_deliveries=deliveries["other"].tolist(),
                           events_seen=[p.events_seen for p in gate.predictors], mature=gate.maturity().tolist(),
-                          rounds=gate.rounds[np.triu_indices(len(teams), 1)].tolist(),
-                          ema_upper=np.round(ema[np.triu_indices(len(teams), 1)], 3).tolist(),
-                          approved=gate.approved().astype(int).tolist(), final=summary["final"],
-                          distance_same=summary["distance_same_mean"], distance_cross=summary["distance_cross_mean"],
+                          pairs=[f"{i}-{j}" for i, j in zip(*iu)], rounds=gate.rounds[iu].tolist(),
+                          ema=np.round(ema[iu], 3).tolist(), approved=gate.approved().astype(int).tolist(),
+                          final=summary["final"], distance_same=summary["distance_same_mean"],
+                          distance_cross=summary["distance_cross_mean"],
                           first_correct=summary["first_correct_approval_step"],
                           first_wrong=summary["first_wrong_approval_step"])
         print(f"== {frame}: " + json.dumps(out[frame]), flush=True)
+    if args.out is not None:
+        if args.job.resolve() in args.out.resolve().parents:
+            raise SystemExit("--out must not point inside the job folder")
+        args.out.write_text(json.dumps(out, indent=2), encoding="utf-8")
     return out
 
 
