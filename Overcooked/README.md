@@ -103,6 +103,22 @@ python -m pgct_overcooked.train --config main_4p2t.json --methods ippo pgct_d2 -
 python -m pgct_overcooked.train --config secondary_2p1t.json --methods ippo all pgct_d2 --seeds 1 --name oc_2p
 ```
 
+## Probe v2 (facing frame)
+
+`configs/main_4p2t_probe_v2.json` changes only the gate's public probe view (heading-relative; D134,
+`docs/EXPERIMENT_DESIGN.md`). IPPO/Oracle/All are bit-identical to the v1 config, so the existing
+`oc_pilot_500k/ippo_s1` serves as the IPPO reference for the same seed. Planned pilot:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v2.json -Name oc_pilot_500k_probe_v2 -Methods pgct_d2,oracle -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 2"
+```
+
+Offline check of a finished job's policies under both probe frames (no training):
+
+```powershell
+python -m pgct_overcooked.offline_gate_check --job Overcooked\runs\oc_pilot_500k\ippo_s1 --updates 40
+```
+
 ## Results
 
 ```powershell

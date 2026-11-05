@@ -103,7 +103,8 @@ otherwise valid long training run.
    Observations are each agent's local view; all agents' critic inputs must share one space (Max-GAE runs a
    donor critic on the receiver's inputs). `info` must not carry team labels; `info["events"]` may carry
    per-agent counters (logged as `episode_<key>_per_agent`, `eval_<key>_total`).
-2. **Projection** implementing `ProbeProjection`: `view_size`, `n_actions`, `view_dtype`,
+2. **Projection** implementing `ProbeProjection`: `view_size`, `n_actions`, `view_dtype`, optionally
+   `public_transition(before, action, after)` when both views and the action must share one frame (Overcooked v2),
    `public_view(observation)`. Include only what any nearby agent could see; exclude team identity,
    coordinates and private task information; make the semantics identical for every agent (egocentric views
    are fine). Leave `mirror` unimplemented (`NoMirror`) unless a symmetry augmentation is justified.

@@ -79,8 +79,19 @@ the crop) and at the east window (facing east, window on the right) are differen
 (seed 1) the two tomato teammates served at opposite windows; each predictor answered its teammate's
 deliveries with 0.04 (own: 1.0), so the same-team distance stayed ≈ 0.92 and no pair was ever approved. The
 onion team's cook made only 2 deliveries and never matured (abstention by design). PGCT-D2 therefore stayed
-bit-identical to IPPO. A projection that normalises orientation (or another justified change) is an open
-decision; nothing was changed in the running experiments.
+bit-identical to IPPO. Nothing was changed in the running experiments.
+
+**Probe v2 (D134, `configs/main_4p2t_probe_v2.json`, `adapter.probe_frame = "facing"`).** Each probe
+transition is expressed in the agent's heading frame before the step: the 3×3 crop is rotated so the heading
+points up, other agents' heading channels and the agent's own heading bits become relative, and move actions
+become forward/right/back/left. A rotation, not a mirror: the two cells beside a station keep their side, so
+west and east window deliveries still differ in the two front corners (dish dispenser vs counter). Only the
+gate's public view changes; observations, rewards, PPO, gate values and Max-GAE are as in v1, so `ippo`,
+`oracle` and `all` give bit-identical runs under both configs (tested). Checks before training:
+- scripted opposite-window teammates (`tests/test_probe_v2.py`): v1 same-team EMA .53/.54 (not approved), v2
+  .32/.27 (approved exactly the teammates), cross-team ≥ .92 in both;
+- replay of the 500k pilot policies with identical experience for both frames: see E90 in `EXPERIMENTS.md`.
+The cook who never serves still abstains in v2: identification needs each agent's own reward events.
 
 Critic compatibility: all critic inputs live in one space with identical semantics, so a donor critic
 `V_j` can be run on the receiver's history. `V_j` estimates returns under **j's** reward function; for a true

@@ -232,8 +232,14 @@ class RewardProbeGate:
         n = len(self.predictors)
         if np.asarray(rewards).shape != (n,) or np.asarray(actions).shape != (n,):
             raise ValueError("A+C v2 consumes one separate scalar reward/action per agent")
-        view = self.projection.public_view
-        self.observe_views([view(o) for o in before], actions, [view(o) for o in after], rewards)
+        transition = getattr(self.projection, "public_transition", None)
+        if transition is None:  # per-observation projection (RWARE, Overcooked v1)
+            view = self.projection.public_view
+            self.observe_views([view(o) for o in before], actions, [view(o) for o in after], rewards)
+            return
+        # Transition-level projection: both views and the action expressed in one frame (Overcooked v2).
+        rows = [transition(b, int(a), f) for b, a, f in zip(before, actions, after)]
+        self.observe_views([r[0] for r in rows], np.asarray([r[1] for r in rows]), [r[2] for r in rows], rewards)
 
     def observe_views(self, before, actions, after, rewards):
         for i, predictor in enumerate(self.predictors):

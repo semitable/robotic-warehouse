@@ -17,6 +17,13 @@
 - Overcooked는 실행 배선 검증만 끝났다. E86의 실제 설정 51,200-step sanity에서 배달·gate 사건이 0이라 PGCT=IPPO였고 학습 가능성은 아직 확인되지 않았다. 로컬 JSON 로그만 있으며 W&B 연동은 없다. 본 실험 전에 0.5–1M pilot과 reward-event/maturity 확인이 필요하다.
 
 
+## 최신 확인 — 2026-11-05 KST, Claude Code (T225, Overcooked probe v2 준비)
+
+- **구현(D134)**: Overcooked 공개 probe를 이동 전 바라보는 방향 기준으로 표현하는 v2(`configs/main_4p2t_probe_v2.json`). 관측·보상·PPO·gate 값·Max-GAE 불변, IPPO는 v1과 비트 동일. 공유 코어에는 선택적 `public_transition` hook만 추가했고 RWARE 지문 18/18 동일.
+- **사전 검증(E90)**: 반대 창구 팀원은 v2에서 승인된다(스크립트 .27–.32, 정책 재생 .36). 하지만 학습된 정책 경험만으로는 같은 창구의 다른 팀이 v1·v2 모두 오승인된다(.05–.07). 요리 담당은 계속 미성숙.
+- **다음(사용자 실행)**: `oc_pilot_500k_probe_v2`(pgct_d2·oracle, seed 1, 0.5M, 계획만 생성). IPPO 기준은 기존 `oc_pilot_500k/ippo_s1`.
+- **실행 중**: `oc_2m_pair_v1`(v1) — 건드리지 않음. v2 변경은 아직 커밋하지 않았다.
+
 ## 최신 확인 — 2026-11-05 KST, Claude Code (T224, RWARE 재현성·Overcooked 학습/gate 진단·영상)
 
 - **RWARE(E89)**: 다른 PC에서 실행 중인 day_base 2 run의 W&B 설정과 현 저장소 계획이 127개 항목 모두 같다. 이 PC GPU로 3 update 재실행하면 첫 update 롤아웃 결과가 같고 이후는 GPU 부동소수점 차이로 갈라진다. 분리 전후 지문 18/18 동일.

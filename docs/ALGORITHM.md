@@ -50,6 +50,7 @@ What counts as a public view is environment specific (`ProbeProjection.public_vi
 | view | own loaded/direction/highway bits + 11 public physical channels within radius 2 | own facing + held item + all 32 physical channels within radius 1 |
 | excluded | absolute coordinates, own-team request channel, goal/return ego info | nothing to exclude: observations hold no team or recipe information |
 | actions | 5 | 6 |
+| frame | north-up crop | v1: north-up crop; v2 (`probe_frame: facing`, D134): crop, heading channels and move actions relative to the pre-step heading (projection method `public_transition`) |
 
 ## 3. Maturity (abstention)
 

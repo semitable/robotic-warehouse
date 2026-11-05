@@ -20911,3 +20911,92 @@ python -m pgct_overcooked.video --job Overcooked\runs\oc_2m_pair_v1\pgct_d2_s1 -
 ```
 
 테스트는 Overcooked 19개, 공유 코어 12개 모두 통과했습니다. 기록은 `EXPERIMENTS.md` E89, `DECISIONS.md` D133, `RESEARCH_STATE.md`, `CONVERSATION_LOG.md` T224에 남겼습니다.
+
+## 원문 기록 T225 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+v2 준비해 줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- 공유 코어에 선택적 public_transition hook, Overcooked 어댑터에 probe_frame(facing) v2, 설정 main_4p2t_probe_v2.json, 오프라인 재생 도구 offline_gate_check.py, 테스트 test_probe_v2.py(9개)를 추가했다(D134).
+- 검증: Overcooked 28 통과, RWARE gate 관련 60 통과·7 건너뜀, trainer 지문 18/18 동일, 스크립트 반대 창구 시험과 500k 정책 재생 비교(E90), v2 smoke, pilot 계획 생성. 학습·커밋 없음.
+
+### Assistant — 진행 안내 (요지)
+
+- v2 계획 설명(어댑터 옵션, 코어 hook, 학습 전 두 가지 확인, 긴 학습은 명령만 준비).
+- 스크립트 시험: v1 미승인, v2 정확히 팀원만 승인. 거리 기준 0.2는 실제 0.32라 테스트 기준을 정직하게 조정.
+- 오프라인 재생 v1 결과: 같은 서쪽 창구의 다른 팀 1–2가 0.054로 오승인(상대 수프 경험 부족 가설).
+- RWARE 재검증 60 통과, 지문 18/18. v2 smoke와 pilot 계획 완료.
+- 오프라인 결과 표(2–3 v1 .76 → v2 .36 승인, 1–2 오승인 유지, 1–3 .92 → .55).
+
+### Assistant — 최종 답변
+
+v2를 준비했습니다. 학습 전 검증에서 v2는 반대 창구를 쓰는 팀원을 찾아냈습니다. 다만 같은 창구를 쓰는 다른 팀을 잘못 승인하는 문제는 v1과 마찬가지로 남아 있어서, 실제 효과는 0.5M pilot으로 확인해야 합니다. 학습은 시작하지 않았고, 커밋도 아직 하지 않았습니다.
+
+## 바꾼 것
+
+- **v2 probe**(`Overcooked/configs/main_4p2t_probe_v2.json`): gate가 보는 공개 전이를 agent가 이동 전에 바라보던 방향 기준으로 바꿉니다.
+  - 3×3 주변 칸을 바라보는 방향이 위로 오도록 회전합니다.
+  - 다른 agent의 방향과 이동 행동(북·동·남·서)을 앞·오른쪽·뒤·왼쪽으로 바꿉니다.
+  - 회전이지 좌우 반전(mirror)이 아니고, mirror 증강도 다시 켜지 않았습니다.
+- **그대로인 것**: 관측, 보상, PPO, gate 값, Max-GAE는 v1과 같습니다. 그래서 IPPO·Oracle·All은 v1 설정과 비트 단위로 같고(테스트로 확인), 기존 `oc_pilot_500k/ippo_s1`을 IPPO 기준으로 그대로 쓸 수 있습니다.
+- **공유 코어**: projection이 전이 단위 변환을 정의하면 gate가 그것을 쓰는 선택적 hook만 추가했습니다. RWARE는 이 hook을 쓰지 않으며, gate 관련 테스트 60개 통과, trainer 지문 18/18이 분리 전과 같습니다.
+
+## 학습 전 검증
+
+**스크립트 시험**: 각 팀에서 한 명은 서쪽 창구, 다른 한 명은 동쪽 창구에서만 배달하게 했습니다.
+- v1: 같은 팀 거리 0.53·0.54로 승인 임계(0.5)를 넘어 팀원을 못 찾았습니다.
+- v2: 같은 팀 거리 0.32·0.27로 정확히 팀원 두 쌍만 승인했습니다.
+- 다른 팀 거리는 둘 다 0.92 이상입니다.
+
+**500k pilot 정책 재생**: pilot의 학습된 정책으로 40,960 step 경험을 만들고, 같은 경험을 v1·v2 gate에 각각 넣었습니다.
+
+| 쌍 | 관계 | v1 | v2 |
+|---|---|---|---|
+| 2–3 (토마토, 서쪽·동쪽 창구) | 같은 팀 | 0.76 미승인 | **0.36 승인** |
+| 1–2 (양파·토마토, 둘 다 서쪽 창구) | 다른 팀 | 0.054 오승인 | 0.067 오승인 |
+| 1–3 (양파 서쪽·토마토 동쪽) | 다른 팀 | 0.92 | 0.55 |
+
+**해석**
+- v2는 목표했던 반대 창구 팀원 문제를 해결합니다.
+- 반면 학습이 끝난 정책은 상대 팀 수프를 거의 배달하지 않습니다. 그래서 그 경험만으로 새로 학습한 예측기는 수프 종류를 구분하지 못하고, 같은 창구를 쓰는 다른 팀을 승인합니다(v1·v2 공통).
+- 실제 학습에서는 초반 탐색 중 상대 수프 배달이 섞여서, pilot gate의 1–2 거리가 0.82였습니다. 이 재생은 다른 팀 분리에 불리한 조건이라, 실제 결과는 학습으로 봐야 합니다.
+- 주의할 점도 있습니다. v2는 1–3 거리도 0.92에서 0.55로 낮춰 다른 팀과의 여유가 줄었습니다. 그리고 배달하지 않는 요리 담당은 v2에서도 성숙하지 못합니다.
+
+## 실행 준비
+
+- v2 smoke(pgct_d2·pgct_id_only·random_gate, 영상 포함)가 정상 동작했습니다. Overcooked 테스트는 28개 모두 통과했습니다(v2 관련 9개 추가).
+- pilot 계획 `Overcooked\runs\oc_pilot_500k_probe_v2`(pgct_d2·oracle, seed 1, 0.5M)를 만들어 두었습니다. 두 job을 동시에 돌리면 1시간 남짓 걸립니다.
+- 소음이 신경 쓰이면 `-MaxConcurrent 1`로 하나씩 돌리세요(약 2시간). 지금 도는 2M은 0.51M 지점이고 3시간쯤 남았으니, 끝난 뒤에 시작하는 편이 조용합니다.
+
+```powershell
+Set-Location C:\PGCT_Overcooked\PGCT
+```
+
+```powershell
+$env:PGCT_PYTHON = "C:\Users\95101\anaconda3\envs\marl-policy-sharing\python.exe"
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v2.json -Name oc_pilot_500k_probe_v2 -Methods pgct_d2,oracle -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 2"
+```
+
+판정 기준은 네 가지입니다: 성숙 agent 수, 같은 팀 2–3의 승인 여부와 시점, 다른 팀 오승인, PGCT-D2와 IPPO 학습 곡선의 차이. W&B `pgct-overcooked` 프로젝트에서 지표와 평가 영상을 볼 수 있습니다.
+
+기록은 `EXPERIMENTS.md` E90, `DECISIONS.md` D134, `RESEARCH_STATE.md`, `CONVERSATION_LOG.md` T225에 남겼습니다.
+
+## 원문 기록 T226 — 2026-11-05 KST, Claude Code
+
+### 사용자 — 원문
+
+커밋·push해 줘
+
+### 수행 기록 — 원문 대화와 별도
+
+- T225의 Overcooked probe v2 변경(D134, E90)과 기록을 `feature/overcooked`에 한 커밋으로 올렸다. master 반영 없음. 커밋 해시는 `git log`로 확인한다.
+
+### Assistant — 최종 답변
+
+`feature/overcooked`에 v2 변경을 커밋해 push했습니다. 실행 결과물·영상·checkpoint는 포함되지 않았습니다. master에는 아직 반영하지 않았으니, 필요하시면 PR을 만들어 드리겠습니다.

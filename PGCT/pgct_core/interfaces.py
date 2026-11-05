@@ -38,6 +38,11 @@ class ProbeProjection(Protocol):
                after: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Optional symmetry augmentation of probe events (only used when the gate config enables it)."""
 
+    # Optional (not part of the runtime check): ``public_transition(before_obs, action, after_obs)
+    # -> (view_before, action, view_after)``. When a projection defines it, the gate uses it instead of two
+    # independent ``public_view`` calls, so both views and the action can be expressed in one frame
+    # (e.g. relative to the agent's heading before the step). Projections without it behave as before.
+
 
 class NoMirror:
     """Mixin for projections without a symmetry augmentation."""

@@ -1624,3 +1624,14 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - 재생 영상: `Overcooked/runs/oc_pilot_500k/ippo_s1/videos/final_seed5000001_det.mp4`(400 step, 수익 8.475로 평가와 일치), W&B run `el1xz1u1`(project `pgct-overcooked`, group `oc_pilot_500k`). 학습 중 영상 기록 옵션 추가(테스트로 학습 가중치 불변 확인).
 - 테스트: Overcooked 19 통과(영상 3개 추가), 공유 코어 12 통과.
 - 한계: Overcooked는 seed 1 하나, 0.5M까지만 관찰. 방향 정규화 가설은 아직 검증하지 않았다.
+
+## E90. Overcooked probe v2 사전 검증: 스크립트 반대 창구 시험과 500k 정책 재생 오프라인 비교 — 2026-11-05 Claude Code (T225)
+
+- 실행 여부: 실제 실행. 학습 없음(테스트, 오프라인 재생, 256 step smoke). 실행 중인 `oc_2m_pair_v1`은 건드리지 않았다.
+- 스크립트 시험(`Overcooked/tests/test_probe_v2.py`, 팀 고정 [0,0,1,1], 각 팀 한 명은 서쪽·한 명은 동쪽 창구에서만 배달, 수프 종류 무작위, D2 gate 값, 8 update): 같은 팀 EMA v1 .528/.537(미승인) → v2 .317/.265(정확히 팀원 2쌍 승인). 다른 팀은 v1 .92–1.0, v2 .92–.99.
+- 오프라인 재생(`python -m pgct_overcooked.offline_gate_check --job Overcooked/runs/oc_pilot_500k/ippo_s1 --updates 40`): 500k pilot 최종 정책(행동 샘플링, torch seed 12345)으로 40 update(40,960 step) 경험을 만들어, 같은 경험을 새 gate에 v1·v2로 각각 넣었다. 팀 [0,0,1,1], 자기 배달 [0, 999, 962, 665], agent 0(요리 담당)은 미성숙.
+  - v1: 2–3(같은 팀, 반대 창구) .76 미승인, 1–2(다른 팀, 같은 서쪽 창구) .054 오승인(20,480 step), 1–3 .924. F1 0.
+  - v2: 2–3 .358 승인(35,840 step), 1–2 .067 오승인, 1–3 .547. precision .5, recall .5, F1 .5.
+- 해석: v2는 반대 창구 팀원 문제를 해결한다. 그러나 학습된 정책은 상대 수프를 거의 배달하지 않아, 그 경험만으로 새로 학습한 예측기는 수프 종류를 구분하지 못하고 같은 창구의 다른 팀을 승인한다(v1·v2 공통). 실제 학습에서는 초반 탐색의 상대 수프 배달이 섞여 pilot gate의 1–2 거리가 .82였으므로, 이 재생은 다른 팀 분리에 비관적인 조건이다. v2는 1–3 거리도 .92→.55로 낮춰 다른 팀 여유가 줄었다.
+- 기타 검증: Overcooked 테스트 28 통과(v2 9개 추가, v1·v2 설정에서 IPPO 비트 동일), RWARE gate 관련 60 통과·7 건너뜀, trainer 지문 18/18 분리 전과 동일, v2 smoke(pgct_d2·pgct_id_only·random_gate, 256 step, 영상 포함) 정상, `Overcooked/runs/oc_pilot_500k_probe_v2` 계획 생성(pgct_d2·oracle, 학습 안 함).
+- 한계: seed 1, 고정된 최종 정책 재생이라 학습 중 경험 분포와 다르다. 실제 판정은 0.5M 학습 pilot에서 한다.

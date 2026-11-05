@@ -1725,3 +1725,10 @@
 - 판단: 학습 자체는 0.5M에 이미 잘 된다(E89). 문제는 식별이다. 승인 0의 원인(좌우 창구 방향 차이로 같은 사건이 다른 공개 view, 요리 담당 미성숙)은 step을 늘려도 풀리지 않을 가능성이 크다. 2M 진행 중 run은 그대로 두고 결과만 확인한다. 실행 중 run은 이어 학습이 없어 늘리려면 처음부터 새로 돌려야 한다.
 - 제안(미구현): Overcooked 어댑터의 공개 probe view를 agent가 바라보는 방향이 항상 위가 되도록 회전한 view로 바꾼 v2 projection. 공유 비교 절차·gate 값·Max-GAE는 그대로이고 환경별 projection만 바뀐다(원 지시서 7절 "환경별 projection을 조정"). mirror 증강을 기본으로 되살리는 것과는 다르다. 회전 후에도 창구 양옆 칸(D/X)은 좌우가 바뀌므로 완전한 해결은 보장되지 않는다. 기존 결과와 섞지 않도록 새 config·새 plan 이름으로 0.5M pilot부터 다시 한다.
 - 요리 담당처럼 보상 사건이 없는 agent는 설계상 묶이지 않는다(RWARE와 같은 한계). 해결하려면 별도 결정이 필요하다.
+
+## D134. Overcooked probe v2(바라보는 방향 기준 프레임) 구현, 0.5M pilot 준비 — 2026-11-05 Claude Code (사용자 승인 T225 "v2 준비해 줘")
+
+- 구현: `AdapterConfig.probe_frame`("absolute" 기본 = v1, "facing" = v2). v2는 gate의 공개 probe 전이를 이동 전 바라보는 방향 기준으로 표현한다. 3×3 crop을 회전, 다른 agent·자기 방향 채널을 상대 방향으로, 이동 행동을 앞/오른쪽/뒤/왼쪽으로 바꾼다. 회전이며 좌우 반전(mirror)이 아니다. 새 설정 `Overcooked/configs/main_4p2t_probe_v2.json`.
+- 공유 코어: projection이 `public_transition(before, action, after)`를 정의하면 gate가 그것을 쓰는 선택적 hook만 추가했다. 정의하지 않은 RWARE projection은 기존 경로 그대로이며 RWARE gate 테스트 60 통과, trainer 지문 18/18이 분리 전과 같다. 비교 절차·gate 값·Max-GAE·관측·보상·PPO는 바꾸지 않았다. IPPO는 v1·v2 설정에서 비트 단위로 같다(테스트).
+- 한계(미해결): 회전해도 서쪽·동쪽 창구 양옆 칸(접시 디스펜서/카운터)의 좌우는 남아 같은 팀 거리가 0이 되지 않는다(스크립트 기준 .27–.32, 임계 .5). 배달하지 않는 요리 담당은 v2에서도 성숙하지 못한다. 정책이 상대 수프를 거의 배달하지 않으면 예측기가 수프 종류를 구분할 근거가 줄어 다른 팀 거리가 낮아질 수 있다(E90 오프라인 재생).
+- 다음 단계(사용자 실행): `oc_pilot_500k_probe_v2`(pgct_d2·oracle, seed 1, 0.5M). IPPO 기준은 기존 `oc_pilot_500k/ippo_s1`과 비트 단위로 같으므로 다시 돌리지 않는다. 판정: 성숙 agent 수, 같은 팀(2-3) 승인 여부와 시점, 다른 팀 오승인, pgct_d2와 IPPO 학습 곡선 차이.
