@@ -113,8 +113,11 @@ Code: `RewardProbeGate.compare`, `approved`. Config: `ema_beta`, `min_rounds`, `
    distance is n_i / (n_i + 2 n_j) for n_i probes from the "blind" agent and n_j from the discriminating one —
    exactly 1/3 for balanced probes, and smaller when the blind agent contributes fewer probes. Overcooked v3
    policy replay showed this (E92: cross-team 0.30). Taking the maximum of D over the two probe owners
-   (E_i and E_j separately; 1 in this case, 0 for teammates) would remove it — a candidate in the spirit of
-   `action_max`, not implemented.
+   (E_i and E_j separately) removes the one-sided case in theory, but the replay analysis E93 showed it is not
+   a remedy there: both predictors were "blind" (owner distances 0.13 / 0.23), and the maximum also rejected a
+   true cook–server teammate pair (0.53). When neither agent has experienced the other team's paid situations,
+   no distance and no τ can separate the teams; the fix has to come from experience (contrast) or abstention
+   (D137). Not implemented.
 
 Recommended reporting: state (1)–(3), show a τ sweep of the identification metrics recomputed from logged EMAs
 (counterfactual decisions on the same trajectory; learning curves would need new runs), and mention τ = 1/3 as

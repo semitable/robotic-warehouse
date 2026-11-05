@@ -17,6 +17,12 @@
 - Overcooked는 실행 배선 검증만 끝났다. E86의 실제 설정 51,200-step sanity에서 배달·gate 사건이 0이라 PGCT=IPPO였고 학습 가능성은 아직 확인되지 않았다. 로컬 JSON 로그만 있으며 W&B 연동은 없다. 본 실험 전에 0.5–1M pilot과 reward-event/maturity 확인이 필요하다.
 
 
+## 최신 확인 — 2026-11-06 KST, Claude Code (T229, Overcooked 해결책)
+
+- **원인(D137)**: ① 창구 방향 차이(v3로 해결) ② 사건 기준 .5가 Overcooked 보상 단위와 안 맞아 요리 담당 미성숙(reward shaping 문제의 실체) ③ 상대 팀 장면을 겪지 않아 생기는 구분 불능(다른 팀 오승인). τ는 병목이 아니다.
+- **오프라인 시험(E93)**: v3 + 사건 기준 .1이면 네 명 모두 성숙하고 같은 팀 두 쌍이 승인된다(재현율 1.0). 다른 팀 1–2·1–3 오승인은 남는다(precision .5). probe 주인별 최댓값은 해결책이 아니다.
+- **다음(사용자 실행)**: `pgct_id_only` + `main_4p2t_probe_v3_ev01.json`, 0.5M. 오승인이 나오면 예측기 기억 유지(reservoir)나 근거 없는 probe 보류 옵션을 구현한다.
+
 ## 최신 확인 — 2026-11-06 KST, Claude Code (T228, Overcooked v3 검증·문제 분석·τ 근거)
 
 - **v2 pilot 완료**: PGCT-D2 0.5M 승인 0(같은 팀 .58). oracle job 실행 중.

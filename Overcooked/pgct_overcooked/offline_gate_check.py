@@ -37,12 +37,25 @@ def parse_schedule(items):
     return schedule
 
 
-def replay(job, frame, schedule, seed):
+def owner_split(gate, i, j):
+    """Analysis only (not a gate rule): distance on each agent's own probes separately, and their maximum."""
+    from pgct_core.reward_gate import response_distance
+    halves = []
+    for k in (i, j):
+        b, a, f = gate.predictors[k].event_probes()
+        if not len(b):
+            return None
+        halves.append(response_distance(gate.predictors[i].predict(b, a, f), gate.predictors[j].predict(b, a, f)))
+    return dict(on_i=halves[0], on_j=halves[1], owner_max=max(h for h in halves if h is not None) if all(
+        h is not None for h in halves) else None)
+
+
+def replay(job, frame, schedule, seed, gate_overrides=None):
     config = json.loads((job / "config.json").read_text(encoding="utf-8"))
     experiment = json.loads(json.dumps(config["experiment"]))
     experiment["adapter"]["probe_frame"] = frame
     make_adapter, trainer_cfg, ppo_cfg, gate_cfg, *_ = build(experiment, "pgct_d2", experiment["trainer"]["seed"])
-    gate_cfg = replace(gate_cfg, contact_snapshot=True)
+    gate_cfg = replace(gate_cfg, contact_snapshot=True, **(gate_overrides or {}))
     adapter = make_adapter()
     gate = RewardProbeGate(adapter.n_agents, gate_cfg, adapter.projection)
     n, hidden = adapter.n_agents, ppo_cfg.recurrent_hidden_dim
@@ -89,13 +102,19 @@ def main(argv=None):
     parser.add_argument("--schedule", nargs="+", default=["final.pt:40"], help="checkpoint:updates, in order")
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--frames", nargs="+", default=["absolute", "facing", "facing_cross"])
+    parser.add_argument("--gate", nargs="*", default=[], metavar="KEY=VALUE",
+                        help="gate config overrides for this analysis, e.g. event_reward=0.1 min_event_response=0.06")
     parser.add_argument("--out", type=Path, help="optional JSON file for the results (never inside the job folder)")
     args = parser.parse_args(argv)
     torch.set_num_threads(1)
     schedule = parse_schedule(args.schedule)
+    overrides = {}
+    for item in args.gate:
+        key, _, value = item.partition("=")
+        overrides[key] = json.loads(value)
     out = {}
     for frame in args.frames:
-        gate, teams, records, deliveries = replay(args.job, frame, schedule, args.seed)
+        gate, teams, records, deliveries = replay(args.job, frame, schedule, args.seed, overrides)
         ema = gate.ema + gate.ema.T
         iu = np.triu_indices(len(teams), 1)
         summary = identification_summary(records, teams)
@@ -107,7 +126,9 @@ def main(argv=None):
                           final=summary["final"], distance_same=summary["distance_same_mean"],
                           distance_cross=summary["distance_cross_mean"],
                           first_correct=summary["first_correct_approval_step"],
-                          first_wrong=summary["first_wrong_approval_step"])
+                          first_wrong=summary["first_wrong_approval_step"], gate_overrides=overrides,
+                          owner_split={f"{i}-{j}": owner_split(gate, i, j) for i, j in zip(*iu)
+                                       if gate.predictors[i].events_seen and gate.predictors[j].events_seen})
         print(f"== {frame}: " + json.dumps(out[frame]), flush=True)
     if args.out is not None:
         if args.job.resolve() in args.out.resolve().parents:

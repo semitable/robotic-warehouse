@@ -1,0 +1,86 @@
+{
+  "description": "Probe v3 + event scale (D137, proposal): main_4p2t_probe_v3.json with the gate's reward-event threshold set to Overcooked's smallest positive reward (event_reward 0.1; min_event_response 0.06 keeps the D2 ratio .3/.5). In this kitchen every positive reward is team-specific (own ingredient, own soup, own delivery), so any positive own reward is an objective-revealing event; RWARE keeps 0.5. Gate-only: ippo/oracle/all are identical to main_4p2t.json runs with the same seed.",
+  "kitchen": {
+    "layout": "two_team_kitchen",
+    "horizon": 400,
+    "cook_time": 10,
+    "team_recipes": [
+      "onion",
+      "tomato"
+    ],
+    "team_sizes": [
+      2,
+      2
+    ],
+    "team_assignment": "shuffle",
+    "team_seed": null,
+    "delivery_reward": 1.0,
+    "wrong_delivery_reward": 0.0,
+    "pot_reward": 0.1,
+    "soup_pickup_reward": 0.2
+  },
+  "adapter": {
+    "obs_radius": 3,
+    "probe_radius": 1,
+    "comm_range": 3,
+    "probe_frame": "facing_cross"
+  },
+  "ppo": {
+    "rollout_steps": 1024,
+    "sequence_length": 64,
+    "minibatch_chunks": 8,
+    "ppo_epochs": 4,
+    "learning_rate": 0.0002,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_coef": 0.2,
+    "value_clip_coef": 0.2,
+    "value_loss_coef": 0.5,
+    "entropy_coef": 0.05,
+    "max_grad_norm": 0.5,
+    "mlp_hidden_dim": 128,
+    "recurrent_hidden_dim": 128
+  },
+  "gate": {
+    "buffer_size": 20000,
+    "event_buffer_size": 512,
+    "event_reward": 0.1,
+    "event_fraction": 0.25,
+    "hidden": 128,
+    "learning_rate": 0.001,
+    "train_steps": 50,
+    "batch_size": 256,
+    "min_events": 20,
+    "min_event_response": 0.06,
+    "probes_per_agent": 32,
+    "mirror": false,
+    "min_probes": 8,
+    "distance_threshold": 0.5,
+    "ema_beta": 0.35,
+    "min_rounds": 3,
+    "interval": 5,
+    "seed": 0,
+    "distance_mode": "action_max"
+  },
+  "max_gae": {
+    "eta": 0.5,
+    "scale": "shrink",
+    "gae_lambda": null,
+    "cap": null,
+    "window": 8,
+    "min_critic_ev": null
+  },
+  "trainer": {
+    "total_timesteps": 5000000,
+    "device": "cpu",
+    "warmup_updates": 100,
+    "eval_interval": 50,
+    "eval_episodes": 10,
+    "eval_seed": 5000001,
+    "eval_deterministic": true,
+    "save_interval": 250,
+    "log_interval": 10,
+    "torch_threads": 1,
+    "audit": true
+  }
+}

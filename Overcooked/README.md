@@ -121,7 +121,15 @@ logs what the v3 gate decides along it:
 powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v3.json -Name oc_id_500k_probe_v3 -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
 ```
 
-Offline check of a finished job's policies under all probe frames (no training; checkpoints replayed in order):
+Probe v3 with the reward-event threshold scaled to Overcooked's rewards (`configs/main_4p2t_probe_v3_ev01.json`:
+event_reward 0.1, min_event_response 0.06; D137, proposal). Same identification-only check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\Overcooked\scripts\run_overcooked.ps1' -Config main_4p2t_probe_v3_ev01.json -Name oc_id_500k_v3_ev01 -Methods pgct_id_only -Seeds 1 -TotalTimesteps 500000 -MaxConcurrent 1"
+```
+
+Offline check of a finished job's policies under all probe frames (`--gate KEY=VALUE` overrides gate values for
+the analysis; the output also reports the distance on each agent's own probes separately) (no training; checkpoints replayed in order):
 
 ```powershell
 python -m pgct_overcooked.offline_gate_check --job Overcooked\runs\oc_pilot_500k\ippo_s1 --schedule checkpoint_00250.pt:20 final.pt:20
