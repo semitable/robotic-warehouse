@@ -2,7 +2,8 @@
 
 This wraps the shared trainer in-process; it does not edit the trainer or PPO.
 Only videos successfully written by this context in its own run are pruned.
-W&B metrics remain live; media are uploaded once, just before finishing.
+W&B metrics remain live. Media are uploaded once just before finishing (upload="finish"), or each video
+right after it is saved (upload="live", T198), still through the short W&B directory.
 """
 from __future__ import annotations
 
@@ -17,7 +18,7 @@ import warnings
 
 
 class RetainedVideos:
-    def __init__(self, cfg, run_dir, keep_last, wandb_root):
+    def __init__(self, cfg, run_dir, keep_last, wandb_root, upload="finish"):
         self.cfg = cfg
         self.run_dir = Path(run_dir).resolve()
         self.video_dir = self.run_dir / "videos"
@@ -30,9 +31,13 @@ class RetainedVideos:
         self.upload_status = "pending"
         self.error = None
         self.active = False
+        self.upload = upload
+        self.live_logged = 0
 
     def record(self):
-        data = dict(keep_last=self.keep_last, upload_policy="tail_at_finish",
+        data = dict(keep_last=self.keep_last,
+                    upload_policy="live" if self.upload == "live" else "tail_at_finish",
+                    live_logged=self.live_logged,
                     wandb_local_dir=str(self.wandb_root) if self.run is not None else None,
                     upload_status=self.upload_status, error=self.error,
                     videos=[dict(file=p.name, env_steps=step) for p, step in self.saved])
@@ -59,6 +64,17 @@ class RetainedVideos:
                 raise ValueError(f"Refusing to prune a video outside this run: {old}")
             old.unlink()
             self.saved.popleft()
+        if self.upload == "live" and self.run is not None:
+            try:
+                import wandb
+
+                # Logged without an explicit step: W&B appends it after the last numeric row.
+                self.run.log({"eval/video": wandb.Video(str(path), format="mp4",
+                                                        caption=f"{path.name}; env_steps={step}")})
+                self.live_logged += 1
+            except Exception as exc:  # a failed upload must not stop training
+                self.error = repr(exc)
+                warnings.warn(f"Live W&B video logging failed; the local video is kept: {exc}", stacklevel=2)
         self.record()
 
     def finish(self, *args, **kwargs):
@@ -68,7 +84,9 @@ class RetainedVideos:
         if not self.active:
             return None
         try:
-            if self.run is not None and self.saved:
+            if self.upload == "live":
+                self.upload_status = "live" if self.live_logged else ("local_only" if self.saved else "no_videos")
+            elif self.run is not None and self.saved:
                 import wandb
 
                 # File input reuses the encoded local mp4; no second encoding or frame buffer.
@@ -111,7 +129,7 @@ class _RunProxy:
 
 
 @contextmanager
-def install(trainer, cfg, run_dir, keep_last=0, *, wandb_root=None):
+def install(trainer, cfg, run_dir, keep_last=0, *, wandb_root=None, upload="finish"):
     """keep_last=0 preserves legacy behavior; positive limits affect only new run files.
 
     A normal Python exception / Ctrl+C flushes the current tail. Force-killing the
@@ -119,6 +137,8 @@ def install(trainer, cfg, run_dir, keep_last=0, *, wandb_root=None):
     """
     if keep_last < 0:
         raise ValueError("keep_last must be nonnegative")
+    if upload not in ("finish", "live"):
+        raise ValueError("upload must be 'finish' or 'live'")
     if keep_last == 0:
         yield None
         return
@@ -126,7 +146,7 @@ def install(trainer, cfg, run_dir, keep_last=0, *, wandb_root=None):
         raise ValueError("Video retention needs --save-video")
     if wandb_root is None:
         wandb_root = Path(__file__).resolve().parents[1] / "wandb_data" / uuid.uuid4().hex[:12]
-    state = RetainedVideos(cfg, run_dir, keep_last, wandb_root)
+    state = RetainedVideos(cfg, run_dir, keep_last, wandb_root, upload)
     names = ("init_wandb", "save_local_eval_video", "make_wandb_video", "log_to_wandb")
     originals = {name: getattr(trainer, name) for name in names}
 
@@ -137,7 +157,8 @@ def install(trainer, cfg, run_dir, keep_last=0, *, wandb_root=None):
             state.run = originals["init_wandb"](config, state.wandb_root)
         if state.run is None:
             return None
-        state.run.config.update(dict(video_keep_last=keep_last, video_upload_policy="tail_at_finish",
+        state.run.config.update(dict(video_keep_last=keep_last,
+                                     video_upload_policy="live" if upload == "live" else "tail_at_finish",
                                      wandb_local_dir=str(state.wandb_root)), allow_val_change=True)
         state.record()
         return _RunProxy(state)

@@ -1,0 +1,245 @@
+[
+ {
+  "k": 0,
+  "pooled": {
+   "same_max": 0.2148815132928533,
+   "cross_min": 0.031903955945824014,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.2148815132928533,
+   "cross_min": 0.031903955945824014,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.2148815132928533,
+   "cross_min": 0.031903955945824014,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 18,
+   "cross_min": 0,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 1,
+  "pooled": {
+   "same_max": 0.19881129303439185,
+   "cross_min": 0.049293277240191,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.20692265302793747,
+   "cross_min": 0.032804995319487176,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.20692265302793747,
+   "cross_min": 0.032804995319487176,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 17,
+   "cross_min": 2,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 2,
+  "pooled": {
+   "same_max": 0.19074151142498605,
+   "cross_min": 0.06703951689317521,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.2066683475738948,
+   "cross_min": 0.03355765861284326,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.2066683475738948,
+   "cross_min": 0.9782601324840045,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 16,
+   "cross_min": 4,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 4,
+  "pooled": {
+   "same_max": 0.1732493768558819,
+   "cross_min": 0.10279207291109271,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.20421139550189912,
+   "cross_min": 0.03374690327032447,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.20421139550189912,
+   "cross_min": 0.9817348802333041,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 15,
+   "cross_min": 8,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 6,
+  "pooled": {
+   "same_max": 0.1644732367380522,
+   "cross_min": 0.1370066440434124,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.21115353820249844,
+   "cross_min": 0.030290963292758474,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.21115353820249844,
+   "cross_min": 0.9848520929476402,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 14,
+   "cross_min": 12,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 8,
+  "pooled": {
+   "same_max": 0.15616234920101282,
+   "cross_min": 0.17581571366312096,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.22092181485729045,
+   "cross_min": 0.9822406573919884,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.22092181485729045,
+   "cross_min": 0.9822406573919884,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 14,
+   "cross_min": 16,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 12,
+  "pooled": {
+   "same_max": 0.1293804423488167,
+   "cross_min": 0.2624910246868302,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.22420237676116286,
+   "cross_min": 0.9839479511174757,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.22420237676116286,
+   "cross_min": 0.9839479511174757,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 12,
+   "cross_min": 24,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 16,
+  "pooled": {
+   "same_max": 0.1167596822458458,
+   "cross_min": 0.3615468079107771,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.2639297601324908,
+   "cross_min": 0.9850274323713296,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.2639297601324908,
+   "cross_min": 0.9850274323713296,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 12,
+   "cross_min": 32,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ },
+ {
+  "k": 32,
+  "pooled": {
+   "same_max": 0.009247602037341401,
+   "cross_min": 0.9854261931289292,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max8": {
+   "same_max": 0.009247602037341401,
+   "cross_min": 0.9854261931289292,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "max2": {
+   "same_max": 0.009247602037341401,
+   "cross_min": 0.9854261931289292,
+   "n_same": 4,
+   "n_cross": 6
+  },
+  "count": {
+   "same_max": 0,
+   "cross_min": 64,
+   "n_same": 4,
+   "n_cross": 6
+  }
+ }
+]

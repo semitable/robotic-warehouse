@@ -1,0 +1,3 @@
+checkpoint 4250: 4352000 env steps
+(a) a3,a5 Same team: pooled 0.040, per-action {'Deliveries (FORWARD)': 0.01, 'Shelf returns (TOGGLE)': 0.083}, max 0.083, probes 64 (FORWARD 36, TOGGLE 28)
+(b) a2,a5 Different teams: pooled 0.388, per-action {'Deliveries (FORWARD)': 0.994, 'Shelf returns (TOGGLE)': 0.022}, max 0.994, probes 64 (FORWARD 34, TOGGLE 30)

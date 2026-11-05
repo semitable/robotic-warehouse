@@ -195,3 +195,19 @@ def test_plan_records_opt_in_without_changing_training_config(tmp_path, monkeypa
         {k: v for k, v in b.items() if k not in ("save_dir", "wandb_group")}
     with pytest.raises(ValueError, match="needs --save-video"):
         S.plan(SimpleNamespace(**dict(args, save_video=False), output_dir=tmp_path / "invalid", video_keep_last=10))
+
+
+def test_live_mode_uploads_each_video_once_and_nothing_at_finish(tmp_path, monkeypatch):
+    trainer, cfg, run_dir, run, calls, videos = setup(tmp_path, monkeypatch)
+    with install(trainer, cfg, run_dir, keep_last=2, wandb_root=tmp_path / "w", upload="live") as state:
+        assert trainer.init_wandb(cfg, run_dir) is not None
+        for k in (1, 2, 3):
+            trainer.save_local_eval_video(b"v", run_dir / "videos" / f"eval_{k:05d}.mp4", 10)
+            trainer.log_to_wandb(trainer_run := state.run, {"eval/deliveries": float(k), "eval/video": "x"}, step=k * 10)
+    video_logs = [p for p, _ in run.logs if "eval/video" in p and isinstance(p["eval/video"], dict)]
+    assert len(video_logs) == 3 and len(videos) == 3          # one upload per saved video, live
+    assert all("eval/tail_01" not in p for p, _ in run.logs)   # no tail upload at finish
+    assert sorted(p.name for p in (run_dir / "videos").glob("*.mp4")) == ["eval_00002.mp4", "eval_00003.mp4"]
+    data = json.loads((run_dir / "video_retention.json").read_text(encoding="utf-8"))
+    assert data["upload_policy"] == "live" and data["live_logged"] == 3 and data["upload_status"] == "live"
+    assert run.finished

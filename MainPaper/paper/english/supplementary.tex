@@ -1,0 +1,47 @@
+%%%% Supplementary material for the anonymous IJCAI-27 submission (uploaded separately as PDF; not part of the 7+2 pages).
+\documentclass[10pt]{article}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{times}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,booktabs,url}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\ifdefined\XeTeXrevision\usepackage{fontspec}
+  \setmainfont{texgyretermes}[Extension=.otf,UprightFont=*-regular,BoldFont=*-bold,ItalicFont=*-italic,BoldItalicFont=*-bolditalic]\fi
+\title{Supplementary Material for\\``Probe-Gated Critic Transfer: Latent Team Discovery from Individual Reward Responses''}
+\author{HwanRyul Lee}
+\date{}
+\begin{document}
+\maketitle
+
+\section{Implementation Details}
+\paragraph{Discovery state.} Each agent keeps a 20{,}000-transition FIFO buffer of public transitions and a separate 512-event buffer of its own reward events ($r_i\ge0.5$). The cumulative event count used for maturity is not bounded by the buffer size. A predictor version advances only when the predictor is refitted. At the start of every rollout, each agent freezes the views and actions of its 32 most recent own events, its maturity flag and its predictor version. At a comparison round the frozen state is compared before any refit; a refit between the snapshot and the comparison is treated as an error. Approvals are reconstructed from stored rounds and EMA values, symmetric in $(i,j)$, and checked against the frozen maturity flags. No approval expiry or hysteresis is used. For the per-action distance, the probes are grouped by their public action (a mirrored turning action would count as the opposite turn). An action is compared only if each agent has at least $n_{\min}=8$ own events with that action among its 32 frozen events. If no action qualifies, the round is skipped and the EMA and round count do not change.
+
+\paragraph{Peer Critic access.} Donor sets are fixed within one update. Donor Critic weights are the weights used during the rollout. The receiver replays its complete current rollout through each donor Critic from a zero recurrent state, resets at episode ends, and evaluates captured time-limit observations before the reset. The warm-up mask covers the first seven steps before the first reset (eight observations are needed). The mask is applied both to the uplift and to the final auxiliary advantage. Own-return Critic targets are computed before the Actor advantage is formed. The scale factor $s_i$ is computed per receiver over the whole rollout before PPO's own per-agent advantage normalization.
+
+\paragraph{Optional filters.} An optional filter excludes donor Critics whose explained variance on their own rollout falls below a threshold. It is disabled in all reported settings because no threshold has been chosen. The implementation also allows an upper bound on the uplift; it is likewise disabled.
+
+\section{Reduction Checks}
+The implementation was checked against the following reductions with the real training loop (short runs of 64 environment steps; these are correctness checks, not performance results).
+\begin{itemize}
+\item With donors withheld, the Max-GAE path produces final network weights bit-identical to independent PPO.
+\item With reward predictors refitted but no approval possible, PGCT and the mature-only true-team variant are bit-identical to independent PPO.
+\item Injecting the true-team approval and maturity (in a diagnostic test only) makes PGCT bit-identical to true-team Max-GAE.
+\item A copied Critic used as its own donor changes the Actor advantage by at most $10^{-6}$.
+\item With permissive settings, pairs that met during the rollout are compared on the frozen probes, donors equal contact $\wedge$ approval, and no peer-distillation term is used.
+\end{itemize}
+
+\section{Evidence Sources}
+\begin{table}[h]\centering\small
+\begin{tabular}{p{.33\linewidth}p{.6\linewidth}}\toprule
+Result & Source (anonymized run identifiers)\\\midrule
+Discovery log (Figure 3) & corner goals, individual rewards, seed 1, 5{,}000{,}192 steps; 5{,}252 / 352 directed peer-access arcs; first cross-team arc at 4{,}280{,}320 steps\\
+Offline replay & 0.26--5M steps of one independent-PPO run, about 1/180 of transitions, all pairs assumed in contact\\
+Counterfactual check & checkpoints at 1M and 2M of one run and 1M of two runs of an earlier configuration; $N=8$, horizon 100\\
+Online discovery & branches from a common checkpoint at 1.024M steps, +0.5M steps; PGCT seeds 1, 3, 5 (seed 5 to 0.46M); control runs seeds 1, 3, 5\\
+Per-action recomputation & saved predictors and probes of 25 checkpoints (the 5M run and three branch runs), no mirrored probes; same-team maximum 0.281, different-team minimum 0.975 (pooled: 0.28 and 0.39); the implemented rule reproduces the offline values exactly\\\bottomrule
+\end{tabular}
+\end{table}
+
+All figures are regenerated from the raw training logs by a single plotting script; the code will be released after review.
+\end{document}

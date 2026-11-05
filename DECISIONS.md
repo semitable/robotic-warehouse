@@ -1610,3 +1610,91 @@
 - 영상 업로드 시점(종료 시)은 구현 판단이며 진행 안내와 최종 답변에 명시했다. 강제 종료는 업로드를 보장하지 않음.
 - 기존 4 mode × seed 1–3, 넓은 지도·action_max·mirror 없음·10M 유지. 본 학습은 사용자가 실행한다.
 - trainer·알고리즘·환경·probe·gate 임계값 변경 없음. 근거: output/video_retention_20261104/REPORT.md, E81.
+
+## D118. Codex의 51,200 step 수정(D116·D117) 검토: 원인·수정 타당, W&B 영상은 종료 시 업로드라 강제 중단과 충돌 — 2026-11-04 Claude Code (사용자 요청 T188)
+
+- 판정: 원인(W&B 영상 목적지 262–268자 > 260, 긴 경로 비활성)과 수정(W&B 저장을 `wandb_data/<12자리 ID>`로 분리)은 타당하다. `video_retention.py`는 trainer의 영상 저장·W&B 기록 함수만 감싸고 끝나면 원래대로 되돌린다. 학습 경로(PPO, Max-GAE, gate, 환경) 변경 없음. 삭제는 이 run이 만든 `videos/eval_*.mp4`로 한정. 앞선 Claude Code 영상 확인(E77)이 짧은 임시 경로라 이 문제를 놓쳤다.
+- 주의: (1) W&B 영상은 job 정상 종료 시 마지막 10개만 업로드되고, 학습 중에는 로컬에서만 볼 수 있다. (2) D115의 `Stop-Process` 중단은 종료 처리를 건너뛰어 W&B 영상이 올라가지 않는다(로컬 10개는 남음). 대책 제안: job의 W&B run ID로 run을 다시 열어 로컬 영상을 올리는 사후 업로드 스크립트(실행 중 학습 무관). (3) 로컬은 마지막 10 평가(약 0.5M)만 남아 초반 영상이 사라진다. (4) 대기 중인 8 job은 시작 시점 코드를 읽으므로 실험 중 학습 코드 변경 금지.
+- queue는 다시 VS Code 터미널(PID 7124)에서 실행 중. 끊기면 `-ResumePlan runs/am2_1104_152110_b6_wide_corner_indiv_comm5_pen005 -Name am2_1104_152110`.
+
+## D119. 본 실험 실행 순서를 seed별(4 mode 동시)로 변경 — 2026-11-04 Claude Code (사용자 제안 T189)
+
+- 사용자 제안: max 3개 + ippo 1개 대신 pgct·ippo·oracle·allk를 함께 돌려 현황을 보기 쉽게.
+- 판단: 동의. 같은 seed의 4 mode가 같은 시간대에 진행해 agent별 학습 속도 비교와 5–9M 수렴 판정을 같은 시점에 할 수 있다. 단점(중간에 끊기면 seed 수가 줄어듦)은 10M·수렴 중단 일정상 작다.
+- 변경: `latent_team/run_main_amax_v2.ps1` 기본을 seed별 순서로, `-ModeMajor`로 이전 순서. plan-only 확인 순서: s1 pgct_max·ippo·oracle_max·allk_max → s2 → s3(`runs/plancheck_am2_seed_b6_wide_corner_indiv_comm5_pen005`, 계획·bank만).
+- 적용 절차(사용자 실행): VS Code 터미널 queue Ctrl+C → `Stop-Process -Id 34424,23532,38028,35324`(am2_1104_152110, 0.01M) → 별도 PowerShell 창에서 `run_main_amax_v2.ps1`. 기존 폴더는 보존.
+
+## D120. 영어 논문 수정: 행동별 거리 반영, 구현 수치 이동, MAMBA 전제 문장 삭제, 쉬운 영어 — 2026-11-05 Claude Code (사용자 요청 T191)
+
+- 대상: 사용자 수정본 `C:/Users/95101/OneDrive/Desktop/제출 논문/paper/`의 `english/main.tex`, `english/supplementary.tex`, `method_equations.tex`(새 매크로 `\ActionDistanceEquation` 추가, 기존 `\DistanceEquation`은 한국어판용으로 유지). 원본 백업 `output/paper_revision_20261105/original/`, 수정본 사본 `revised/`.
+- 반영: D108 행동별 최대 거리 식·이유·Properties(pooled = 가중평균 ≤ 최대)·식별 조건, 알고리즘 1 단계 4, mirror를 방법에서 제외, 실험 절에 Method versions(보고 결과는 예전 pooled·mirror·r_c 3, 현재 방법은 11×16에서 실행 중), 늦은 다른 팀 승인의 원인과 25 checkpoint 재계산(같은 팀 ≤ .28, 다른 팀 ≥ .97; pooled 다른 팀 .39), Limitations 갱신.
+- 구현 수치(공개 view 281차원·채널, 입력 567, MLP·버퍼 크기, 32 probe, n_min 8, mask 8)를 Problem Setting·Method에서 Setup의 Implementation 문단·표로 이동. 사용자의 "크리틱 전이에 몇 채널" 지적을 이 수치로 해석했다.
+- MAMBA 전제 불충족·보장 미주장 문장 삭제. 성능 보장 주장은 넣지 않았다.
+- 문체: 짧은 문장, 세미콜론·분사구문 축소, 수사 의문문 제거, 어려운 어휘 교체. 초록 189단어.
+- 빌드(Tectonic, 임시 사본): 본문 7쪽, 보조 2쪽, Overfull 0, 정의되지 않은 참조 0. PDF 화면 확인은 도구가 없어 못 했다. 한국어판·그림·저자명은 바꾸지 않았다(저자명은 제출 전 익명화 필요).
+
+## D121. 한국어 논문 동기화와 알고리즘 1의 수식 중심 재작성 — 2026-11-05 Claude Code (사용자 요청 T192)
+
+- 한국어판(`C:/Users/95101/OneDrive/Desktop/제출 논문/paper/korean/main.tex`)을 D120의 영어판과 같은 내용으로 고쳤다: 행동별 최대 거리(`\ActionDistanceEquation`), 최댓값 이유, 합친 거리 ≤ 최댓값, 식별 조건, 대칭 사본을 방법에서 제외, 방법 버전 문단, 늦은 다른 팀 승인 원인·25 checkpoint 재계산, 구현 수치를 설정의 구현 문단·표로 이동, MAMBA 전제 문장 삭제, 번역투·수사 의문문 정리, 부록 갱신.
+- 사용자 지적("알고리즘 너무 글자만 있는거 아냐?")에 따라 두 판의 알고리즘 1을 입력(Input/입력)과 수식 16줄로 바꾸고 각 줄에 식 번호 주석(▷)을 달았다. 본문 참조를 "1–12줄 Q1, 13–16줄 Q2"로 고쳤다. $n_{ij}$ 증가 조건(두 예측기 재학습)은 알고리즘에서 단순화하고 본문 설명에 맡겼다.
+- 빌드(Tectonic, 임시 사본): 영어 7쪽, 한국어 8쪽, Overfull 0, 정의되지 않은 참조 0. PDF 화면 확인은 못 했다. 공용 수식 파일의 예전 `\DistanceEquation`은 두 판 모두 쓰지 않으며 참고용으로 남겼다. 백업 `output/paper_revision_20261105/original/korean_main.*`, 수정본 사본 `revised/`.
+
+## D122. 논문 Properties·Limitations 절 제거, 식 (10) 괄호 수정 / 넓은 지도 본 실험 중단 권고 — 2026-11-05 Claude Code (사용자 요청 T193)
+
+- 논문(영어·한국어): Properties 절을 없애고 세 가지만 본문에 남겼다. 거리 범위·척도 무관성과 합친 거리 = Σ w_a D^a ≤ 최댓값은 "왜 최댓값인가" 문단에, 발견의 필요조건(식별 조건, 연구 기여 후보라 유지)은 승인 규칙 뒤에, 독립 PPO 환원은 Max-GAE 절 끝에 넣었다. 가치 오차 상한(Eq. bound)은 삭제. Limitations 절은 본 실험 전이라 제거(본 실험 후 짧게 복원 권장). 식 (10)의 std 인자에 괄호(공용 수식 파일)와 본문 std(A^self) 수정. 영어 6쪽, 한국어 7쪽, Overfull 0.
+- 실험(E83): 넓은 지도(`b6_wide_corner_indiv_comm5_pen005`) 본 실험 seed 1의 4 mode가 1.1M에서 평가 배송 0, 학습 중 선반 집기가 agent·episode당 6.3(0–0.2M)에서 0.04(1.0–1.2M)로 줄었다. 감점만 경험해 집기를 피하는 pickup 정체(E44–E47)로 판단. pgct_max 성숙 0/6(사건 평균 8). D113의 1.3M 중단 조건에 해당.
+- 권고: 지금 중단하고 기존 지도 r_c 5(`b6_corner_indiv_comm5_pen005`, 같은 지도에서 IPPO 5M 24–26/ep 학습 확인)로 전환. 대안은 요청 2개(학습 이력 없음, 경쟁으로 미성숙 agent 증가 위험). 결정·중단·재시작은 사용자.
+- `latent_team/run_main_amax_v2.ps1`에 필수 `-Candidate`(세 후보 중 선택) 추가. 기존 지도·요청 2개 모두 plan-only로 12 job·10M·r_c 5 확인(`runs/plancheck_am3_*`).
+
+## D123. PC·서버 분담 제안: 본 실험은 서버(기존 지도 r_c 5), 위험한 pilot·분석은 PC — 2026-11-05 Claude Code (사용자 제안 T194, 제안)
+
+- 사용자 제안: 서버가 있으니 PC로 작은 것, 서버로 큰 것.
+- 제안: 서버에서 본 실험(기존 지도 `b6_corner_indiv_comm5_pen005`, 4 mode × seed 1–3, 코어가 되면 4–5, 10M·수렴 중단). PC에서 요청 2개 IPPO 1–2M pilot, 오프라인 분석, smoke, 논문. 같은 seed의 mode 비교는 한 기계 안에서만(하드웨어·라이브러리가 달라 비트 동일하지 않음).
+- 서버 준비물: `feature/PGCT_Next`(origin과 일치, 코드 커밋 `ba14c40`), `runs/sp_20261008_120638_983201/experiment.json` 한 파일(plan이 읽는 유일한 기준 파일, runs/는 git 제외), Python 3.11.15·torch 2.11.0·gymnasium 1.3.0·numpy 2.4.6·`pip install -e .`, Linux면 bash 실행기(plan-only 후 `--run-job` 병렬), tmux/nohup 또는 스케줄러 job 스크립트, `wandb login`.
+- 대기: 서버 OS·코어·메모리·스케줄러 정보. 넓은 지도 실행 중단은 사용자.
+
+## D124. PC 실험: 요청 2개 환경, 4 mode × seed 1, 상한 7M(5·6M 수렴 시 중단) — 2026-11-05 Claude Code (사용자 요청 T195)
+
+- 사용자 요청: 컴퓨터 쪽 실험 코드를 알려 달라, 5–7M 정도로.
+- 해석: D123의 분담대로 PC는 요청 2개 환경(`b6_corner_indiv_comm5_req2_pen005`)을 맡는다. 확인용이라 seed 1, 4 mode 동시, 상한 7M, `main_check.py`의 5·6M 수렴 판정으로 중단.
+- `latent_team/run_main_amax_v2.ps1`에 `-Seeds`, `-TotalTimesteps` 추가(기본은 seed 1–3, 10M 유지). plan-only 확인(`runs/plancheck_pc_req2_*`): 4 job, 7,000,064 step, r_c 5, 요청 [2,2], 자동 상향 꺼짐, 영상 10개, 처음부터.
+- 명령: `run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_req2_pen005 -Seeds 1 -TotalTimesteps 7000000 -Name pc_req2_1105`. 넓은 지도 실행(PID 32108·20432·28100·29944)은 아직 실행 중이며 중단은 사용자.
+
+## D125. 하루짜리 집 컴퓨터 실험으로 변경: 기존 지도 r_c 5, pgct_max·ippo × seed 1, 2M — 2026-11-05 Claude Code (사용자 요청 T196)
+
+- 사용자 요청: D124(요청 2개, 7M) 대신 2–3M 하루짜리. 다음 날 이사라 집 컴퓨터(RTX 3060)로 진행.
+- 판단: 하루 안에 끝내려면 job을 2개로 줄인다(이 PC 측정: 4개 동시 job당 약 16 step/s → 하루 약 1.4M, 2개 약 25 step/s → 2M 약 22시간). 학습은 CPU 위주라 집 컴퓨터 CPU가 속도를 정한다. 환경은 2M 안에 학습이 확인된 기존 지도(`b6_corner_indiv_comm5_pen005`)로 하여, 행동별 거리 gate의 첫 온라인 확인과 pgct_max 대 ippo의 agent별 학습 속도 비교를 노린다. 요청 2개는 학습 이력이 없어 하루짜리에 위험.
+- `latent_team/run_main_amax_v2.ps1`에 `-Modes` 추가(기본 4 mode). plan-only(`runs/plancheck_home_*`): 2 job, 2,000,896 step, r_c 5, 요청 3, action_max, mirror 없음, device auto. 이 PC 기준 가장 긴 영상 경로 171자.
+- 집 컴퓨터 준비: 브랜치(실행기 옵션은 미커밋 → 커밋·push 또는 파일 복사), 기준 `experiment.json`, 같은 Python 패키지 버전·`pip install -e .`, `run_queue.ps1`의 Python 경로, `wandb login`, 짧은 저장소 경로. 넓은 지도 4 job 중단은 사용자.
+
+## D126. 하루짜리 실험은 이 PC에서, W&B 영상 live 업로드 옵션 추가 — 2026-11-05 Claude Code (사용자 요청 T197·T198)
+
+- T197: 하루짜리(기존 지도 r_c 5, pgct_max·ippo × seed 1, 2M, 약 22시간)는 집 컴퓨터가 아니라 이 PC에서 돌린다. D125의 집 컴퓨터 준비 항목은 불필요.
+- T198: W&B 영상도 업로드. `latent_team/video_retention.py`에 `upload="live"`(저장 직후 `eval/video`로 W&B 기록, 짧은 `wandb_data/<ID>` 경로 유지, 실패해도 학습 계속, 종료 시 중복 업로드 없음), `train_from_scratch.py --video-upload {finish,live}`(live는 `--video-keep-last` 필요), `run_main_amax_v2.ps1 -VideoUpload`(기본 live). 로컬은 최근 10개 유지.
+- 검증: 새 테스트(live 3회 업로드·종료 시 tail 없음·로컬 2개 유지), 실제 1 update(W&B 오프라인)에서 final.mp4가 W&B media에 기록, 전체 272개 통과, plan-only(`runs/plancheck_day_*`): 2 job, 2,000,896 step, upload live.
+- 명령(사용자 실행): 넓은 지도 4 job 중단 후 `run_main_amax_v2.ps1 -Candidate b6_corner_indiv_comm5_pen005 -Modes pgct_max,ippo -Seeds 1 -TotalTimesteps 2000000 -Name day_base_1105`. 서버 10M에서 live는 job당 약 195개 영상.
+
+## D127. 논문 그림 2를 실제 데이터로 교체, 다른 데이터 그림 후보 정리 — 2026-11-05 Claude Code (사용자 요청 T204)
+
+- 그림 2: `runs/acv2_s1_20261029_084340/b6_corner_indiv_pen005_acv2_pgct_s1/checkpoint_04250.pt`(4.35M)의 저장 예측기·사건 버퍼로 그린 두 agent의 공통 probe 예측(최근 자기 사건 32개씩, 대칭 사본 없음, 행동별 묶음). (a) 같은 팀 a3·a5: 배송 0.01, 반납 0.083, 합친 0.040, 최대 0.083. (b) 다른 팀 a2·a5: 배송 0.994, 반납 0.022, 합친 0.388(문턱 아래), 최대 0.994. 스크립트 `output/fig2_real_20261105/fig_discovery_data.py`, 출력 `figures/fig_discovery_data.pdf`(예전 `fig_discovery.pdf` 보존). 영어·한국어 캡션 교체, "왜 최댓값인가" 문단에서 그림 2(b) 참조. 영어 7쪽, 한국어 7쪽, Overfull 0.
+- 후보: ① 반사실 점검 산점도(dV 대 dMC, `output/oracle_why_20261029/cf_*.json`), ② checkpoint별 합친 거리 대 행동별 거리(`output/ac_drift_20261104/`), ③ 반납 비율 변화(부록), ④ agent별 학습 곡선(실험 결과 필요), ⑤ 분기 실험 온라인 발견 표. 본 실험 결과 자리 약 1쪽을 남기려면 지금은 ①(5.3절 대체)과 ②(그림 3 패널)를 권함. 사용자 결정 대기.
+
+## D128. 그림 3에 (d) 오프라인 거리 비교 패널, 5.3절에 반사실 산점도(그림 4) 추가 — 2026-11-05 Claude Code (사용자 요청 T205)
+
+- 스크립트 `output/fig_data_20261105/make_figures.py`, 수치 `figure_data.json`, 그림 `discovery_log_v2.pdf`·`counterfactual.pdf`(OneDrive `paper/figures`에 복사, 예전 파일 보존).
+- 그림 3(d): `runs/acv2_s1_20261029_084340` checkpoint 19개, 대칭 사본 없음, 성숙 쌍. 행동별 최대: 같은 팀 최대 ≤ .281, 다른 팀 최소 ≥ .976. 합친 거리: 다른 팀 최소 .388(4.35M). (a)–(c)는 `evidence_plots.py`와 같은 계산.
+- 그림 4: `output/oracle_why_20261029/cf_*.json` 네 묶음. 예측 상승분 > .2: 뒤처진·같은 팀 n 56, 평균 dMC .361, 양수 .89; 뒤처진·다른 팀 n 47, .104, .96; 앞선·같은 팀 n 16, .084, .75; 앞선·다른 팀 n 38, −.038, .50. 5.3절 본문을 합친 수치로 다시 썼다(이전 묶음별 범위 대신).
+- 빌드: 영어 7쪽(참고문헌 포함), 한국어 8쪽, Overfull 0.
+
+## D129. 행동별 probe 수집은 보류, 기록만 — 2026-11-05 Claude Code (사용자 결정 T212)
+
+- 배경(E84·E85): 팀 차이가 드문 경우, 현재 규칙(최근 32개 중 행동별 n_min 8)은 팀별 사건이 1/4 미만이면 다른 팀을 잘못 승인한다. 대안 후보: (1) 행동마다 최근 사건을 따로 모아 probe를 구성(사건 버퍼 512개 활용, n_min 8 유지), (2) n_min 낮추기(경험 불균형 쌍의 같은 팀 거리 증가 위험), (3) 불일치 개수 검정(드문 차이에 약함).
+- 결정: 사용자가 "지금은 기록만"으로 답했다. 오프라인 검증·구현은 하지 않는다. 현재 실행 중인 하루짜리 실험과 서버 본 실험 계획은 현재 규칙 그대로다. 도입하려면 서버 본 실험 시작 전에 다시 정해야 한다.
+- 논문: 식별 조건을 "팀마다 다른 보상이, 두 agent가 모두 n_min번 이상 겪은 행동에서 나타나야 한다"로 명시할 것을 제안해 두었다(미반영).
+
+## D130. IJCAI-27 제출까지 로드맵(제안) — 2026-11-05 Claude Code (사용자 요청 T213)
+
+- 마감(D105): 초록 2027-01-04, 본문 2027-01-11(AoE).
+- 일정: 11/5–9 하루짜리 run 분석·설계 확정·서버 준비, 11/10–16 서버 본 실험 시작(기존 지도 r_c 5, 5M, ippo·pgct_max·oracle_max·allk_max × seed 다수)과 PC 강건성 run(인접 목적지, 보상 잡음, 발견만 1M), 11/17–30 결과 수집·방법 절 최종본·그림 1 원본 수정(사용자), 12/1–14 그림 3 교체·학습 속도 그림·Results·초록/결론 갱신·Limitations 복원으로 초고 v1, 12/15–28 검토 반영·추가 seed·재현성 체크리스트·익명화·Overleaf 빌드, 12/29–1/4 초록 제출, 1/5–11 본문·보조 자료 제출(1/10 목표).
+- 결정 시점: 11/6 하루짜리 결과, 11/9 D129 도입 여부·서버 규모, 11/12 서버 본 실험 시작, 12/14 초고 v1.
+- 대비: Q2 이득 없음이면 Q1 중심·Q2 주장 축소, 서버 불가면 PC 4개 동시(5M × 12 job 약 11일), 학습 붕괴면 1.3M 점검으로 즉시 중단, "쉬운 환경" 지적은 강건성 run과 식별 조건 명시, 쪽수 초과면 그림 3 2×2·5.3절 축소.

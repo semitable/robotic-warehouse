@@ -1,0 +1,811 @@
+{
+  "discovery": {
+    "same_arc_updates": 5252,
+    "cross_arc_updates": 352,
+    "precision": 0.9371877230549608,
+    "first_cross_step": 4280320,
+    "last_step": 5000192,
+    "bins": [
+      {
+        "step": 150000,
+        "same": 0.2461614329219009,
+        "cross": 0.9909080663681148,
+        "mature": 2.642857142857143
+      },
+      {
+        "step": 250000,
+        "same": 0.24999484774962874,
+        "cross": 0.992109823942309,
+        "mature": 4.855670103092783
+      },
+      {
+        "step": 350000,
+        "same": 0.22842595989611972,
+        "cross": 0.9927459613625327,
+        "mature": 5.0
+      },
+      {
+        "step": 450000,
+        "same": 0.2304365675307487,
+        "cross": 0.9909007527467096,
+        "mature": 5.0
+      },
+      {
+        "step": 550000,
+        "same": 0.23184716884841722,
+        "cross": 0.9924152971734721,
+        "mature": 5.0
+      },
+      {
+        "step": 650000,
+        "same": 0.20368503249396683,
+        "cross": 0.9950197929285451,
+        "mature": 5.0
+      },
+      {
+        "step": 750000,
+        "same": 0.18039486985326,
+        "cross": 0.9936722179644356,
+        "mature": 5.0
+      },
+      {
+        "step": 850000,
+        "same": 0.1655807141099731,
+        "cross": 0.9944225102513339,
+        "mature": 5.0
+      },
+      {
+        "step": 950000,
+        "same": 0.17108239693719315,
+        "cross": 0.9923613695913337,
+        "mature": 5.0
+      },
+      {
+        "step": 1050000,
+        "same": 0.15198198320981615,
+        "cross": 0.9903730486517819,
+        "mature": 5.0
+      },
+      {
+        "step": 1150000,
+        "same": 0.13927737387341674,
+        "cross": 0.9828180299710473,
+        "mature": 5.0
+      },
+      {
+        "step": 1250000,
+        "same": 0.13341130438523396,
+        "cross": 0.9784740708948731,
+        "mature": 5.714285714285714
+      },
+      {
+        "step": 1350000,
+        "same": 0.1108376801438749,
+        "cross": 0.9709439702071424,
+        "mature": 6.0
+      },
+      {
+        "step": 1450000,
+        "same": 0.10746660188275786,
+        "cross": 0.9722408105112387,
+        "mature": 6.0
+      },
+      {
+        "step": 1550000,
+        "same": 0.10296186612113,
+        "cross": 0.9485985175207127,
+        "mature": 6.0
+      },
+      {
+        "step": 1650000,
+        "same": 0.09397552873483442,
+        "cross": 0.9259662122709994,
+        "mature": 6.0
+      },
+      {
+        "step": 1750000,
+        "same": 0.09862504098633247,
+        "cross": 0.9197631871606368,
+        "mature": 6.0
+      },
+      {
+        "step": 1850000,
+        "same": 0.09795084391105568,
+        "cross": 0.9253178430290733,
+        "mature": 6.0
+      },
+      {
+        "step": 1950000,
+        "same": 0.10070578066318438,
+        "cross": 0.923040212359694,
+        "mature": 6.0
+      },
+      {
+        "step": 2050000,
+        "same": 0.1109069362966773,
+        "cross": 0.9073387527292626,
+        "mature": 6.0
+      },
+      {
+        "step": 2150000,
+        "same": 0.09807705590239266,
+        "cross": 0.9018165361881526,
+        "mature": 6.0
+      },
+      {
+        "step": 2250000,
+        "same": 0.10185412332713478,
+        "cross": 0.8823012451249647,
+        "mature": 6.0
+      },
+      {
+        "step": 2350000,
+        "same": 0.10585526549221264,
+        "cross": 0.8975259796128535,
+        "mature": 6.0
+      },
+      {
+        "step": 2450000,
+        "same": 0.10090405737894582,
+        "cross": 0.8735812685653245,
+        "mature": 6.0
+      },
+      {
+        "step": 2550000,
+        "same": 0.11560206411526633,
+        "cross": 0.8498491467591656,
+        "mature": 6.0
+      },
+      {
+        "step": 2650000,
+        "same": 0.13752916423253222,
+        "cross": 0.8842182987921715,
+        "mature": 6.0
+      },
+      {
+        "step": 2750000,
+        "same": 0.11752943520773286,
+        "cross": 0.8645610007938146,
+        "mature": 6.0
+      },
+      {
+        "step": 2850000,
+        "same": 0.10709566752026799,
+        "cross": 0.8459108698974089,
+        "mature": 6.0
+      },
+      {
+        "step": 2950000,
+        "same": 0.11955672964987442,
+        "cross": 0.8651580797477779,
+        "mature": 6.0
+      },
+      {
+        "step": 3050000,
+        "same": 0.10567132634105354,
+        "cross": 0.851075478025913,
+        "mature": 6.0
+      },
+      {
+        "step": 3150000,
+        "same": 0.08419751022965827,
+        "cross": 0.8487744856642297,
+        "mature": 6.0
+      },
+      {
+        "step": 3250000,
+        "same": 0.08450923246909939,
+        "cross": 0.7736514041866558,
+        "mature": 6.0
+      },
+      {
+        "step": 3350000,
+        "same": 0.0933120511443035,
+        "cross": 0.7635572965845919,
+        "mature": 6.0
+      },
+      {
+        "step": 3450000,
+        "same": 0.08631136118387658,
+        "cross": 0.7594035041276305,
+        "mature": 6.0
+      },
+      {
+        "step": 3550000,
+        "same": 0.08360067737945476,
+        "cross": 0.7631607893277054,
+        "mature": 6.0
+      },
+      {
+        "step": 3650000,
+        "same": 0.08961557241911838,
+        "cross": 0.7765962256489912,
+        "mature": 6.0
+      },
+      {
+        "step": 3750000,
+        "same": 0.08105054629788533,
+        "cross": 0.7977037046872874,
+        "mature": 6.0
+      },
+      {
+        "step": 3850000,
+        "same": 0.09076494490363456,
+        "cross": 0.7341729660744248,
+        "mature": 6.0
+      },
+      {
+        "step": 3950000,
+        "same": 0.08897531488856124,
+        "cross": 0.6867567002443858,
+        "mature": 6.0
+      },
+      {
+        "step": 4050000,
+        "same": 0.09751901167845328,
+        "cross": 0.7043167876452437,
+        "mature": 6.0
+      },
+      {
+        "step": 4150000,
+        "same": 0.0788337907418113,
+        "cross": 0.6763460483999454,
+        "mature": 6.0
+      },
+      {
+        "step": 4250000,
+        "same": 0.09201943182292159,
+        "cross": 0.6873680135488275,
+        "mature": 6.0
+      },
+      {
+        "step": 4350000,
+        "same": 0.08890181762196624,
+        "cross": 0.6490295155519589,
+        "mature": 6.0
+      },
+      {
+        "step": 4450000,
+        "same": 0.08669191433681683,
+        "cross": 0.6192818669874598,
+        "mature": 6.0
+      },
+      {
+        "step": 4550000,
+        "same": 0.0755087873159192,
+        "cross": 0.6275097908737602,
+        "mature": 6.0
+      },
+      {
+        "step": 4650000,
+        "same": 0.07150664617502815,
+        "cross": 0.6158752743931412,
+        "mature": 6.0
+      },
+      {
+        "step": 4750000,
+        "same": 0.08810603723515906,
+        "cross": 0.6187222921773693,
+        "mature": 6.0
+      },
+      {
+        "step": 4850000,
+        "same": 0.06735827173395728,
+        "cross": 0.5931885074573892,
+        "mature": 6.0
+      },
+      {
+        "step": 4950000,
+        "same": 0.07989239258722769,
+        "cross": 0.626901198682885,
+        "mature": 6.0
+      }
+    ],
+    "source": "runs\\acv2_s1_20261029_084340\\b6_corner_indiv_pen005_acv2_pgct_s1",
+    "caution": "Component diagnostic with update-end contacts; not final integrated PGCT performance."
+  },
+  "ippo": {
+    "curve": [
+      {
+        "step": 51200,
+        "deliveries": 0.0
+      },
+      {
+        "step": 102400,
+        "deliveries": 0.0
+      },
+      {
+        "step": 153600,
+        "deliveries": 0.0
+      },
+      {
+        "step": 204800,
+        "deliveries": 0.0
+      },
+      {
+        "step": 256000,
+        "deliveries": 0.0
+      },
+      {
+        "step": 307200,
+        "deliveries": 0.0
+      },
+      {
+        "step": 358400,
+        "deliveries": 0.15
+      },
+      {
+        "step": 409600,
+        "deliveries": 0.0
+      },
+      {
+        "step": 460800,
+        "deliveries": 0.0
+      },
+      {
+        "step": 512000,
+        "deliveries": 0.0
+      },
+      {
+        "step": 563200,
+        "deliveries": 0.0
+      },
+      {
+        "step": 614400,
+        "deliveries": 0.0
+      },
+      {
+        "step": 665600,
+        "deliveries": 0.15
+      },
+      {
+        "step": 716800,
+        "deliveries": 0.85
+      },
+      {
+        "step": 768000,
+        "deliveries": 1.4
+      },
+      {
+        "step": 819200,
+        "deliveries": 2.2
+      },
+      {
+        "step": 870400,
+        "deliveries": 2.8
+      },
+      {
+        "step": 921600,
+        "deliveries": 2.55
+      },
+      {
+        "step": 972800,
+        "deliveries": 3.25
+      },
+      {
+        "step": 1024000,
+        "deliveries": 3.3
+      },
+      {
+        "step": 1075200,
+        "deliveries": 2.95
+      },
+      {
+        "step": 1126400,
+        "deliveries": 3.55
+      },
+      {
+        "step": 1177600,
+        "deliveries": 3.95
+      },
+      {
+        "step": 1228800,
+        "deliveries": 4.45
+      },
+      {
+        "step": 1280000,
+        "deliveries": 5.55
+      },
+      {
+        "step": 1331200,
+        "deliveries": 5.75
+      },
+      {
+        "step": 1382400,
+        "deliveries": 4.75
+      },
+      {
+        "step": 1433600,
+        "deliveries": 6.55
+      },
+      {
+        "step": 1484800,
+        "deliveries": 5.9
+      },
+      {
+        "step": 1536000,
+        "deliveries": 6.95
+      },
+      {
+        "step": 1587200,
+        "deliveries": 7.4
+      },
+      {
+        "step": 1638400,
+        "deliveries": 7.35
+      },
+      {
+        "step": 1689600,
+        "deliveries": 6.7
+      },
+      {
+        "step": 1740800,
+        "deliveries": 7.05
+      },
+      {
+        "step": 1792000,
+        "deliveries": 7.05
+      },
+      {
+        "step": 1843200,
+        "deliveries": 8.1
+      },
+      {
+        "step": 1894400,
+        "deliveries": 8.3
+      },
+      {
+        "step": 1945600,
+        "deliveries": 7.95
+      },
+      {
+        "step": 1996800,
+        "deliveries": 9.1
+      },
+      {
+        "step": 2048000,
+        "deliveries": 8.0
+      },
+      {
+        "step": 2099200,
+        "deliveries": 8.5
+      },
+      {
+        "step": 2150400,
+        "deliveries": 8.4
+      },
+      {
+        "step": 2201600,
+        "deliveries": 8.85
+      },
+      {
+        "step": 2252800,
+        "deliveries": 9.75
+      },
+      {
+        "step": 2304000,
+        "deliveries": 9.7
+      },
+      {
+        "step": 2355200,
+        "deliveries": 9.05
+      },
+      {
+        "step": 2406400,
+        "deliveries": 9.0
+      },
+      {
+        "step": 2457600,
+        "deliveries": 9.75
+      },
+      {
+        "step": 2508800,
+        "deliveries": 12.0
+      },
+      {
+        "step": 2560000,
+        "deliveries": 10.25
+      },
+      {
+        "step": 2611200,
+        "deliveries": 10.85
+      },
+      {
+        "step": 2662400,
+        "deliveries": 11.7
+      },
+      {
+        "step": 2713600,
+        "deliveries": 11.45
+      },
+      {
+        "step": 2764800,
+        "deliveries": 10.75
+      },
+      {
+        "step": 2816000,
+        "deliveries": 11.8
+      },
+      {
+        "step": 2867200,
+        "deliveries": 10.9
+      },
+      {
+        "step": 2918400,
+        "deliveries": 13.0
+      },
+      {
+        "step": 2969600,
+        "deliveries": 11.4
+      },
+      {
+        "step": 3020800,
+        "deliveries": 13.4
+      },
+      {
+        "step": 3072000,
+        "deliveries": 13.25
+      },
+      {
+        "step": 3123200,
+        "deliveries": 11.85
+      },
+      {
+        "step": 3174400,
+        "deliveries": 13.65
+      },
+      {
+        "step": 3225600,
+        "deliveries": 11.2
+      },
+      {
+        "step": 3276800,
+        "deliveries": 13.4
+      },
+      {
+        "step": 3328000,
+        "deliveries": 15.45
+      },
+      {
+        "step": 3379200,
+        "deliveries": 14.75
+      },
+      {
+        "step": 3430400,
+        "deliveries": 14.85
+      },
+      {
+        "step": 3481600,
+        "deliveries": 16.7
+      },
+      {
+        "step": 3532800,
+        "deliveries": 14.95
+      },
+      {
+        "step": 3584000,
+        "deliveries": 13.5
+      },
+      {
+        "step": 3635200,
+        "deliveries": 15.4
+      },
+      {
+        "step": 3686400,
+        "deliveries": 15.1
+      },
+      {
+        "step": 3737600,
+        "deliveries": 16.3
+      },
+      {
+        "step": 3788800,
+        "deliveries": 16.45
+      },
+      {
+        "step": 3840000,
+        "deliveries": 18.0
+      },
+      {
+        "step": 3891200,
+        "deliveries": 16.9
+      },
+      {
+        "step": 3942400,
+        "deliveries": 16.2
+      },
+      {
+        "step": 3993600,
+        "deliveries": 17.35
+      },
+      {
+        "step": 4044800,
+        "deliveries": 18.75
+      },
+      {
+        "step": 4096000,
+        "deliveries": 18.2
+      },
+      {
+        "step": 4147200,
+        "deliveries": 18.65
+      },
+      {
+        "step": 4198400,
+        "deliveries": 19.35
+      },
+      {
+        "step": 4249600,
+        "deliveries": 20.05
+      },
+      {
+        "step": 4300800,
+        "deliveries": 20.8
+      },
+      {
+        "step": 4352000,
+        "deliveries": 22.35
+      },
+      {
+        "step": 4403200,
+        "deliveries": 22.75
+      },
+      {
+        "step": 4454400,
+        "deliveries": 22.7
+      },
+      {
+        "step": 4505600,
+        "deliveries": 17.35
+      },
+      {
+        "step": 4556800,
+        "deliveries": 19.8
+      },
+      {
+        "step": 4608000,
+        "deliveries": 19.45
+      },
+      {
+        "step": 4659200,
+        "deliveries": 21.0
+      },
+      {
+        "step": 4710400,
+        "deliveries": 22.45
+      },
+      {
+        "step": 4761600,
+        "deliveries": 20.95
+      },
+      {
+        "step": 4812800,
+        "deliveries": 24.0
+      },
+      {
+        "step": 4864000,
+        "deliveries": 25.0
+      },
+      {
+        "step": 4915200,
+        "deliveries": 25.0
+      },
+      {
+        "step": 4966400,
+        "deliveries": 25.65
+      }
+    ],
+    "source": "runs\\ac_20261023_185556\\b6_corner_indiv_pen005_ac_ippo_s1",
+    "evaluation_key": "eval/deliveries"
+  },
+  "branch_plans": [
+    {
+      "path": "runs\\maxgae_br1M_20261102_165216",
+      "jobs": [
+        {
+          "mode": "ippo",
+          "seed": 1,
+          "status": "running",
+          "last_logged_steps": 35840
+        },
+        {
+          "mode": "oracle_max",
+          "seed": 1,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "oracle_maxd1",
+          "seed": 1,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "allk_max",
+          "seed": 1,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "ippo",
+          "seed": 3,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "oracle_max",
+          "seed": 3,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "oracle_maxd1",
+          "seed": 3,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "allk_max",
+          "seed": 3,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "ippo",
+          "seed": 5,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "oracle_max",
+          "seed": 5,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "oracle_maxd1",
+          "seed": 5,
+          "status": "planned",
+          "last_logged_steps": 0
+        },
+        {
+          "mode": "allk_max",
+          "seed": 5,
+          "status": "planned",
+          "last_logged_steps": 0
+        }
+      ]
+    }
+  ],
+  "training_config": {
+    "rollout_steps": 1024,
+    "sequence_length": 64,
+    "minibatch_chunks": 8,
+    "ppo_epochs": 4,
+    "learning_rate": 0.0002,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_coef": 0.2,
+    "value_clip_coef": 0.2,
+    "entropy_coef": 0.05,
+    "mlp_hidden_dim": 128,
+    "recurrent_hidden_dim": 128,
+    "pgct_probe_sequence_length": 1,
+    "eval_episodes": 20,
+    "eval_horizon": 500,
+    "eval_interval": 50,
+    "eval_render_episodes": 1,
+    "eval_render_mode": "human",
+    "eval_render_fps": 10,
+    "wandb_log_eval_video": false,
+    "save_eval_video": false
+  },
+  "sources": {
+    "runs\\acv2_s1_20261029_084340\\b6_corner_indiv_pen005_acv2_pgct_s1\\transfer.jsonl": "57f5d35df18e8241a47cf7608ab37d4282d3be0151cbca16ef1633743f8089de",
+    "runs\\acv2_s1_20261029_084340\\b6_corner_indiv_pen005_acv2_pgct_s1\\metrics.jsonl": "145cec3da77b35969cf909b90989fe38beb1371cceab1c83a1e23d4f20d12fb4",
+    "runs\\ac_20261023_185556\\b6_corner_indiv_pen005_ac_ippo_s1\\metrics.jsonl": "60da65a5679fedb7068b54d38af0ffee52890fb3f3379f8e62031a2739e8840e",
+    "latent_team\\max_gae.py": "85b41c05f509437047981391868dc4d617c144a7e2cc98f4d2e5555a95093e55",
+    "latent_team\\reward_probe_ac_v2.py": "8d0fcefe5f54e7c46345ef9849e5d740ed3937fe02ac3078923b08c326a9099e",
+    "latent_team\\train_from_scratch.py": "1e66e2df6b970211c353bf0d9c2235eedd940037edb36d8f5955a94976cf9100"
+  }
+}

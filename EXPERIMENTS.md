@@ -1545,3 +1545,31 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
 - 새 파일: latent_team/video_retention.py, run_main_amax_v2.ps1, tests/test_video_retention.py. 수정: train_from_scratch.py 옵션·설치 연결, README, .gitignore.
 - 한계: 온라인 업로드·본 학습 미실행. 종료 시 영상 업로드하며 강제 종료 시 로컬 파일만 남을 수 있음. 기존 결과 삭제 없음; 새 run의 오래된 영상만 사용자 지시대로 순환 삭제.
 - 근거: output/video_retention_20261104/REPORT.md, offline_result.json, verify_offline.py; 새 plan manifest.
+
+## E82. am2 재실행 초기 점검과 Codex 수정 검증(읽기 전용) — 2026-11-04 15:27 KST Claude Code (T188)
+
+- 실행: `runs/am2_1104_152110_b6_wide_corner_indiv_comm5_pen005`(사용자가 15:21 `run_main_amax_v2.ps1`로 시작, W&B `rware-main-amax-v2`, 10M, keep_last 10). pgct_max s1–3(PID 34424·23532·38028), ippo s1(PID 35324), 부모 PID 7124(VS Code 터미널). 15:25 기준 0.00–0.01M, 오류 로그 오류 0. 이전 실행의 프로세스 없음.
+- 경로: 가장 긴 로컬 영상 경로(oracle_max_s1 `videos/eval_00050.mp4`) 184자. W&B 목적지는 run 이름과 무관한 `wandb_data/<ID>` 아래(E81 최장 177자).
+- 테스트: 전체 271개 통과.
+- 51,200 step 통과 여부는 백그라운드 감시(읽기 전용)로 확인 중. 결과는 이 항목 뒤에 추가한다.
+- 후속(17:58 KST): 감시 대상 `am2_1104_152110`은 사용자가 약 1만 step에서 멈추고(D119 절차) seed별 순서로 `runs/am2_1104_153231_b6_wide_corner_indiv_comm5_pen005`를 15:32에 다시 시작했다(감시는 시간 초과로 끝남). 새 실행 seed 1의 pgct_max·ippo·oracle_max·allk_max(PID 32108·20432·28100·29944)가 0.14M에서 running, 평가 2회(51,200·102,400 step)와 `eval_00050`·`eval_00100.mp4` 저장, 오류 로그 오류 0, job당 약 16 step/s. W&B 영상은 설계대로 종료 시 업로드 대기(`upload_status` pending). 51,200 step 실패는 재발하지 않았다.
+
+## E83. 넓은 지도 본 실험 학습 붕괴 확인(읽기 전용) — 2026-11-05 11:41 KST Claude Code (T193)
+
+- 실행: `runs/am2_1104_153231_b6_wide_corner_indiv_comm5_pen005` seed 1(pgct_max·ippo 1.17M, oracle_max·allk_max 1.08–1.09M), job당 15–16 step/s, 오류 0.
+- 결과: 마지막 평가(1.08–1.13M) 배송/ep 4 mode 모두 0.00, agent별도 모두 0. 학습 중 배송/ep(0.2M 구간별) 0.15→0.02→0.01→0.01→0→0(4 mode 거의 같음). ippo_s1 학습 중 요청 선반 집기/ep 0.775→0.053→0.028→0.008→0.012→0.006, agent_1 집기 횟수 6.33→0.59→0.07→0.03→0.015→0.036, episode return −0.36→−0.04(감점 회피로 상승). pgct_max 성숙 0/6, `ac_v2_own_events_mean` 8.3.
+- 해석: 보상이 멀어 감점만 경험하고 TOGGLE을 회피하는 정책으로 수렴(pickup 정체). 방법 차이가 아니라 환경 문제.
+
+## E84. 불일치 개수 검정 오프라인 확인(행동 구분 없음, 학습 없음) — 2026-11-05 Claude Code (사용자 질문 T210)
+
+- 질문: 공유 보상과 팀별 보상이 같은 행동 안에 섞이면 행동별 최대가 다시 희석된다. 행동으로 나누지 않고 |p−q| > δ인 probe 개수로 판정하면 되는가.
+- 방법: `output/ac_drift_20261104/disagreement_count_check.py`. v2 발견 run(seed 1, 5M) checkpoint 19개, 성숙 쌍, 64 probe(최근 32개씩, 대칭 사본 없음, 행동 구분 없음). δ = .3, .5.
+- 결과(δ .5): 같은 팀 최대 개수 / 다른 팀 최소 개수 — 0.26M 27/48, 1.02M 16/62, 2.05M 13/49, 3.07M 9/43, 4.35M 17/34, 4.86M 13/36. 전체 같은 팀 ≤ 27, 다른 팀 ≥ 33으로 모든 시점에서 분리되나 여유가 작다(행동별 최대는 .28 대 .97). 비율로는 같은 팀 ≤ .47, 다른 팀 ≥ .52.
+- 해석: 행동으로 나눌 수 없을 때의 대안이 될 수 있으나 문턱 개수가 필요하고, 다른 팀 개수도 팀별 사건 수가 줄면 함께 준다. 구현하지 않았다.
+- 출력: 같은 폴더 `disagreement_count_check_stdout.txt`, `.json`.
+
+## E85. 팀 차이가 드문 경우 오프라인 모의(학습 없음) — 2026-11-05 Claude Code (사용자 질문 T211)
+
+- 방법: `output/ac_drift_20261104/rare_difference_check.py`. v2 발견 run checkpoint_04250(4.35M)의 예측기와 512 사건 버퍼에서, 각 agent의 probe를 팀별 사건(배송, FORWARD) k개 + 공유 사건(반납, TOGGLE) 32−k개로 재구성(대칭 사본 없음). 두 종류가 32개 이상인 성숙 agent 1–5.
+- 결과(같은 팀 최대 / 다른 팀 최소): 합친 거리 k=8 .16/.18, k=16 .12/.36, k=32 .01/.99. 행동별 최대 n_min 8: k ≤ 6 다른 팀 .03(분리 실패), k ≥ 8 .98 이상. n_min 2: k ≥ 2 다른 팀 .98, 같은 팀 ≤ .21. 불일치 개수(|p−q|>.5): k=0 18/0, k=8 14/16, k=16 12/32.
+- 해석: 드문 차이에서 실패하는 원인은 거리 식이 아니라 "최근 32개 중 n_min개" 경험 조건이다. 행동별 probe 수집(행동마다 최근 사건 따로 보관) 또는 n_min 낮추기가 대안이며, 후자는 경험 불균형 쌍의 같은 팀 거리를 키울 수 있다. 구현하지 않았다.
