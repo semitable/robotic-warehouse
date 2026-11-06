@@ -1,5 +1,13 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-06 13:25 KST, Claude Code (T246, PGCT_Change의 하루짜리 run 분석 이식)
+
+- **이식**: `feature/PGCT_Change`(29ef6f0)에만 있던 하루짜리 run 분석을 이 브랜치에 옮겼다. E86은 E100으로, 대화 T216은 T245로 옮겼고, 스크립트·그림은 `RWARE/output/day_run_20261106/`에 두었다. 같은 run의 W&B 분석은 E91·E97에 있다.
+- **결과(E100)**: 기존 지도 r_c 5, seed 1, 2M. pgct_max 대 ippo의 팀 0.5 도달은 0.92 대 1.48M, 마지막 평가 3회 평균은 9.0 대 6.65 배송/ep다. 다른 팀 승인은 0이다. 다른 팀 쌍의 행동별 거리는 .99–1.00을 유지했지만 합친 거리는 .58까지 내려갔다(행동별 최대 규칙의 첫 온라인 확인). a1(E97의 A2)은 pgct에서 미성숙·미학습이다.
+- **당시 권고(T216)**: 현재 설정으로 서버 본 실험(5M, ippo·pgct_max·oracle_max·allk_max, seed ≥ 5). seed 1개라 속도 이득은 미확정이다. 이후 계획은 T239 절과 E97을 따른다.
+- **주의(DESKTOP-03ASKH8)**: 이 PC 디스크에서는 `RWARE` 폴더 이름이 소문자 `rware`다. 그래서 `git add -A`나 `git add .`로 새 파일을 올리면 경로가 `rware/...`로 기록된다(dry-run 확인). 리눅스 서버에서는 다른 폴더가 된다. 새 파일은 `git add RWARE/...`처럼 대문자 경로로 올리거나, 학습이 없을 때 폴더 이름을 `RWARE`로 바꾼다.
+- **통합 사본 미갱신**: 이 PC에는 `research_archive/build_archive.py`가 읽는 보고서 7개(`RWARE/output/gating_diagnosis/README.md` 등, git에 없음)가 없다. 여기서 다시 만들면 그 내용이 빠지므로 커밋된 사본을 그대로 두었다. 보고서가 있는 PC에서 다시 만든다.
+
 ## 최신 확인 — 2026-11-06 11:15 KST, Claude Code (T239, 속도 원인·LBF 본 비교 시작)
 
 - **속도 저하 원인(E98, D143)**: 팬이 아니라 Windows 11 백그라운드 절전(EcoQoS)이다. 같은 팬 설정에서 최소화 창은 48 step/s, 앱 하위 프로세스는 197 step/s였다. 학습 프로세스가 스스로 절전에서 빠지도록 고쳤고(`pgct_runner/power.py`), 최소화 창에서도 203 step/s가 나온다.
