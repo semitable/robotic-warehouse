@@ -1,5 +1,18 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-06 KST, Claude Code (T238, LBF 식별 1M·RWARE seed 1 최종 분석)
+
+- **LBF 학습 중 식별(E97)**: main, seed 1, 1M. PGCT-ID-only가 117,760 step부터 1M까지 같은 팀 두 쌍만 승인했다(오승인 0, AUROC 1.0). 같은 팀 D는 .06–.14, 다른 팀 D는 .94–1.00이다. 대조 경험이 학습 내내 남아서 Overcooked 조건 3 실패가 생기지 않았다.
+- **LBF IPPO 학습**: 평가 보상이 563k 이후 .21–.23에서 정체했다. 먹이 6개 중 3.75개를 모으고 적재 실패가 58회/episode다. 같은 팀 협력이 병목이라 Q2 여지가 있다.
+- **이 PC 속도 문제**: 이 PC에서 46 step/s로, 시험 학습 206의 1/4.3이다. 원인은 미확인이다(gate 1.5%, RWARE는 다른 PC).
+- **RWARE seed 1 최종(2M, 결정적 20×500)**:
+  - 배송/episode: IPPO 6.85, PGCT-D2 8.55(+25%).
+  - 첫 배송: PGCT 819k, IPPO 1.43M. 평가 39점 평균은 1.24 대 3.19다.
+  - 다른 팀 승인·donor는 0이다.
+  - A2는 미성숙이고 PGCT에서 배송 0이다(IPPO 23). IPPO가 막판에 따라붙고 있다.
+- **Overcooked `oc_id_500k_v3_rel`**: Ctrl+C로 16/489 update에서 멈췄다. 미검증이다.
+- **다음(사용자 결정)**: RWARE seed 2·3, LBF 본 비교(ippo·oracle·all·pgct_d2). LBF 본 비교 전에 이 PC 속도부터 확인한다.
+
 ## 최신 확인 — 2026-11-06 KST, Claude Code (T236, LBF·VMAS 환경 구현)
 
 - **구현(D142)**:

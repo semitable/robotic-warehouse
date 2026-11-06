@@ -1716,3 +1716,35 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - 결정적 평가(10 episode), agent 평균 보상: 51k .575, 100k .675. 100k에서 episode당 자기 종류 덮기 합계 2.7, 다른 종류 2.3.
   - 해석: 학습은 느리게 오른다. 다른 종류 목표도 계속 덮으므로 대조 경험은 LBF보다 풍부할 수 있다. seed 1개, 100k라 결론은 아니다.
   - 비용: 2M이면 job당 약 6.6시간이다.
+
+## E97. LBF 학습 중 식별(1M)과 RWARE 본 실험 seed 1 최종(2M) 분석 — 2026-11-06 KST Claude Code (T238)
+
+- 실행 여부: 읽기 전용 분석. 학습·코드는 바꾸지 않았다. 근거: 로컬 `LBF/runs/lbf_id_1m/*`(metrics, gate, eval), W&B `pgct-lbf` 두 run(84jyrm9w, 4a1scxhq), W&B `rware-main-amax-v2` 두 run(yidd96p3, 57ebqe5l). W&B 요약값은 로컬 로그와 같았다.
+- **LBF `lbf_id_1m`** (사용자 실행):
+  - 조건: main_4p2t, seed 1, 숨은 팀 [0,0,1,1], 1,000,448 step. 결정적 평가는 20 episode × 최대 50 step. 이 PC(DJKLSFJ).
+  - IPPO와 PGCT-ID-only의 최종 agent 가중치는 완전히 같다. gate는 학습에 개입하지 않는다.
+  - 식별(PGCT-ID-only):
+    - 네 명 모두 warm-up 끝(102k) 전에 성숙했다. 첫 올바른 승인은 117,760 step이고 같은 팀 두 쌍이다.
+    - 이후 1M까지 precision·recall 1.0을 유지했고 오승인은 0이다. AUROC 1.0이다.
+    - 175회 비교 각각에서 같은 팀 D는 .06–.14(평균 .095), 다른 팀 D는 .94–1.00(평균 .985)이다. 임계값을 .14–.93 사이 어디에 두어도 결과가 같다.
+    - 모든 쌍이 매 update 접촉했다. 비교는 전부 LOAD 층에서 64 probe로 했다.
+  - 학습(IPPO), agent 평균 평가 보상: 51k .019, 154k .130, 256k .175, 563k .223. 이후 1M까지 .209–.231에서 정체했다.
+  - 1M 평가 세부: 먹이 6개 중 3.75개를 모은다. 다른 팀 먹이는 .25개, 적재 실패는 58회/episode다. 팀 보상(최대 1)은 .44와 .49다. 같은 팀 협력이 여전히 병목이다.
+  - 대조 경험: 1M 직전 학습 중에도 agent당 다른 팀 먹이 적재가 .08–.10회/episode, 적재 실패가 4–6회/episode 남아 있다. 모든 agent가 같은 상황에서 두 종류 먹이를 다 겪는다. Overcooked의 조건 3 실패가 LBF에서는 생기지 않았다.
+  - 속도: 46 step/s, job당 6.1시간이다. 시험 학습(206 step/s)보다 rollout(8.6초 대 1.9초)과 PPO(12.5초 대 2.9초)가 똑같이 약 4.3배 느렸다. gate 비용은 update당 .2–.34초(약 1.5%)다. RWARE는 다른 PC(DESKTOP-03ASKH8)에서 돌았으므로 원인이 아니다. 원인은 확인하지 못했다(전원·팬 설정이나 다른 프로세스 가능성). 이 속도라면 5M은 job당 약 30시간이다.
+- **RWARE `rware-main-amax-v2`** (b6_corner_indiv_comm5_pen005, PGCT-D2 = acv2 action_max, 거울 없음, Max-GAE):
+  - 조건: seed 1, 2,000,896 step, DESKTOP-03ASKH8. 결정적 평가는 20 episode × 500 step. 팀은 team0 = A1·A3·A5, team1 = A2·A4·A6.
+  - 최종 평가(eval/final): 배송/episode는 IPPO 6.85, PGCT 8.55(+25%)다.
+    - agent별 20 episode 합계: IPPO [53,23,18,21,0,22], PGCT [54,0,32,28,0,57].
+    - 팀 합계: IPPO 71·66, PGCT 86·85.
+  - 마지막 주기 평가(1,996,800): IPPO 6.55, PGCT 9.45.
+  - 첫 배송: PGCT 819,200(.35/episode), IPPO 1,433,600(1.1/episode).
+  - 평가 39점 평균 배송/episode(학습곡선 면적 대용): IPPO 1.24, PGCT 3.19(2.6배). 1.5M 이후 10점 평균은 4.61 대 7.88.
+  - IPPO가 막판에 따라붙어 격차가 줄고 있다.
+  - gate(W&B update 기록 1,954개):
+    - 다른 팀 승인과 다른 팀 donor arc는 전 구간 0이다.
+    - 성숙 순서: A3 124,928 → A4 130,048 → A6 150,528 → A1 171,008 → A5 229,376. 첫 donor arc는 163,840이다.
+    - 0.5M 이후 donor arc 8개(같은 팀 쌍 전부)와 receiver 5명을 유지했다. select_frac은 약 .62, adv_shift는 약 .32다.
+    - A2는 끝까지 성숙하지 못했다(자기 보상 사건 없음). PGCT run에서 A2는 배송 0이고, IPPO run에서는 23이다. team1 요청을 A4·A6가 먼저 가져가는 경쟁 때문일 수 있으나 확인하지 않았다. A5는 두 run 모두 0이다.
+  - 한계: seed 1개다. 판정에는 seed 2·3이 필요하다(D78).
+- **Overcooked `oc_id_500k_v3_rel`**: 02:15에 KeyboardInterrupt로 멈췄다(489 update 중 16 update, 37 step/s). 결과가 없으므로 v3+상대 규칙의 학습 중 식별은 아직 검증되지 않았다.
