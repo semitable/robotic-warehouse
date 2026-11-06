@@ -1765,3 +1765,13 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - W&B `pgct-lbf`: pgct_d2 4daf1v2q, ippo vgh03qrs, oracle 2z6d3b21, all 9lvho7an, random_gate k71y3qsk.
   - 예상: job당 약 9시간, 전체 약 27–28시간(묶음 3개).
   - 이것은 시작 기록이고 결과는 아직 없다.
+
+## E99. LBF 본 비교 seed 1 중단(콘솔 창 닫힘)과 재시작 — 2026-11-06 11:35 KST 전후 Claude Code (T243)
+
+- 증상: `lbf_main_5m`의 seed 1 job 5개(pgct_d2·ippo·oracle·all·random_gate)가 11:17:21–28에 update 67–69(약 68k step)에서 동시에 종료됐다. 각 `.log.err`에 `forrtl: error (200): program aborting due to window-CLOSE event`가 남았다.
+- 원인: WMI로 띄운 대기열 PowerShell(PID 9684)이 사용자 세션에 보이는 콘솔 창(conhost 28440)을 가졌고, 이 창이 닫혀 붙어 있던 프로세스에 CTRL_CLOSE가 갔다. 대기열 자신도 종료됐다. 종료 직전 대기열이 seed 2 job 5개(PID 5248·33860·10824·11460·35348, 11:17:27–32 시작)를 띄웠고, 이 job들은 정상 진행 중이다(11:30에 update 약 120). seed 3은 대기열이 없어 시작되지 않았다.
+- 조치:
+  - `scripts/start_detached.ps1`: 콘솔을 숨김(Win32_ProcessStartup ShowWindow 0, `-WindowStyle Hidden`)으로 띄우고 `-WaitForPid` 옵션을 추가했다. 시험 실행에서 창 핸들 0을 확인했다.
+  - 중단된 seed 1 폴더·로그는 지우지 않고 `lbf_main_5m/_crashed_20261106_1117/`로 옮겼다. 집계(`*/config.json`)에서는 빠진다. W&B의 해당 5 run은 crashed 상태로 남는다.
+  - 숨김 대기열 PID 24360을 띄웠다. seed 2의 5개 job이 끝나면 seed 1·3을 5개씩 차례로 돌린다(5M, 같은 plan·config).
+- 예상: seed 2는 2026-11-06 20시 전후, seed 1은 11-07 05시 전후, seed 3은 11-07 14시 전후에 끝난다(job당 약 155 step/s 기준). 사용자가 최대 프로세서 상태를 99%로 낮추면 약 30% 늦어진다.
