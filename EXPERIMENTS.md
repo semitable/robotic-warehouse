@@ -1748,3 +1748,20 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
     - A2는 끝까지 성숙하지 못했다(자기 보상 사건 없음). PGCT run에서 A2는 배송 0이고, IPPO run에서는 23이다. team1 요청을 A4·A6가 먼저 가져가는 경쟁 때문일 수 있으나 확인하지 않았다. A5는 두 run 모두 0이다.
   - 한계: seed 1개다. 판정에는 seed 2·3이 필요하다(D78).
 - **Overcooked `oc_id_500k_v3_rel`**: 02:15에 KeyboardInterrupt로 멈췄다(489 update 중 16 update, 37 step/s). 결과가 없으므로 v3+상대 규칙의 학습 중 식별은 아직 검증되지 않았다.
+
+## E98. 학습 속도 저하 진단(EcoQoS)과 LBF 본 비교 시작 — 2026-11-06 11:10 KST 전후 Claude Code (T239)
+
+- 환경: 이 PC(DJKLSFJ). i5-13400(P코어 6, E코어 4, 16 스레드, 기본 2.5 GHz), 전원 구성표 "균형 조정". 사용자 팬 설정은 CPU 팬 35% 고정, 펌프 100%, 시스템 팬 60%(T239 화면).
+- 벤치마크: LBF main_4p2t IPPO, seed 1, 30 update(30,720 step). 평가·체크포인트·W&B는 껐다. 출력은 scratchpad `bench_runs`.
+  - A. 앱의 하위 프로세스: 197 step/s(update당 rollout 2.05초, PPO 2.90초).
+  - B. 최소화된 별도 PowerShell 창: 48 step/s(8.53초, 12.40초). 사용자 `lbf_id_1m`(46 step/s, 8.6초, 12.5초)과 같다.
+  - C. B와 같은 조건에서 학습 프로세스가 스스로 EcoQoS를 해제: 203 step/s(2.11초, 2.99초).
+  - 결론: 같은 팬 설정에서 실행 방식만으로 4.2배 차이가 났다. 원인은 Windows 백그라운드 절전이다.
+- 코드: `PGCT/pgct_runner/power.py`(신규), `pgct_runner/cli.py`와 `Overcooked/pgct_overcooked/train.py`에 기본 해제와 `--allow-eco`를 추가했다. 테스트는 PGCT 16(신규 1), Overcooked·LBF 학습/명령줄 테스트 통과다.
+- LBF 본 비교 `LBF/runs/lbf_main_5m`:
+  - 2026-11-06 11:09 KST 시작. main_4p2t, 5M, 방법 5(pgct_d2·ippo·oracle·all·random_gate), seed 1–3, 15 job, 동시 5개.
+  - `scripts/start_detached.ps1`로 앱 밖(WMI)에서 실행했다. 대기열 PID 9684, 로그 `queue.log`.
+  - 첫 묶음(seed 1) 25 update 시점: 각 152–156 step/s, 합계 약 770 step/s. 다섯 job 모두 절전 해제 True다.
+  - W&B `pgct-lbf`: pgct_d2 4daf1v2q, ippo vgh03qrs, oracle 2z6d3b21, all 9lvho7an, random_gate k71y3qsk.
+  - 예상: job당 약 9시간, 전체 약 27–28시간(묶음 3개).
+  - 이것은 시작 기록이고 결과는 아직 없다.

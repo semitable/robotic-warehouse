@@ -1817,3 +1817,20 @@
 - 구조: 공용 실행부 `PGCT/pgct_runner`(ExperimentSpec, 계획·CLI·W&B·영상·집계)를 추가했다. Overcooked 코드는 바꾸지 않았다. `pgct_core`도 바꾸지 않았다.
 - 의존성: `marl-policy-sharing` 환경에 vmas 1.5.2, gym 0.26.2, gym-notices 0.0.8, lbforaging 2.0.0을 `--no-deps`로 설치했다. 기존 패키지 버전은 그대로다. pip check상 없는 것은 pyglet(렌더링 전용, 미사용)뿐이다.
 - 남은 결정(사용자): 본 실험 예산과 실행 범위. LBF 5M은 job당 약 6–7시간, VMAS 2M은 job당 수 시간이다. 학습은 사용자 승인 후 앱 밖 PowerShell에서 건다.
+
+## D143. 학습 속도 저하 원인(Windows 백그라운드 절전)과 LBF 본 비교 실행 방식 — 2026-11-06 Claude Code (사용자 요청 T239)
+
+- 사용자 가설: 팬 속도를 낮춘 영향으로 학습이 느려졌다(T239, FanControl 화면: CPU 팬 35% 고정 1,428 RPM, 펌프 100%, 시스템 팬 60%).
+- 측정 결과(E98): 팬 설정이 같아도 실행 방식에 따라 속도가 갈렸다.
+  - 앱의 하위 프로세스로 실행: 197 step/s.
+  - 최소화된 PowerShell 창에서 실행: 48 step/s. 사용자 `lbf_id_1m`의 46 step/s를 재현했다.
+  - 원인: Windows 11이 백그라운드·최소화 창의 프로세스에 EcoQoS(E코어·저클럭)를 적용한다. 팬이 원인이 아니다. job 2개 정도의 부하에서는 열 스로틀링 근거가 없다.
+- 조치:
+  - 학습 진입점(`pgct_runner.cli.train_main`, `pgct_overcooked.train`)이 기본으로 자기 프로세스를 EcoQoS에서 뺀다. `SetProcessInformation(ProcessPowerThrottling)`이고, 관리자 권한이 필요 없으며 시스템 설정을 바꾸지 않는다.
+  - `--allow-eco`로 끌 수 있다. 계산 결과는 바뀌지 않고 스케줄링만 바뀐다.
+  - 최소화 창에서 203 step/s를 확인했다.
+- LBF 본 비교(사용자 "LBF 진행해줘"):
+  - 범위: `main_4p2t.json`(5M, 사전 고정), 방법 pgct_d2·ippo·oracle·all·random_gate, seed 1–3, 15 job, 동시 5개.
+  - pgct_id_only는 뺐다. 학습이 IPPO와 비트 단위로 같고(E97), 식별 지표는 pgct_d2·random_gate의 gate 로그에도 남기 때문이다.
+  - 실행 방식: `scripts/start_detached.ps1`로 WMI(Win32_Process.Create)를 통해 앱 프로세스 트리 밖에서 대기열을 띄웠다. 앱이 재시작돼도 죽지 않게 하려는 것(E26)이다. 같은 사용자 계정으로 돌고 W&B 인증 파일을 찾는 것을 확인했다.
+- 남은 확인: 동시 5개 부하에서 CPU 온도. 팬이 낮게 고정돼 있으므로, FanControl에서 CPU 온도가 90°C 안팎이면 CPU 팬 곡선을 켜는 것이 좋다.

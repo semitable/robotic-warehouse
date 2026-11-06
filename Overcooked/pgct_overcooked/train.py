@@ -91,6 +91,8 @@ def main(argv=None):
                         help="record a greedy play video at every N-th evaluation and at the end (0: off); "
                              "uploaded as eval/video when --track is on")
     parser.add_argument("--video-keep", type=int, default=10, help="newest periodic videos kept per job (+ final.mp4)")
+    parser.add_argument("--allow-eco", action="store_true",
+                        help="keep Windows' background power throttling (EcoQoS); by default training opts out")
     args = parser.parse_args(argv)
     if len(set(args.methods)) != len(args.methods) or len(set(args.seeds)) != len(args.seeds):
         parser.error("methods and seeds must be unique")
@@ -127,6 +129,9 @@ def main(argv=None):
     print(f"plan: {plan_path} ({len(planned)} jobs listed, {len(jobs)} selected)", flush=True)
     if args.plan_only:
         return 0
+    if not args.allow_eco:  # scheduling only: a minimized console would otherwise run ~4x slower (E98)
+        from pgct_runner.power import disable_power_throttling
+        print(f"windows power throttling disabled for this process: {disable_power_throttling()}", flush=True)
     failed = []
     for job in jobs:
         out = root / job["name"]

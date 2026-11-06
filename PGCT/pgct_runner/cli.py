@@ -20,6 +20,7 @@ from pathlib import Path
 
 from pgct_core.trainer import METHODS, evaluate, load_agents, run_training
 
+from .power import disable_power_throttling
 from .tracking import WandbTracker
 from .video import EvalVideoRecorder
 
@@ -80,6 +81,9 @@ def train_main(spec, argv=None):
     parser.add_argument("--video-every", type=int, default=0,
                         help="record a greedy play video at every N-th evaluation and at the end (0: off)")
     parser.add_argument("--video-keep", type=int, default=10, help="newest periodic videos kept per job (+ final.mp4)")
+    parser.add_argument("--allow-eco", action="store_true",
+                        help="keep Windows' background power throttling (EcoQoS); by default training opts out of it "
+                             "so a minimized or background console does not run about 4x slower (pgct_runner.power)")
     args = parser.parse_args(argv)
     if len(set(args.methods)) != len(args.methods) or len(set(args.seeds)) != len(args.seeds):
         parser.error("methods and seeds must be unique")
@@ -118,6 +122,8 @@ def train_main(spec, argv=None):
     print(f"plan: {plan_path} ({len(planned)} jobs listed, {len(jobs)} selected)", flush=True)
     if args.plan_only:
         return 0
+    if not args.allow_eco:
+        print(f"windows power throttling disabled for this process: {disable_power_throttling()}", flush=True)
     failed = []
     for job in jobs:
         out = root / job["name"]

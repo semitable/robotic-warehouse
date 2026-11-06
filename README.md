@@ -16,7 +16,7 @@ This repository is organised as one shared algorithm and independent experiment 
 | [`LBF/`](LBF) | multi-team Level-Based Foraging: second main environment (D141, D142) |
 | [`VMAS/`](VMAS) | VMAS Team Discovery: continuous-physics check (optional `vmas`, GPLv3) |
 | [`docs/`](docs) | [ARCHITECTURE](docs/ARCHITECTURE.md), [MIGRATION](docs/MIGRATION.md), [ALGORITHM](docs/ALGORITHM.md), [ENVIRONMENTS](docs/ENVIRONMENTS.md), research context and history |
-| [`scripts/`](scripts) | `run_tests.ps1`, `run_experiment.ps1` / `aggregate_experiment.ps1` (LBF, VMAS), `migrate_local_layout.ps1` |
+| [`scripts/`](scripts) | `run_tests.ps1`, `run_experiment.ps1` / `aggregate_experiment.ps1` (LBF, VMAS), `start_detached.ps1` (queue outside the app), `migrate_local_layout.ps1` |
 
 Research records stay at the root: `RESEARCH_STATE.md`, `DECISIONS.md`, `EXPERIMENTS.md`,
 `CONVERSATION_LOG.md`, `paper/`, `presentation/` (see `AGENTS.md`, `CLAUDE.md`).

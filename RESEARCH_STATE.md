@@ -1,5 +1,11 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-06 11:15 KST, Claude Code (T239, 속도 원인·LBF 본 비교 시작)
+
+- **속도 저하 원인(E98, D143)**: 팬이 아니라 Windows 11 백그라운드 절전(EcoQoS)이다. 같은 팬 설정에서 최소화 창은 48 step/s, 앱 하위 프로세스는 197 step/s였다. 학습 프로세스가 스스로 절전에서 빠지도록 고쳤고(`pgct_runner/power.py`), 최소화 창에서도 203 step/s가 나온다.
+- **LBF 본 비교 진행 중**: `LBF/runs/lbf_main_5m`, main 5M, pgct_d2·ippo·oracle·all·random_gate × seed 1–3, 동시 5개. 2026-11-06 11:09 KST에 `scripts/start_detached.ps1`로 앱 밖에서 시작했다. seed 1 묶음이 각 약 155 step/s로 돌고 있다. job당 약 9시간, 전체 약 27–28시간 예상이다.
+- **확인할 것**: 진행 상태는 `queue.log`·W&B `pgct-lbf`에서 본다. 동시 5개 부하에서 CPU 온도를 확인한다. 끝나면 `scripts/aggregate_experiment.ps1 -Experiment LBF -Name lbf_main_5m`로 집계한다.
+
 ## 최신 확인 — 2026-11-06 KST, Claude Code (T238, LBF 식별 1M·RWARE seed 1 최종 분석)
 
 - **LBF 학습 중 식별(E97)**: main, seed 1, 1M. PGCT-ID-only가 117,760 step부터 1M까지 같은 팀 두 쌍만 승인했다(오승인 0, AUROC 1.0). 같은 팀 D는 .06–.14, 다른 팀 D는 .94–1.00이다. 대조 경험이 학습 내내 남아서 Overcooked 조건 3 실패가 생기지 않았다.

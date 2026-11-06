@@ -52,6 +52,16 @@ powershell -ExecutionPolicy Bypass -Command "& '.\scripts\run_experiment.ps1' -E
 powershell -ExecutionPolicy Bypass -File scripts\aggregate_experiment.ps1 -Experiment LBF -Name lbf_main
 ```
 
+Long runs can be started outside the calling app (they survive app restarts; no window; log in
+`LBF/runs/<name>/queue.log`):
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& '.\scripts\start_detached.ps1' -Experiment LBF -Name lbf_main_5m -Methods pgct_d2,ippo,oracle,all,random_gate -Seeds 1,2,3 -MaxConcurrent 5"
+```
+
+Training opts itself out of Windows 11 background power throttling (EcoQoS): from a minimized console the same job
+otherwise ran at 48 instead of about 200 env steps/s (E98). `--allow-eco` keeps Windows' default.
+
 Direct entry points (with `LBF;PGCT` on `PYTHONPATH`): `python -m pgct_lbf.train|evaluate|video|aggregate`.
 Runs go to `LBF/runs/<name>/` (git-ignored). The six methods are those of `pgct_core.trainer.METHODS`; the queue
 tracks W&B project `pgct-lbf` and records a greedy play video at every evaluation (`-NoTrack`, `-NoVideo`).

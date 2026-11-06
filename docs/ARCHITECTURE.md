@@ -38,7 +38,7 @@
 │   ├── configs/                main_4p2t.json, coop_4p2t.json
 │   └── tests/
 ├── docs/                       ARCHITECTURE / MIGRATION / ALGORITHM + research context and history
-├── scripts/                    run_tests.ps1, run_experiment.ps1, aggregate_experiment.ps1, migrate_local_layout.ps1
+├── scripts/                    run_tests.ps1, run_experiment.ps1, aggregate_experiment.ps1, start_detached.ps1, migrate_local_layout.ps1
 ├── pyproject.toml              installs pgct_core, pgct_runner and the experiment packages (optional)
 └── research records            RESEARCH_STATE.md, DECISIONS.md, EXPERIMENTS.md, CONVERSATION_LOG.md, paper/, ...
 ```
