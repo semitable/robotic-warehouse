@@ -80,7 +80,9 @@ def recurrent_minibatches(rollout: Rollout, agent_id: int, sequence_length: int,
 
 
 def ppo_update(agents: Sequence[nn.Module], optimizers, rollout: Rollout, cfg: PPOConfig, device, rng,
-               advantages: Optional[torch.Tensor] = None, returns: Optional[torch.Tensor] = None) -> Dict[str, float]:
+               advantages: Optional[torch.Tensor] = None, returns: Optional[torch.Tensor] = None,
+               frozen: Sequence[int] = ()) -> Dict[str, float]:
+    """``frozen``: agent indices that are not updated (e.g. a pre-trained expert kept fixed); empty = all agents."""
     if (advantages is None) != (returns is None):
         raise ValueError("Pass both advantages and returns, or neither")
     if advantages is None:
@@ -91,6 +93,8 @@ def ppo_update(agents: Sequence[nn.Module], optimizers, rollout: Rollout, cfg: P
     metrics = {name: [] for name in names}
     diagnostics: Dict[str, float] = {}
     for agent_id, (net, optimizer) in enumerate(zip(agents, optimizers)):
+        if agent_id in frozen:
+            continue
         raw_adv = advantages[:, agent_id]
         adv_std = raw_adv.std(unbiased=False)
         if cfg.normalize_advantages:

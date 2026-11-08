@@ -45,7 +45,10 @@ def build(data, method, seed):
     ppo_cfg = PPOConfig(**data.get("ppo", {}))
     gate_cfg = RewardGateConfig(**{"radius": max(1, adapter_cfg.probe_radius), **data.get("gate", {})})
     max_cfg = MaxGAEConfig(**{"donors": "gate", "scale": "shrink", **data.get("max_gae", {})})
-    trainer_cfg = TrainerConfig(**{**data.get("trainer", {}), "method": method, "seed": int(seed)})
+    trainer = dict(data.get("trainer", {}))
+    if trainer.get("init_checkpoint") and not Path(trainer["init_checkpoint"]).is_absolute():
+        trainer["init_checkpoint"] = str(REPO_ROOT / trainer["init_checkpoint"])  # repo-relative in configs
+    trainer_cfg = TrainerConfig(**{**trainer, "method": method, "seed": int(seed)})
 
     def make_adapter():
         return ForagingAdapter(foraging_cfg, adapter_cfg)

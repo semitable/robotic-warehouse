@@ -1,0 +1,85 @@
+{
+  "description": "POST-HOC exploratory variant (chosen after the main LBF results, T247-T248; not part of the pre-registered set): main_4p2t.json with a sparser first reward - 15x15 field, 1 food per team, sight 1 (probe radius 1). Random actions collect own-team food about 0.04 times per agent-episode (main: 0.16), so agents may learn at different speeds and critic transfer can matter. Report as post-hoc exploration.",
+  "foraging": {
+    "field_size": 15,
+    "team_sizes": [
+      2,
+      2
+    ],
+    "food_per_team": 1,
+    "min_player_level": 1,
+    "max_player_level": 2,
+    "min_food_level": 1,
+    "max_food_level": null,
+    "force_coop": false,
+    "sight": 1,
+    "horizon": 50,
+    "normalize_reward": true,
+    "penalty": 0.0,
+    "team_assignment": "shuffle",
+    "team_seed": null
+  },
+  "adapter": {
+    "probe_radius": 1,
+    "comm_range": 3
+  },
+  "ppo": {
+    "rollout_steps": 1024,
+    "sequence_length": 64,
+    "minibatch_chunks": 8,
+    "ppo_epochs": 4,
+    "learning_rate": 0.0002,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_coef": 0.2,
+    "value_clip_coef": 0.2,
+    "value_loss_coef": 0.5,
+    "entropy_coef": 0.05,
+    "max_grad_norm": 0.5,
+    "mlp_hidden_dim": 128,
+    "recurrent_hidden_dim": 128
+  },
+  "gate": {
+    "buffer_size": 20000,
+    "event_buffer_size": 512,
+    "event_fraction": 0.25,
+    "hidden": 128,
+    "learning_rate": 0.001,
+    "train_steps": 50,
+    "batch_size": 256,
+    "min_events": 20,
+    "probes_per_agent": 32,
+    "mirror": false,
+    "min_probes": 8,
+    "distance_threshold": 0.5,
+    "ema_beta": 0.35,
+    "min_rounds": 3,
+    "interval": 5,
+    "seed": 0,
+    "distance_mode": "action_max",
+    "event_threshold": "relative",
+    "event_scale": 0.1,
+    "min_event_response_ratio": 0.3
+  },
+  "max_gae": {
+    "eta": 0.5,
+    "scale": "shrink",
+    "gae_lambda": null,
+    "cap": null,
+    "window": 8,
+    "min_critic_ev": null
+  },
+  "trainer": {
+    "total_timesteps": 5000000,
+    "device": "cpu",
+    "warmup_updates": 100,
+    "eval_interval": 50,
+    "eval_episodes": 20,
+    "eval_seed": 5000001,
+    "eval_deterministic": true,
+    "save_interval": 250,
+    "log_interval": 10,
+    "torch_threads": 1,
+    "audit": true
+  }
+}

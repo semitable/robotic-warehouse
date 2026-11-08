@@ -27,7 +27,7 @@ import random
 import time
 from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -65,12 +65,23 @@ class TrainerConfig:
     log_interval: int = 10
     torch_threads: int = 0        # 0 keeps torch's default
     audit: bool = True            # label-based audit metrics in the logs (evaluation side only)
+    # Follower experiments (D145): start some agents from a saved checkpoint's agents and keep chosen agents fixed.
+    # init_agents maps target agent index -> source agent index in init_checkpoint (a pgct_core.trainer checkpoint).
+    # Loaded after every network is built, so all random streams match a run without loading. Defaults: off.
+    init_checkpoint: Optional[str] = None
+    init_agents: Optional[Dict[int, int]] = None
+    frozen_agents: Tuple[int, ...] = ()
 
     def __post_init__(self):
         if self.method not in METHODS:
             raise ValueError(f"method must be one of {sorted(METHODS)}")
         if self.total_timesteps <= 0 or self.warmup_updates < 0:
             raise ValueError("total_timesteps must be positive and warmup_updates nonnegative")
+        if self.init_agents is not None:
+            self.init_agents = {int(k): int(v) for k, v in dict(self.init_agents).items()}
+        if bool(self.init_agents) != bool(self.init_checkpoint):
+            raise ValueError("init_agents and init_checkpoint go together")
+        self.frozen_agents = tuple(sorted(int(i) for i in self.frozen_agents))
 
 
 def set_global_seeds(seed: int) -> None:
@@ -272,6 +283,18 @@ def run_training(make_adapter: Callable, out_dir, cfg: TrainerConfig, ppo_cfg: O
     agents = [RecurrentActorCritic(adapter.obs_dim, adapter.n_actions, ppo_cfg.mlp_hidden_dim,
                                    ppo_cfg.recurrent_hidden_dim).to(device) for _ in range(n)]
     optimizers = [torch.optim.Adam(a.parameters(), lr=ppo_cfg.learning_rate, eps=1e-5) for a in agents]
+    init_info = {}
+    if cfg.init_agents:  # follower experiments: copy saved agents in after every network was built (D145)
+        if max(cfg.init_agents) >= n or min(cfg.init_agents) < 0:
+            raise ValueError(f"init_agents targets must be agent indices < {n}")
+        payload = torch.load(cfg.init_checkpoint, map_location=device, weights_only=False)
+        for target, source in sorted(cfg.init_agents.items()):
+            agents[target].load_state_dict(payload["agents"][source])
+        init_info = dict(init_checkpoint_sha256=hashlib.sha256(Path(cfg.init_checkpoint).read_bytes()).hexdigest(),
+                         init_checkpoint_env_steps=payload.get("env_steps"))
+    if any(i < 0 or i >= n for i in cfg.frozen_agents):
+        raise ValueError(f"frozen_agents must be agent indices < {n}")
+    frozen = cfg.frozen_agents
     gate = None
     if spec["gate"]:
         gate_cfg = replace(gate_cfg or RewardGateConfig(), contact_snapshot=True)  # D103 for every gate method
@@ -284,7 +307,8 @@ def run_training(make_adapter: Callable, out_dir, cfg: TrainerConfig, ppo_cfg: O
         trainer=asdict(cfg), ppo=asdict(ppo_cfg), gate=asdict(gate.config) if gate else None,
         max_gae=asdict(max_cfg), lambda_f=lam_f, method_spec=spec, n_agents=n, obs_dim=adapter.obs_dim,
         n_actions=adapter.n_actions, probe_view_size=adapter.projection.view_size,
-        critic_parameters=critic_params, **(extra_config or {})), indent=2, default=_json_default), encoding="utf-8")
+        critic_parameters=critic_params, **init_info, **(extra_config or {})), indent=2, default=_json_default),
+        encoding="utf-8")
     (out_dir / "initial_weights_sha256.txt").write_text(model_hash(agents) + "\n", encoding="utf-8")
     metrics_log, gate_log, eval_log = (JsonlWriter(out_dir / f) for f in ("metrics.jsonl", "gate.jsonl", "eval.jsonl"))
     team_ids = None
@@ -349,12 +373,12 @@ def run_training(make_adapter: Callable, out_dir, cfg: TrainerConfig, ppo_cfg: O
                     active, scale=max_cfg.scale, valid=valid)
                 t4 = time.perf_counter()
                 ppo_metrics = ppo_update(agents, optimizers, rollout, ppo_cfg, device, rng, advantages=actor,
-                                         returns=returns)
+                                         returns=returns, frozen=frozen)
                 diag, diag_row = advantage_diagnostics(actor, adv_self, adv_max, b, raw, active, valid, max_cfg.cap)
                 extra.update(diag)
             else:
                 t4 = time.perf_counter()
-                ppo_metrics = ppo_update(agents, optimizers, rollout, ppo_cfg, device, rng)
+                ppo_metrics = ppo_update(agents, optimizers, rollout, ppo_cfg, device, rng, frozen=frozen)
                 diag_row = {}
             t5 = time.perf_counter()
             env_steps = update * ppo_cfg.rollout_steps

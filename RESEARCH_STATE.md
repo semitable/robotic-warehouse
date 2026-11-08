@@ -1,5 +1,11 @@
 # PGCT 현재 연구 상태
 
+## 최신 확인 — 2026-11-07 KST, Claude Code (T255, 큰 팀 LBF 시작·VMAS 계획)
+
+- **진행 중**: LBF 큰 팀 L1 `LBF/runs/lbf_large12_5m` seed 1(pgct_d2·ippo·oracle, 5M)만 11-08 밤까지 돌고 멈춘다. seed 2·3은 사용자 요청으로 취소했다(T260). 다음 추천은 RWARE 본 비교 완성과 F1이다(D146, `docs/PLAN_RECOMMENDED_20261108.md`). seed 1 묶음 완료(약 1.5일 뒤)에 팀 안 엇갈림과 중간 결과를 점검한다(D144, E104).
+- **완료·보류**: LBF main은 seed 2만 5M 완료(방법 간 차이 잡음 수준, E100). seed 1은 PC 재시작으로 중단(E103), seed 3은 미실행이다. 희소 변형 IPPO 2M은 팀 안 엇갈림 없음(E103).
+- **계획**: VMAS V1(main_4p2t)·V2(large_8p2t)는 다른 PC를 권장한다. RWARE seed 2·3이 최우선이다(`docs/PLAN_LBF_VMAS_20261107.md`).
+
 ## 최신 확인 — 2026-11-06 11:15 KST, Claude Code (T239, 속도 원인·LBF 본 비교 시작)
 
 - **속도 저하 원인(E98, D143)**: 팬이 아니라 Windows 11 백그라운드 절전(EcoQoS)이다. 같은 팬 설정에서 최소화 창은 48 step/s, 앱 하위 프로세스는 197 step/s였다. 학습 프로세스가 스스로 절전에서 빠지도록 고쳤고(`pgct_runner/power.py`), 최소화 창에서도 203 step/s가 나온다.

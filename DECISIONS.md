@@ -1834,3 +1834,46 @@
   - pgct_id_only는 뺐다. 학습이 IPPO와 비트 단위로 같고(E97), 식별 지표는 pgct_d2·random_gate의 gate 로그에도 남기 때문이다.
   - 실행 방식: `scripts/start_detached.ps1`로 WMI(Win32_Process.Create)를 통해 앱 프로세스 트리 밖에서 대기열을 띄웠다. 앱이 재시작돼도 죽지 않게 하려는 것(E26)이다. 같은 사용자 계정으로 돌고 W&B 인증 파일을 찾는 것을 확인했다.
 - 남은 확인: 동시 5개 부하에서 CPU 온도. 팬이 낮게 고정돼 있으므로, FanControl에서 CPU 온도가 90°C 안팎이면 CPU 팬 곡선을 켜는 것이 좋다.
+
+## D144. 큰 팀 LBF 본 실험(L1) 시작과 VMAS 실험 계획 — 2026-11-07 Claude Code (사용자 요청 T255)
+
+- 요청(T255): LBF는 2M보다 길게, agent는 8명보다 많게, IPPO만이 아니라 전체 방법으로 실험한다. VMAS 실험도 계획한다.
+- 가설 H: 같은 팀 안에서 보상 경험량이 엇갈리면 PGCT-D2가 IPPO보다 빨리 배운다. 팀이 클수록 엇갈림이 생기기 쉽다. RWARE의 leader→lagger 전이(E95·E97)와 LBF 2명 팀의 무효과(E100·E102)에서 나온 가설이다.
+- L1(시작):
+  - 설정: `LBF/configs/large_12p3t.json`. 12 agent = 3팀 × 4, 15×15, 팀당 먹이 3, 시야 2, 50 step. 먹이의 50%가 팀원 2명 이상을 요구한다.
+  - 실행: 5M, pgct_d2·ippo·oracle·all·random_gate × seed 1–3, 동시 5개. `LBF/runs/lbf_large12_5m`, 숨김 대기열 PID 21412.
+  - 사후 변형이라 보조 실험으로 밝힌다.
+- VMAS 계획:
+  - V1: 사전 고정 `main_4p2t`, 5 방법 × seed 1–3 × 2M.
+  - V2: 사후 변형 `large_8p2t`(8 agent = 2팀 × 4, 목표 4개를 팀원끼리 경쟁, RWARE형 엇갈림), 같은 구성.
+  - 다른 PC를 권장하고, 이 PC에서는 L1 다음에 돌린다.
+- 우선순위 권고: RWARE seed 2·3(다른 PC, 최우선), L1(이 PC), V1·V2, LBF main seed 1·3 재실행(L0) 순이다.
+- 계획서: `docs/PLAN_LBF_VMAS_20261107.md`(계산량, 분석 계획, 명령).
+
+## D145. 전문가 추종 실험(F1) 설계와 학습기 확장 — 2026-11-08 Claude Code (사용자 요청 T259)
+
+- 요청(T259): 이미 학습을 끝낸 agent를 하나 두고, lagging agent가 얼마나 잘 따라오는지 본다.
+- 판단: LBF·큰 팀 LBF에서는 팀 안 격차가 저절로 생기지 않았다(E100·E106). 그래서 격차를 실험 설계로 직접 만든다. 같은 팀에 고정된 전문가를 두고, 후발의 학습 속도를 방법별로 비교한다.
+- 학습기 확장(`pgct_core`, 기본값이면 동작 불변):
+  - `TrainerConfig.init_checkpoint`, `init_agents`(대상 → 원본 agent 번호), `frozen_agents`를 추가했다.
+  - 불러오기는 모든 신경망을 만든 뒤에 하므로 난수 흐름이 일반 run과 같다.
+  - 고정 agent는 PPO 업데이트를 건너뛴다(`ppo_update(frozen=...)`).
+  - config.json에 원본 체크포인트의 sha256과 step을 남긴다.
+  - 검증: PGCT 20(신규 4), RWARE 동결 사본 동등성 28 통과·4 skip, LBF 22, Overcooked 30 통과.
+- F1 설정: `LBF/configs/follow_12p3t.json`. 12명 = 3팀 × 4, 팀 배정은 L1 seed 1로 고정한다. agent 11(숨은 팀 0)에 L1 IPPO seed 1의 5M agent 11을 넣고 고정한다. 후발은 agent 5·6·8, 비교군은 팀 1·2의 8명이다. 2M, IPPO·PGCT-D2·Oracle(선택 All) × seed 1–3이다.
+- 분석 도구: `pgct_runner/follow.py`(`python -m pgct_lbf.follow`). 후발·비교군의 구간별 보상 사건과 전문가 수준 도달 시점을 계산한다.
+- 시작 조건: L1 IPPO seed 1 `final.pt`(11-08 저녁). L1 seed 2·3과 같은 PC라 순서는 사용자가 정한다.
+
+## D146. 추천 실험 계획: RWARE 본 비교 완성(최우선)과 F1(IPPO·PGCT-D2·All) — 2026-11-08 Claude Code (사용자 질문 T260, 제안)
+
+- 사용자 요청(T260): 12명 실험은 seed 1에서 멈추고, 기존 사용자 의견에 얽매이지 않고 가장 추천하는 PGCT 실험 계획을 낸다.
+- 조치: L1 seed 2·3 대기열(PID 29556)을 껐다. seed 1의 3개 job은 5M까지 마저 돈다.
+- 판단:
+  - Q1(식별) 근거는 강하다: RWARE, LBF 4명, LBF 12명·3팀.
+  - Q2(전이) 근거는 RWARE seed 1 하나뿐이고, RWARE에 Oracle·무작위 donor 대조가 없다. 그래서 가장 가치 있는 다음 실험은 새 환경이 아니라 Q2를 확실히 하는 것이다.
+- 추천 1: RWARE `b6_corner_indiv_comm5_pen005` 2M, ippo·pgct_max·oracle_max·allk_max × seed 1–3(남은 10 job), 다른 PC, 약 3일. 사전 판정 기준과 agent별 첫 배송·donor 연결 분석을 포함한다.
+- 추천 2: F1 전문가 추종(LBF 12명)은 이 PC에서, 약 28시간. 방법은 IPPO·PGCT-D2·All이다. LBF 12명은 식별이 완벽해 PGCT-D2 ≈ Oracle이므로 Oracle 대신 All로 잘못된 donor의 해를 본다.
+- 추천 3: 계산 없는 "팀 안 엇갈림 ↔ PGCT 이득" 정리 분석과 한계(보상 사건 없는 agent) 명시.
+- 보류: LBF 12명 seed 2·3, LBF 4명 재실행, VMAS, Overcooked 추가 실험.
+- 참고 측정: RWARE 학습기는 이 PC에서 LBF job 3개와 함께 돌릴 때 약 11 step/s였다(6,144 step 시점, 하위 프로세스라 절전 영향 없음). 다른 PC의 25–27 step/s는 정상 속도로 본다.
+- 계획서: `docs/PLAN_RECOMMENDED_20261108.md`. 실행은 사용자 결정을 기다린다.
