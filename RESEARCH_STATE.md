@@ -5,6 +5,13 @@
 - **진행 중**: LBF 큰 팀 L1 `LBF/runs/lbf_large12_5m` seed 1(pgct_d2·ippo·oracle, 5M)만 11-08 밤까지 돌고 멈춘다. seed 2·3은 사용자 요청으로 취소했다(T260). 다음 추천은 RWARE 본 비교 완성과 F1이다(D146, `docs/PLAN_RECOMMENDED_20261108.md`). seed 1 묶음 완료(약 1.5일 뒤)에 팀 안 엇갈림과 중간 결과를 점검한다(D144, E104).
 - **완료·보류**: LBF main은 seed 2만 5M 완료(방법 간 차이 잡음 수준, E100). seed 1은 PC 재시작으로 중단(E103), seed 3은 미실행이다. 희소 변형 IPPO 2M은 팀 안 엇갈림 없음(E103).
 - **계획**: VMAS V1(main_4p2t)·V2(large_8p2t)는 다른 PC를 권장한다. RWARE seed 2·3이 최우선이다(`docs/PLAN_LBF_VMAS_20261107.md`).
+## 최신 확인 — 2026-11-06 13:25 KST, Claude Code (T246, PGCT_Change의 하루짜리 run 분석 이식)
+
+- **이식**: `feature/PGCT_Change`(29ef6f0)에만 있던 하루짜리 run 분석을 이 브랜치에 옮겼다. E86은 E100으로, 대화 T216은 T245로 옮겼고, 스크립트·그림은 `RWARE/output/day_run_20261106/`에 두었다. 같은 run의 W&B 분석은 E91·E97에 있다.
+- **결과(E100)**: 기존 지도 r_c 5, seed 1, 2M. pgct_max 대 ippo의 팀 0.5 도달은 0.92 대 1.48M, 마지막 평가 3회 평균은 9.0 대 6.65 배송/ep다. 다른 팀 승인은 0이다. 다른 팀 쌍의 행동별 거리는 .99–1.00을 유지했지만 합친 거리는 .58까지 내려갔다(행동별 최대 규칙의 첫 온라인 확인). a1(E97의 A2)은 pgct에서 미성숙·미학습이다.
+- **당시 권고(T216)**: 현재 설정으로 서버 본 실험(5M, ippo·pgct_max·oracle_max·allk_max, seed ≥ 5). seed 1개라 속도 이득은 미확정이다. 이후 계획은 T239 절과 E97을 따른다.
+- **주의(DESKTOP-03ASKH8)**: 이 PC 디스크에서는 `RWARE` 폴더 이름이 소문자 `rware`다. 그래서 `git add -A`나 `git add .`로 새 파일을 올리면 경로가 `rware/...`로 기록된다(dry-run 확인). 리눅스 서버에서는 다른 폴더가 된다. 새 파일은 `git add RWARE/...`처럼 대문자 경로로 올리거나, 학습이 없을 때 폴더 이름을 `RWARE`로 바꾼다.
+- **통합 사본 미갱신**: 이 PC에는 `research_archive/build_archive.py`가 읽는 보고서 7개(`RWARE/output/gating_diagnosis/README.md` 등, git에 없음)가 없다. 여기서 다시 만들면 그 내용이 빠지므로 커밋된 사본을 그대로 두었다. 보고서가 있는 PC에서 다시 만든다.
 
 ## 최신 확인 — 2026-11-06 11:15 KST, Claude Code (T239, 속도 원인·LBF 본 비교 시작)
 

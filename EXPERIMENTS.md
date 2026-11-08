@@ -1917,3 +1917,13 @@ ID / 실제 실행 날짜·작성 도구 / 상태(계획·smoke·진행·완료�
   - 숨김 대기열 PID 4760, 2026-11-09 00:10 KST 시작.
   - 전문가: L1 ippo_s1 `final.pt`(sha256 72507b9d1647…) agent 11, 고정.
   - 3개 job 모두 절전 해제, job당 53 step/s. job당 약 10.5시간, 전체 약 32시간(11-10 오전 완료 예상).
+## E100. 하루짜리 run 결과: 기존 지도 r_c 5, pgct_max 대 ippo, seed 1, 2M (학습 완료) — 2026-11-06 12:51 KST 전후 Claude Code (T245, `feature/PGCT_Change`의 E86을 T246에서 옮김)
+
+- 출처: `feature/PGCT_Change` 커밋 29ef6f0에 E86으로 남긴 기록이다. 이 브랜치의 E86은 다른 실험(저장소 분리 검증)이라 E100으로 옮겼다. 같은 run을 W&B로 분석한 기록이 E91(진행 중)과 E97(최종)에 있다. 이 항목은 로컬 `metrics.jsonl`·gate 로그를 직접 읽은 분석이다. agent 번호는 0부터 센다(a0–a5 = E97의 A1–A6).
+- 실행: 저장소 루트 `runs/day_base_1105_nv_b6_corner_indiv_comm5_pen005`(분리 전 코드, 이 PC DESKTOP-03ASKH8, 사용자가 11-05 12시대 시작, 영상 없음, W&B `rware-main-amax-v2`). 두 job complete, 오류 0, 25.6–27.3 step/s.
+- 분석 파일: `RWARE/output/day_run_20261106/analyze_day_run.py`, `stdout.txt`, `summary.json`, `day_run.png/pdf`. 옮기면서 스크립트의 run 경로만 고쳤다. `RWARE/runs`에서 먼저 찾고, 없으면 저장소 루트 `runs/`에서 찾는다. 다시 실행한 `stdout.txt`·`summary.json`은 원본과 줄바꿈만 다르다. 그림은 원본 파일을 그대로 두었다.
+- 학습(결정적 평가 20 ep, 3회 평균 첫 도달): 팀 0.5/2/5 — pgct_max 0.92/1.23/1.38M, ippo 1.48/1.69/1.84M. 마지막 3회 평균 9.0 대 6.65. agent별 0.5/ep 도달 pgct a0 1.08, a2 1.38, a3 1.28, a5 0.97M, a1·a4 못 배움; ippo a0 1.48, a1 1.64, a2 2.0, a3 1.79, a5 1.89M, a4 못 배움. pgct 사건 수 [5111, 11, 2246, 2410, 23, 6363].
+- 발견: 성숙 a2 .125, a3 .13, a5 .151, a0 .171, a4 .229M, a1 미성숙. 승인 (3,5) .164, (0,2) .184, (0,4)·(2,4) .241M. 같은 팀 arc 14,020, 다른 팀 0. 최대를 낸 행동 FORWARD 17,505, TOGGLE 205. 다른 팀 1.5M 이후 평균(행동별 최대/합친) (0,3) .99/.81, (0,5) .99/.74, (2,3) 1.00/.88, (2,5) 1.00/.84, 마지막 비교 합친 거리 .58–.95.
+- Max-GAE: donor arc 8/update, 받는 agent 5, select_frac .50–.67, mean_b .02→.30, eta_eff .19–.46, adv_shift .17–.35, Critic EV [.68,.22,.74,.79,.17,.70].
+- E97과의 관계: 기준이 달라 숫자가 다르다. E97의 IPPO 6.85 대 PGCT 8.55는 `eval/final` 1회, 이 항목의 6.65 대 9.0은 마지막 주기 평가 3회 평균이다. 성숙 순서·시점, 다른 팀 승인 0, a1(=A2) 미성숙, a4(=A5) 두 run 모두 배송 0은 서로 같다.
+- 한계: seed 1개. 이전 기존 지도 IPPO(r_c 3, 다른 코드 버전)의 팀 0.5 도달은 .72–.82M로 이번 IPPO보다 빨라, 속도 차이의 일부는 seed 변동일 수 있다. a1은 pgct에서만 못 배움(원인 미확인).
